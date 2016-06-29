@@ -217,3 +217,4 @@ C/build
 *.dll
 os.img
 C/output.c
+bochsrc.bxrc
