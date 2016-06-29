@@ -218,3 +218,4 @@ C/build
 os.img
 C/output.c
 bochsrc.bxrc
+C/kernel
