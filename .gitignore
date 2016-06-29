@@ -215,3 +215,5 @@ ModelManifest.xml
 C/tools
 C/build
 *.dll
+os.img
+C/output.c

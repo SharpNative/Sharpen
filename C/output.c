@@ -62,19 +62,19 @@ void Sharpen_Console_PutChar(char ch)
 {
 	if(ch == '\n')
 	{
-		Sharpen_Console_X_setter(obj, 0);
-		Sharpen_Console_Y_setter(obj, Sharpen_Console_Y_getter(obj) + 1);
+		Sharpen_Console_X_setter(NULL, 0);
+		Sharpen_Console_Y_setter(NULL, Sharpen_Console_Y_getter(NULL) + 1);
 	}
 	else
 	{
-		classStatics_Sharpen_Console.vidmem[ ( classStatics_Sharpen_Console.Y * 25 + classStatics_Sharpen_Console.X )  * 2 + 0] = (uint8_t)ch;
-		classStatics_Sharpen_Console.vidmem[ ( classStatics_Sharpen_Console.Y * 25 + classStatics_Sharpen_Console.X )  * 2 + 1] = 0x07;
-		Sharpen_Console_X_setter(obj, Sharpen_Console_X_getter(obj) + 1);
+		classStatics_Sharpen_Console.vidmem[ ( Sharpen_Console_Y_getter(NULL) * 25 + Sharpen_Console_X_getter(NULL) )  * 2 + 0] = (uint8_t)ch;
+		classStatics_Sharpen_Console.vidmem[ ( Sharpen_Console_Y_getter(NULL) * 25 + Sharpen_Console_X_getter(NULL) )  * 2 + 1] = 0x07;
+		Sharpen_Console_X_setter(NULL, Sharpen_Console_X_getter(NULL) + 1);
 	}
-	if(X == 80)
+	if(Sharpen_Console_X_getter(NULL) == 80)
 	{
-		Sharpen_Console_X_setter(obj, 0);
-		Sharpen_Console_Y_setter(obj, Sharpen_Console_Y_getter(obj) + 1);
+		Sharpen_Console_X_setter(NULL, 0);
+		Sharpen_Console_Y_setter(NULL, Sharpen_Console_Y_getter(NULL) + 1);
 	}
 }
 /* Static Method <Write> */
@@ -82,7 +82,8 @@ void Sharpen_Console_Write(char* text)
 {
 	for(/* Variable i = 0 */
 	int32_t i = 0;
-	i < String.Length(text);i = i + 1	)
+	i < Sharpen_String_Length(text);
+	i = i + 1	)
 	{
 	}
 }
@@ -150,7 +151,7 @@ int32_t Sharpen_String_Length(char* text)
 {
 	/* Variable i = 0 */
 	int32_t i = 0;
-	for(;text[i] != '\0';i = i + 1	)
+	for(;text[i] != '\0'i = i + 1	)
 	{
 	}
 	return i;
