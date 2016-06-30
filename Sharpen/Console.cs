@@ -26,18 +26,18 @@
         public unsafe static void PutChar(char ch)
         {
             // Enter
-            if(ch == '\n')
+            if (ch == '\n')
             {
                 X = 0;
                 Y++;
             }
             // Carriage return
-            else if(ch == '\r')
+            else if (ch == '\r')
             {
                 X = 0;
             }
             // Tab
-            else if(ch == '\t')
+            else if (ch == '\t')
             {
                 X = (X + 4) & ~(4 - 1);
             }
@@ -49,9 +49,9 @@
 
                 X++;
             }
-            
+
             // New line
-            if(X == 80)
+            if (X == 80)
             {
                 X = 0;
                 Y++;

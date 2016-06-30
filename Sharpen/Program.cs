@@ -7,6 +7,8 @@
         /// </summary>
         static void KernelMain()
         {
+            GDT.Init();
+
             Console.WriteLine("test test");
             Console.WriteLine("1234");
         }
