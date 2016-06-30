@@ -1,5 +1,5 @@
-global Sharpen_GDT_FlushGDT
-Sharpen_GDT_FlushGDT:
+global Sharpen_Arch_GDT_FlushGDT
+Sharpen_Arch_GDT_FlushGDT:
     ; Pointer passed as argument
     mov eax, [esp + 4]
     lgdt [eax]

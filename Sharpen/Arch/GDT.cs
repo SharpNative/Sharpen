@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Sharpen
+namespace Sharpen.Arch
 {
     class GDT
     {

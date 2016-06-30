@@ -1,4 +1,4 @@
-﻿namespace Sharpen
+﻿namespace Sharpen.Arch
 {
     public sealed class PortIO
     {

@@ -1,4 +1,6 @@
-﻿namespace Sharpen
+﻿using Sharpen.Arch;
+
+namespace Sharpen
 {
     public unsafe class Console
     {
@@ -60,9 +62,24 @@
             MoveCursor();
 
             // TODO: scroll
+        }
 
-            // TODO: remove this, just a test
-            Attribute++;
+        /// <summary>
+        /// Clears the screen
+        /// </summary>
+        public static void Clear()
+        {
+            // Move back to start
+            X = 0;
+            Y = 0;
+            MoveCursor();
+
+            // Clear
+            for(int i = 0; i < 25 * 80; i++)
+            {
+                vidmem[i * 2 + 0] = (byte)' ';
+                vidmem[i * 2 + 1] = Attribute;
+            }
         }
 
         /// <summary>
