@@ -15,7 +15,15 @@ namespace Sharpen
             Console.WriteLine("test test");
             Console.WriteLine("1234");
 
-            Panic.DoPanic("hallo");
+            CMOS.UpdateTime();
+            Console.Write("It is ");
+            Console.WriteNum(Time.Hours);
+            Console.Write(":");
+            Console.WriteNum(Time.Minutes);
+            Console.Write(":");
+            Console.WriteNum(Time.Seconds);
+
+            // Panic.DoPanic("hallo");
         }
     }
 }

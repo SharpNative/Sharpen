@@ -5,7 +5,7 @@ namespace Sharpen
     public unsafe class Console
     {
         private static byte* vidmem = (byte*)0xB8000;
-        
+
         /// <summary>
         /// Cursor X position
         /// </summary>
@@ -75,7 +75,7 @@ namespace Sharpen
             MoveCursor();
 
             // Clear
-            for(int i = 0; i < 25 * 80; i++)
+            for (int i = 0; i < 25 * 80; i++)
             {
                 vidmem[i * 2 + 0] = (byte)' ';
                 vidmem[i * 2 + 1] = Attribute;
@@ -103,6 +103,67 @@ namespace Sharpen
         {
             Write(text);
             PutChar('\n');
+        }
+
+        /// <summary>
+        /// Writes a hexadecimal integer to the screen
+        /// </summary>
+        /// <param name="num">The number</param>
+        public static void WriteHex(int num)
+        {
+            if (num == 0)
+            {
+                PutChar('0');
+                return;
+            }
+
+            // Don't print zeroes at beginning of number
+            bool noZeroes = true;
+            for (int j = 28; j >= 0; j -= 4)
+            {
+                int tmp = (num >> j) & 0x0F;
+                if (tmp == 0 && noZeroes)
+                {
+                    continue;
+                }
+
+                noZeroes = false;
+                if (tmp >= 0x0A)
+                {
+                    PutChar((char)(tmp - 0x0A + 'A'));
+                }
+                else
+                {
+                    PutChar((char)(tmp + '0'));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Writes an integer to the screen
+        /// </summary>
+        /// <param name="num">The number</param>
+        public static void WriteNum(int num)
+        {
+            if (num == 0)
+            {
+                PutChar('0');
+                return;
+            }
+
+            if(num < 0)
+            {
+                PutChar('-');
+                num = -num;
+            }
+
+            int a = num % 10;
+            if (num >= 10)
+            {
+                WriteNum(num / 10);
+            }
+
+            PutChar((char)('0' + a));
         }
 
         /// <summary>
