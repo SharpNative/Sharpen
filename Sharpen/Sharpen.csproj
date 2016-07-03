@@ -51,6 +51,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Arch\CPU.cs" />
     <Compile Include="Console.cs" />
     <Compile Include="Arch\GDT.cs" />
     <Compile Include="Panic.cs" />

@@ -18,3 +18,18 @@ Sharpen_Arch_GDT_FlushGDT:
     
 .flush:
     ret
+
+global Sharpen_Arch_CPU_CLI
+Sharpen_Arch_CPU_CLI:
+    cli
+    ret
+
+global Sharpen_Arch_CPU_STI
+Sharpen_Arch_CPU_STI:
+    sti
+    ret
+
+global Sharpen_Arch_CPU_HLT
+Sharpen_Arch_CPU_HLT:
+    hlt
+    ret

@@ -5,7 +5,7 @@ namespace Sharpen
     public unsafe class Console
     {
         private static byte* vidmem = (byte*)0xB8000;
-
+        
         /// <summary>
         /// Cursor X position
         /// </summary>

@@ -1,4 +1,6 @@
-﻿namespace Sharpen
+﻿using Sharpen.Arch;
+
+namespace Sharpen
 {
     public class Panic
     {
@@ -8,6 +10,9 @@
         /// <param name="str">The message</param>
         public static void DoPanic(string str)
         {
+            // Clear interrupts
+            CPU.CLI();
+
             // Empty screen
             Console.Attribute = 0x04;
             Console.Clear();
@@ -27,6 +32,7 @@
             Console.Write(str);
 
             // HALT
+            CPU.HLT();
         }
     }
 }
