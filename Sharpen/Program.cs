@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Drivers.Block;
 
 namespace Sharpen
 {
@@ -22,6 +23,11 @@ namespace Sharpen
             Console.WriteNum(Time.Minutes);
             Console.Write(":");
             Console.WriteNum(Time.Seconds);
+            Console.WriteLine("");
+
+            ATA.Probe();
+            ATA.Test();
+            ATA.WriteTest();
 
             // Panic.DoPanic("hallo");
         }
