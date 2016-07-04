@@ -8,8 +8,9 @@ namespace Sharpen
         /// <summary>
         /// Kernel entrypoint
         /// </summary>
-        static void KernelMain()
+        public static unsafe void KernelMain()
         {
+            Heap.Init((void*) 0x911000);
             Console.Clear();
             GDT.Init();
 
@@ -28,6 +29,19 @@ namespace Sharpen
             ATA.Probe();
             ATA.Test();
             ATA.WriteTest();
+
+            Console.WriteLine("\nList of ATA devices:");
+            for(int i = 0; i < 4; i++)
+            {
+                IDE_Device device = ATA.Devices[i];
+                if(!device.Exists)
+                {
+                    continue;
+                }
+
+                Console.WriteStr(device.Name);
+                Console.PutChar('\n');
+            }
 
             // Panic.DoPanic("hallo");
         }

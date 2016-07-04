@@ -3,8 +3,7 @@
 
 #include <stdint.h>
 
-#define NULL ((void*)0)
-
-void* malloc(size_t);
+#define NULL ((void*) 0)
+#define null ((void*) 0)
 
 #endif

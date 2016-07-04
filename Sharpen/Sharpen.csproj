@@ -57,6 +57,8 @@
     <Compile Include="Arch\GDT.cs" />
     <Compile Include="Drivers\Block\ATA.cs" />
     <Compile Include="Drivers\Block\IDE_Device.cs" />
+    <Compile Include="Heap.cs" />
+    <Compile Include="Memory.cs" />
     <Compile Include="Panic.cs" />
     <Compile Include="Arch\PortIO.cs" />
     <Compile Include="Program.cs" />

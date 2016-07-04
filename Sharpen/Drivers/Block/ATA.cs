@@ -4,7 +4,7 @@ namespace Sharpen.Drivers.Block
 {
     unsafe partial class ATA
     {
-        #region static readonlyants
+        #region ATA data
 
         public static readonly ushort ATA_PRIMARY_IO = 0x1F0;
         public static readonly ushort ATA_SECONDARY_IO = 0x170;
@@ -423,15 +423,16 @@ namespace Sharpen.Drivers.Block
                 Devices[num].Size = (uint)(((result[pos] << 24) | (result[pos + 1] << 16) | (result[pos + 2] << 8) | result[pos + 3]));
 
                 // Model name
-                // TODO: fix this
                 pos = ATA_IDENT_MODEL;
-                Devices[num].Name = "TODO";
-                /*for (int i = 0; i < 40; i += 2)
-                {
-                    devices[num].Name += ((char)result[pos + i + 0]).ToString();
-                    devices[num].Name += ((char)result[pos + i + 1]).ToString();
-                }*/
 
+                // NULL-terminated string
+                Devices[num].Name = (char*)Heap.Alloc(40 + 1);
+                fixed(void* source = &result[pos])
+                {
+                    Memory.Memcpy(Devices[num].Name, source, 40);
+                }
+                Devices[num].Name[40] = '\0';
+                
                 num++;
             }
         }
@@ -445,7 +446,7 @@ namespace Sharpen.Drivers.Block
             buf[0] = (byte)Time.Hours;
             buf[1] = (byte)Time.Minutes;
             buf[2] = (byte)Time.Seconds;
-            
+
             int status = WriteSector(0, 0, 1, buf);
             Console.Write("Status of write: ");
             Console.WriteNum(status);

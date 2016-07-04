@@ -3,7 +3,7 @@ ALIGN 4
 
 global start
 extern init
-extern Sharpen_Program_KernelMain
+extern Sharpen_Program_KernelMain_0
 
 SECTION .multiboot
 mboot:
@@ -34,7 +34,7 @@ start:
     ; Pass magic and header to kmain
     push eax
     push ebx
-    call Sharpen_Program_KernelMain
+    call Sharpen_Program_KernelMain_0
 
     ; Gets here if unexpected end
     cli
