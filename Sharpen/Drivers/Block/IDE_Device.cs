@@ -1,6 +1,6 @@
 ﻿namespace Sharpen.Drivers.Block
 {
-    struct IDE_Device
+    public unsafe struct IDE_Device
     {
         public bool Exists;
         public byte Channel;
