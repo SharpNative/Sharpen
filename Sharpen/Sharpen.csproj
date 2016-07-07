@@ -54,6 +54,7 @@
     <Compile Include="Arch\CMOS.cs" />
     <Compile Include="Arch\CPU.cs" />
     <Compile Include="Arch\IDT.cs" />
+    <Compile Include="Arch\ISR.cs" />
     <Compile Include="Arch\Regs.cs" />
     <Compile Include="Console.cs" />
     <Compile Include="Arch\GDT.cs" />

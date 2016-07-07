@@ -18,8 +18,10 @@ namespace Sharpen
         {
             Console.Clear();
 
-            // Booted by a multiboot bootloader
             void* heapStart = (void*)end;
+            #region Multiboot
+
+            // Booted by a multiboot bootloader
             if (magic == Multiboot.Magic)
             {
                 Console.WriteLine("Booted by a multiboot bootloader");
@@ -59,6 +61,8 @@ namespace Sharpen
                 }
             }
 
+            #endregion
+
             Heap.Init(heapStart);
             GDT.Init();
             IDT.Init();
@@ -86,11 +90,9 @@ namespace Sharpen
                     continue;
                 }
 
-                Console.WriteStr(device.Name);
+                Console.Write(device.Name);
                 Console.PutChar('\n');
             }
-
-            // Panic.DoPanic("hallo");
         }
     }
 }

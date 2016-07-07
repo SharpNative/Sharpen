@@ -1,5 +1,5 @@
 ; External functions
-extern Sharpen_Arch_IDT_Handler_1
+extern Sharpen_Arch_ISR_Handler_1
 
 ; =====================================
 ; ===           GDT class           ===
@@ -37,90 +37,95 @@ Sharpen_Arch_IDT_FlushIDT_1:
     lidt [eax]
     ret
 
-; Common interrupt handler
-int_common:
-    ; Store data
-    pusha
+%macro INT_COMMON 2
+    global %1
+    %1:
+        ; Store data
+        pusha
 
-    ; Store segment
-    push ds
-    push es
-    push fs
-    push gs
+        ; Store segment
+        push ds
+        push es
+        push fs
+        push gs
 
-    ; Load kernel segment
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
+        ; Load kernel segment
+        mov ax, 0x10
+        mov ds, ax
+        mov es, ax
+        mov fs, ax
+        mov gs, ax
 
-    ; Call interrupt handler
-    push esp
-    call Sharpen_Arch_IDT_Handler_1
-    add esp, 4
+        ; Call interrupt handler
+        push esp
+        call %2
+        add esp, 4
 
-    ; Reload original segment
-    pop gs
-    pop fs
-    pop es
-    pop ds
+        ; Reload original segment
+        pop gs
+        pop fs
+        pop es
+        pop ds
 
-    ; Pop data
-    popa
+        ; Pop data
+        popa
 
-    ; Cleanup (errorcode and pushed INT number)
-    add esp, 8
-    iret
+        ; Cleanup (errorcode and pushed INT number)
+        add esp, 8
+        iret
+%endmacro
 
-%macro INT_NO_ERROR 1
-    GLOBAL Sharpen_Arch_IDT_ISR%1_0
+%macro ISR_NO_ERROR 1
+    global Sharpen_Arch_IDT_ISR%1_0
     Sharpen_Arch_IDT_ISR%1_0:
         push 0
         push %1
-        jmp int_common
+        jmp isr_common
 %endmacro
 
-%macro INT_ERROR    1
-    GLOBAL Sharpen_Arch_IDT_ISR%1_0
+%macro ISR_ERROR 1
+    global Sharpen_Arch_IDT_ISR%1_0
     Sharpen_Arch_IDT_ISR%1_0:
         push %1
-        jmp int_common
+        jmp isr_common
 %endmacro
 
+; Interrupt handlers
+INT_COMMON isr_common, Sharpen_Arch_ISR_Handler_1
+
 ; ISR routines
-INT_NO_ERROR 0
-INT_NO_ERROR 1
-INT_NO_ERROR 2
-INT_NO_ERROR 3
-INT_NO_ERROR 4
-INT_NO_ERROR 5
-INT_NO_ERROR 6
-INT_NO_ERROR 7
-INT_ERROR    8
-INT_NO_ERROR 9
-INT_ERROR    10
-INT_ERROR    11
-INT_ERROR    12
-INT_ERROR    13
-INT_ERROR    14
-INT_NO_ERROR 15
-INT_NO_ERROR 16
-INT_NO_ERROR 17
-INT_NO_ERROR 18
-INT_NO_ERROR 19
-INT_NO_ERROR 20
-INT_NO_ERROR 21
-INT_NO_ERROR 22
-INT_NO_ERROR 23
-INT_NO_ERROR 24
-INT_NO_ERROR 25
-INT_NO_ERROR 26
-INT_NO_ERROR 27
-INT_NO_ERROR 28
-INT_NO_ERROR 29
-INT_NO_ERROR 30
-INT_NO_ERROR 31
+ISR_NO_ERROR 0
+ISR_NO_ERROR 1
+ISR_NO_ERROR 2
+ISR_NO_ERROR 3
+ISR_NO_ERROR 4
+ISR_NO_ERROR 5
+ISR_NO_ERROR 6
+ISR_NO_ERROR 7
+ISR_ERROR    8
+ISR_NO_ERROR 9
+ISR_ERROR    10
+ISR_ERROR    11
+ISR_ERROR    12
+ISR_ERROR    13
+ISR_ERROR    14
+ISR_NO_ERROR 15
+ISR_NO_ERROR 16
+ISR_NO_ERROR 17
+ISR_NO_ERROR 18
+ISR_NO_ERROR 19
+ISR_NO_ERROR 20
+ISR_NO_ERROR 21
+ISR_NO_ERROR 22
+ISR_NO_ERROR 23
+ISR_NO_ERROR 24
+ISR_NO_ERROR 25
+ISR_NO_ERROR 26
+ISR_NO_ERROR 27
+ISR_NO_ERROR 28
+ISR_NO_ERROR 29
+ISR_NO_ERROR 30
+ISR_NO_ERROR 31
 
 global Sharpen_Arch_IDT_INTIgnore_0
 Sharpen_Arch_IDT_INTIgnore_0:

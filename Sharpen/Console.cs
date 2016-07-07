@@ -109,18 +109,6 @@ namespace Sharpen
         }
 
         /// <summary>
-        /// Writes a strign to the screen
-        /// </summary>
-        /// <param name="text">The string</param>
-        public static unsafe void WriteStr(char* text)
-        {
-            for (int i = 0; text[i] != '\0'; i++)
-            {
-                PutChar(text[i]);
-            }
-        }
-
-        /// <summary>
         /// Writes a string to the screen with a newline
         /// </summary>
         /// <param name="text">The string</param>

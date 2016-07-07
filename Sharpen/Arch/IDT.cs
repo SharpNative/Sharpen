@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Sharpen.Arch
 {
@@ -169,21 +170,7 @@ namespace Sharpen.Arch
 
             #endregion
         }
-
-        /// <summary>
-        /// Interrupt handler
-        /// </summary>
-        /// <param name="regsPtr">Pointer to registers</param>
-        public static unsafe void Handler(Regs* regsPtr)
-        {
-            Regs regs = *regsPtr;
-            int intNum = regs.IntNum & 0xFF;
-
-            Console.Write("interrupt ");
-            Console.WriteHex(regs.IntNum);
-            Console.PutChar('\n');
-        }
-
+        
         /// <summary>
         /// Flushes the IDT table
         /// </summary>
