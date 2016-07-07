@@ -2,7 +2,7 @@
 {
     public unsafe sealed class Heap
     {
-        private static void* heap_start;
+        private static void* m_heapStart;
 
         /// <summary>
         /// Initializes the heap at the given start address
@@ -10,7 +10,10 @@
         /// <param name="start">The start address</param>
         public static unsafe void Init(void* start)
         {
-            heap_start = start;
+            Console.Write("Heap start: ");
+            Console.WriteHex((int)start);
+            Console.PutChar('\n');
+            m_heapStart = start;
         }
 
         /// <summary>
@@ -30,8 +33,8 @@
         /// <param name="size">The size</param>
         public static unsafe void* Alloc(int size)
         {
-            void* ret = heap_start;
-            heap_start = (void*)((int)heap_start + size);
+            void* ret = m_heapStart;
+            m_heapStart = (void*)((int)m_heapStart + size);
             return ret;
         }
 

@@ -3,7 +3,8 @@ ALIGN 4
 
 global start
 extern init
-extern Sharpen_Program_KernelMain_0
+extern end
+extern Sharpen_Program_KernelMain_3
 
 SECTION .multiboot
 mboot:
@@ -29,16 +30,22 @@ start:
     ; Set stack
     mov esp, _sys_stack
 
-    call init
+    ; Push data now for the kernel main
+    push dword end  ; Linker end
+    push eax        ; Magic
+    push ebx        ; Multiboot header
 
-    ; Pass magic and header to kmain
-    push eax
-    push ebx
-    call Sharpen_Program_KernelMain_0
+    ; Call .cctors
+    call init
+    ; Go to kernel main
+    call Sharpen_Program_KernelMain_3
 
     ; Gets here if unexpected end
     cli
+
+.halt:
     hlt
+    jmp .halt
 
 SECTION .bss
     resb 8192

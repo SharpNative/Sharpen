@@ -5,17 +5,65 @@ namespace Sharpen
 {
     class Program
     {
+        private static Multiboot.Header m_mbootHeader;
+        private static bool m_isMultiboot = false;
+
+        // End address is defined by the linker
+        private static uint m_end;
+
         /// <summary>
         /// Kernel entrypoint
         /// </summary>
-        public static unsafe void KernelMain()
+        /// <param name="header">The multiboot header</param>
+        /// <param name="magic">The magic</param>
+        /// <param name="end">The end address of the kernel</param>
+        public static unsafe void KernelMain(Multiboot.Header* header, uint magic, uint end)
         {
-            Heap.Init((void*)0x911000);
             Console.Clear();
-            GDT.Init();
 
-            Console.WriteLine("test test");
-            Console.WriteLine("1234");
+            // Booted by a multiboot bootloader
+            void* heapStart = (void*)end;
+            if (magic == Multiboot.Magic)
+            {
+                Console.WriteLine("Booted by a multiboot bootloader");
+
+                // Bring the header to a safe location
+                m_isMultiboot = true;
+                fixed (Multiboot.Header* destination = &m_mbootHeader)
+                {
+                    Memory.Memcpy(destination, header, sizeof(Multiboot.Header));
+                }
+
+                // Check if any modules are loaded
+                if ((m_mbootHeader.Flags & Multiboot.FlagMods) > 0)
+                {
+                    uint modsCount = m_mbootHeader.ModsCount;
+
+                    Console.Write("Modules: ");
+                    Console.WriteNum((int)modsCount);
+                    Console.PutChar('\n');
+
+                    for (uint i = 0; i < modsCount; i++)
+                    {
+                        Multiboot.Module** mods = (Multiboot.Module**)m_mbootHeader.ModsAddr;
+                        Multiboot.Module module = *mods[i];
+
+                        // Check if the end is bigger
+                        // If it's bigger, set the new end
+                        if((int)module.End > (int)heapStart)
+                        {
+                            heapStart = module.End;
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No modules");
+                }
+            }
+
+            Heap.Init(heapStart);
+            GDT.Init();
 
             CMOS.UpdateTime();
             Console.Write("It is ");
@@ -41,12 +89,6 @@ namespace Sharpen
 
                 Console.WriteStr(device.Name);
                 Console.PutChar('\n');
-            }
-
-            for (int i = 0; i < 8000; i++)
-            {
-                Console.WriteNum(i);
-                Console.PutChar(' ');
             }
 
             // Panic.DoPanic("hallo");

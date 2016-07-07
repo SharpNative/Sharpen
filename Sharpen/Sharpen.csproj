@@ -59,6 +59,7 @@
     <Compile Include="Drivers\Block\IDE_Device.cs" />
     <Compile Include="Heap.cs" />
     <Compile Include="Memory.cs" />
+    <Compile Include="Multiboot.cs" />
     <Compile Include="Panic.cs" />
     <Compile Include="Arch\PortIO.cs" />
     <Compile Include="Program.cs" />
