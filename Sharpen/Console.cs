@@ -60,9 +60,22 @@ namespace Sharpen
                 Y++;
             }
 
-            MoveCursor();
+            // End of screen
+            if (Y > 24)
+            {
+                Y = 24;
 
-            // TODO: scroll
+                // Scrolling
+                Memory.Memcpy(vidmem, &vidmem[1 * 80 * 2], 80 * 24 * 2);
+                for (int i = 0; i < 80; i++)
+                {
+                    vidmem[((24 * 80) + i) * 2 + 0] = (byte)' ';
+                    vidmem[((24 * 80) + i) * 2 + 1] = Attribute;
+                }
+            }
+
+            // Move cursor
+            MoveCursor();
         }
 
         /// <summary>
@@ -163,7 +176,7 @@ namespace Sharpen
                 return;
             }
 
-            if(num < 0)
+            if (num < 0)
             {
                 PutChar('-');
                 num = -num;

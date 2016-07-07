@@ -10,7 +10,7 @@ namespace Sharpen
         /// </summary>
         public static unsafe void KernelMain()
         {
-            Heap.Init((void*) 0x911000);
+            Heap.Init((void*)0x911000);
             Console.Clear();
             GDT.Init();
 
@@ -31,16 +31,22 @@ namespace Sharpen
             ATA.WriteTest();
 
             Console.WriteLine("\nList of ATA devices:");
-            for(int i = 0; i < 4; i++)
+            for (int i = 0; i < 4; i++)
             {
                 IDE_Device device = ATA.Devices[i];
-                if(!device.Exists)
+                if (!device.Exists)
                 {
                     continue;
                 }
 
                 Console.WriteStr(device.Name);
                 Console.PutChar('\n');
+            }
+
+            for (int i = 0; i < 8000; i++)
+            {
+                Console.WriteNum(i);
+                Console.PutChar(' ');
             }
 
             // Panic.DoPanic("hallo");
