@@ -1,5 +1,6 @@
 ; External functions
 extern Sharpen_Arch_ISR_Handler_1
+extern Sharpen_Arch_IRQ_Handler_1
 
 ; =====================================
 ; ===           GDT class           ===
@@ -90,8 +91,17 @@ Sharpen_Arch_IDT_FlushIDT_1:
         jmp isr_common
 %endmacro
 
+%macro IRQ 1
+    global Sharpen_Arch_IDT_IRQ%1_0
+    Sharpen_Arch_IDT_IRQ%1_0:
+        push 0
+        push (%1 + 32)
+        jmp irq_common
+%endmacro
+
 ; Interrupt handlers
 INT_COMMON isr_common, Sharpen_Arch_ISR_Handler_1
+INT_COMMON irq_common, Sharpen_Arch_IRQ_Handler_1
 
 ; ISR routines
 ISR_NO_ERROR 0
@@ -126,6 +136,24 @@ ISR_NO_ERROR 28
 ISR_NO_ERROR 29
 ISR_NO_ERROR 30
 ISR_NO_ERROR 31
+
+; IRQ routines
+IRQ 0
+IRQ 1
+IRQ 2
+IRQ 3
+IRQ 4
+IRQ 5
+IRQ 6
+IRQ 7
+IRQ 8
+IRQ 9
+IRQ 10
+IRQ 11
+IRQ 12
+IRQ 13
+IRQ 14
+IRQ 15
 
 global Sharpen_Arch_IDT_INTIgnore_0
 Sharpen_Arch_IDT_INTIgnore_0:

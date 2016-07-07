@@ -65,18 +65,12 @@ namespace Sharpen
 
             Heap.Init(heapStart);
             GDT.Init();
+            PIC.Remap();
+            PIT.Init();
+            CMOS.UpdateTime();
             IDT.Init();
             Console.PutChar('\n');
-
-            CMOS.UpdateTime();
-            Console.Write("It is ");
-            Console.WriteNum(Time.Hours);
-            Console.Write(":");
-            Console.WriteNum(Time.Minutes);
-            Console.Write(":");
-            Console.WriteNum(Time.Seconds);
-            Console.WriteLine("");
-
+            
             ATA.Probe();
             ATA.Test();
             ATA.WriteTest();
@@ -92,6 +86,11 @@ namespace Sharpen
 
                 Console.Write(device.Name);
                 Console.PutChar('\n');
+            }
+
+            while(true)
+            {
+                CPU.HLT();
             }
         }
     }

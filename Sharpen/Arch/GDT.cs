@@ -166,8 +166,6 @@ namespace Sharpen.Arch
             {
                 FlushGDT(ptr);
             }
-
-            Console.WriteLine("GDT Installed");
         }
 
         /// <summary>

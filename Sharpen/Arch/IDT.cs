@@ -157,6 +157,27 @@ namespace Sharpen.Arch
 
             #endregion
 
+            #region IRQ
+            
+            SetEntry(IRQ.MASTER_OFFSET + 0, Util.MethodToPtr(IRQ0), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.MASTER_OFFSET + 1, Util.MethodToPtr(IRQ1), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.MASTER_OFFSET + 2, Util.MethodToPtr(IRQ2), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.MASTER_OFFSET + 3, Util.MethodToPtr(IRQ3), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.MASTER_OFFSET + 4, Util.MethodToPtr(IRQ4), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.MASTER_OFFSET + 5, Util.MethodToPtr(IRQ5), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.MASTER_OFFSET + 6, Util.MethodToPtr(IRQ6), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.MASTER_OFFSET + 7, Util.MethodToPtr(IRQ7), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.SLAVE_OFFSET + 0, Util.MethodToPtr(IRQ8), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.SLAVE_OFFSET + 1, Util.MethodToPtr(IRQ9), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.SLAVE_OFFSET + 2, Util.MethodToPtr(IRQ10), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.SLAVE_OFFSET + 3, Util.MethodToPtr(IRQ11), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.SLAVE_OFFSET + 4, Util.MethodToPtr(IRQ12), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.SLAVE_OFFSET + 5, Util.MethodToPtr(IRQ13), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.SLAVE_OFFSET + 6, Util.MethodToPtr(IRQ14), 0x08, FLAG_IRQ);
+            SetEntry(IRQ.SLAVE_OFFSET + 7, Util.MethodToPtr(IRQ15), 0x08, FLAG_IRQ);
+
+            #endregion
+
             #region Finish
 
             // Flush IDT
@@ -166,7 +187,6 @@ namespace Sharpen.Arch
             }
 
             CPU.STI();
-            Console.WriteLine("IDT Installed");
 
             #endregion
         }
@@ -177,7 +197,7 @@ namespace Sharpen.Arch
         /// <param name="ptr">The pointer to the table</param>
         private static extern unsafe void FlushIDT(IDT_Pointer* ptr);
 
-        #region "ISR routines"
+        #region ISR routines
 
         private static extern void INTIgnore();
         private static extern void ISR0();
@@ -212,6 +232,27 @@ namespace Sharpen.Arch
         private static extern void ISR29();
         private static extern void ISR30();
         private static extern void ISR31();
+
+        #endregion
+
+        #region IRQ routines
+
+        private static extern void IRQ0();
+        private static extern void IRQ1();
+        private static extern void IRQ2();
+        private static extern void IRQ3();
+        private static extern void IRQ4();
+        private static extern void IRQ5();
+        private static extern void IRQ6();
+        private static extern void IRQ7();
+        private static extern void IRQ8();
+        private static extern void IRQ9();
+        private static extern void IRQ10();
+        private static extern void IRQ11();
+        private static extern void IRQ12();
+        private static extern void IRQ13();
+        private static extern void IRQ14();
+        private static extern void IRQ15();
 
         #endregion
     }
