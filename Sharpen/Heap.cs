@@ -13,7 +13,15 @@
             Console.Write("Heap start: ");
             Console.WriteHex((int)start);
             Console.PutChar('\n');
-            m_heapStart = start;
+
+            int address = (int)start;
+            if (address % 0x1000 != 0)
+            {
+                address &= ~0x1000;
+                address += 0x1000;
+            }
+
+            m_heapStart = (void*)address;
         }
 
         /// <summary>
@@ -34,6 +42,11 @@
         public static unsafe void* Alloc(int size)
         {
             void* ret = m_heapStart;
+            if ((size & 3) != 0)
+            {
+                size &= ~3;
+                size += 4;
+            }
             m_heapStart = (void*)((int)m_heapStart + size);
             return ret;
         }
