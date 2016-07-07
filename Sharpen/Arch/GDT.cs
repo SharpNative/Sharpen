@@ -8,20 +8,20 @@ namespace Sharpen.Arch
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct GDT_Entry
         {
-            public ushort limit_lo;
-            public ushort base_lo;
-            public byte base_mid;
-            public byte access;
-            public byte granularity;
-            public byte base_hi;
+            public ushort LimitLow;
+            public ushort BaseLow;
+            public byte   BaseMid;
+            public byte   Access;
+            public byte   Granularity;
+            public byte   BaseHigh;
         }
 
         // GDT pointer
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct GDT_Pointer
         {
-            public ushort limit;
-            public uint base_address;
+            public ushort Limit;
+            public uint   BaseAddress;
         }
 
         // Data selector constants
@@ -119,17 +119,17 @@ namespace Sharpen.Arch
         public static void SetEntry(int num, ulong base_address, ulong limit, byte access, byte granularity)
         {
             // Address
-            m_entries[num].base_lo = (ushort)(base_address & 0xFFFF);
-            m_entries[num].base_mid = (byte)((base_address >> 16) & 0xFF);
-            m_entries[num].base_hi = (byte)((base_address >> 24) & 0xFF);
+            m_entries[num].BaseLow = (ushort)(base_address & 0xFFFF);
+            m_entries[num].BaseMid = (byte)((base_address >> 16) & 0xFF);
+            m_entries[num].BaseHigh = (byte)((base_address >> 24) & 0xFF);
 
             // Limit
-            m_entries[num].limit_lo = (ushort)(limit & 0xFFFF);
-            m_entries[num].granularity = (byte)((limit >> 16) & 0xFF);
+            m_entries[num].LimitLow = (ushort)(limit & 0xFFFF);
+            m_entries[num].Granularity = (byte)((limit >> 16) & 0xFF);
 
             // Set access and granularity
-            m_entries[num].granularity |= (byte)(granularity & 0xF0);
-            m_entries[num].access = access;
+            m_entries[num].Granularity |= (byte)(granularity & 0xF0);
+            m_entries[num].Access = access;
         }
 
         /// <summary>
@@ -142,10 +142,10 @@ namespace Sharpen.Arch
             m_ptr = new GDT_Pointer();
 
             // Set GDT table pointer
-            m_ptr.limit = (ushort)((3 * sizeof(GDT_Entry)) - 1);
+            m_ptr.Limit = (ushort)((3 * sizeof(GDT_Entry)) - 1);
             fixed (GDT_Entry* ptr = m_entries)
             {
-                m_ptr.base_address = (uint)ptr;
+                m_ptr.BaseAddress = (uint)ptr;
             }
 
             // NULL segment

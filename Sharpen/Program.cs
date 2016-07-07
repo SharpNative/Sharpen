@@ -7,10 +7,7 @@ namespace Sharpen
     {
         private static Multiboot.Header m_mbootHeader;
         private static bool m_isMultiboot = false;
-
-        // End address is defined by the linker
-        private static uint m_end;
-
+        
         /// <summary>
         /// Kernel entrypoint
         /// </summary>
@@ -64,6 +61,7 @@ namespace Sharpen
 
             Heap.Init(heapStart);
             GDT.Init();
+            Console.PutChar('\n');
 
             CMOS.UpdateTime();
             Console.Write("It is ");
