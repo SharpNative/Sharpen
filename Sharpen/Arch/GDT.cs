@@ -48,6 +48,8 @@ namespace Sharpen.Arch
         private static GDT_Entry[] m_entries;
         private static GDT_Pointer m_ptr;
 
+        #region Helpers
+
         /// <summary>
         /// Converts descriptor type
         /// </summary>
@@ -107,6 +109,8 @@ namespace Sharpen.Arch
         {
             return (a << 0x07);
         }
+
+        #endregion
 
         /// <summary>
         /// Sets a GDT entry in the table

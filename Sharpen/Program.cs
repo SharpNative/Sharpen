@@ -61,6 +61,7 @@ namespace Sharpen
 
             Heap.Init(heapStart);
             GDT.Init();
+            IDT.Init();
             Console.PutChar('\n');
 
             CMOS.UpdateTime();

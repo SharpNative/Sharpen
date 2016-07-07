@@ -17,6 +17,6 @@
         public ushort Heads;
         public ushort Sectorspt;
 
-        public char* Name;
+        public string Name;
     }
 }

@@ -1,3 +1,10 @@
+; External functions
+extern Sharpen_Arch_IDT_Handler_1
+
+; =====================================
+; ===           GDT class           ===
+; =====================================
+
 global Sharpen_Arch_GDT_FlushGDT_1
 Sharpen_Arch_GDT_FlushGDT_1:
     ; Pointer passed as argument
@@ -19,6 +26,111 @@ Sharpen_Arch_GDT_FlushGDT_1:
 .flush:
     ret
 
+; =====================================
+; ===           IDT class           ===
+; =====================================
+
+global Sharpen_Arch_IDT_FlushIDT_1
+Sharpen_Arch_IDT_FlushIDT_1:
+    ; Pointer passed as an argument
+    mov eax, [esp + 4]
+    lidt [eax]
+    ret
+
+; Common interrupt handler
+int_common:
+    ; Store data
+    pusha
+
+    ; Store segment
+    push ds
+    push es
+    push fs
+    push gs
+
+    ; Load kernel segment
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    ; Call interrupt handler
+    push esp
+    call Sharpen_Arch_IDT_Handler_1
+    add esp, 4
+
+    ; Reload original segment
+    pop gs
+    pop fs
+    pop es
+    pop ds
+
+    ; Pop data
+    popa
+
+    ; Cleanup (errorcode and pushed INT number)
+    add esp, 8
+    iret
+
+%macro INT_NO_ERROR 1
+    GLOBAL Sharpen_Arch_IDT_ISR%1_0
+    Sharpen_Arch_IDT_ISR%1_0:
+        push 0
+        push %1
+        jmp int_common
+%endmacro
+
+%macro INT_ERROR    1
+    GLOBAL Sharpen_Arch_IDT_ISR%1_0
+    Sharpen_Arch_IDT_ISR%1_0:
+        push %1
+        jmp int_common
+%endmacro
+
+; ISR routines
+INT_NO_ERROR 0
+INT_NO_ERROR 1
+INT_NO_ERROR 2
+INT_NO_ERROR 3
+INT_NO_ERROR 4
+INT_NO_ERROR 5
+INT_NO_ERROR 6
+INT_NO_ERROR 7
+INT_ERROR    8
+INT_NO_ERROR 9
+INT_ERROR    10
+INT_ERROR    11
+INT_ERROR    12
+INT_ERROR    13
+INT_ERROR    14
+INT_NO_ERROR 15
+INT_NO_ERROR 16
+INT_NO_ERROR 17
+INT_NO_ERROR 18
+INT_NO_ERROR 19
+INT_NO_ERROR 20
+INT_NO_ERROR 21
+INT_NO_ERROR 22
+INT_NO_ERROR 23
+INT_NO_ERROR 24
+INT_NO_ERROR 25
+INT_NO_ERROR 26
+INT_NO_ERROR 27
+INT_NO_ERROR 28
+INT_NO_ERROR 29
+INT_NO_ERROR 30
+INT_NO_ERROR 31
+
+global Sharpen_Arch_IDT_INTIgnore_0
+Sharpen_Arch_IDT_INTIgnore_0:
+    ; Ignored interrupt
+    iret
+
+; =====================================
+; ===           CPU class           ===
+; =====================================
+
 global Sharpen_Arch_CPU_CLI_0
 Sharpen_Arch_CPU_CLI_0:
     cli
@@ -33,6 +145,10 @@ global Sharpen_Arch_CPU_HLT_0
 Sharpen_Arch_CPU_HLT_0:
     hlt
     ret
+
+; =====================================
+; ===         Memory class          ===
+; =====================================
 
 global Sharpen_Memory_Memcpy_3
 Sharpen_Memory_Memcpy_3:
@@ -105,4 +221,18 @@ Sharpen_Memory_Memset_3:
     ; Done
     mov eax, edi
     pop edi
+    ret
+
+; =====================================
+; ===          Util class           ===
+; =====================================
+
+global Sharpen_Util_CharPtrToString_1
+Sharpen_Util_CharPtrToString_1:
+    mov eax, [esp + 4]
+    ret
+
+global Sharpen_Util_MethodToPtr_1
+Sharpen_Util_MethodToPtr_1:
+    mov eax, [esp + 4]
     ret

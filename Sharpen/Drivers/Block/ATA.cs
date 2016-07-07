@@ -426,12 +426,13 @@ namespace Sharpen.Drivers.Block
                 pos = ATA_IDENT_MODEL;
 
                 // NULL-terminated string
-                Devices[num].Name = (char*)Heap.Alloc(40 + 1);
+                char* name = (char*)Heap.Alloc(40 + 1);
                 fixed(void* source = &result[pos])
                 {
-                    Memory.Memcpy(Devices[num].Name, source, 40);
+                    Memory.Memcpy(name, source, 40);
                 }
-                Devices[num].Name[40] = '\0';
+                name[40] = '\0';
+                Devices[num].Name = Util.CharPtrToString(name);
                 
                 num++;
             }
