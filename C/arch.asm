@@ -1,13 +1,13 @@
 ; External functions
-extern Sharpen_Arch_ISR_Handler_1
-extern Sharpen_Arch_IRQ_Handler_1
+extern Sharpen_Arch_ISR_Handler_1struct_struct_Sharpen_Arch_Regs__
+extern Sharpen_Arch_IRQ_Handler_1struct_struct_Sharpen_Arch_Regs__
 
 ; =====================================
 ; ===           GDT class           ===
 ; =====================================
 
-global Sharpen_Arch_GDT_FlushGDT_1
-Sharpen_Arch_GDT_FlushGDT_1:
+global Sharpen_Arch_GDT_FlushGDT_1struct_struct_Sharpen_Arch_GDT_GDT_Pointer__
+Sharpen_Arch_GDT_FlushGDT_1struct_struct_Sharpen_Arch_GDT_GDT_Pointer__:
     ; Pointer passed as argument
     mov eax, [esp + 4]
     lgdt [eax]
@@ -31,8 +31,8 @@ Sharpen_Arch_GDT_FlushGDT_1:
 ; ===           IDT class           ===
 ; =====================================
 
-global Sharpen_Arch_IDT_FlushIDT_1
-Sharpen_Arch_IDT_FlushIDT_1:
+global Sharpen_Arch_IDT_FlushIDT_1struct_struct_Sharpen_Arch_IDT_IDT_Pointer__
+Sharpen_Arch_IDT_FlushIDT_1struct_struct_Sharpen_Arch_IDT_IDT_Pointer__:
     ; Pointer passed as an argument
     mov eax, [esp + 4]
     lidt [eax]
@@ -100,8 +100,8 @@ Sharpen_Arch_IDT_FlushIDT_1:
 %endmacro
 
 ; Interrupt handlers
-INT_COMMON isr_common, Sharpen_Arch_ISR_Handler_1
-INT_COMMON irq_common, Sharpen_Arch_IRQ_Handler_1
+INT_COMMON isr_common, Sharpen_Arch_ISR_Handler_1struct_struct_Sharpen_Arch_Regs__
+INT_COMMON irq_common, Sharpen_Arch_IRQ_Handler_1struct_struct_Sharpen_Arch_Regs__
 
 ; ISR routines
 ISR_NO_ERROR 0
@@ -183,8 +183,8 @@ Sharpen_Arch_CPU_HLT_0:
 ; ===         Memory class          ===
 ; =====================================
 
-global Sharpen_Memory_Memcpy_3
-Sharpen_Memory_Memcpy_3:
+global Sharpen_Memory_Memcpy_3void__void__int32_t_
+Sharpen_Memory_Memcpy_3void__void__int32_t_:
     push edi
     push esi
 
@@ -219,8 +219,8 @@ Sharpen_Memory_Memcpy_3:
     pop edi
     ret
 
-global Sharpen_Memory_Memset_3
-Sharpen_Memory_Memset_3:
+global Sharpen_Memory_Memset_3void__int32_t_int32_t_
+Sharpen_Memory_Memset_3void__int32_t_int32_t_:
     push edi
 
     ; First set per 4 bytes using stosd
@@ -260,12 +260,17 @@ Sharpen_Memory_Memset_3:
 ; ===          Util class           ===
 ; =====================================
 
-global Sharpen_Util_CharPtrToString_1
-Sharpen_Util_CharPtrToString_1:
+global Sharpen_Util_CharPtrToString_1char__
+Sharpen_Util_CharPtrToString_1char__:
     mov eax, [esp + 4]
     ret
 
-global Sharpen_Util_MethodToPtr_1
-Sharpen_Util_MethodToPtr_1:
+global Sharpen_Util_ObjectToVoidPtr_1void__
+Sharpen_Util_ObjectToVoidPtr_1void__:
+    mov eax, [esp + 4]
+    ret
+
+global Sharpen_Util_MethodToPtr_1void__
+Sharpen_Util_MethodToPtr_1void__:
     mov eax, [esp + 4]
     ret

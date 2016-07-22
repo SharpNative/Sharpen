@@ -12,6 +12,13 @@ namespace Sharpen
         public static unsafe extern string CharPtrToString(char* ptr);
 
         /// <summary>
+        /// Converts an object to a void pointer
+        /// </summary>
+        /// <param name="obj">The object</param>
+        /// <returns>The pointer</returns>
+        public static unsafe extern void* ObjectToVoidPtr(object obj);
+
+        /// <summary>
         /// Converts a method to a pointer
         /// </summary>
         /// <param name="method">The method</param>

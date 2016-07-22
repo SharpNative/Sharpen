@@ -4,7 +4,7 @@ ALIGN 4
 global start
 extern init
 extern end
-extern Sharpen_Program_KernelMain_3
+extern Sharpen_Program_KernelMain_3struct_struct_Sharpen_Multiboot_Header__uint32_t_uint32_t_
 
 SECTION .multiboot
 mboot:
@@ -38,7 +38,7 @@ start:
     ; Call .cctors
     call init
     ; Go to kernel main
-    call Sharpen_Program_KernelMain_3
+    call Sharpen_Program_KernelMain_3struct_struct_Sharpen_Multiboot_Header__uint32_t_uint32_t_
 
     ; Gets here if unexpected end
     cli

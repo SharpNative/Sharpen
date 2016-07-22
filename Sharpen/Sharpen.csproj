@@ -64,6 +64,7 @@
     <Compile Include="Drivers\Block\ATA.cs" />
     <Compile Include="Drivers\Block\IDE_Device.cs" />
     <Compile Include="Heap.cs" />
+    <Compile Include="List.cs" />
     <Compile Include="Memory.cs" />
     <Compile Include="Multiboot.cs" />
     <Compile Include="Panic.cs" />

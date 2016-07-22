@@ -3,7 +3,17 @@ using Sharpen.Drivers.Block;
 
 namespace Sharpen
 {
-    class Program
+    class Test
+    {
+        public int a = 3;
+
+        public Test()
+        {
+
+        }
+    }
+
+    public sealed class Program
     {
         private static Multiboot.Header m_mbootHeader;
         private static bool m_isMultiboot = false;
@@ -88,7 +98,25 @@ namespace Sharpen
                 Console.PutChar('\n');
             }
 
-            while(true)
+            Console.WriteLine("list test:");
+            Test a = new Test();
+            Test b = new Test();
+            Test c = new Test();
+            List list = new List();
+            list.Add(new Test());
+            list.Add(a);
+            list.Add(b);
+            list.Add(c);
+            list.Add(c);
+
+            Console.WriteNum(list.Count);
+            Console.PutChar(' ');
+            Console.WriteNum(list.LastIndexOf(b));
+            Console.PutChar(' ');
+            Console.WriteNum(list.IndexOf(c));
+            Console.PutChar('\n');
+
+            while (true)
             {
                 CPU.HLT();
             }

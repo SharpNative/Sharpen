@@ -2,7 +2,7 @@
 
 namespace Sharpen
 {
-    public class Panic
+    public sealed class Panic
     {
         /// <summary>
         /// Does a kernel panic
