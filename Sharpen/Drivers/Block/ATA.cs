@@ -142,15 +142,11 @@ namespace Sharpen.Drivers.Block
             // Check if a drive is found
             byte status = PortIO.In8((ushort)(port + ATA_REG_STATUS));
             if (status == 0)
-            {
                 return null;
-            }
 
             // Wait until drive is not busy anymore
             do
-            {
                 status = PortIO.In8((ushort)(port + ATA_REG_STATUS));
-            }
             while ((status & ATA_STATUS_BSY) != 0);
 
             while (true)
@@ -158,28 +154,24 @@ namespace Sharpen.Drivers.Block
                 status = PortIO.In8((ushort)(port + ATA_REG_STATUS));
 
                 if ((status & ATA_STATUS_ERR) != 0)
-                {
                     return null;
-                }
 
                 if ((status & ATA_STATUS_DRQ) != 0)
-                {
                     break;
-                }
             }
 
             // Read data from ATA drive
-            byte[] ide_buf = new byte[256];
+            byte[] buffer = new byte[256];
             int offset = 0;
             for (int i = 0; i < 128; i++)
             {
                 ushort shrt = PortIO.In16((ushort)(port + ATA_REG_DATA));
-                ide_buf[offset + 0] = (byte)(shrt >> 8);
-                ide_buf[offset + 1] = (byte)(shrt);
+                buffer[offset + 0] = (byte)(shrt >> 8);
+                buffer[offset + 1] = (byte)(shrt);
                 offset += 2;
             }
 
-            return ide_buf;
+            return buffer;
         }
 
         /// <summary>
@@ -192,9 +184,7 @@ namespace Sharpen.Drivers.Block
 
             byte status;
             do
-            {
                 status = PortIO.In8((ushort)(port + ATA_REG_STATUS));
-            }
             while ((status & ATA_STATUS_BSY) > 0);
 
             while ((status & ATA_STATUS_DRQ) == 0)
@@ -202,14 +192,10 @@ namespace Sharpen.Drivers.Block
                 status = PortIO.In8((ushort)(port + ATA_REG_STATUS));
 
                 if ((status & ATA_STATUS_DF) > 0)
-                {
                     Panic.DoPanic("Device fault!");
-                }
 
                 if ((status & ATA_STATUS_ERR) > 0)
-                {
                     Panic.DoPanic("ERR IN ATA!!");
-                }
             }
         }
 
@@ -224,18 +210,14 @@ namespace Sharpen.Drivers.Block
         {
             // The driver only supports up to 4 drives
             if (device_num >= 4)
-            {
                 return 0;
-            }
 
             // Get IDE device from array
             IDE_Device device = Devices[device_num];
 
             // Does the drive exist?
             if (!device.Exists)
-            {
                 return 0;
-            }
 
             uint port = device.BasePort;
             int drive = device.Drive;
@@ -286,18 +268,14 @@ namespace Sharpen.Drivers.Block
         {
             // The driver only supports up to 4 drivers
             if (device_num >= 4)
-            {
                 return 0;
-            }
 
             // Get IDE device from array
             IDE_Device device = Devices[device_num];
 
             // Does the drive exist?
             if (!device.Exists)
-            {
                 return 0;
-            }
 
             uint port = device.BasePort;
             int drive = device.Drive;
@@ -342,9 +320,7 @@ namespace Sharpen.Drivers.Block
             // Wait till done
             byte status;
             do
-            {
                 status = PortIO.In8((ushort)(port + ATA_REG_STATUS));
-            }
             while ((status & ATA_STATUS_BSY) > 0);
 
             return size * 512;

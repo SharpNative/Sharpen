@@ -90,9 +90,7 @@ namespace Sharpen
             {
                 IDE_Device device = ATA.Devices[i];
                 if (!device.Exists)
-                {
                     continue;
-                }
 
                 Console.Write(device.Name);
                 Console.PutChar('\n');
@@ -117,9 +115,7 @@ namespace Sharpen
             Console.PutChar('\n');
 
             while (true)
-            {
                 CPU.HLT();
-            }
         }
     }
 }

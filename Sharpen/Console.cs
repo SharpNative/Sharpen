@@ -136,9 +136,7 @@ namespace Sharpen
             {
                 int tmp = (num >> j) & 0x0F;
                 if (tmp == 0 && noZeroes)
-                {
                     continue;
-                }
 
                 noZeroes = false;
                 if (tmp >= 0x0A)
@@ -172,9 +170,7 @@ namespace Sharpen
 
             int a = num % 10;
             if (num >= 10)
-            {
                 WriteNum(num / 10);
-            }
 
             PutChar((char)('0' + a));
         }

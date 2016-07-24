@@ -97,9 +97,7 @@
 
                     // Midnight is actually reported as 12 and not 0, fix this
                     if (Time.Hours == 24)
-                    {
                         Time.Hours = 0;
-                    }
                 }
 
                 // Convert seconds, minutes and hours if required

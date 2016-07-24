@@ -34,9 +34,7 @@
         {
             // Slave EOI if irq belongs to slave
             if(irq >= 8)
-            {
                 PortIO.Out8(SLAVE_PIC_CMD, PIC_EOI);
-            }
 
             // EOI to master
             PortIO.Out8(MASTER_PIC_CMD, PIC_EOI);

@@ -140,11 +140,9 @@
                     Time.Seconds = 0;
                     Time.Minutes++;
 
+                    // Resync with CMOS
                     if (Time.Minutes == 60)
-                    {
-                        // Resync with CMOS
                         CMOS.UpdateTime();
-                    }
                 }
 
                 Console.Write("It is ");

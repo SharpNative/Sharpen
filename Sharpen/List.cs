@@ -47,9 +47,7 @@
         private void EnsureCapacity(int required)
         {
             if (required < m_currentCap)
-            {
                 return;
-            }
             
             Capacity *= 2;
         }
@@ -83,9 +81,7 @@
             for (int i = 0; i < Count; i++)
             {
                 if (Item[i] == item)
-                {
                     return true;
-                }
             }
 
             return false;
@@ -155,9 +151,7 @@
             for (int i = index; i < Count && i < count + index; i++)
             {
                 if (Item[i] == item)
-                {
                     return i;
-                }
             }
 
             return -1;
@@ -194,9 +188,7 @@
             for (int i = index; i >= 0 && i - index < count; i--)
             {
                 if (Item[i] == item)
-                {
                     return i;
-                }
             }
 
             return -1;

@@ -95,10 +95,6 @@ namespace Sharpen.Arch
             // Allocate data
             m_entries = new IDT_Entry[256];
             m_ptr = new IDT_Pointer();
-            fixed(void* ptr = m_entries)
-            {
-                Memory.Memset(ptr, 0, 256 * sizeof(IDT_Entry));
-            }
 
             // Set IDT table pointer
             m_ptr.Limit = (ushort)((256 * sizeof(IDT_Entry)) - 1);
