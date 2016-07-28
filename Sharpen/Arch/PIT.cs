@@ -144,14 +144,6 @@
                     if (Time.Minutes == 60)
                         CMOS.UpdateTime();
                 }
-
-                Console.Write("It is ");
-                Console.WriteNum(Time.Hours);
-                Console.Write(":");
-                Console.WriteNum(Time.Minutes);
-                Console.Write(":");
-                Console.WriteNum(Time.Seconds);
-                Console.PutChar('\n');
             }
         }
     }

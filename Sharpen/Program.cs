@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Drivers.Block;
+using Sharpen.Drivers.Char;
 
 namespace Sharpen
 {
@@ -79,6 +80,7 @@ namespace Sharpen
             PIT.Init();
             CMOS.UpdateTime();
             IDT.Init();
+            Keyboard.Init();
             Console.PutChar('\n');
             
             ATA.Probe();

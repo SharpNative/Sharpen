@@ -14,7 +14,7 @@ namespace Sharpen
             CPU.CLI();
 
             // Empty screen
-            Console.Attribute = 0x04;
+            Console.Attribute = 0x4F;
             Console.Clear();
 
             // Logo
@@ -28,7 +28,7 @@ namespace Sharpen
             Console.WriteLine("");
 
             // Message
-            Console.Write("Message: ");
+            Console.Write("\tMessage: ");
             Console.Write(str);
 
             // HALT
