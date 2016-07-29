@@ -63,8 +63,10 @@
     <Compile Include="Arch\GDT.cs" />
     <Compile Include="Drivers\Block\ATA.cs" />
     <Compile Include="Drivers\Block\IDE_Device.cs" />
+    <Compile Include="Drivers\Char\SerialPort.cs" />
     <Compile Include="Drivers\Char\Keyboard.cs" />
     <Compile Include="Drivers\Char\KeyboardMap.cs" />
+    <Compile Include="Drivers\Char\SerialPortExtras.cs" />
     <Compile Include="Heap.cs" />
     <Compile Include="List.cs" />
     <Compile Include="Memory.cs" />

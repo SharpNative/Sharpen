@@ -116,6 +116,8 @@ namespace Sharpen
             Console.WriteNum(list.IndexOf(c));
             Console.PutChar('\n');
 
+            SerialPort.Init();
+
             Console.WriteLine("reads key from keyboard:");
             while(true)
                 Console.PutChar(Keyboard.Getch());
