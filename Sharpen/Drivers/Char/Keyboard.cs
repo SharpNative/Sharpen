@@ -11,12 +11,20 @@ namespace Sharpen.Drivers.Char
     {
 
         /// <summary>
-        /// Leds :D
+        /// Leds
         /// </summary>
         private static byte m_leds = 0x00;
 
+        /// <summary>
+        /// Capslock key enabled
+        /// </summary>
         private static int m_capslock = 0;
 
+        /// <summary>
+        /// Shift
+        /// 0x01 == left shift
+        /// 0x02 == right shift
+        /// </summary>
         private static byte m_shift = 0x00;
 
         /// <summary>
