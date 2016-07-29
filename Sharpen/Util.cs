@@ -10,7 +10,7 @@ namespace Sharpen
         /// <param name="ptr">The char pointer</param>
         /// <returns>The string</returns>
         public static unsafe extern string CharPtrToString(char* ptr);
-
+        
         /// <summary>
         /// Converts an object to a void pointer
         /// </summary>

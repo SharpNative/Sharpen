@@ -122,7 +122,7 @@ namespace Sharpen
         /// Writes a hexadecimal integer to the screen
         /// </summary>
         /// <param name="num">The number</param>
-        public static void WriteHex(int num)
+        public static void WriteHex(long num)
         {
             if (num == 0)
             {
@@ -132,9 +132,9 @@ namespace Sharpen
 
             // Don't print zeroes at beginning of number
             bool noZeroes = true;
-            for (int j = 28; j >= 0; j -= 4)
+            for (int j = 60; j >= 0; j -= 4)
             {
-                int tmp = (num >> j) & 0x0F;
+                long tmp = (num >> j) & 0x0F;
                 if (tmp == 0 && noZeroes)
                     continue;
 

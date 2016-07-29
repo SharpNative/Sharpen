@@ -1,12 +1,12 @@
-﻿namespace Sharpen
+﻿namespace Sharpen.Collections
 {
-    public class List
+    public class LongIndex
     {
         // Default capacity of 4
         private int m_currentCap = 4;
 
         // Array of items
-        public object[] Item { get; private set; }
+        public long[] Item { get; private set; }
 
         /// <summary>
         /// The amount of items currently in the list
@@ -25,7 +25,7 @@
 
             set
             {
-                object[] newArray = new object[value];
+                long[] newArray = new long[value];
                 Memory.Memcpy(Util.ObjectToVoidPtr(newArray), Util.ObjectToVoidPtr(Item), m_currentCap * sizeof(void*));
                 Item = newArray;
                 m_currentCap = value;
@@ -35,9 +35,9 @@
         /// <summary>
         /// Constructor
         /// </summary>
-        public List()
+        public LongIndex()
         {
-            Item = new object[m_currentCap];
+            Item = new long[m_currentCap];
         }
 
         /// <summary>
@@ -56,7 +56,7 @@
         /// Adds an object to the list
         /// </summary>
         /// <param name="o">The object</param>
-        public void Add(object o)
+        public void Add(long o)
         {
             EnsureCapacity(Count + 1);
             Item[Count++] = o;
@@ -76,7 +76,7 @@
         /// </summary>
         /// <param name="item">The item to look for</param>
         /// <returns>Of the list contains the item</returns>
-        public bool Contains(object item)
+        public bool Contains(long item)
         {
             for (int i = 0; i < Count; i++)
             {
@@ -91,7 +91,7 @@
         /// Copies the entire list to a one-dimensional array
         /// </summary>
         /// <param name="array">The target array</param>
-        public void CopyTo(object[] array)
+        public void CopyTo(long[] array)
         {
             CopyTo(0, array, 0, Count);
         }
@@ -101,7 +101,7 @@
         /// </summary>
         /// <param name="array">The target array</param>
         /// <param name="arrayIndex">The target array index</param>
-        public void CopyTo(object[] array, int arrayIndex)
+        public void CopyTo(long[] array, int arrayIndex)
         {
             CopyTo(0, array, arrayIndex, Count);
         }
@@ -113,7 +113,7 @@
         /// <param name="array">The target array</param>
         /// <param name="arrayIndex">The target array index</param>
         /// <param name="count">The count of how much to copy</param>
-        public unsafe void CopyTo(int index, object[] array, int arrayIndex, int count)
+        public unsafe void CopyTo(int index, long[] array, int arrayIndex, int count)
         {
             int destination = (int)Util.ObjectToVoidPtr(array) + (sizeof(void*) * arrayIndex);
             int source = (int)Util.ObjectToVoidPtr(Item) + (sizeof(void*) * index);
@@ -124,7 +124,7 @@
         /// Searches for the specified object and returns the index of the first occurrence
         /// </summary>
         /// <param name="item">The item to look for</param>
-        public int IndexOf(object item)
+        public int IndexOf(long item)
         {
             return IndexOf(item, 0, Count);
         }
@@ -134,7 +134,7 @@
         /// </summary>
         /// <param name="item">The item to look for</param>
         /// <param name="index">The starting index</param>
-        public int IndexOf(object item, int index)
+        public int IndexOf(long item, int index)
         {
             return IndexOf(item, index, Count - index);
         }
@@ -146,7 +146,7 @@
         /// <param name="index">The starting index in the list</param>
         /// <param name="count">The count</param>
         /// <returns>-1 if not found, the index if found</returns>
-        public int IndexOf(object item, int index, int count)
+        public int IndexOf(long item, int index, int count)
         {
             for (int i = index; i < Count && i < count + index; i++)
             {
@@ -161,7 +161,7 @@
         /// Searches for the specified object and returns the index of the last occurrence
         /// </summary>
         /// <param name="item">The item to look for</param>
-        public int LastIndexOf(object item)
+        public int LastIndexOf(long item)
         {
             return LastIndexOf(item, Count - 1, Count);
         }
@@ -171,7 +171,7 @@
         /// </summary>
         /// <param name="item">The item to look for</param>
         /// <param name="index">The starting index</param>
-        public int LastIndexOf(object item, int index)
+        public int LastIndexOf(long item, int index)
         {
             return LastIndexOf(item, index, Count - index);
         }
@@ -183,7 +183,7 @@
         /// <param name="index">The starting index in the list</param>
         /// <param name="count">The count</param>
         /// <returns>-1 if not found, the index if found</returns>
-        public int LastIndexOf(object item, int index, int count)
+        public int LastIndexOf(long item, int index, int count)
         {
             for (int i = index; i >= 0 && i - index < count; i--)
             {

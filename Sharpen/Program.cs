@@ -1,6 +1,7 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Drivers.Block;
 using Sharpen.Drivers.Char;
+using Sharpen.FileSystem;
 
 namespace Sharpen
 {
@@ -18,7 +19,7 @@ namespace Sharpen
     {
         private static Multiboot.Header m_mbootHeader;
         private static bool m_isMultiboot = false;
-        
+
         /// <summary>
         /// Kernel entrypoint
         /// </summary>
@@ -60,7 +61,7 @@ namespace Sharpen
 
                         // Check if the end is bigger
                         // If it's bigger, set the new end
-                        if((int)module.End > (int)heapStart)
+                        if ((int)module.End > (int)heapStart)
                         {
                             heapStart = module.End;
                         }
@@ -82,46 +83,25 @@ namespace Sharpen
             IDT.Init();
             Keyboard.Init();
             Console.PutChar('\n');
-            
+
             ATA.Probe();
-            ATA.Test();
-            ATA.WriteTest();
 
-            Console.WriteLine("\nList of ATA devices:");
-            for (int i = 0; i < 4; i++)
-            {
-                IDE_Device device = ATA.Devices[i];
-                if (!device.Exists)
-                    continue;
+            Console.WriteLine("VFS test:");
+            VFS vfs = new VFS();
+            MountPoint test = new MountPoint();
+            test.Name = "henk";
+            MountPoint test2 = new MountPoint();
+            test2.Name = "de pony";
+            vfs.AddMountPoint(test);
+            vfs.AddMountPoint(test2);
 
-                Console.Write(device.Name);
-                Console.PutChar('\n');
-            }
-
-            Console.WriteLine("list test:");
-            Test a = new Test();
-            Test b = new Test();
-            Test c = new Test();
-            List list = new List();
-            list.Add(new Test());
-            list.Add(a);
-            list.Add(b);
-            list.Add(c);
-            list.Add(c);
-
-            Console.WriteNum(list.Count);
-            Console.PutChar(' ');
-            Console.WriteNum(list.LastIndexOf(b));
-            Console.PutChar(' ');
-            Console.WriteNum(list.IndexOf(c));
-            Console.PutChar('\n');
-
-            SerialPort.Init();
-
-            Console.WriteLine("reads key from keyboard:");
-            while(true)
-                Console.PutChar(Keyboard.Getch());
-
+            MountPoint mp = vfs.FindMountByName("de pony");
+            if (mp == null)
+                Console.WriteLine("TEST FAIL!");
+            else
+                Console.WriteLine(mp.Name);
+            
+            // Idle loop
             while (true)
                 CPU.HLT();
         }

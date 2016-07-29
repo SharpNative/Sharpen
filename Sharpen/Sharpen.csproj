@@ -59,6 +59,8 @@
     <Compile Include="Arch\PIC.cs" />
     <Compile Include="Arch\PIT.cs" />
     <Compile Include="Arch\Regs.cs" />
+    <Compile Include="FileSystem\MountDictionary.cs" />
+    <Compile Include="Collections\LongIndex.cs" />
     <Compile Include="Console.cs" />
     <Compile Include="Arch\GDT.cs" />
     <Compile Include="Drivers\Block\ATA.cs" />
@@ -67,9 +69,13 @@
     <Compile Include="Drivers\Char\Keyboard.cs" />
     <Compile Include="Drivers\Char\KeyboardMap.cs" />
     <Compile Include="Drivers\Char\SerialPortExtras.cs" />
+    <Compile Include="FileSystem\MountList.cs" />
+    <Compile Include="FileSystem\MountPoint.cs" />
+    <Compile Include="FileSystem\Node.cs" />
+    <Compile Include="FileSystem\VFS.cs" />
     <Compile Include="Heap.cs" />
     <Compile Include="Collections\Fifo.cs" />
-    <Compile Include="List.cs" />
+    <Compile Include="Collections\List.cs" />
     <Compile Include="Memory.cs" />
     <Compile Include="Multiboot.cs" />
     <Compile Include="Panic.cs" />
