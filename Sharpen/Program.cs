@@ -116,6 +116,10 @@ namespace Sharpen
             Console.WriteNum(list.IndexOf(c));
             Console.PutChar('\n');
 
+            Console.WriteLine("reads key from keyboard:");
+            while(true)
+                Console.PutChar(Keyboard.Getch());
+
             while (true)
                 CPU.HLT();
         }

@@ -17,7 +17,7 @@ namespace Sharpen.Drivers.Char
 
         private static int m_capslock = 0;
 
-        private static bool m_shift = false;
+        private static byte m_shift = 0x00;
 
         /// <summary>
         /// Capslock enabled
@@ -27,7 +27,7 @@ namespace Sharpen.Drivers.Char
         /// <summary>
         /// Shift down
         /// </summary>
-        public static bool Shift { get { return m_shift; } }
+        public static byte Shift { get { return m_shift; } }
 
         private static char readchar;
         private static volatile int readingchar;
@@ -58,15 +58,10 @@ namespace Sharpen.Drivers.Char
         {
             char outputChar;
 
-            int codeFixed = scancode - 128;
-
-            outputChar = (m_shift ? KeyboardMap.Shifted[codeFixed] : KeyboardMap.Normal[codeFixed]);
-
-            Console.WriteNum(codeFixed);
-            Console.Write("-");
-            Console.WriteHex(outputChar);
-            Console.WriteLine("");
-
+            int codeFixed = scancode;
+            // test
+            outputChar = (m_shift > 0 ? KeyboardMap.Shifted[codeFixed] : KeyboardMap.Normal[codeFixed]);
+            
             /**
              * Capslock enabled?
              */
@@ -96,54 +91,69 @@ namespace Sharpen.Drivers.Char
             while ((PortIO.In8(0x64) & 2) > 0) ;
         }
 
+        /// <summary>
+        /// Initialize keyboard
+        /// </summary>
         public static unsafe void Init()
         {
+            KeyboardMap.Fill();
 
             // Install the IRQ handler
             IRQ.SetHandler(1, Handler);
         }
 
+        /// <summary>
+        /// Get char from keyboard
+        /// </summary>
+        /// <returns></returns>
+        public static char Getch()
+        {
+            readingchar = 1;
+            while (readingchar != 0) CPU.HLT();
+
+            return readchar;
+        }
+
+        /// <summary>
+        /// Keyboard IRQ handler
+        /// </summary>
+        /// <param name="regsPtr"></param>
         private static unsafe void Handler(Regs* regsPtr)
         {
             byte scancode = PortIO.In8(0x60);
-
+            
+            // Key up?
             if ((scancode & 0x80) > 0)
             {
                 if (scancode == 0xAA)
-                    m_shift = !m_shift;
+                    m_shift &= 0x02;
                 else if (scancode == 0xB6)
-                    m_shift = !m_shift;
-                else
+                    m_shift &= 0x01;
+            }
+            else
+            {
+                readchar = transformKey(scancode);
+                
+                if (scancode == 0x3A)
                 {
-                    readchar = transformKey(scancode);
-                    readingchar = 0;
-
-
-                    if (scancode == 0x3A)
+                    if (m_capslock > 0)
                     {
-                        if (m_capslock > 0)
-                        {
-                            m_capslock = 0;
-                            m_leds = 0;
-                        }
-                        else
-                        {
-                            m_capslock = 1;
-                            m_leds = 4;
-                        }
-                        updateLeds();
+                        m_capslock = 0;
+                        m_leds = 0;
                     }
-                    else if (scancode == 0x2A)
-                        m_shift = !m_shift;
-                    else if (scancode == 0x36)
-                        m_shift = !m_shift;
-
-
-                    if (readchar > 0)
+                    else
                     {
-                        Console.WriteNum(readchar);
+                        m_capslock = 1;
+                        m_leds = 4;
                     }
+                    updateLeds();
                 }
+                else if (scancode == 0x2A)
+                    m_shift |= 0x01;
+                else if (scancode == 0x36)
+                    m_shift |= 0x02;
+
+                readingchar = 0;
             }
         }
     }
