@@ -68,6 +68,7 @@
     <Compile Include="Drivers\Char\KeyboardMap.cs" />
     <Compile Include="Drivers\Char\SerialPortExtras.cs" />
     <Compile Include="Heap.cs" />
+    <Compile Include="Collections\Fifo.cs" />
     <Compile Include="List.cs" />
     <Compile Include="Memory.cs" />
     <Compile Include="Multiboot.cs" />

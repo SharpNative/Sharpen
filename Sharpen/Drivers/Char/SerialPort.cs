@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Sharpen.Arch;
+using Sharpen.Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,7 +18,54 @@ namespace Sharpen.Drivers.Char
         /// <param name="num"></param>
         private static void initDevice(int num)
         {
+            if (num == 0 || comports[num].Address == 0)
+                return;
 
+            ushort port = comports[num].Address;
+
+            PortIO.Out8((ushort)(port + 1), 0x00);
+            PortIO.Out8((ushort)(port + 3), 0x80);
+            PortIO.Out8((ushort)(port + 0), 0x01);
+            PortIO.Out8((ushort)(port + 1), 0x00);
+            PortIO.Out8((ushort)(port + 3), 0x03);
+            PortIO.Out8((ushort)(port + 2), 0xC7);
+            PortIO.Out8((ushort)(port + 4), 0x0B);
+            PortIO.Out8((ushort)(port + 1), 0x01);
+
+            comports[num].Buffer = new Fifo(256);
+        }
+
+        /// <summary>
+        /// Is the transmit empty?
+        /// </summary>
+        /// <param name="port"></param>
+        /// <returns></returns>
+        private static int transmitEmtpy(int port)
+        {
+            return PortIO.In8((ushort)(port + 0x20)) & 1;
+        }
+
+        /// <summary>
+        /// Byte received on port?
+        /// </summary>
+        /// <param name="port"></param>
+        /// <returns></returns>
+        private static int received(int port)
+        {
+            return PortIO.In8((ushort)(port + 0x05)) & 1;
+        }
+
+        /// <summary>
+        /// Read from serial port
+        /// </summary>
+        /// <param name="port">The serial port</param>
+        /// <returns></returns>
+        private static byte Read(ushort port)
+        {
+            while (received(port) == 0)
+                CPU.HLT();
+
+            return PortIO.In8(port);
         }
 
         /// <summary>
@@ -30,10 +79,62 @@ namespace Sharpen.Drivers.Char
             comports[1].Address = *(bda + 1);    // COM2
             comports[2].Address = *(bda + 2);    // COM3
             comports[3].Address = *(bda + 3);	// COM4
-
         }
 
-        public static void Init()
+        /// <summary>
+        /// Handler for comport 1 and 3
+        /// </summary>
+        private static unsafe void Handler13(Regs* regsPtr)
+        {
+            SerialPortComport port;
+
+            if (comports[0].Address != 0 && received(comports[0].Address) != 0)
+            {
+                port = comports[0];
+            }
+            else
+            {
+                port = comports[2];
+            }
+
+            if (port.Address != 0)
+                return;
+
+            while(received(port.Address) != 0)
+            {
+                port.Buffer.WriteByte(Read(port.Address));
+            }
+        }
+
+        /// <summary>
+        /// Handler for comports 2 and 4
+        /// </summary>
+        private static unsafe void Handler24(Regs* regsPtr)
+        {
+            SerialPortComport port;
+
+            if (comports[1].Address != 0 && received(comports[1].Address) != 0)
+            {
+                port = comports[1];
+            }
+            else
+            {
+                port = comports[3];
+            }
+
+            if (port.Address != 0)
+                return;
+
+            while (received(port.Address) != 0)
+            {
+                port.Buffer.WriteByte(Read(port.Address));
+            }
+        }
+
+        /// <summary>
+        /// Initialize serialport
+        /// </summary>
+        public static unsafe void Init()
         {
             comports[0] = new SerialPortComport();
             comports[0].Name = "COM1";
@@ -52,6 +153,9 @@ namespace Sharpen.Drivers.Char
             initDevice(1);
             initDevice(2);
             initDevice(3);
+            
+            IRQ.SetHandler(3, Handler24);
+            IRQ.SetHandler(4, Handler13);
         }
     }
 }

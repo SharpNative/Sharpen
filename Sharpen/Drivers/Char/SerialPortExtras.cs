@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sharpen.Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,8 @@ namespace Sharpen.Drivers.Char
 
         public string Name { get; set; }
 
-        public int Address { get; set; }
+        public ushort Address { get; set; }
+
+        public Fifo Buffer { get; set; }
     }
 }
