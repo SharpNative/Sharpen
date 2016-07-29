@@ -73,7 +73,7 @@ namespace Sharpen.Drivers.Char
         /// </summary>
         private static unsafe void readBda()
         {
-            UInt16* bda = (UInt16*)0x00000400;
+            ushort* bda = (ushort*)0x00000400;
 
             comports[0].Address = *bda;          // COM1
             comports[1].Address = *(bda + 1);    // COM2
@@ -89,21 +89,15 @@ namespace Sharpen.Drivers.Char
             SerialPortComport port;
 
             if (comports[0].Address != 0 && received(comports[0].Address) != 0)
-            {
                 port = comports[0];
-            }
             else
-            {
                 port = comports[2];
-            }
 
             if (port.Address != 0)
                 return;
 
             while(received(port.Address) != 0)
-            {
                 port.Buffer.WriteByte(Read(port.Address));
-            }
         }
 
         /// <summary>
@@ -114,21 +108,15 @@ namespace Sharpen.Drivers.Char
             SerialPortComport port;
 
             if (comports[1].Address != 0 && received(comports[1].Address) != 0)
-            {
                 port = comports[1];
-            }
             else
-            {
                 port = comports[3];
-            }
 
             if (port.Address != 0)
                 return;
 
             while (received(port.Address) != 0)
-            {
                 port.Buffer.WriteByte(Read(port.Address));
-            }
         }
 
         /// <summary>

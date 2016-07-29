@@ -9,11 +9,51 @@ namespace Sharpen.Drivers.Char
     class KeyboardMap
     {
 
-        public static char[] Normal = new char[127];
-
-        public static char[] Shifted = new char[127]
+        public static char[] Normal =
         {
-            (char)27, '!', '@', '#', '$', '%', '^', '&', '*',	/* 9 */
+            (char) 0, (char)27, '1', '2', '3', '4', '5', '6', '7', '8',	/* 9 */
+            '9', '0', '-', '=', '\b',	/* Backspace */
+            '\t',			/* Tab */
+            'q', 'w', 'e', 'r',	/* 19 */
+            't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',	/* Enter key */
+            (char)0,			/* 29   - Control */
+            'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',	/* 39 */
+            '\'', '`',   (char)0,		/* Left shift */
+            '\\', 'z', 'x', 'c', 'v', 'b', 'n',			/* 49 */
+            'm', ',', '.', '/',   (char)0,				/* Right shift */
+            '*',
+            (char)0,	/* Alt */
+            ' ',	/* Space bar */
+            (char)0,	/* Caps lock */
+            (char)0,	/* 59 - F1 key ... > */
+            (char)0,   (char)0,   (char)0,   (char)0,   (char)0,   (char)0,   (char)0,   (char)0,
+            (char)0,	/* < ... F10 */
+            (char)0,	/* 69 - Num lock*/
+            (char)0,	/* Scroll Lock */
+            (char)0,	/* Home key */
+            (char)0,	/* Up Arrow */
+            (char)0,	/* Page Up */
+            '-',
+            (char)0,	/* Left Arrow */
+            (char)0,
+            (char)0,	/* Right Arrow */
+            '+',
+            (char)0,	/* 79 - End key*/
+            (char)0,	/* Down Arrow */
+            (char)0,	/* Page Down */
+            (char)0,	/* Insert Key */
+            (char)0,	/* Delete Key */
+            (char)0,   (char)0,   (char)0,
+            (char)0,	/* F11 Key */
+            (char)0,	/* F12 Key */
+            (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0,
+            (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0,
+            (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0,/* All other keys are undefined */
+        };
+
+        public static char[] Shifted =
+        {
+            (char) 0, (char)27, '!', '@', '#', '$', '%', '^', '&', '*',	/* 9 */
             '(', ')', '_', '+', '\b',	/* Backspace */
             '\t',			/* Tab */
             'Q', 'W', 'E', 'R',	/* 19 */
@@ -52,22 +92,5 @@ namespace Sharpen.Drivers.Char
             (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0,
             (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0, (char)0,/* All other keys are undefined */
         };
-
-        public static void Fill()
-        {
-            Normal[2] = '1';
-            Normal[3] = '2';
-            Normal[4] = '3';
-            Normal[5] = '4';
-            Normal[6] = '5';
-            Normal[7] = '6';
-            Normal[8] = '7';
-            Normal[9] = '8';
-            Normal[10] = '9';
-            Normal[11] = '0';
-            Normal[12] = '-';
-            Normal[13] = '+';
-            Normal[14] = '\b';
-        }
     }
 }

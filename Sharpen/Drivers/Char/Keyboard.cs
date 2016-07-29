@@ -104,8 +104,6 @@ namespace Sharpen.Drivers.Char
         /// </summary>
         public static unsafe void Init()
         {
-            KeyboardMap.Fill();
-
             // Install the IRQ handler
             IRQ.SetHandler(1, Handler);
         }
