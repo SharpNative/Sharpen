@@ -107,6 +107,6 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="Build">
-    <CompileProjectTask Path="$(MSBuildProjectFullPath)" Outpath="../C/output.c" />
+    <CompileProjectTask Path="$(MSBuildProjectFullPath)" Outpath="../C/output.c" AfterBuildWorkingDir="$(SolutionDir)C" AfterBuildCommand="$(SolutionDir)C/compile.bat"/>
   </Target>
 </Project>
