@@ -10,7 +10,7 @@
         /// <param name="start">The start address</param>
         public static unsafe void Init(void* start)
         {
-            Console.Write("Heap start: ");
+            Console.Write("[HEAP] Start at ");
             Console.WriteHex((int)start);
             Console.PutChar('\n');
 

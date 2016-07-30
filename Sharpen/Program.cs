@@ -2,6 +2,7 @@
 using Sharpen.Drivers.Block;
 using Sharpen.Drivers.Char;
 using Sharpen.Drivers.Power;
+using Sharpen.Drivers.Sound;
 using Sharpen.FileSystem;
 
 namespace Sharpen
@@ -28,8 +29,6 @@ namespace Sharpen
             // Booted by a multiboot bootloader
             if (magic == Multiboot.Magic)
             {
-                Console.WriteLine("Booted by a multiboot bootloader");
-
                 // Bring the header to a safe location
                 m_isMultiboot = true;
                 fixed (Multiboot.Header* destination = &m_mbootHeader)
@@ -42,7 +41,7 @@ namespace Sharpen
                 {
                     uint modsCount = m_mbootHeader.ModsCount;
 
-                    Console.Write("Modules: ");
+                    Console.Write("[Multiboot] Detected - Modules: ");
                     Console.WriteNum((int)modsCount);
                     Console.PutChar('\n');
 
@@ -61,7 +60,7 @@ namespace Sharpen
                 }
                 else
                 {
-                    Console.WriteLine("No modules");
+                    Console.WriteLine("[Multiboot] Detected - No modules");
                 }
             }
 
@@ -75,24 +74,12 @@ namespace Sharpen
             IDT.Init();
             Keyboard.Init();
             Acpi.Init();
-            Console.PutChar('\n');
 
             ATA.Probe();
-
-            VFS vfs = new VFS();
-
-            MountPoint mp = new MountPoint();
-            mp.Name = "test";
-
-            MountPoint mp2 = new MountPoint();
-            mp2.Name = "test2";
-
-            vfs.AddMountPoint(mp);
-            vfs.AddMountPoint(mp2);
-
-            MountPoint mpp = vfs.FindMountByName("test");
-            Console.WriteLine(mpp.Name);
             
+
+            PCI.Probe();
+            AC97.Init();
 
             while (true)
                 Console.PutChar(Keyboard.Getch());

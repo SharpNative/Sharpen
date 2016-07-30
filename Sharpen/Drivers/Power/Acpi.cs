@@ -74,11 +74,6 @@ namespace Sharpen.Drivers.Power
 
         private static bool checkSum(void *address, uint length)
         {
-            Console.WriteHex((int)address);
-            Console.Write(" ");
-            Console.WriteNum((int)length);
-            Console.WriteLine(" ");
-
             char* bptr = (char*)address;
             byte check = 0;
 
@@ -87,10 +82,7 @@ namespace Sharpen.Drivers.Power
                 check += (byte)*bptr;
                 bptr++;
             }
-
-
-            Console.WriteNum((int)check);
-            Console.WriteLine("");
+            
             if (check == 0)
                 return true;
 
