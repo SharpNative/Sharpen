@@ -1,6 +1,7 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Drivers.Block;
 using Sharpen.Drivers.Char;
+using Sharpen.Drivers.Other;
 using Sharpen.Drivers.Power;
 using Sharpen.Drivers.Sound;
 using Sharpen.FileSystem;
@@ -80,6 +81,12 @@ namespace Sharpen
 
             PCI.Probe();
             AC97.Init();
+            IntelHD.Init();
+            VirtualboxDevice.Init();
+
+            Console.Write("Current virtual session ID: ");
+            Console.WriteNum((int)VirtualboxDevice.GetSessionID());
+            Console.WriteLine("");
 
             while (true)
                 Console.PutChar(Keyboard.Getch());

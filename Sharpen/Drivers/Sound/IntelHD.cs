@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.Sound
 {
-    class AC97
+    class IntelHD
     {
-
 
         private static void InitHandler(PCI.PciDevice dev)
         {
@@ -23,11 +22,11 @@ namespace Sharpen.Drivers.Sound
         public static void Init()
         {
             PCI.PciDriver driver = new PCI.PciDriver();
-            driver.Name = "AC97 Driver";
+            driver.Name = "Intel HD Driver";
             driver.Exit = ExitHander;
             driver.Init = InitHandler;
 
-            PCI.RegisterDriver(0x8086, 0x2415, driver);
+            PCI.RegisterDriver(0x8086, 0x2668, driver);
         }
     }
 }

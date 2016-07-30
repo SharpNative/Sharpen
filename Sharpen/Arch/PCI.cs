@@ -8,6 +8,8 @@ namespace Sharpen.Arch
 {
     class PCI
     {
+        public static readonly ushort COMMAND = 0x04;
+
         public struct PciDriver
         {
             public string Name;
@@ -18,10 +20,15 @@ namespace Sharpen.Arch
 
         public struct PciDevice
         {
+            public ushort Bus;
+            public ushort Slot;
+            public ushort Function;
+
             public ushort Vendor;
             public ushort Device;
-            public ushort Func;
             public PciDriver Driver;
+            public ushort Port1;
+            public ushort Port2;
         }
         
         public unsafe delegate void PciDriverInit(PciDevice dev);
@@ -29,6 +36,11 @@ namespace Sharpen.Arch
 
         private static PciDevice[] m_devices = new PciDevice[300];
         private static uint m_currentdevice = 0;
+
+        private static uint GenerateAddress(uint lbus, uint lslot, uint lfun, uint offset)
+        {
+            return lbus << 16 | lslot << 11 | lfun << 8 | (uint)(offset & 0xFC) | 0x80000000;
+        }
 
         /// <summary>
         /// Read word from PCI
@@ -40,17 +52,49 @@ namespace Sharpen.Arch
         /// <returns>Word value</returns>
         private static ushort readWord(ushort bus, ushort slot, ushort function, ushort offset)
         {
+            return (ushort)PciRead(bus, slot, function, offset, 2);
+        }
+
+        public static uint PciRead(ushort bus, ushort slot, ushort function, ushort offset, uint size)
+        {
             uint address;
             uint lbus = bus;
             uint lslot = slot;
             uint lfun = function;
+            
+            address = GenerateAddress(bus, slot, function, offset);
 
-            ushort tmp;
-            address = lbus << 16 | lslot << 11 | lfun << 8 | (uint)(offset & 0xFC) | 0x80000000;
+            uint tmp = 0xFFFFFFFF;
 
             PortIO.Out32(0xCF8, address);
-            tmp = (ushort)((PortIO.In32(0xCFC) >> ((offset & 2) * 8)) & 0xffff);
+
+            if (size == 4)
+                tmp = PortIO.In32(0xCFC);
+            else if (size == 2)
+                tmp = (ushort)((PortIO.In32(0xCFC) >> ((offset & 2) * 8)) & 0xffff);
+            else if(size == 1)
+                return (byte)((PortIO.In32(0xCFC) >> ((offset & 4) * 8)) & 0xff);
+
             return tmp;
+        }
+
+        public static void PciWrite(ushort bus, ushort slot, ushort function, ushort offset, uint value)
+        {
+            uint address = GenerateAddress(bus, slot, function, offset);
+
+            PortIO.Out32(0xCF8, address);
+            PortIO.Out32(0xCFC, value);
+        }
+
+        public static void PciWrite(PciDevice dev, ushort offset, uint value)
+        {
+            PciWrite(dev.Bus, dev.Slot, dev.Function, offset, value);
+        }
+
+
+        public static ushort PciReadWord(PciDevice dev, ushort offset, uint value)
+        {
+            return readWord(dev.Bus, dev.Slot, dev.Function, offset);
         }
 
         /// <summary>
@@ -63,6 +107,11 @@ namespace Sharpen.Arch
         private static ushort GetDeviceID(ushort bus, ushort device, ushort function)
         {
             return readWord(bus, device, function, 0x2);
+        }
+
+        private static ushort GetHeaderType(ushort bus, ushort device, ushort function)
+        {
+            return (byte)(readWord(bus, device, function, 0xE) & 0xFF);
         }
 
         /// <summary>
@@ -130,11 +179,17 @@ namespace Sharpen.Arch
             ushort deviceID = GetDeviceID(bus, device, function);
             if (deviceID == 0xFFFF)
                 return;
+            
 
             PciDevice dev = new PciDevice();
             dev.Device = deviceID;
-            dev.Func = function;
+            dev.Function = function;
+            dev.Bus = bus;
+            dev.Slot = device;
+
             dev.Vendor = vendorID;
+            dev.Port1 = (ushort)(readWord(bus, device, function, 0x10) & -1 << 1);
+            dev.Port2 = (ushort)(readWord(bus, device, function, 0x14) & -1 << 1);
 
             m_devices[m_currentdevice++] = dev;
         }
@@ -150,11 +205,13 @@ namespace Sharpen.Arch
             int foundIndex = -1;
 
             for (int i = 0; i < m_currentdevice; i++)
+            {
                 if (m_devices[i].Vendor == vendorID && m_devices[i].Device == deviceID)
                 {
                     foundIndex = i;
                     break;
                 }
+            }
 
             if (foundIndex == -1)
                 return;
@@ -167,6 +224,7 @@ namespace Sharpen.Arch
             Console.WriteLine(driver.Name);
 
             m_devices[foundIndex].Driver = driver;
+            driver.Init(m_devices[foundIndex]);
         }
 
         /// <summary>
