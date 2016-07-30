@@ -59,7 +59,8 @@
         public void Add(long o)
         {
             EnsureCapacity(Count + 1);
-            Item[Count++] = o;
+            Item[Count] = o;
+            Count++;
         }
 
         /// <summary>

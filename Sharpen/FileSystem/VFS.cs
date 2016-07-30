@@ -42,12 +42,7 @@ namespace Sharpen.FileSystem
         {
 
             long key = GenerateHash(mountPoint.Name);
-
-            Console.Write("Put in index: ");
-            Console.Write(mountPoint.Name);
-            Console.Write(" ");
-            Console.WriteHex(key);
-            Console.PutChar('\n');
+            
             m_dictionary.Add(key, mountPoint);
         }
 
@@ -59,11 +54,7 @@ namespace Sharpen.FileSystem
         public unsafe MountPoint FindMountByName(string name)
         {
             long key = GenerateHash(name);
-
-            Console.Write("Looking for ");
-            Console.WriteHex(key);
-            Console.PutChar('\n');
-
+            
             return m_dictionary.GetByKey(key);
         }
     }

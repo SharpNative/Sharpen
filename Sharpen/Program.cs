@@ -86,7 +86,7 @@ namespace Sharpen
 
             ATA.Probe();
 
-            Console.WriteLine("VFS test:");
+            Console.Write("VFS test: ");
             VFS vfs = new VFS();
             MountPoint test = new MountPoint();
             test.Name = "henk";
@@ -99,7 +99,7 @@ namespace Sharpen
             if (mp == null)
                 Console.WriteLine("TEST FAIL!");
             else
-                Console.WriteLine(mp.Name);
+                Console.WriteLine("PASSED");
             
             // Idle loop
             while (true)
