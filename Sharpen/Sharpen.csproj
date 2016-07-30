@@ -84,6 +84,7 @@
     <Compile Include="Heap.cs" />
     <Compile Include="Collections\Fifo.cs" />
     <Compile Include="Collections\List.cs" />
+    <Compile Include="Lib\Audio.cs" />
     <Compile Include="Memory.cs" />
     <Compile Include="Multiboot.cs" />
     <Compile Include="Panic.cs" />

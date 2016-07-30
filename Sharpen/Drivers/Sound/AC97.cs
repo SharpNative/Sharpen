@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Lib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -152,6 +153,23 @@ namespace Sharpen.Drivers.Sound
             driver.Init = InitHandler;
 
             PCI.RegisterDriver(0x8086, 0x2415, driver);
+
+            Audio.SoundDevice device = new Audio.SoundDevice();
+            device.Name = "AC97 audio device";
+            device.Writer = writer;
+            device.Reader = reader;
+
+            Audio.SetDevice(device);
+        }
+
+        private static uint reader(AudioActions action)
+        {
+            return 0;
+        }
+
+        private static void writer(AudioActions action, uint value)
+        {
+
         }
     }
 }
