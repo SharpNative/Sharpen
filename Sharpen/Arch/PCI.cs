@@ -227,6 +227,19 @@ namespace Sharpen.Arch
             driver.Init(m_devices[foundIndex]);
         }
 
+        public static void PrintDevices()
+        {
+
+            for (int i = 0; i < m_currentdevice; i++)
+            {
+                Console.Write("Device ");
+                Console.WriteHex(m_devices[i].Vendor);
+                Console.Write(":");
+                Console.WriteHex(m_devices[i].Device);
+                Console.WriteLine("");
+            }
+        }
+
         /// <summary>
         /// Brute force scan over all busses
         /// </summary>

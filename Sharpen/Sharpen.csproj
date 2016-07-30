@@ -60,6 +60,7 @@
     <Compile Include="Arch\PIC.cs" />
     <Compile Include="Arch\PIT.cs" />
     <Compile Include="Arch\Regs.cs" />
+    <Compile Include="Drivers\Net\I217.cs" />
     <Compile Include="Drivers\Other\VirtualboxDevice.cs" />
     <Compile Include="Drivers\Other\VirtualboxDeviceExtras.cs" />
     <Compile Include="Drivers\Power\Acpi.cs" />
