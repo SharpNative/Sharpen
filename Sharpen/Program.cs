@@ -74,7 +74,7 @@ namespace Sharpen
             CMOS.UpdateTime();
             IDT.Init();
             Keyboard.Init();
-            Acpi.Init();
+            //Acpi.Init();
             Console.PutChar('\n');
 
             ATA.Probe();

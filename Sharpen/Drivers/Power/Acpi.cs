@@ -60,9 +60,10 @@ namespace Sharpen.Drivers.Power
                     Panic.DoPanic("RDSP not found!");
             }
 
-            rsdt = (RSDT*)rdsp->RsdtAddress;
-            if (rsdt == (RSDT*)0)
-                Panic.DoPanic("RDST not found!");
+            // TODO: This generates a bug in CS2C
+            //rsdt = (RSDT*)rdsp->RsdtAddress;
+            //if (rsdt == (RSDT*)0)
+            //    Panic.DoPanic("RDST not found!");
         }
 
         private static bool check_sum(void *address, uint length)
