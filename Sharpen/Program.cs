@@ -84,10 +84,6 @@ namespace Sharpen
             IntelHD.Init();
             VirtualboxDevice.Init();
 
-            Console.Write("Current virtual session ID: ");
-            Console.WriteNum((int)VirtualboxDevice.GetSessionID());
-            Console.WriteLine("");
-
             while (true)
                 Console.PutChar(Keyboard.Getch());
 
