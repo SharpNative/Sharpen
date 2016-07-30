@@ -84,7 +84,6 @@ namespace Sharpen.Drivers.Sound
             for(int i = 0; i < 32; i++)
             {
                 m_bufs[i] = (ushort *)Heap.Alloc(sizeof(ushort) * 0x1000);
-                // FILL FROM SOUND DRIVER
 
                 m_bdls[i].pointer = (uint)m_bufs[i];
                 m_bdls[i].cl = 0x1000 & 0xFFFF;
@@ -124,8 +123,9 @@ namespace Sharpen.Drivers.Sound
                 // Fill buffer ;
                 for(int i = 0; i < 0x1000 * 4; i+= 128)
                 {
-                    ushort * shr = (ushort *)(m_bufs[start] + i);
-                    // TODO: FILL FROM SOUND DRIVER
+                    ushort * shr = m_bufs[start] + i;
+
+                    Audio.RequestBuffer(128, shr);
                 }
 
                 tmp = m_lvi + 1;
@@ -169,7 +169,26 @@ namespace Sharpen.Drivers.Sound
 
         private static void writer(AudioActions action, uint value)
         {
+            if(action == AudioActions.Master)
+            {
+                value = ~value;
 
+                // It's a 6bit value!
+                value >>= 26;
+
+                ushort encoded = (ushort)(value | (value << 8));
+                PortIO.Out16((ushort)(m_nambar + MASTER_VOLUME), encoded);
+            }
+            else if(action == AudioActions.PCM_OUT)
+            {
+                value = ~value;
+
+                // It's a 5 bit value!
+                value >>= 27;
+
+                ushort encoded = (ushort)(value | (value << 8));
+                PortIO.Out16((ushort)(m_nambar + PCM_OUT_VOLUME), encoded);
+            }
         }
     }
 }

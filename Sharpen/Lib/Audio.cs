@@ -34,5 +34,10 @@ namespace Sharpen.Lib
         {
             m_device = device;
         }
+
+        public unsafe static void RequestBuffer(uint size, ushort* buffer)
+        {
+
+        }
     }
 }
