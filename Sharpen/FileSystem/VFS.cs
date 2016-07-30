@@ -51,7 +51,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public unsafe MountPoint FindMountByName(string name)
+        public MountPoint FindMountByName(string name)
         {
             long key = GenerateHash(name);
             

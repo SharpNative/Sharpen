@@ -1,19 +1,11 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Drivers.Block;
 using Sharpen.Drivers.Char;
+using Sharpen.Drivers.Power;
 using Sharpen.FileSystem;
 
 namespace Sharpen
 {
-    class Test
-    {
-        public int a = 3;
-
-        public Test()
-        {
-
-        }
-    }
 
     public sealed class Program
     {
@@ -82,24 +74,10 @@ namespace Sharpen
             CMOS.UpdateTime();
             IDT.Init();
             Keyboard.Init();
+            Acpi.Init();
             Console.PutChar('\n');
 
             ATA.Probe();
-
-            Console.Write("VFS test: ");
-            VFS vfs = new VFS();
-            MountPoint test = new MountPoint();
-            test.Name = "henk";
-            MountPoint test2 = new MountPoint();
-            test2.Name = "de pony";
-            vfs.AddMountPoint(test);
-            vfs.AddMountPoint(test2);
-
-            MountPoint mp = vfs.FindMountByName("de pony");
-            if (mp == null)
-                Console.WriteLine("TEST FAIL!");
-            else
-                Console.WriteLine("PASSED");
             
             // Idle loop
             while (true)
