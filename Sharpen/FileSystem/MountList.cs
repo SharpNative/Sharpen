@@ -59,8 +59,7 @@
         public void Add(MountPoint o)
         {
             EnsureCapacity(Count + 1);
-            Item[Count] = o;
-            Count++;
+            Item[Count++] = o;
         }
 
         /// <summary>

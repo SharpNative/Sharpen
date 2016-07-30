@@ -74,11 +74,30 @@ namespace Sharpen
             CMOS.UpdateTime();
             IDT.Init();
             Keyboard.Init();
-            //Acpi.Init();
+            Acpi.Init();
             Console.PutChar('\n');
 
             ATA.Probe();
+
+            VFS vfs = new VFS();
+
+            MountPoint mp = new MountPoint();
+            mp.Name = "test";
+
+            MountPoint mp2 = new MountPoint();
+            mp2.Name = "test2";
+
+            vfs.AddMountPoint(mp);
+            vfs.AddMountPoint(mp2);
+
+            MountPoint mpp = vfs.FindMountByName("test");
+            Console.WriteLine(mpp.Name);
             
+
+            while (true)
+                Console.PutChar(Keyboard.Getch());
+
+
             // Idle loop
             while (true)
                 CPU.HLT();

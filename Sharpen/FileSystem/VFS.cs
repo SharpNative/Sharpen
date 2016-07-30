@@ -5,12 +5,7 @@ namespace Sharpen.FileSystem
     class VFS
     {
         private MountDictionary m_dictionary = new MountDictionary();
-
-        public VFS()
-        {
-
-        }
-
+        
         /// <summary>
         /// Generate hash from string
         /// </summary>
@@ -40,9 +35,7 @@ namespace Sharpen.FileSystem
         /// <param name="mountPoint"></param>
         public void AddMountPoint(MountPoint mountPoint)
         {
-
             long key = GenerateHash(mountPoint.Name);
-            
             m_dictionary.Add(key, mountPoint);
         }
 
@@ -54,7 +47,6 @@ namespace Sharpen.FileSystem
         public MountPoint FindMountByName(string name)
         {
             long key = GenerateHash(name);
-            
             return m_dictionary.GetByKey(key);
         }
     }

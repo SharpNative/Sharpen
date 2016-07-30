@@ -152,7 +152,9 @@
             for (int i = index; i < Count && i < count + index; i++)
             {
                 if (Item[i] == item)
+                {
                     return i;
+                }
             }
 
             return -1;

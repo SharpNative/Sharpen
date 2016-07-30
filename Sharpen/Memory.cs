@@ -12,15 +12,14 @@ namespace Sharpen
         /// <param name="num">The number of bytes</param>
         public static extern unsafe void Memcpy(void* destination, void* source, int num);
 
-        internal static unsafe bool Compare(char* s1, char *s2, int n)
+        internal static unsafe bool Compare(char * s1, char *s2, int n)
         {
             for(int i = 0; i < n; i++)
             {
                 if (s1[i] != s2[i])
                     return false;
             }
-
-
+            
             return true;
         }
 

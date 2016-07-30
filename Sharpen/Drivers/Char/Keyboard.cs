@@ -138,8 +138,8 @@ namespace Sharpen.Drivers.Char
             }
             else
             {
-                readchar = transformKey(scancode);
                 
+
                 if (scancode == 0x3A)
                 {
                     if (m_capslock > 0)
@@ -158,8 +158,12 @@ namespace Sharpen.Drivers.Char
                     m_shift |= 0x01;
                 else if (scancode == 0x36)
                     m_shift |= 0x02;
+                else
+                {
+                    readchar = transformKey(scancode);
+                    readingchar = 0;
+                }
 
-                readingchar = 0;
             }
         }
     }
