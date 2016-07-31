@@ -72,7 +72,7 @@
     <Compile Include="FileSystem\DevFS.cs" />
     <Compile Include="FileSystem\Device.cs" />
     <Compile Include="FileSystem\DirEntry.cs" />
-    <Compile Include="FileSystem\DevDictionary.cs" />
+    <Compile Include="Collections\Dictionary.cs" />
     <Compile Include="FileSystem\MountDictionary.cs" />
     <Compile Include="Collections\LongIndex.cs" />
     <Compile Include="Console.cs" />

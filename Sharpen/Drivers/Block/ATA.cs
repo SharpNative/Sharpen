@@ -138,7 +138,7 @@ namespace Sharpen.Drivers.Block
             PortIO.Out8((ushort)(port + ATA_REG_LBAHI), 0x00);
 
             PortIO.Out8((ushort)(port + ATA_REG_CMD), ATA_CMD_IDENTIFY);
-
+            
             // Check if a drive is found
             byte status = PortIO.In8((ushort)(port + ATA_REG_STATUS));
             if (status == 0)
@@ -152,7 +152,7 @@ namespace Sharpen.Drivers.Block
             while (true)
             {
                 status = PortIO.In8((ushort)(port + ATA_REG_STATUS));
-
+                
                 if ((status & ATA_STATUS_ERR) != 0)
                     return null;
 
@@ -370,7 +370,6 @@ namespace Sharpen.Drivers.Block
                 
                 if (result == null)
                 {
-                    Console.WriteLine("NUM");
                     Devices[num].Exists = false;
                     num++;
                     continue;

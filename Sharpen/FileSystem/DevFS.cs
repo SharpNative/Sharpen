@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sharpen.Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace Sharpen.FileSystem
 {
     public class DevFS
     {
-        private static DevDictionary m_devices = new DevDictionary();
+        private static Dictionary m_devices = new Dictionary();
         private static Node m_currentNode;
 
         public unsafe static void Init()
