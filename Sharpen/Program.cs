@@ -81,16 +81,20 @@ namespace Sharpen
             CMOS.UpdateTime();
             Keyboard.Init();
 
-
-            ATA.Probe();
+            DevFS.Init();
+            ATA.Probe(); 
             
             PCI.Probe();
             AC97.Init();
-            VirtualboxDevice.Init();
+            VboxDev.Init();
             //I217.Init();
+            
+            // SET VM on pause
+            //Node node = VFS.GetByPath("devices://VMMDEV/powerstate");
+            //node.Write(node, 0, 4, ByteUtil.toBytes((int)VboxDevPowerState.Pause));
 
             while (true)
-                Console.PutChar(Keyboard.Getch());
+            Console.PutChar(Keyboard.Getch());
 
 
             // Idle loop

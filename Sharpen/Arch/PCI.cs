@@ -58,9 +58,6 @@ namespace Sharpen.Arch
         public static uint PciRead(ushort bus, ushort slot, ushort function, ushort offset, uint size)
         {
             uint address;
-            uint lbus = bus;
-            uint lslot = slot;
-            uint lfun = function;
             
             address = GenerateAddress(bus, slot, function, offset);
 

@@ -10,9 +10,6 @@ namespace Sharpen.FileSystem
     {
         public string Name;
 
-        public MountPoint()
-        {
-
-        }
+        public Node Node;
     }
 }

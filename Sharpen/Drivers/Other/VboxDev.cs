@@ -1,22 +1,16 @@
 ﻿using Sharpen.Arch;
+using Sharpen.FileSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Sharpen.FileSystem.DevFS;
 
 namespace Sharpen.Drivers.Other
 {
-    class VirtualboxDevice
+    class VboxDev
     {
-        public enum PowerState
-        {
-            Invalid = 0,
-            Pause = 1,
-            PowerOff = 2,
-            SaveState = 3, 
-            SizeHack = 0x7FFFFFFF
-        }
 
         private static PCI.PciDevice m_dev;
         private static bool m_initalized;
@@ -25,7 +19,7 @@ namespace Sharpen.Drivers.Other
         {
             public uint Size;
             public uint Version;
-            public VBoxRequestTypes requestType;
+            public VboxDevRequestTypes requestType;
             public int rc;
             public uint reserved_1;
             public uint reserved_2;
@@ -47,20 +41,26 @@ namespace Sharpen.Drivers.Other
             public uint osType;
         }
 
-        struct RquestPowerState
+        struct RequestPowerState
         {
             public RequestHeader header;
 
-            public PowerState PowerState;
+            public VboxDevPowerState PowerState;
         }
+        
+        struct RequestHostTime
+        {
+            public RequestHeader header;
 
+            public ulong Time;
+        }
 
         private unsafe static void GetGuestInfo()
         {
             RequestGuestInfo* req = (RequestGuestInfo*)Heap.Alloc(sizeof(RequestGuestInfo));
             req->header.Size = (uint)sizeof(RequestGuestInfo);
             req->header.Version = 0x10001;
-            req->header.requestType = VBoxRequestTypes.VMMDevReq_ReportGuestInfo;
+            req->header.requestType = VboxDevRequestTypes.VMMDevReq_ReportGuestInfo;
             req->header.rc = 0xFFFFF;
             req->interfaceVersion = 0x10000;
             req->osType = 0x10000;
@@ -86,6 +86,9 @@ namespace Sharpen.Drivers.Other
             m_dev = dev;
 
             GetGuestInfo();
+
+            if(m_initalized)
+                VboxDevFSDriver.Init();
         }
 
         private static void ExitHander(PCI.PciDevice dev)
@@ -101,6 +104,7 @@ namespace Sharpen.Drivers.Other
             driver.Init = InitHandler;
 
             PCI.RegisterDriver(0x80EE, 0xCAFE, driver);
+
         }
 
         #region Functions
@@ -110,12 +114,12 @@ namespace Sharpen.Drivers.Other
         /// Change power state
         /// </summary>
         /// <param name="state">Power state</param>
-        public unsafe static void ChangePowerState(PowerState state)
+        public unsafe static void ChangePowerState(VboxDevPowerState state)
         {
-            RquestPowerState* req = (RquestPowerState*)Heap.Alloc(sizeof(RquestPowerState));
-            req->header.Size = (uint)sizeof(RquestPowerState);
+            RequestPowerState* req = (RequestPowerState*)Heap.Alloc(sizeof(RequestPowerState));
+            req->header.Size = (uint)sizeof(RequestPowerState);
             req->header.Version = 0x10001;
-            req->header.requestType = VBoxRequestTypes.VMMDevReq_SetPowerStatus;
+            req->header.requestType = VboxDevRequestTypes.VMMDevReq_SetPowerStatus;
             req->header.rc = 0xFFFFF;
             req->PowerState = state;
 
@@ -131,12 +135,29 @@ namespace Sharpen.Drivers.Other
             RequestSessionID* req = (RequestSessionID*)Heap.Alloc(sizeof(RequestSessionID));
             req->header.Size = (uint)sizeof(RequestSessionID);
             req->header.Version = 0x10001;
-            req->header.requestType = VBoxRequestTypes.VMMDevReq_GetSessionId;
+            req->header.requestType = VboxDevRequestTypes.VMMDevReq_GetSessionId;
             req->header.rc = 0xFFFFF;
 
             PortIO.Out32(m_dev.Port1, (uint)Paging.GetPhysicalFromVirtual(req));
 
             return req->idSession;
+        }
+
+        /// <summary>
+        /// Get host time
+        /// </summary>
+        /// <returns>Time sinds linux epoch</returns>
+        public unsafe static ulong GetHostTime()
+        {
+            RequestHostTime* req = (RequestHostTime*)Heap.Alloc(sizeof(RequestHostTime));
+            req->header.Size = (uint)sizeof(RequestHostTime);
+            req->header.Version = 0x10001;
+            req->header.requestType = VboxDevRequestTypes.VMMDevReq_GetHostTime;
+            req->header.rc = 0xFFFFF;
+
+            PortIO.Out32(m_dev.Port1, (uint)Paging.GetPhysicalFromVirtual(req));
+
+            return req->Time;
         }
 
         #endregion

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.Other
 {
-   public enum VBoxRequestTypes
+   public enum VboxDevRequestTypes
    {
         VMMDevReq_InvalidRequest = 0,
         VMMDevReq_GetMouseStatus = 1,
@@ -58,5 +58,14 @@ namespace Sharpen.Drivers.Other
         VMMDevReq_GuestHeartbeat = 219,
         VMMDevReq_HeartbeatConfigure = 220,
         VMMDevReq_SizeHack = 0x7fffffff
+    }
+
+    public enum VboxDevPowerState
+    {
+        Invalid = 0,
+        Pause = 1,
+        PowerOff = 2,
+        SaveState = 3,
+        SizeHack = 0x7FFFFFFF
     }
 }
