@@ -11,7 +11,7 @@ namespace Sharpen.FileSystem
     class DevDictionary
     {
         private LongIndex m_index = new LongIndex();
-        private DevList m_values = new DevList();
+        private List m_values = new List();
         
         public void Clear()
         {
@@ -25,7 +25,7 @@ namespace Sharpen.FileSystem
 
         public Device GetAt(int index)
         {
-            return (index != -1) ? m_values.Item[index] : null;
+            return (index != -1) ? (Device)m_values.Item[index] : null;
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Sharpen.FileSystem
         {
             int index = m_index.IndexOf(key);
             
-            return (index != -1) ? m_values.Item[index]: null;
+            return (index != -1) ? (Device)m_values.Item[index]: null;
         }
     }
 }

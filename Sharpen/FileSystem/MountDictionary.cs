@@ -11,11 +11,21 @@ namespace Sharpen.FileSystem
     class MountDictionary
     {
         private LongIndex m_index = new LongIndex();
-        private MountList m_values = new MountList();
+        private List m_values = new List();
         
         public void Clear()
         {
             m_values.Clear();
+        }
+
+        public int Count()
+        {
+            return m_index.Count;
+        }
+
+        public MountPoint GetAt(int index)
+        {
+            return (index != -1) ? (MountPoint)m_values.Item[index] : null;
         }
 
         /// <summary>
@@ -43,7 +53,7 @@ namespace Sharpen.FileSystem
         {
             int index = m_index.IndexOf(key);
             
-            return (index != -1) ? m_values.Item[index]: null;
+            return (index != -1) ? (MountPoint)m_values.Item[index]: null;
         }
     }
 }

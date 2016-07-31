@@ -83,8 +83,6 @@
     <Compile Include="Drivers\Char\Keyboard.cs" />
     <Compile Include="Drivers\Char\KeyboardMap.cs" />
     <Compile Include="Drivers\Char\SerialPortExtras.cs" />
-    <Compile Include="FileSystem\DevList.cs" />
-    <Compile Include="FileSystem\MountList.cs" />
     <Compile Include="FileSystem\MountPoint.cs" />
     <Compile Include="FileSystem\Node.cs" />
     <Compile Include="FileSystem\VFS.cs" />

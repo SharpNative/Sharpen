@@ -28,6 +28,7 @@ namespace Sharpen
             void* heapStart = (void*)end;
             #region Multiboot
 
+            uint i;
             // Booted by a multiboot bootloader
             if (magic == Multiboot.Magic)
             {
@@ -47,7 +48,7 @@ namespace Sharpen
                     Console.WriteNum((int)modsCount);
                     Console.PutChar('\n');
 
-                    for (uint i = 0; i < modsCount; i++)
+                    for (i = 0; i < modsCount; i++)
                     {
                         Multiboot.Module** mods = (Multiboot.Module**)m_mbootHeader.ModsAddr;
                         Multiboot.Module module = *mods[i];
@@ -82,6 +83,7 @@ namespace Sharpen
             Keyboard.Init();
 
             DevFS.Init();
+            VFS.Init();
             SerialPort.Init();
             ATA.Probe();
 
@@ -91,14 +93,14 @@ namespace Sharpen
             //I217.Init();
 
 
-            Console.WriteLine("\nReaddir: devices://");
-            Node searchNode = VFS.GetByPath("devices://");
-            uint i = 0;
+            Console.WriteLine("\nReaddir: mounts://");
+            Node searchNode = VFS.GetByPath("mounts://");
+            i = 0;
             DirEntry* entry = searchNode.ReadDir(searchNode, i);
             i++;
             while (entry != null)
             {
-                Console.Write("\tdevices://");
+                Console.Write("mounts://");
                 Console.WriteLineP(entry->Name);
 
                 entry = searchNode.ReadDir(searchNode, i); 
@@ -107,8 +109,8 @@ namespace Sharpen
 
             // SET VM on pause
             //Console.WriteLine("Set VM on pause");
-            //Node node = VFS.GetByPath("devices://VMMDEV/powerstate");
-            //node.Write(node, 0, 4, ByteUtil.toBytes((int)VboxDevPowerState.Pause));
+            Node node = VFS.GetByPath("devices://test/VMMDEV/powerstate");
+            node.Write(node, 0, 4, ByteUtil.toBytes((int)VboxDevPowerState.Pause));
             
             while (true)
                 Console.PutChar(Keyboard.Getch());

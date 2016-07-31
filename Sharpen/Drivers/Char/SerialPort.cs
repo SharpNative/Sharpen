@@ -65,7 +65,6 @@ namespace Sharpen.Drivers.Char
 
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            uint i = 0;
             if (comports[node.Cookie].Address == 0)
                 return 0;
 

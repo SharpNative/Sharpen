@@ -1,10 +1,41 @@
-﻿using Sharpen.Collections;
+﻿using System;
+using Sharpen.Collections;
 
 namespace Sharpen.FileSystem
 {
     class VFS
     {
         private static MountDictionary m_dictionary = new MountDictionary();
+
+        public static unsafe void Init()
+        {
+            MountPoint mountPoint = new MountPoint();
+            mountPoint.Name = "mounts";
+            mountPoint.Node = new Node();
+            mountPoint.Node.ReadDir = readDirImpl;
+
+            AddMountPoint(mountPoint);
+        }
+
+        private static unsafe DirEntry* readDirImpl(Node node, uint index)
+        {
+            if (index >= m_dictionary.Count())
+                return null;
+
+            Console.WriteNum((int)index);
+
+            MountPoint dev = m_dictionary.GetAt((int)index);
+            if (dev == null)
+                return null;
+
+            DirEntry *entry = (DirEntry *)Heap.Alloc(sizeof(DirEntry));
+            int i = 0;
+            for (; dev.Name[i] != '\0'; i++)
+                entry->Name[i] = dev.Name[i];
+            entry->Name[i] = '\0';
+
+            return entry;
+        }
 
         /// <summary>
         /// Generate hash from string
@@ -73,8 +104,9 @@ namespace Sharpen.FileSystem
 
             if (mp == null)
                 return null;
-
+            
             Node lastNode = mp.Node;
+
             // TODO: Optimize this process!
             string nodeName = AfterDeviceName;
             string afterNodeName = AfterDeviceName;
@@ -84,13 +116,13 @@ namespace Sharpen.FileSystem
                 
                 nodeName = String.Substring(afterNodeName, 0, index);
                 afterNodeName = String.Substring(afterNodeName, index + 1, String.Length(path) - 1);
-                
                 lastNode = lastNode.FindDir(lastNode, nodeName);
 
-                // TODO: Check gives out of bounds exception!
+                Console.WriteLine("a");
+                
                 if (lastNode == null)
                     return null;
-                
+                Console.WriteLine("b");
                 parts--;
             }
             
