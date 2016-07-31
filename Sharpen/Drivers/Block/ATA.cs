@@ -365,11 +365,12 @@ namespace Sharpen.Drivers.Block
                 Devices[num].BasePort = port;
                 Devices[num].Channel = channel;
                 Devices[num].Drive = drive;
-
+                
                 byte[] result = Identify(channel, drive);
-
+                
                 if (result == null)
                 {
+                    Console.WriteLine("NUM");
                     Devices[num].Exists = false;
                     num++;
                     continue;

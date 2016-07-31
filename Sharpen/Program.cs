@@ -93,24 +93,26 @@ namespace Sharpen
             //I217.Init();
 
 
-            Console.WriteLine("\nReaddir: mounts://");
-            Node searchNode = VFS.GetByPath("mounts://");
+            Console.WriteLine("\nReaddir: devices://");
+            Node searchNode = VFS.GetByPath("devices://");
             i = 0;
             DirEntry* entry = searchNode.ReadDir(searchNode, i);
             i++;
             while (entry != null)
             {
-                Console.Write("mounts://");
+                Console.Write("\tdevices://");
                 Console.WriteLineP(entry->Name);
 
                 entry = searchNode.ReadDir(searchNode, i); 
                 i++;
             }
 
+            byte[] buf = new byte[55];
+
             // SET VM on pause
             //Console.WriteLine("Set VM on pause");
-            Node node = VFS.GetByPath("devices://VMMDEV/powerstate");
-            node.Write(node, 0, 4, ByteUtil.toBytes((int)VboxDevPowerState.Pause));
+            //Node node = VFS.GetByPath("devices://keyboard");
+            //node.Read(node, 0, 4, buf);
             
             while (true)
                 Console.PutChar(Keyboard.Getch());

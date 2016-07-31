@@ -21,6 +21,22 @@ namespace Sharpen.Collections
             m_size = size;
         }
 
+        public unsafe uint ReadWait(byte[] buffer, ushort size)
+        {
+            ushort left = size;
+            uint offset = 0;
+
+            while(left > 0)
+            {
+                uint sz = Read(buffer, left, offset);
+
+                left -= (ushort)sz;
+                offset += sz;
+            }
+
+            return size;
+        }
+
         /// <summary>
         /// Read from fifo struct
         /// </summary>
@@ -29,7 +45,18 @@ namespace Sharpen.Collections
         /// <returns></returns>
         public unsafe uint Read(byte[] buffer, ushort size)
         {
-            uint j = 0;
+            return Read(buffer, size, 0);
+        }
+
+        /// <summary>
+        /// Read from fifo struct
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        public unsafe uint Read(byte[] buffer, ushort size, uint offset)
+        {
+            uint j = offset;
 
             if (m_wait)
             {
@@ -55,7 +82,6 @@ namespace Sharpen.Collections
                 }
                 else
                 {
-                    Console.WriteLine("JA");
                     // We may return if we shouldn't wait
                     return i;
                 }

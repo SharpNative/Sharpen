@@ -117,12 +117,9 @@ namespace Sharpen.FileSystem
                 nodeName = String.Substring(afterNodeName, 0, index);
                 afterNodeName = String.Substring(afterNodeName, index + 1, String.Length(path) - 1);
                 lastNode = lastNode.FindDir(lastNode, nodeName);
-
-                Console.WriteLine("a");
                 
                 if (lastNode == null)
                     return null;
-                Console.WriteLine("b");
                 parts--;
             }
             
