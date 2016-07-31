@@ -64,7 +64,7 @@ namespace Sharpen.Drivers.Sound
 
             m_nambar = dev.Port1;
             m_nabmbar = dev.Port2;
-
+            
             // "Map" IRQ
             uint irqNum = PCI.PciRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
             IRQ.SetHandler((int)irqNum, irqHandler);
@@ -78,21 +78,20 @@ namespace Sharpen.Drivers.Sound
             ushort volume = 0x03 | (0x03 << 8);
             PortIO.Out16((ushort)(m_nambar + MASTER_VOLUME), volume);
             PortIO.Out16((ushort)(m_nambar + PCM_OUT_VOLUME), volume);
-
+            
             m_bufs = (ushort**)Heap.Alloc(sizeof(ushort*) * 32);
-
-            for(int i = 0; i < 32; i++)
+            
+            for (int i = 0; i < 32; i++)
             {
-                m_bufs[i] = (ushort *)Heap.Alloc(sizeof(ushort) * 0x1000);
-
+                m_bufs[i] = (ushort*)Heap.Alloc(sizeof(ushort) * 0x1000);
                 m_bdls[i].pointer = (uint)m_bufs[i];
                 m_bdls[i].cl = 0x1000 & 0xFFFF;
 
                 m_bdls[i].cl |= CL_IOC;
             }
-
+            
             // Tell BDL location
-            PortIO.Out32((ushort)(m_nabmbar + BDBAR), (uint)Util.ObjectToVoidPtr(m_bdls));
+            PortIO.Out32((ushort)(m_nabmbar + BDBAR), (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_bdls)));
 
             // Set last valid index to 2
             PortIO.Out8((ushort)(m_nabmbar + LVI), 2);

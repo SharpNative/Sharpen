@@ -76,21 +76,6 @@ namespace Sharpen
 
             Paging.Init();
             Heap.SetupRealHeap();
-            Console.WriteLine("paging and heap on");
-
-            void* a = Heap.Alloc(800);
-            void* b = Heap.Alloc(400);
-            Heap.Free(a);
-            void* c = Heap.Alloc(800);
-            void* d = Heap.AlignedAlloc(0x1000, 600);
-            Console.WriteHex((int)a);
-            Console.Write(" ");
-            Console.WriteHex((int)b);
-            Console.Write(" ");
-            Console.WriteHex((int)c);
-            Console.Write(" ");
-            Console.WriteHex((int)d);
-            Console.Write(" ");
 
             PIT.Init();
             CMOS.UpdateTime();
@@ -103,6 +88,8 @@ namespace Sharpen
             AC97.Init();
             VirtualboxDevice.Init();
             //I217.Init();
+
+            VirtualboxDevice.ChangePowerState(VirtualboxDevice.PowerState.Pause);
 
             while (true)
                 Console.PutChar(Keyboard.Getch());

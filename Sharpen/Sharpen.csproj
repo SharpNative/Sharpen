@@ -84,11 +84,13 @@
     <Compile Include="Heap.cs" />
     <Compile Include="Collections\Fifo.cs" />
     <Compile Include="Collections\List.cs" />
+    <Compile Include="Collections\BitArray.cs" />
     <Compile Include="Lib\Audio.cs" />
     <Compile Include="Memory.cs" />
     <Compile Include="Multiboot.cs" />
     <Compile Include="Panic.cs" />
     <Compile Include="Arch\PortIO.cs" />
+    <Compile Include="Arch\Paging.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="String.cs" />

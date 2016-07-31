@@ -167,6 +167,9 @@ namespace Sharpen.Arch
 
             // Calculate page
             int page = table->pages[frame & (1024 - 1)];
+            Console.WriteNum(page);
+            Console.Write(" << page ");
+            Console.WriteHex((int)table);
             return (void*)(GetFrameAddress(page) * 0x1000 + remaining);
         }
 

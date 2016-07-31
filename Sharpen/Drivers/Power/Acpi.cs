@@ -60,8 +60,6 @@ namespace Sharpen.Drivers.Power
                 if (rdsp == (RDSP*)0)
                     Panic.DoPanic("RDSP not found!");
             }
-
-            char b = rdsp->OEMID[0];
             
             rsdt = (RSDT*)rdsp->RsdtAddress;
             if (rsdt == (RSDT*)0)

@@ -11,7 +11,7 @@ namespace Sharpen.Drivers.Other
     {
         public enum PowerState
         {
-            Invailid = 0,
+            Invalid = 0,
             Pause = 1,
             PowerOff = 2,
             SaveState = 3, 
@@ -66,7 +66,8 @@ namespace Sharpen.Drivers.Other
             req->osType = 0x10000;
 
 
-            PortIO.Out32(m_dev.Port1, (uint)req);
+            Console.WriteHex((int)Paging.GetPhysicalFromVirtual(req));
+            PortIO.Out32(m_dev.Port1, (uint)Paging.GetPhysicalFromVirtual(req));
 
             if (req->header.rc == 0)
             {
@@ -119,7 +120,7 @@ namespace Sharpen.Drivers.Other
             req->header.rc = 0xFFFFF;
             req->PowerState = state;
 
-            PortIO.Out32(m_dev.Port1, (uint)req);
+            PortIO.Out32(m_dev.Port1, (uint)Paging.GetPhysicalFromVirtual(req));
         }
 
         /// <summary>
@@ -134,7 +135,7 @@ namespace Sharpen.Drivers.Other
             req->header.requestType = VBoxRequestTypes.VMMDevReq_GetSessionId;
             req->header.rc = 0xFFFFF;
 
-            PortIO.Out32(m_dev.Port1, (uint)req);
+            PortIO.Out32(m_dev.Port1, (uint)Paging.GetPhysicalFromVirtual(req));
 
             return req->idSession;
         }

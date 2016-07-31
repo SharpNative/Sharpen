@@ -8,8 +8,8 @@ namespace Sharpen.Lib
 {
     public enum AudioActions
     {
-        Master,
-        PCM_OUT
+        Master = 0,
+        PCM_OUT = 1
     }
 
     class Audio

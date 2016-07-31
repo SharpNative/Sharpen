@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Drivers.Char;
 
 namespace Sharpen
 {
@@ -147,7 +148,7 @@ namespace Sharpen
                 // Find a descriptor that is big enough to hold the block header and its data
                 // We need to look for something that can hold an aligned size if alignment is requested
                 size += sizeof(Block);
-
+                
                 int alignedSize = size;
                 if (alignedSize % alignment != 0)
                 {
@@ -185,18 +186,33 @@ namespace Sharpen
                                 // Padding size is the difference between the new block address and the old block address
                                 int paddingSize = address - (int)currentBlock;
                                 int remainingAfterSplit = currentBlock->Size - paddingSize;
-                                padding->Used = false;
-                                padding->Size = paddingSize;
 
-                                // Remaining block after padding
                                 Block* afterPadding = (Block*)((int)padding + paddingSize);
-                                afterPadding->Next = padding->Next;
-                                padding->Next = afterPadding;
-                                afterPadding->Used = true;
-                                afterPadding->Prev = padding;
-                                afterPadding->Size = remainingAfterSplit;
-                                afterPadding->Descriptor = descriptor;
+                                if (paddingSize <= sizeof(Block))
+                                {
+                                    // Waste of space to include padding and also impossible
+                                    Block* prev = padding->Prev;
+                                    Block* next = padding->Next;
 
+                                    prev->Next = afterPadding;
+                                    afterPadding->Next = next;
+                                    afterPadding->Prev = prev;
+                                    afterPadding->Size = remainingAfterSplit;
+                                    afterPadding->Descriptor = descriptor;
+                                }
+                                else
+                                {
+                                    padding->Used = false;
+                                    padding->Size = paddingSize;
+
+                                    // Remaining block after padding
+                                    afterPadding->Next = padding->Next;
+                                    padding->Next = afterPadding;
+                                    afterPadding->Prev = padding;
+                                    afterPadding->Size = remainingAfterSplit;
+                                    afterPadding->Descriptor = descriptor;
+                                }
+                                
                                 currentBlock = afterPadding;
                             }
                         }
@@ -211,6 +227,7 @@ namespace Sharpen
                             // Create block
                             newNext = (Block*)((int)currentBlock + size);
                             newNext->Used = false;
+                            newNext->Prev = currentBlock;
                             newNext->Next = currentBlock->Next;
                             newNext->Size = remaining;
                             newNext->Descriptor = descriptor;
@@ -224,7 +241,7 @@ namespace Sharpen
                         // Return block (skip header)
                         return (void*)((int)currentBlock + sizeof(Block));
                     }
-
+                    
                     // Next block
                     currentBlock = currentBlock->Next;
                     if (currentBlock == null)
@@ -277,6 +294,33 @@ namespace Sharpen
                 prev->Size += block->Size;
                 prev->Next = block->Next;
                 block->Next->Prev = prev;
+            }
+        }
+
+        /// <summary>
+        /// Dumps the data
+        /// </summary>
+        public static void Dump()
+        {
+            BlockDescriptor* descriptor = firstDescriptor;
+            Block* currentBlock = descriptor->First;
+
+            // Search in the descriptor
+            while (true)
+            {
+                Console.Write("Block: size=");
+                Console.WriteHex(currentBlock->Size);
+                Console.Write(" used:");
+                Console.Write((currentBlock->Used ? "yes" : "no"));
+                Console.Write(" next=");
+                Console.WriteHex((int)currentBlock->Next);
+                Console.Write(" i am=");
+                Console.WriteHex((int)currentBlock);
+                Console.WriteLine("");
+
+                currentBlock = currentBlock->Next;
+                if (currentBlock == null)
+                    return;
             }
         }
 
