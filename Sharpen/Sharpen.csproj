@@ -56,14 +56,16 @@
     <Compile Include="Arch\IDT.cs" />
     <Compile Include="Arch\IRQ.cs" />
     <Compile Include="Arch\ISR.cs" />
-    <Compile Include="Arch\Paging.cs" />
     <Compile Include="Arch\PCI.cs" />
     <Compile Include="Arch\PIC.cs" />
     <Compile Include="Arch\PIT.cs" />
     <Compile Include="Arch\Regs.cs" />
-    <Compile Include="Collections\BitArray.cs" />
+    <Compile Include="Drivers\Net\I217.cs" />
+    <Compile Include="Drivers\Other\VirtualboxDevice.cs" />
+    <Compile Include="Drivers\Other\VirtualboxDeviceExtras.cs" />
     <Compile Include="Drivers\Power\Acpi.cs" />
     <Compile Include="Drivers\Power\AcpiExtras.cs" />
+    <Compile Include="Drivers\Sound\IntelHD.cs" />
     <Compile Include="Drivers\Sound\AC97.cs" />
     <Compile Include="FileSystem\MountDictionary.cs" />
     <Compile Include="Collections\LongIndex.cs" />
@@ -82,6 +84,7 @@
     <Compile Include="Heap.cs" />
     <Compile Include="Collections\Fifo.cs" />
     <Compile Include="Collections\List.cs" />
+    <Compile Include="Lib\Audio.cs" />
     <Compile Include="Memory.cs" />
     <Compile Include="Multiboot.cs" />
     <Compile Include="Panic.cs" />

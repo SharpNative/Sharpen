@@ -1,6 +1,8 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Drivers.Block;
 using Sharpen.Drivers.Char;
+using Sharpen.Drivers.Net;
+using Sharpen.Drivers.Other;
 using Sharpen.Drivers.Power;
 using Sharpen.Drivers.Sound;
 using Sharpen.FileSystem;
@@ -99,6 +101,8 @@ namespace Sharpen
             
             PCI.Probe();
             AC97.Init();
+            VirtualboxDevice.Init();
+            //I217.Init();
 
             while (true)
                 Console.PutChar(Keyboard.Getch());

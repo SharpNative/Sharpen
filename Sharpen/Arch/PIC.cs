@@ -45,10 +45,6 @@
         /// </summary>
         public static void Remap()
         {
-            // Save masks
-            byte masterMask = PortIO.In8(MASTER_PIC_DATA);
-            byte slaveMask = PortIO.In8(SLAVE_PIC_DATA);
-
             // Initialize
             PortIO.Out8(MASTER_PIC_CMD, PIC_INIT);
             PortIO.Out8(SLAVE_PIC_CMD, PIC_INIT);
@@ -66,10 +62,10 @@
             // 8086 mode
             PortIO.Out8(MASTER_PIC_DATA, PIC_8086);
             PortIO.Out8(SLAVE_PIC_DATA, PIC_8086);
-
-            // Restore saved masks
-            PortIO.Out8(MASTER_PIC_DATA, masterMask);
-            PortIO.Out8(SLAVE_PIC_DATA, slaveMask);
+            
+            // No masks
+            PortIO.Out8(MASTER_PIC_DATA, 0);
+            PortIO.Out8(SLAVE_PIC_DATA, 0);
         }
     }
 }
