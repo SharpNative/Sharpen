@@ -63,10 +63,11 @@ namespace Sharpen.FileSystem
              */
             int lba = (cylinder * hpc + BeginHead) * spt + (Sector - 1);
             
+            byte[] bootSector = new byte[512];
+            dev.Read(dev, (uint)lba, 512, bootSector);
+            
 
-
-            Console.WriteHex(systemID);
-
+            Console.WriteHex(bootSector[0]);
         }
     }
 }
