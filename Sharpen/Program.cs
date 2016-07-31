@@ -92,6 +92,10 @@ namespace Sharpen
             VboxDev.Init();
             //I217.Init();
 
+            Tasking.Init();
+            Tasking.AddTask(Util.MethodToPtr(Test1), TaskPriority.VERYLOW);
+            Tasking.AddTask(Util.MethodToPtr(Test2), TaskPriority.VERYHIGH);
+
             Console.WriteLine("\nReaddir: devices://");
             Node searchNode = VFS.GetByPath("devices://");
             i = 0;
@@ -112,6 +116,18 @@ namespace Sharpen
             // Idle loop
             while (true)
                 CPU.HLT();
+        }
+
+        public static void Test1()
+        {
+            while (true)
+                Console.PutChar('a');
+        }
+
+        public static void Test2()
+        {
+            while (true)
+                Console.PutChar('b');
         }
     }
 }

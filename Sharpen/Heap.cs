@@ -148,8 +148,9 @@ namespace Sharpen
                 // Find a descriptor that is big enough to hold the block header and its data
                 // We need to look for something that can hold an aligned size if alignment is requested
                 size += sizeof(Block);
-                
-                int alignedSize = size;
+
+                // Safe size
+                int alignedSize = size * 2;
                 if (alignedSize % alignment != 0)
                 {
                     alignedSize = size - (size % alignment);
@@ -170,7 +171,7 @@ namespace Sharpen
                             int currentData = (int)currentBlock + sizeof(Block);
 
                             // Not aligned
-                            if(currentData % alignment != 0)
+                            if (currentData % alignment != 0)
                             {
                                 // Split the current block into two
                                 // The first part is a padding
@@ -191,8 +192,8 @@ namespace Sharpen
                                 if (paddingSize <= sizeof(Block))
                                 {
                                     // Waste of space to include padding and also impossible
-                                    Block* prev = padding->Prev;
-                                    Block* next = padding->Next;
+                                    Block* next = currentBlock->Next;
+                                    Block* prev = currentBlock->Prev;
 
                                     prev->Next = afterPadding;
                                     afterPadding->Next = next;
@@ -212,7 +213,7 @@ namespace Sharpen
                                     afterPadding->Size = remainingAfterSplit;
                                     afterPadding->Descriptor = descriptor;
                                 }
-                                
+
                                 currentBlock = afterPadding;
                             }
                         }
@@ -221,7 +222,7 @@ namespace Sharpen
                         int remaining = currentBlock->Size - size;
 
                         // When needed, create a block that follows this block
-                        Block* newNext = currentBlock->Next;
+                        Block* newNext = null;
                         if (remaining > sizeof(Block))
                         {
                             // Create block
@@ -237,11 +238,12 @@ namespace Sharpen
                         currentBlock->Used = true;
                         currentBlock->Next = newNext;
                         currentBlock->Size = size;
+                        descriptor->FreeSpace -= size;
 
                         // Return block (skip header)
                         return (void*)((int)currentBlock + sizeof(Block));
                     }
-                    
+
                     // Next block
                     currentBlock = currentBlock->Next;
                     if (currentBlock == null)
@@ -250,7 +252,7 @@ namespace Sharpen
             }
             else
             {
-                if(alignment == 0x1000)
+                if (alignment == 0x1000)
                     return KAlloc(size, true);
                 else
                     return KAlloc(size, false);
@@ -277,6 +279,7 @@ namespace Sharpen
 
             // Not used anymore
             block->Used = false;
+            block->Descriptor->FreeSpace += block->Size;
 
             // Merge forward
             if (block->Next != null && !block->Next->Used)
@@ -298,6 +301,25 @@ namespace Sharpen
         }
 
         /// <summary>
+        /// Dumps a block
+        /// </summary>
+        /// <param name="currentBlock">The block</param>
+        private static unsafe void DumpBlock(Block* currentBlock)
+        {
+            Console.Write("Block: size=");
+            Console.WriteHex(currentBlock->Size);
+            Console.Write(" used:");
+            Console.Write((currentBlock->Used ? "yes" : "no"));
+            Console.Write(" prev=");
+            Console.WriteHex((int)currentBlock->Prev);
+            Console.Write(" next=");
+            Console.WriteHex((int)currentBlock->Next);
+            Console.Write(" i am=");
+            Console.WriteHex((int)currentBlock);
+            Console.WriteLine("");
+        }
+
+        /// <summary>
         /// Dumps the data
         /// </summary>
         public static void Dump()
@@ -308,15 +330,8 @@ namespace Sharpen
             // Search in the descriptor
             while (true)
             {
-                Console.Write("Block: size=");
-                Console.WriteHex(currentBlock->Size);
-                Console.Write(" used:");
-                Console.Write((currentBlock->Used ? "yes" : "no"));
-                Console.Write(" next=");
-                Console.WriteHex((int)currentBlock->Next);
-                Console.Write(" i am=");
-                Console.WriteHex((int)currentBlock);
-                Console.WriteLine("");
+                DumpBlock(currentBlock);
+                Keyboard.Getch();
 
                 currentBlock = currentBlock->Next;
                 if (currentBlock == null)
