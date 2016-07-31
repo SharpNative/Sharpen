@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Sharpen.FileSystem
+namespace Sharpen.Collections
 {
-    class DevDictionary
+    class Dictionary
     {
         private LongIndex m_index = new LongIndex();
         private List m_values = new List();
@@ -23,9 +23,9 @@ namespace Sharpen.FileSystem
             return m_values.Count;
         }
 
-        public Device GetAt(int index)
+        public object GetAt(int index)
         {
-            return (index != -1) ? (Device)m_values.Item[index] : null;
+            return (index != -1) ? m_values.Item[index] : null;
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="key"></param>
         /// <param name="val"></param>
-        public unsafe void Add(long key, Device val)
+        public unsafe void Add(long key, object val)
         {
             int index = m_index.IndexOf(key);
             
@@ -49,11 +49,11 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        public Device GetByKey(long key)
+        public object GetByKey(long key)
         {
             int index = m_index.IndexOf(key);
-            
-            return (index != -1) ? (Device)m_values.Item[index]: null;
+
+            return (index != -1) ? m_values.Item[index]: null;
         }
     }
 }

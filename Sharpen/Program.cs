@@ -27,7 +27,8 @@ namespace Sharpen
 
             void* heapStart = (void*)end;
             #region Multiboot
-            
+
+            uint i;
             // Booted by a multiboot bootloader
             if (magic == Multiboot.Magic)
             {
@@ -47,7 +48,7 @@ namespace Sharpen
                     Console.WriteNum((int)modsCount);
                     Console.PutChar('\n');
 
-                    for (int i = 0; i < modsCount; i++)
+                    for (i = 0; i < modsCount; i++)
                     {
                         Multiboot.Module** mods = (Multiboot.Module**)m_mbootHeader.ModsAddr;
                         Multiboot.Module module = *mods[i];
@@ -69,7 +70,6 @@ namespace Sharpen
             #endregion
 
             Heap.Init(heapStart);
-
             GDT.Init();
             PIC.Remap();
             IDT.Init();
@@ -80,48 +80,38 @@ namespace Sharpen
 
             PIT.Init();
             CMOS.UpdateTime();
-            
+            Keyboard.Init();
+
             DevFS.Init();
             VFS.Init();
-
-            Keyboard.Init();
             SerialPort.Init();
-            ATA.Probe();
 
             PCI.Probe();
             //AC97.Init();
+            ATA.Init();
             VboxDev.Init();
             //I217.Init();
 
             Tasking.Init();
-
             Tasking.AddTask(Util.MethodToPtr(Test1), TaskPriority.VERYLOW);
             Tasking.AddTask(Util.MethodToPtr(Test2), TaskPriority.VERYHIGH);
 
-            
-            Console.WriteLine("\nReaddir: mounts://");
-            Node searchNode = VFS.GetByPath("mounts://");
-            uint j = 0;
-            DirEntry* entry = searchNode.ReadDir(searchNode, j);
-            j++;
+            Console.WriteLine("\nReaddir: devices://");
+            Node searchNode = VFS.GetByPath("devices://");
+            i = 0;
+            DirEntry* entry = searchNode.ReadDir(searchNode, i);
+            i++;
             while (entry != null)
             {
-                Console.Write("mounts://");
+                Console.Write("\tdevices://");
                 Console.WriteLineP(entry->Name);
 
-                entry = searchNode.ReadDir(searchNode, j); 
-                j++;
+                entry = searchNode.ReadDir(searchNode, i);
+                i++;
             }
 
-            // SET VM on pause
-            //Console.WriteLine("Set VM on pause");
-            //Node node = VFS.GetByPath("devices://VMMDEV/powerstate");
-            //node.Write(node, 0, 4, ByteUtil.toBytes((int)VboxDevPowerState.Pause));
-            
-            while (true)
-                Console.PutChar(Keyboard.Getch());
-
-
+            Node hddNode = VFS.GetByPath("devices://HDD0");
+            Fat32 fat = new Fat32(hddNode, "C");
 
             // Idle loop
             while (true)
@@ -131,17 +121,13 @@ namespace Sharpen
         public static void Test1()
         {
             while (true)
-            {
                 Console.PutChar('a');
-            }
         }
 
         public static void Test2()
         {
             while (true)
-            {
                 Console.PutChar('b');
-            }
         }
     }
 }

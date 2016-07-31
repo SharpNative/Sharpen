@@ -1,4 +1,6 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Collections;
+using Sharpen.FileSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,6 +41,7 @@ namespace Sharpen.Drivers.Char
 
         private static char readchar;
         private static volatile int readingchar;
+        private static Fifo m_fifo = new Fifo(250);
 
         /// <summary>
         /// Set keyboard leds
@@ -106,6 +109,40 @@ namespace Sharpen.Drivers.Char
         {
             // Install the IRQ handler
             IRQ.SetHandler(1, Handler);
+
+            Device device = new Device();
+            device.Name = "keyboard";
+            device.node = new Node();
+            device.node.Read = readImpl;
+            device.node.Write = writeImpl;
+
+            DevFS.RegisterDevice(device);
+        }
+
+        /// <summary>
+        /// There no write!
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="offset"></param>
+        /// <param name="size"></param>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
+        {
+            return 0;
+        }
+
+        /// <summary>
+        /// Read from keyboard
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="offset"></param>
+        /// <param name="size"></param>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
+        {
+            return m_fifo.ReadWait(buffer, (ushort)size);
         }
 
         /// <summary>
@@ -161,6 +198,9 @@ namespace Sharpen.Drivers.Char
                 else
                 {
                     readchar = transformKey(scancode);
+
+                    m_fifo.WriteByte((byte)readchar);
+
                     readingchar = 0;
                 }
 

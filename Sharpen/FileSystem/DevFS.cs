@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sharpen.Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace Sharpen.FileSystem
 {
     public class DevFS
     {
-        private static DevDictionary m_devices = new DevDictionary();
+        private static Dictionary m_devices = new Dictionary();
         private static Node m_currentNode;
 
         public unsafe static void Init()
@@ -32,7 +33,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="inVal">Name</param>
         /// <returns></returns>
-        private static long GenerateHash(string inVal)
+        public static long GenerateHash(string inVal)
         {
             long hash = 0;
 
@@ -63,7 +64,7 @@ namespace Sharpen.FileSystem
         {
             long hash = GenerateHash(name);
             
-            Device dev = m_devices.GetByKey(hash);
+            Device dev = (Device)m_devices.GetByKey(hash);
 
             if (dev == null)
                 return null;
@@ -76,7 +77,8 @@ namespace Sharpen.FileSystem
             if (index >= m_devices.Count())
                 return null;
 
-            Device dev = m_devices.GetAt((int)index);
+
+            Device dev = (Device)m_devices.GetAt((int)index);
             if (dev == null)
                 return null;
 
