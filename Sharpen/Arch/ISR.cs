@@ -33,7 +33,10 @@
         public static unsafe void Handler(Regs* regsPtr)
         {
             int isrNum = (*regsPtr).IntNum;
-            Panic.DoPanic(m_errorCodes[isrNum]);
+            //Panic.DoPanic(m_errorCodes[isrNum]);
+            Console.WriteLine(m_errorCodes[isrNum]);
+            CPU.CLI();
+            CPU.HLT();
         }
     }
 }

@@ -56,10 +56,12 @@
     <Compile Include="Arch\IDT.cs" />
     <Compile Include="Arch\IRQ.cs" />
     <Compile Include="Arch\ISR.cs" />
+    <Compile Include="Arch\Paging.cs" />
     <Compile Include="Arch\PCI.cs" />
     <Compile Include="Arch\PIC.cs" />
     <Compile Include="Arch\PIT.cs" />
     <Compile Include="Arch\Regs.cs" />
+    <Compile Include="Collections\BitArray.cs" />
     <Compile Include="Drivers\Power\Acpi.cs" />
     <Compile Include="Drivers\Power\AcpiExtras.cs" />
     <Compile Include="Drivers\Sound\AC97.cs" />

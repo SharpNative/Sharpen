@@ -69,15 +69,34 @@ namespace Sharpen
             Heap.Init(heapStart);
             GDT.Init();
             PIC.Remap();
+            IDT.Init();
+            Acpi.Init();
+
+            Paging.Init();
+            Heap.SetupRealHeap();
+            Console.WriteLine("paging and heap on");
+
+            void* a = Heap.Alloc(800);
+            void* b = Heap.Alloc(400);
+            Heap.Free(a);
+            void* c = Heap.Alloc(800);
+            void* d = Heap.AlignedAlloc(0x1000, 600);
+            Console.WriteHex((int)a);
+            Console.Write(" ");
+            Console.WriteHex((int)b);
+            Console.Write(" ");
+            Console.WriteHex((int)c);
+            Console.Write(" ");
+            Console.WriteHex((int)d);
+            Console.Write(" ");
+
             PIT.Init();
             CMOS.UpdateTime();
-            IDT.Init();
             Keyboard.Init();
-            Acpi.Init();
+
 
             ATA.Probe();
             
-
             PCI.Probe();
             AC97.Init();
 

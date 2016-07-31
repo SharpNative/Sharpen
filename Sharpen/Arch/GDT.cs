@@ -49,17 +49,7 @@ namespace Sharpen.Arch
         private static GDT_Pointer m_ptr;
 
         #region Helpers
-
-        /// <summary>
-        /// Converts descriptor type
-        /// </summary>
-        /// <param name="a"></param>
-        /// <returns></returns>
-        private static int DescriptorType(int a)
-        {
-            return (a << 0x04);
-        }
-
+        
         /// <summary>
         /// Converts privilege level
         /// </summary>
@@ -70,48 +60,17 @@ namespace Sharpen.Arch
             return (a << 0x05);
         }
 
-        /// <summary>
-        /// Converts present
-        /// </summary>
-        /// <param name="a"></param>
-        /// <returns></returns>
-        private static int Present(int a)
-        {
-            return (a << 0x07);
-        }
-
-        /// <summary>
-        /// Converts available
-        /// </summary>
-        /// <param name="a"></param>
-        /// <returns></returns>
-        private static int Available(int a)
-        {
-            return (a << 0x0C);
-        }
-
-        /// <summary>
-        /// Converts size
-        /// </summary>
-        /// <param name="a"></param>
-        /// <returns></returns>
-        private static int Size(int a)
-        {
-            return (a << 0x06);
-        }
-
-        /// <summary>
-        /// Converts granularity
-        /// </summary>
-        /// <param name="a"></param>
-        /// <returns></returns>
-        private static int Granularity(int a)
-        {
-            return (a << 0x07);
-        }
-
         #endregion
-
+        
+        enum GDTFlags
+        {
+            DescriptorCodeOrData = (1 << 0x4),
+            Size32 = (1 << 0x6),
+            Present = (1 << 0x7),
+            Available = (1 << 0xC),
+            Granularity = (1 << 0xF)
+        }
+        
         /// <summary>
         /// Sets a GDT entry in the table
         /// </summary>
@@ -120,7 +79,7 @@ namespace Sharpen.Arch
         /// <param name="limit">The limit</param>
         /// <param name="access">The access type</param>
         /// <param name="granularity">Granularity</param>
-        public static void SetEntry(int num, ulong base_address, ulong limit, byte access, byte granularity)
+        public static void SetEntry(int num, ulong base_address, ulong limit, int access, int granularity)
         {
             // Address
             m_entries[num].BaseLow = (ushort)(base_address & 0xFFFF);
@@ -133,7 +92,7 @@ namespace Sharpen.Arch
 
             // Set access and granularity
             m_entries[num].Granularity |= (byte)(granularity & 0xF0);
-            m_entries[num].Access = access;
+            m_entries[num].Access = (byte)access;
         }
 
         /// <summary>
@@ -156,10 +115,10 @@ namespace Sharpen.Arch
             SetEntry(0, 0, 0, 0, 0);
 
             // Kernel code segment
-            SetEntry(1, 0, 0xFFFFFFFF, (byte)((int)GDT_Data.ER | DescriptorType(1) | Privilege(0) | Present(1)), (byte)(Size(1) | Granularity(1)));
+            SetEntry(1, 0, 0xFFFFFFFF, (int)GDT_Data.ER | (int)GDTFlags.DescriptorCodeOrData | Privilege(0) | (int)GDTFlags.Present, (int)GDTFlags.Size32 | (int)GDTFlags.Granularity);
 
             // Kernel data segment
-            SetEntry(2, 0, 0xFFFFFFFF, (byte)((int)GDT_Data.RW | DescriptorType(1) | Privilege(0) | Present(1)), (byte)(Size(1) | Granularity(1)));
+            SetEntry(2, 0, 0xFFFFFFFF, (int)GDT_Data.RW | (int)GDTFlags.DescriptorCodeOrData | Privilege(0) | (int)GDTFlags.Present, (int)GDTFlags.Size32 | (int)GDTFlags.Granularity);
 
             // Flush GDT
             fixed (GDT_Pointer* ptr = &m_ptr)
