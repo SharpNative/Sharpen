@@ -40,8 +40,8 @@
         private static int m_frequency;
 
         // Timer ticks
-        private static int m_subTicks = 0;
-        private static int m_fullTicks = 0;
+        public static int SubTicks { get; private set; }
+        public static int FullTicks { get; private set; }
 
         #region Helpers
 
@@ -110,8 +110,8 @@
         /// </summary>
         public static unsafe void Init()
         {
-            // Set to 100Hz
-            Frequency = 100;
+            // Set frequency in one second
+            Frequency = 200;
 
             // Install the IRQ handler
             IRQ.SetHandler(0, Handler);
@@ -121,17 +121,17 @@
         /// PIT handler
         /// </summary>
         /// <param name="regsPtr">Pointer to registers</param>
-        public static unsafe void Handler(Regs* regsPtr)
+        private static unsafe void Handler(Regs* regsPtr)
         {
             // Update ticks
-            m_subTicks++;
+            SubTicks++;
 
             // One second
-            if (m_subTicks == m_frequency)
+            if (SubTicks == m_frequency)
             {
                 // Update ticks
-                m_subTicks = 0;
-                m_fullTicks++;
+                SubTicks = 0;
+                FullTicks++;
 
                 // Re-read the CMOS time every hour
                 Time.Seconds++;
