@@ -23,7 +23,7 @@ namespace Sharpen.FileSystem
         public unsafe delegate void FSOpen(Node node, uint read, uint write);
         public unsafe delegate void FSClose(Node node);
         public unsafe delegate Node FSFindDir(Node node, string name);
-        public unsafe delegate void FSReaddir(Node node, uint index);
+        public unsafe delegate DirEntry *FSReaddir(Node node, uint index);
     }
 
     public class NodeFlags

@@ -18,6 +18,16 @@ namespace Sharpen.FileSystem
             m_values.Clear();
         }
 
+        public int Count()
+        {
+            return m_values.Count;
+        }
+
+        public Device GetAt(int index)
+        {
+            return (index != -1) ? m_values.Item[index] : null;
+        }
+
         /// <summary>
         /// Add value by key
         /// </summary>

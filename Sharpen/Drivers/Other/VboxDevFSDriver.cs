@@ -22,8 +22,7 @@ namespace Sharpen.Drivers.Other
 
             Console.WriteLine("[VMMDev] FsDevice registered under VMMDEV");
         }
-
-
+        
 
         private static unsafe Node findDirImpl(Node node, string name)
         {
@@ -44,6 +43,7 @@ namespace Sharpen.Drivers.Other
             outNode.Cookie = functionID;
             outNode.Read = readImpl;
             outNode.Write = writeImpl;
+            outNode.Flags = NodeFlags.FILE;
 
             return outNode;
         }

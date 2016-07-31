@@ -82,19 +82,53 @@ namespace Sharpen
             Keyboard.Init();
 
             DevFS.Init();
-            ATA.Probe(); 
-            
+            SerialPort.Init();
+            ATA.Probe();
+
             PCI.Probe();
-            AC97.Init();
+            //AC97.Init();
             VboxDev.Init();
             //I217.Init();
+
+
+            Console.WriteLine("\nReaddir: devices://");
+            Node searchNode = VFS.GetByPath("devices://");
+            uint i = 0;
+            DirEntry* entry = searchNode.ReadDir(searchNode, i);
+            i++;
+            while (entry != null)
+            {
+                Console.Write("\tdevices://");
+                Console.WriteLineP(entry->Name);
+
+                entry = searchNode.ReadDir(searchNode, i); 
+                i++;
+            }
             
+            byte[] t = new byte[3];
+            t[0] = (byte)'T';
+            t[1] = (byte)'A';
+            t[2] = (byte)'\0';
+            byte[] a = new byte[3];
+
+            Node node = VFS.GetByPath("devices://COM1");
+
+            Console.WriteLine("Writing TA to serial port");
+            node.Write(node, 0, 3, t);
+            node.Read(node, 0, 3, a);
+
+            Console.WriteLine("Response");
+            Console.PutChar((char)a[0]);
+            Console.PutChar((char)a[1]);
+
             // SET VM on pause
+            //Console.WriteLine("Set VM on pause");
             //Node node = VFS.GetByPath("devices://VMMDEV/powerstate");
             //node.Write(node, 0, 4, ByteUtil.toBytes((int)VboxDevPowerState.Pause));
 
+
             while (true)
-            Console.PutChar(Keyboard.Getch());
+                Console.PutChar(Keyboard.Getch());
 
 
             // Idle loop

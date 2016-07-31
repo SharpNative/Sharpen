@@ -71,9 +71,23 @@ namespace Sharpen.FileSystem
             return dev.node;
         }
 
-        private static void readDirImpl(Node node, uint index)
+        private static unsafe DirEntry *readDirImpl(Node node, uint index)
         {
-            // TODO: List all devices here :)
+            if (index >= m_devices.Count())
+                return null;
+
+            Device dev = m_devices.GetAt((int)index);
+            if (dev == null)
+                return null;
+
+            DirEntry* entry = (DirEntry *)Heap.Alloc(sizeof(DirEntry));
+
+            int i = 0;
+            for (; dev.Name[i] != '\0'; i++)
+                entry->Name[i] = dev.Name[i];
+            entry->Name[i] = '\0';
+
+            return entry;
         }
     }
 }

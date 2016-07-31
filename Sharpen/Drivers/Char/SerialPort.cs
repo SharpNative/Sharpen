@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Collections;
+using Sharpen.FileSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace Sharpen.Drivers.Char
         /// <param name="num"></param>
         private static void initDevice(int num)
         {
-            if (num == 0 || comports[num].Address == 0)
+            if (comports[num].Address == 0)
                 return;
 
             ushort port = comports[num].Address;
@@ -33,6 +34,42 @@ namespace Sharpen.Drivers.Char
             PortIO.Out8((ushort)(port + 1), 0x01);
 
             comports[num].Buffer = new Fifo(256);
+            
+            Device dev = new Device();
+            dev.Name = comports[num].Name;
+            dev.node = new Node();
+            
+            dev.node.Cookie = (uint)num;
+            dev.node.Flags = NodeFlags.FILE;
+            dev.node.Write = writeImpl;
+            dev.node.Read = readImpl;
+
+            DevFS.RegisterDevice(dev);
+        }
+
+        private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
+        {
+            uint i = 0;
+            if (comports[node.Cookie].Address == 0)
+                return 0;
+
+            while(i < size)
+            {
+                Write(buffer[i], comports[node.Cookie].Address);
+
+                i++;
+            }
+
+            return i;
+        }
+
+        private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
+        {
+            uint i = 0;
+            if (comports[node.Cookie].Address == 0)
+                return 0;
+
+            return comports[node.Cookie].Buffer.Read(buffer, (ushort)size);
         }
 
         /// <summary>
@@ -68,6 +105,15 @@ namespace Sharpen.Drivers.Char
             return PortIO.In8(port);
         }
 
+        public static void Write(byte d, ushort port)
+        {
+            while (transmitEmtpy(port) == 0)
+                CPU.HLT();
+
+            PortIO.Out8(port, d);
+        }
+        
+
         /// <summary>
         /// Read bios data area for addresses
         /// </summary>
@@ -93,7 +139,7 @@ namespace Sharpen.Drivers.Char
             else
                 port = comports[2];
 
-            if (port.Address != 0)
+            if (port.Address == 0)
                 return;
 
             while(received(port.Address) != 0)
@@ -112,7 +158,7 @@ namespace Sharpen.Drivers.Char
             else
                 port = comports[3];
 
-            if (port.Address != 0)
+            if (port.Address == 0)
                 return;
 
             while (received(port.Address) != 0)
@@ -134,8 +180,6 @@ namespace Sharpen.Drivers.Char
             comports[3].Name = "COM4";
 
             readBda();
-            Console.Write("COM1 - address 0x");
-            Console.WriteHex(comports[0].Address);
 
             initDevice(0);
             initDevice(1);
@@ -144,6 +188,7 @@ namespace Sharpen.Drivers.Char
             
             IRQ.SetHandler(3, Handler24);
             IRQ.SetHandler(4, Handler13);
+
         }
     }
 }

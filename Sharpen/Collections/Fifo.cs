@@ -10,7 +10,7 @@ namespace Sharpen.Collections
     class Fifo
     {
         private byte[] m_buffer;
-        private bool m_wait = false;
+        private bool m_wait = true;
         private int m_head = 0;
         private int m_tail = 0;
         private int m_size = 0;
@@ -27,9 +27,9 @@ namespace Sharpen.Collections
         /// <param name="buffer"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public unsafe uint Read(byte* buffer, byte size)
+        public unsafe uint Read(byte[] buffer, ushort size)
         {
-            byte* current = buffer;
+            uint j = 0;
 
             if (m_wait)
             {
@@ -45,8 +45,9 @@ namespace Sharpen.Collections
                 // Is there data?
                 if (m_tail != m_head)
                 {
-
-                    *current++ = m_buffer[m_tail++];
+                    buffer[j] = m_buffer[m_tail];
+                    j++;
+                    m_tail++;
 
                     // Time to flip the tail?
                     if (m_tail >= m_size)
@@ -54,11 +55,12 @@ namespace Sharpen.Collections
                 }
                 else
                 {
+                    Console.WriteLine("JA");
                     // We may return if we shouldn't wait
                     return i;
                 }
             }
-
+            
             return size;
         }
 
@@ -95,7 +97,8 @@ namespace Sharpen.Collections
             }
             else
             {
-                m_buffer[m_head++] = byt;
+                m_buffer[m_head] = byt;
+                m_head++;
 
                 // Time to flip the tail?
                 if (m_head >= m_size)

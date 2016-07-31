@@ -55,7 +55,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="path">The path</param>
         /// <returns></returns>
-        public static Node GetByPath(string path)
+        public static unsafe Node GetByPath(string path)
         {
             int index = String.indexOf(path, "://");
             if (index == -1)
@@ -81,16 +81,19 @@ namespace Sharpen.FileSystem
             while (parts > 0)
             {
                 index = String.indexOf(afterNodeName, "/");
+                
                 nodeName = String.Substring(afterNodeName, 0, index);
                 afterNodeName = String.Substring(afterNodeName, index + 1, String.Length(path) - 1);
-
+                
                 lastNode = lastNode.FindDir(lastNode, nodeName);
+
+                // TODO: Check gives out of bounds exception!
                 if (lastNode == null)
                     return null;
-
+                
                 parts--;
             }
-
+            
             return lastNode;
         }
     }
