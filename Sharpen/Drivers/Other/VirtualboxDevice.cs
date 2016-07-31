@@ -65,8 +65,7 @@ namespace Sharpen.Drivers.Other
             req->interfaceVersion = 0x10000;
             req->osType = 0x10000;
 
-
-            Console.WriteHex((int)Paging.GetPhysicalFromVirtual(req));
+            
             PortIO.Out32(m_dev.Port1, (uint)Paging.GetPhysicalFromVirtual(req));
 
             if (req->header.rc == 0)

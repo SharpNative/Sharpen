@@ -89,8 +89,6 @@ namespace Sharpen
             VirtualboxDevice.Init();
             //I217.Init();
 
-            VirtualboxDevice.ChangePowerState(VirtualboxDevice.PowerState.Pause);
-
             while (true)
                 Console.PutChar(Keyboard.Getch());
 

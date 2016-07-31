@@ -155,6 +155,8 @@ namespace Sharpen.Arch
         /// <returns>The physical address</returns>
         public static unsafe void* GetPhysicalFromVirtual(void* virt)
         {
+            return virt;
+
             // Get indices
             int address = (int)virt;
             int remaining = address % 0x1000;
@@ -167,9 +169,6 @@ namespace Sharpen.Arch
 
             // Calculate page
             int page = table->pages[frame & (1024 - 1)];
-            Console.WriteNum(page);
-            Console.Write(" << page ");
-            Console.WriteHex((int)table);
             return (void*)(GetFrameAddress(page) * 0x1000 + remaining);
         }
 
