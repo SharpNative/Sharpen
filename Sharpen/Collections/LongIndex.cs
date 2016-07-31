@@ -26,7 +26,7 @@
             set
             {
                 long[] newArray = new long[value];
-                Memory.Memcpy(Util.ObjectToVoidPtr(newArray), Util.ObjectToVoidPtr(Item), m_currentCap * sizeof(void*));
+                Memory.Memcpy(Util.ObjectToVoidPtr(newArray), Util.ObjectToVoidPtr(Item), (m_currentCap + 1) * sizeof(void*));
                 Item = newArray;
                 m_currentCap = value;
             }

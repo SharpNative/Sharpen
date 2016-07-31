@@ -1,4 +1,6 @@
-﻿using Sharpen.Arch;
+﻿using System;
+using Sharpen.Arch;
+using Sharpen.FileSystem;
 
 namespace Sharpen.Drivers.Block
 {
@@ -329,7 +331,7 @@ namespace Sharpen.Drivers.Block
         /// <summary>
         /// IDE Prope
         /// </summary>
-        public static void Probe()
+        private static void probe()
         {
             int num = 0;
 
@@ -414,59 +416,44 @@ namespace Sharpen.Drivers.Block
             }
         }
 
-        /// <summary>
-        /// Test write code
-        /// </summary>
-        public static void WriteTest()
+        public static void Init()
         {
-            byte[] buf = new byte[512];
-            buf[0] = (byte)Time.Hours;
-            buf[1] = (byte)Time.Minutes;
-            buf[2] = (byte)Time.Seconds;
+            probe();
 
-            int status = WriteSector(0, 0, 1, buf);
-            Console.Write("Status of write: ");
-            Console.WriteNum(status);
-            Console.PutChar('\n');
+            if(Devices[0].Exists)
+            {
+
+                Device dev = new Device();
+                dev.Name = "HDD0";
+                dev.node.Cookie = 0; // Disk 0!
+                dev.node = new Node();
+                dev.node.Read = readImpl;
+                dev.node.Write = writeImpl;
+
+                DevFS.RegisterDevice(dev);
+            }
         }
 
-        /// <summary>
-        /// Contains test code for ATA
-        /// </summary>
-        public static void Test()
+        private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            Console.WriteLine("Reading 3 bytes of sector on IDE_PRIMARY_MASTER");
+            // Only support sizes in magnitutes of 512
+            if (size % 512 != 0)
+                return 0;
 
-            byte[] buf = new byte[512];
-            int status;
+            uint inSize = size / 512;
+            
+            return (uint)WriteSector(node.Cookie, offset, (byte)inSize, buffer);
+        }
 
-            status = ReadSector(0, 0, 1, buf);
-            Console.Write("status of read: ");
-            Console.WriteNum(status);
-            Console.PutChar('\n');
+        private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
+        {
+            // Only support sizes in magnitutes of 512
+            if (size % 512 != 0)
+                return 0;
 
-            Console.Write("Value: ");
-            Console.WriteNum(buf[0]);
-            Console.PutChar(' ');
-            Console.WriteNum(buf[1]);
-            Console.PutChar(' ');
-            Console.WriteNum(buf[2]);
-            Console.PutChar('\n');
+            uint inSize = size / 512;
 
-            Console.WriteLine("Reading 3 bytes of sector on IDE_SECONDARY_MASTER");
-
-            status = ReadSector(2, 0, 1, buf);
-            Console.Write("status of read: ");
-            Console.WriteNum(status);
-            Console.PutChar('\n');
-
-            Console.Write("Value: ");
-            Console.WriteNum(buf[0]);
-            Console.PutChar(' ');
-            Console.WriteNum(buf[1]);
-            Console.PutChar(' ');
-            Console.WriteNum(buf[2]);
-            Console.PutChar('\n');
+            return (uint)ReadSector(node.Cookie, offset, (byte)inSize, buffer);
         }
     }
 }

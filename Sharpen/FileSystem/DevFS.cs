@@ -33,7 +33,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="inVal">Name</param>
         /// <returns></returns>
-        private static long GenerateHash(string inVal)
+        public static long GenerateHash(string inVal)
         {
             long hash = 0;
 
@@ -64,7 +64,7 @@ namespace Sharpen.FileSystem
         {
             long hash = GenerateHash(name);
             
-            Device dev = m_devices.GetByKey(hash);
+            Device dev = (Device)m_devices.GetByKey(hash);
 
             if (dev == null)
                 return null;
@@ -77,7 +77,8 @@ namespace Sharpen.FileSystem
             if (index >= m_devices.Count())
                 return null;
 
-            Device dev = m_devices.GetAt((int)index);
+
+            Device dev = (Device)m_devices.GetAt((int)index);
             if (dev == null)
                 return null;
 

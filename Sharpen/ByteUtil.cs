@@ -53,6 +53,19 @@ namespace Sharpen
         }
 
 
+        public static short ToShort(byte[] b, int offset)
+        {
+            short result = 0;
+            for (int i = 0; i < 2; i++)
+            {
+                result <<= 8;
+                result |= (short)(b[offset] & 0xFF);
+                offset++;
+            }
+
+            return result;
+        }
+
         public static int ToInt(byte[] b)
         {
             int result = 0;

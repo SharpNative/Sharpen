@@ -52,7 +52,7 @@ namespace Sharpen.Collections
         public object GetByKey(long key)
         {
             int index = m_index.IndexOf(key);
-            
+
             return (index != -1) ? m_values.Item[index]: null;
         }
     }

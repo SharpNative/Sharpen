@@ -85,13 +85,12 @@ namespace Sharpen
             DevFS.Init();
             VFS.Init();
             SerialPort.Init();
-            ATA.Probe();
 
             PCI.Probe();
             //AC97.Init();
+            ATA.Init();
             VboxDev.Init();
             //I217.Init();
-
 
             Console.WriteLine("\nReaddir: devices://");
             Node searchNode = VFS.GetByPath("devices://");
@@ -103,20 +102,12 @@ namespace Sharpen
                 Console.Write("\tdevices://");
                 Console.WriteLineP(entry->Name);
 
-                entry = searchNode.ReadDir(searchNode, i); 
+                entry = searchNode.ReadDir(searchNode, i);
                 i++;
             }
 
-            byte[] buf = new byte[55];
-
-            // SET VM on pause
-            //Console.WriteLine("Set VM on pause");
-            //Node node = VFS.GetByPath("devices://keyboard");
-            //node.Read(node, 0, 4, buf);
-            
-            while (true)
-                Console.PutChar(Keyboard.Getch());
-
+            Node hddNode = VFS.GetByPath("devices://HDD0");
+            Fat32 fat = new Fat32(hddNode, "C");
 
             // Idle loop
             while (true)
