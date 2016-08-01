@@ -1,9 +1,4 @@
 ﻿using Sharpen.Collections;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.FileSystem
 {
@@ -12,6 +7,9 @@ namespace Sharpen.FileSystem
         private static Dictionary m_devices = new Dictionary();
         private static Node m_currentNode;
 
+        /// <summary>
+        /// Initializes DevFS
+        /// </summary>
         public unsafe static void Init()
         {
             MountPoint mp = new MountPoint();
@@ -24,15 +22,13 @@ namespace Sharpen.FileSystem
             mp.Node = m_currentNode;
 
             VFS.AddMountPoint(mp);
-
-
         }
 
         /// <summary>
         /// Generate hash from string
         /// </summary>
-        /// <param name="inVal">Name</param>
-        /// <returns></returns>
+        /// <param name="inVal">Name to get hash from</param>
+        /// <returns>The hash</returns>
         public static long GenerateHash(string inVal)
         {
             long hash = 0;
@@ -54,35 +50,45 @@ namespace Sharpen.FileSystem
         /// <summary>
         /// Register device in devices
         /// </summary>
-        /// <param name="dev"></param>
+        /// <param name="dev">The device</param>
         public unsafe static void RegisterDevice(Device dev)
         {
             m_devices.Add(GenerateHash(dev.Name), dev);
         }
 
+        /// <summary>
+        /// FS finddir
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="name">The name to look for</param>
+        /// <returns>The node</returns>
         private static unsafe Node findDirImpl(Node node, string name)
         {
             long hash = GenerateHash(name);
-            
-            Device dev = (Device)m_devices.GetByKey(hash);
 
+            Device dev = (Device)m_devices.GetByKey(hash);
             if (dev == null)
                 return null;
 
             return dev.node;
         }
 
-        private static unsafe DirEntry *readDirImpl(Node node, uint index)
+        /// <summary>
+        /// FS readdir
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="index">The index</param>
+        /// <returns>The directory entry</returns>
+        private static unsafe DirEntry* readDirImpl(Node node, uint index)
         {
             if (index >= m_devices.Count())
                 return null;
-
 
             Device dev = (Device)m_devices.GetAt((int)index);
             if (dev == null)
                 return null;
 
-            DirEntry* entry = (DirEntry *)Heap.Alloc(sizeof(DirEntry));
+            DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
 
             int i = 0;
             for (; dev.Name[i] != '\0'; i++)

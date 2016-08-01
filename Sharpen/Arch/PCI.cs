@@ -37,59 +37,91 @@ namespace Sharpen.Arch
         private static PciDevice[] m_devices = new PciDevice[300];
         private static uint m_currentdevice = 0;
 
-        private static uint GenerateAddress(uint lbus, uint lslot, uint lfun, uint offset)
+        /// <summary>
+        /// Generates a PCI address
+        /// </summary>
+        /// <param name="lbus">Bus</param>
+        /// <param name="lslot">Slot</param>
+        /// <param name="lfun">Function</param>
+        /// <param name="offset">Offset</param>
+        /// <returns>Generates the address</returns>
+        private static uint generateAddress(uint lbus, uint lslot, uint lfun, uint offset)
         {
-            return lbus << 16 | lslot << 11 | lfun << 8 | (uint)(offset & 0xFC) | 0x80000000;
+            return lbus << 16 | lslot << 11 | lfun << 8 | (offset & 0xFC) | 0x80000000;
         }
 
         /// <summary>
         /// Read word from PCI
         /// </summary>
-        /// <param name="bus">bus</param>
+        /// <param name="bus">Bus</param>
         /// <param name="slot">Slot</param>
         /// <param name="function">Function</param>
         /// <param name="offset">Offset</param>
         /// <returns>Word value</returns>
         private static ushort readWord(ushort bus, ushort slot, ushort function, ushort offset)
         {
-            return (ushort)PciRead(bus, slot, function, offset, 2);
+            return (ushort)PCIRead(bus, slot, function, offset, 2);
         }
 
-        public static uint PciRead(ushort bus, ushort slot, ushort function, ushort offset, uint size)
+        /// <summary>
+        /// Read data from PCI
+        /// </summary>
+        /// <param name="bus">Bus</param>
+        /// <param name="slot">Slot</param>
+        /// <param name="function">Function</param>
+        /// <param name="offset">Offset</param>
+        /// <param name="size">The size of the data to read</param>
+        /// <returns>The read data</returns>
+        public static uint PCIRead(ushort bus, ushort slot, ushort function, ushort offset, uint size)
         {
-            uint address;
-            
-            address = GenerateAddress(bus, slot, function, offset);
-
-            uint tmp = 0xFFFFFFFF;
+            uint address = generateAddress(bus, slot, function, offset);
 
             PortIO.Out32(0xCF8, address);
 
             if (size == 4)
-                tmp = PortIO.In32(0xCFC);
+                return PortIO.In32(0xCFC);
             else if (size == 2)
-                tmp = (ushort)((PortIO.In32(0xCFC) >> ((offset & 2) * 8)) & 0xffff);
+                return ((PortIO.In32(0xCFC) >> ((offset & 2) * 8)) & 0xFFFF);
             else if(size == 1)
-                return (byte)((PortIO.In32(0xCFC) >> ((offset & 4) * 8)) & 0xff);
+                return ((PortIO.In32(0xCFC) >> ((offset & 4) * 8)) & 0xFF);
 
-            return tmp;
+            return 0xFFFFFFFF;
         }
 
-        public static void PciWrite(ushort bus, ushort slot, ushort function, ushort offset, uint value)
+        /// <summary>
+        /// Write data to PCI
+        /// </summary>
+        /// <param name="bus">Bus</param>
+        /// <param name="slot">Slot</param>
+        /// <param name="function">Function</param>
+        /// <param name="offset">Offset</param>
+        /// <param name="value">The value to write</param>
+        public static void PCIWrite(ushort bus, ushort slot, ushort function, ushort offset, uint value)
         {
-            uint address = GenerateAddress(bus, slot, function, offset);
+            uint address = generateAddress(bus, slot, function, offset);
 
             PortIO.Out32(0xCF8, address);
             PortIO.Out32(0xCFC, value);
         }
 
-        public static void PciWrite(PciDevice dev, ushort offset, uint value)
+        /// <summary>
+        /// Write data to PCI
+        /// </summary>
+        /// <param name="dev">The PCI device</param>
+        /// <param name="offset">Offset</param>
+        /// <param name="value">The value to write</param>
+        public static void PCIWrite(PciDevice dev, ushort offset, uint value)
         {
-            PciWrite(dev.Bus, dev.Slot, dev.Function, offset, value);
+            PCIWrite(dev.Bus, dev.Slot, dev.Function, offset, value);
         }
 
-
-        public static ushort PciReadWord(PciDevice dev, ushort offset, uint value)
+        /// <summary>
+        /// Read data from PCI
+        /// </summary>
+        /// <param name="dev">The PCI device</param>
+        /// <param name="offset">Offset</param>
+        /// <returns>The read data</returns>
+        public static ushort PCIReadWord(PciDevice dev, ushort offset)
         {
             return readWord(dev.Bus, dev.Slot, dev.Function, offset);
         }
@@ -101,14 +133,21 @@ namespace Sharpen.Arch
         /// <param name="device">Device</param>
         /// <param name="function">Function</param>
         /// <returns>Device ID</returns>
-        private static ushort GetDeviceID(ushort bus, ushort device, ushort function)
+        private static ushort getDeviceID(ushort bus, ushort device, ushort function)
         {
             return readWord(bus, device, function, 0x2);
         }
 
-        private static ushort GetHeaderType(ushort bus, ushort device, ushort function)
+        /// <summary>
+        /// Get header type
+        /// </summary>
+        /// <param name="bus">Bus</param>
+        /// <param name="device">Device</param>
+        /// <param name="function">Function</param>
+        /// <returns>Header type</returns>
+        private static ushort getHeaderType(ushort bus, ushort device, ushort function)
         {
-            return (byte)(readWord(bus, device, function, 0xE) & 0xFF);
+            return (ushort)(readWord(bus, device, function, 0xE) & 0xFF);
         }
 
         /// <summary>
@@ -134,9 +173,7 @@ namespace Sharpen.Arch
         {
             return (byte)(readWord(bus, device, function, 0XA) & 0xFF);
         }
-
-
-
+        
         /// <summary>
         /// Get sub class ID
         /// </summary>
@@ -149,44 +186,40 @@ namespace Sharpen.Arch
             return (byte)((readWord(bus, device, function, 0XA) >> 8) & 0xFF);
         }
 
-        private static ushort getHeaderType(ushort bus, ushort device, ushort function)
-        {
-            return (byte)(readWord(bus, device, function, 0XE) & 0xFF);
-        }
-
         /// <summary>
         /// Check PCI bus
         /// </summary>
-        /// <param name="bus"></param>
+        /// <param name="bus">The bus to check</param>
         private static void checkBus(byte bus)
         {
             for (byte device = 0; device < 32; device++)
                 checkDevice(bus, device);
         }
 
+        /// <summary>
+        /// Checks a device
+        /// </summary>
+        /// <param name="bus">The bus</param>
+        /// <param name="device">The device</param>
         private static void checkDevice(byte bus, byte device)
         {
-            byte function = 0;
-
-            ushort vendorID = GetVendorID(bus, device, function);
-            
+            ushort vendorID = GetVendorID(bus, device, 0);
             if (vendorID == 0xFFFF)
                 return;
 
-            ushort deviceID = GetDeviceID(bus, device, function);
+            ushort deviceID = getDeviceID(bus, device, 0);
             if (deviceID == 0xFFFF)
                 return;
             
-
             PciDevice dev = new PciDevice();
             dev.Device = deviceID;
-            dev.Function = function;
+            dev.Function = 0;
             dev.Bus = bus;
             dev.Slot = device;
 
             dev.Vendor = vendorID;
-            dev.Port1 = (ushort)(readWord(bus, device, function, 0x10) & -1 << 1);
-            dev.Port2 = (ushort)(readWord(bus, device, function, 0x14) & -1 << 1);
+            dev.Port1 = (ushort)(readWord(bus, device, 0, 0x10) & -1 << 1);
+            dev.Port2 = (ushort)(readWord(bus, device, 0, 0x14) & -1 << 1);
 
             m_devices[m_currentdevice++] = dev;
         }
@@ -224,9 +257,11 @@ namespace Sharpen.Arch
             driver.Init(m_devices[foundIndex]);
         }
 
+        /// <summary>
+        /// Print the found devices
+        /// </summary>
         public static void PrintDevices()
         {
-
             for (int i = 0; i < m_currentdevice; i++)
             {
                 Console.Write("Device ");
@@ -238,7 +273,7 @@ namespace Sharpen.Arch
         }
 
         /// <summary>
-        /// Brute force scan over all busses
+        /// Brute force scan over bus 0
         /// </summary>
         public static void Probe()
         {

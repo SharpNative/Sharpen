@@ -13,7 +13,7 @@ namespace Sharpen.Drivers.Sound
         /// The initialization handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private static void InitHandler(PCI.PciDevice dev)
+        private static void initHandler(PCI.PciDevice dev)
         {
         }
 
@@ -21,7 +21,7 @@ namespace Sharpen.Drivers.Sound
         /// The exit handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private static void ExitHander(PCI.PciDevice dev)
+        private static void exitHander(PCI.PciDevice dev)
         {
 
         }
@@ -33,8 +33,8 @@ namespace Sharpen.Drivers.Sound
         {
             PCI.PciDriver driver = new PCI.PciDriver();
             driver.Name = "Intel HD Driver";
-            driver.Exit = ExitHander;
-            driver.Init = InitHandler;
+            driver.Exit = exitHander;
+            driver.Init = initHandler;
 
             PCI.RegisterDriver(0x8086, 0x2668, driver);
         }

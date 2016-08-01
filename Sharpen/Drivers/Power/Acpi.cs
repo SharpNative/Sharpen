@@ -58,7 +58,7 @@ namespace Sharpen.Drivers.Power
             if (rsdt == null)
                 Panic.DoPanic("RDST not found!");
 
-            fadt = (FADT*)GetEntry("FACP");
+            fadt = (FADT*)getEntry("FACP");
             if (fadt == null)
                 Panic.DoPanic("FACP not found!");
         }
@@ -89,7 +89,7 @@ namespace Sharpen.Drivers.Power
         /// <summary>
         /// Parses the S5 object
         /// </summary>
-        private static void ParseS5Object()
+        private static void parseS5Object()
         {
             bool s5Found = false;
 
@@ -142,7 +142,7 @@ namespace Sharpen.Drivers.Power
         /// </summary>
         /// <param name="signature">The signature</param>
         /// <returns>The entry</returns>
-        private static void* GetEntry(string signature)
+        private static void* getEntry(string signature)
         {
             if (rsdt == null)
                 return null;
@@ -168,7 +168,7 @@ namespace Sharpen.Drivers.Power
         public static void Init()
         {
             Find();
-            ParseS5Object();
+            parseS5Object();
             Enable();
         }
 

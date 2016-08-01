@@ -1,11 +1,15 @@
-﻿using Sharpen.Utilities;
+﻿using Sharpen.Collections;
+using Sharpen.Utilities;
 
 namespace Sharpen.FileSystem
 {
     class VFS
     {
-        private static MountDictionary m_dictionary = new MountDictionary();
+        private static Dictionary m_dictionary = new Dictionary();
 
+        /// <summary>
+        /// Initializes the VFS
+        /// </summary>
         public static unsafe void Init()
         {
             MountPoint mountPoint = new MountPoint();
@@ -16,14 +20,18 @@ namespace Sharpen.FileSystem
             AddMountPoint(mountPoint);
         }
 
+        /// <summary>
+        /// FS readdir
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="index">The index</param>
+        /// <returns>The directory entry</returns>
         private static unsafe DirEntry* readDirImpl(Node node, uint index)
         {
             if (index >= m_dictionary.Count())
                 return null;
-
-            Console.WriteNum((int)index);
-
-            MountPoint dev = m_dictionary.GetAt((int)index);
+            
+            MountPoint dev = (MountPoint)m_dictionary.GetAt((int)index);
             if (dev == null)
                 return null;
 
@@ -41,7 +49,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="inVal">Name</param>
         /// <returns></returns>
-        private static long GenerateHash(string inVal)
+        private static long generateHash(string inVal)
         {
             long hash = 0;
 
@@ -65,7 +73,7 @@ namespace Sharpen.FileSystem
         /// <param name="mountPoint"></param>
         public static void AddMountPoint(MountPoint mountPoint)
         {
-            long key = GenerateHash(mountPoint.Name);
+            long key = generateHash(mountPoint.Name);
             m_dictionary.Add(key, mountPoint);
         }
 
@@ -76,15 +84,15 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         public static MountPoint FindMountByName(string name)
         {
-            long key = GenerateHash(name);
-            return m_dictionary.GetByKey(key);
+            long key = generateHash(name);
+            return (MountPoint)m_dictionary.GetByKey(key);
         }
 
         /// <summary>
         /// Get node by path
         /// </summary>
         /// <param name="path">The path</param>
-        /// <returns></returns>
+        /// <returns>The node</returns>
         public static unsafe Node GetByPath(string path)
         {
             int index = String.IndexOf(path, "://");
@@ -100,7 +108,6 @@ namespace Sharpen.FileSystem
             
             // Find first mount
             MountPoint mp = FindMountByName(deviceName);
-
             if (mp == null)
                 return null;
             

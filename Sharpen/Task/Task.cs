@@ -11,6 +11,7 @@ namespace Sharpen.Task
 
         public Paging.PageDirectory* PageDir;
         public int* Stack;
+        public void* FPUContext;
 
         public Task Next;
 

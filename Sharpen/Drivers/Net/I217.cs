@@ -10,7 +10,7 @@ namespace Sharpen.Drivers.Net
         /// Initialization handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private static void InitHandler(PCI.PciDevice dev)
+        private static void initHandler(PCI.PciDevice dev)
         {
             m_io_base = dev.Port1;
         }
@@ -19,7 +19,7 @@ namespace Sharpen.Drivers.Net
         /// Exit handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private static void ExitHander(PCI.PciDevice dev)
+        private static void exitHandler(PCI.PciDevice dev)
         {
         }
 
@@ -30,8 +30,8 @@ namespace Sharpen.Drivers.Net
         {
             PCI.PciDriver driver = new PCI.PciDriver();
             driver.Name = "Intel I217 Driver";
-            driver.Exit = ExitHander;
-            driver.Init = InitHandler;
+            driver.Exit = exitHandler;
+            driver.Init = initHandler;
 
             PCI.RegisterDriver(0x8086, 0x100E, driver);
         }

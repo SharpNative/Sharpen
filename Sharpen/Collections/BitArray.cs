@@ -31,7 +31,7 @@ namespace Sharpen.Collections
         /// <param name="k">The bit number</param>
         public void SetBit(int k)
         {
-            int bitmap = k / 32;
+            int bitmap = k >> 5;
             int index = k & (32 - 1);
             m_bitmap[bitmap] |= 1 << index;
         }
@@ -42,7 +42,7 @@ namespace Sharpen.Collections
         /// <param name="k">The bit number</param>
         public void ClearBit(int k)
         {
-            int bitmap = k / 32;
+            int bitmap = k >> 5;
             int index = k & (32 - 1);
             m_bitmap[bitmap] &= ~(1 << index);
         }
@@ -53,7 +53,7 @@ namespace Sharpen.Collections
         /// <param name="k">The bit number</param>
         public bool TestBit(int k)
         {
-            int bitmap = k / 32;
+            int bitmap = k >> 5;
             int index = k & (32 - 1);
             return ((m_bitmap[bitmap] & (1 << index)) > 0);
         }

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Sharpen.Lib
+﻿namespace Sharpen.Lib
 {
     public enum AudioActions
     {
@@ -35,6 +29,11 @@ namespace Sharpen.Lib
             m_device = device;
         }
 
+        /// <summary>
+        /// Request a new audio buffer
+        /// </summary>
+        /// <param name="size">The required size</param>
+        /// <param name="buffer">The buffer to put the data into</param>
         public unsafe static void RequestBuffer(uint size, ushort* buffer)
         {
 

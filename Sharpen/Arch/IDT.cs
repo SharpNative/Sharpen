@@ -179,7 +179,7 @@ namespace Sharpen.Arch
             // Flush IDT
             fixed (IDT_Pointer* ptr = &m_ptr)
             {
-                FlushIDT(ptr);
+                flushIDT(ptr);
             }
 
             CPU.STI();
@@ -191,7 +191,7 @@ namespace Sharpen.Arch
         /// Flushes the IDT table
         /// </summary>
         /// <param name="ptr">The pointer to the table</param>
-        private static extern unsafe void FlushIDT(IDT_Pointer* ptr);
+        private static extern unsafe void flushIDT(IDT_Pointer* ptr);
 
         #region ISR routines
 

@@ -53,7 +53,7 @@ namespace Sharpen
         /// </summary>
         /// <param name="size">The requested size</param>
         /// <returns>The required amount of pages</returns>
-        private static int GetRequiredPageCount(int size)
+        private static int getRequiredPageCount(int size)
         {
             // Calculate the required amount of pages
             int required = size / 0x1000;
@@ -65,15 +65,14 @@ namespace Sharpen
         /// </summary>
         /// <param name="size">The minimal size</param>
         /// <returns>The block descriptor</returns>
-        private static unsafe BlockDescriptor* CreateBlockDescriptor(int size)
+        private static unsafe BlockDescriptor* createBlockDescriptor(int size)
         {
             // Allocate descriptor
-            size = GetRequiredPageCount(size) * 0x1000;
+            size = getRequiredPageCount(size) * 0x1000;
             BlockDescriptor* descriptor = (BlockDescriptor*)Paging.AllocatePhysical(size);
             if (descriptor == null)
                 return null;
-
-
+            
             // Setup block
             Block* first = (Block*)((int)descriptor + sizeof(BlockDescriptor));
             first->Next = null;
@@ -94,7 +93,7 @@ namespace Sharpen
         /// </summary>
         /// <param name="size">The required size</param>
         /// <returns>The block descriptor</returns>
-        private static unsafe BlockDescriptor* GetSufficientDescriptor(int size)
+        private static unsafe BlockDescriptor* getSufficientDescriptor(int size)
         {
             BlockDescriptor* descriptor = firstDescriptor;
             
@@ -111,7 +110,7 @@ namespace Sharpen
             }
 
             // Create next descriptor because there is no descriptor that is big enough
-            BlockDescriptor* newDescriptor = CreateBlockDescriptor(size);
+            BlockDescriptor* newDescriptor = createBlockDescriptor(size);
             descriptor->Next = newDescriptor;
             return newDescriptor;
         }
@@ -131,7 +130,7 @@ namespace Sharpen
             CurrentEnd = (void*)address;
 
             // First block descriptor and real heap on
-            firstDescriptor = CreateBlockDescriptor(MINIMALPAGES * 0x1000);
+            firstDescriptor = createBlockDescriptor(MINIMALPAGES * 0x1000);
             m_realHeap = true;
 
             Console.Write("[HEAP] Currently at ");
@@ -160,7 +159,7 @@ namespace Sharpen
                     alignedSize += alignment;
                 }
 
-                BlockDescriptor* descriptor = GetSufficientDescriptor(alignedSize);
+                BlockDescriptor* descriptor = getSufficientDescriptor(alignedSize);
                 Block* currentBlock = descriptor->First;
 
                 // Search in the descriptor
@@ -307,7 +306,7 @@ namespace Sharpen
         /// Dumps a block
         /// </summary>
         /// <param name="currentBlock">The block</param>
-        private static unsafe void DumpBlock(Block* currentBlock)
+        private static unsafe void dumpBlock(Block* currentBlock)
         {
             Console.Write("Block: size=");
             Console.WriteHex(currentBlock->Size);
@@ -333,7 +332,7 @@ namespace Sharpen
             // Search in the descriptor
             while (true)
             {
-                DumpBlock(currentBlock);
+                dumpBlock(currentBlock);
                 Keyboard.Getch();
 
                 currentBlock = currentBlock->Next;

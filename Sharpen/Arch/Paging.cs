@@ -55,7 +55,7 @@ namespace Sharpen.Arch
             set
             {
                 m_currentDirectory = value;
-                SetDirectoryInternal(value);
+                setDirectoryInternal(value);
             }
         }
 
@@ -101,11 +101,12 @@ namespace Sharpen.Arch
 
             // Map from [ 0x00 - Heap end ] as kernelspace
             int address = 0;
-            while (address < (int)Heap.CurrentEnd + (sizeof(PageDirectory) * sizeof(PageTable)))
+            while (address < (int)Heap.CurrentEnd + (sizeof(PageDirectory)))
             {
                 int flags = (int)PageFlags.Present | (int)PageFlags.Writable;
                 MapPage(KernelDirectory, address, address, flags);
-                AllocateFrame(GetPage(KernelDirectory, address), flags);
+                //AllocateFrame(GetPage(KernelDirectory, address), flags);
+                SetFrame(address);
                 address += 0x1000;
             }
 
@@ -154,8 +155,6 @@ namespace Sharpen.Arch
         /// <returns>The physical address</returns>
         public static unsafe void* GetPhysicalFromVirtual(void* virt)
         {
-            return virt;
-
             // Get indices
             int address = (int)virt;
             int remaining = address % 0x1000;
@@ -201,16 +200,15 @@ namespace Sharpen.Arch
         }
 
         /// <summary>
-        /// Allocate a frame
+        /// Allocates a free frame
         /// </summary>
-        /// <param name="page">The page (physical)</param>
-        /// <param name="flags">The flags</param>
-        public static unsafe void AllocateFrame(int page, int flags)
+        /// <returns>The free frame</returns>
+        public static unsafe int AllocateFrame()
         {
             int free = m_bitmap.FindFirstFree();
             int address = free * 0x1000;
             SetFrame(address);
-            MapPage(CurrentDirectory, address, (int)(page & 0xFFFFF000), flags);
+            return address;
         }
 
         /// <summary>
@@ -245,8 +243,10 @@ namespace Sharpen.Arch
             while (address < end)
             {
                 int flags = (int)PageFlags.Present | (int)PageFlags.Writable;
+                
                 MapPage(KernelDirectory, address, address, flags);
-                AllocateFrame(GetPage(KernelDirectory, address), flags);
+                SetFrame(address);
+                
                 address += 0x1000;
             }
 
@@ -267,6 +267,6 @@ namespace Sharpen.Arch
         /// Sets the current paging directory in the CR3 register
         /// </summary>
         /// <param name="directory">The page directory</param>
-        private static unsafe extern void SetDirectoryInternal(PageDirectory* directory);
+        private static unsafe extern void setDirectoryInternal(PageDirectory* directory);
     }
 }

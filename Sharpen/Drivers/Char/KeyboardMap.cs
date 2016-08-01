@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Sharpen.Drivers.Char
+﻿namespace Sharpen.Drivers.Char
 {
     class KeyboardMap
     {
-
         public static char[] Normal =
         {
             (char) 0, (char)27, '1', '2', '3', '4', '5', '6', '7', '8',	/* 9 */
