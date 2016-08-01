@@ -79,6 +79,7 @@ namespace Sharpen
             PIC.Remap();
             IDT.Init();
             Acpi.Init();
+            FPU.Init();
             
             Paging.Init(memSize);
             Heap.SetupRealHeap();
@@ -98,8 +99,8 @@ namespace Sharpen
             ATA.Init();
             
             Tasking.Init();
-            //Tasking.AddTask(Util.MethodToPtr(Test1), TaskPriority.VERYLOW);
-            //Tasking.AddTask(Util.MethodToPtr(Test2), TaskPriority.VERYHIGH);
+            // Tasking.AddTask(Util.MethodToPtr(Test1), TaskPriority.VERYLOW);
+            // Tasking.AddTask(Util.MethodToPtr(Test2), TaskPriority.VERYHIGH);
 
             Console.WriteLine("\nReaddir: devices://");
             Node searchNode = VFS.GetByPath("devices://");
@@ -116,9 +117,9 @@ namespace Sharpen
             }
 
             // SET VM on pause 
-            Console.WriteLine("Set VM on pause");
-            Node node = VFS.GetByPath("devices://VMMDEV/powerstate");
-            node.Write(node, 0, 4, ByteUtil.ToBytes((int)VboxDevPowerState.Pause));
+            // Console.WriteLine("Set VM on pause");
+            // Node node = VFS.GetByPath("devices://VMMDEV/powerstate");
+            // node.Write(node, 0, 4, ByteUtil.ToBytes((int)VboxDevPowerState.Pause));
 
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat32 fat = new Fat32(hddNode, "C");

@@ -25,6 +25,7 @@ namespace Sharpen.Task
             kernel.UID = 0;
             kernel.PageDir = Paging.KernelDirectory;
             kernel.Next = null;
+            kernel.FPUContext = Heap.AlignedAlloc(16, 512);
 
             KernelTask = kernel;
             CurrentTask = kernel;
@@ -61,7 +62,7 @@ namespace Sharpen.Task
         /// Removes a task by its PID
         /// </summary>
         /// <param name="pid">The PID</param>
-        public static void RemoveTaskByPID(int pid)
+        public static unsafe void RemoveTaskByPID(int pid)
         {
             Task current = KernelTask;
             Task previous = null;
@@ -79,11 +80,17 @@ namespace Sharpen.Task
                     return;
             }
 
+            // Wait for task switch if this current task will be removed
+            if (current == CurrentTask)
+                CPU.HLT();
+
             // Critical section, a task switch may not occur now
             CPU.CLI();
 
-            // TODO: free task data
+            // Set pointer and free task data
             previous.Next = current.Next;
+            Heap.Free(current.FPUContext);
+            Heap.Free(current.Stack);
 
             // End of critical section
             CPU.STI();
@@ -134,6 +141,10 @@ namespace Sharpen.Task
             newTask.Stack = (int*)((int)Heap.AlignedAlloc(16, 8192) + 8192);
             newTask.Stack = writeSchedulerStack(newTask.Stack, 0x08, 0x10, eip);
 
+            // FPU context
+            newTask.FPUContext = Heap.AlignedAlloc(16, 512);
+            FPU.StoreContext(newTask.FPUContext);
+
             // Schedule
             ScheduleTask(newTask);
         }
@@ -173,13 +184,16 @@ namespace Sharpen.Task
             // Store old context
             Task oldTask = CurrentTask;
             oldTask.Stack = (int*)regsPtr;
+            FPU.StoreContext(oldTask.FPUContext);
 
             // Switch to next task
-            CurrentTask = FindNextTask();
-            Paging.CurrentDirectory = CurrentTask.PageDir;
+            Task current = FindNextTask();
+            Paging.CurrentDirectory = current.PageDir;
+            FPU.RestoreContext(current.FPUContext);
+            CurrentTask = current;
 
             // Return the next task context
-            return (Regs*)CurrentTask.Stack;
+            return (Regs*)current.Stack;
         }
 
         /// <summary>

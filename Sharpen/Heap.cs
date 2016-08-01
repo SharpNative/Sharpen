@@ -72,8 +72,7 @@ namespace Sharpen
             BlockDescriptor* descriptor = (BlockDescriptor*)Paging.AllocatePhysical(size);
             if (descriptor == null)
                 return null;
-
-
+            
             // Setup block
             Block* first = (Block*)((int)descriptor + sizeof(BlockDescriptor));
             first->Next = null;
