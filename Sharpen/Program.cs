@@ -114,15 +114,10 @@ namespace Sharpen
                 entry = searchNode.ReadDir(searchNode, j);
                 j++;
             }
-
-            // SET VM on pause 
-            Console.WriteLine("Set VM on pause");
-            Node node = VFS.GetByPath("devices://VMMDEV/powerstate");
-            node.Write(node, 0, 4, ByteUtil.ToBytes((int)VboxDevPowerState.Pause));
-
+            
             Node hddNode = VFS.GetByPath("devices://HDD0");
-            Fat32 fat = new Fat32(hddNode, "C");
-
+            Fat16.Init(hddNode, "C");
+            
             // Idle loop
             while (true)
                 CPU.HLT();
