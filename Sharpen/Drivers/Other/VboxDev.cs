@@ -1,17 +1,9 @@
 ﻿using Sharpen.Arch;
-using Sharpen.FileSystem;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Sharpen.FileSystem.DevFS;
 
 namespace Sharpen.Drivers.Other
 {
-    class VboxDev
+    public sealed class VboxDev
     {
-
         private static PCI.PciDevice m_dev;
         private static bool m_initalized;
 
@@ -47,7 +39,7 @@ namespace Sharpen.Drivers.Other
 
             public VboxDevPowerState PowerState;
         }
-        
+
         struct RequestHostTime
         {
             public RequestHeader header;
@@ -55,6 +47,9 @@ namespace Sharpen.Drivers.Other
             public ulong Time;
         }
 
+        /// <summary>
+        /// Gets info about the guest
+        /// </summary>
         private unsafe static void GetGuestInfo()
         {
             RequestGuestInfo* req = (RequestGuestInfo*)Heap.Alloc(sizeof(RequestGuestInfo));
@@ -65,13 +60,11 @@ namespace Sharpen.Drivers.Other
             req->interfaceVersion = 0x10000;
             req->osType = 0x10000;
 
-            
             PortIO.Out32(m_dev.Port1, (uint)Paging.GetPhysicalFromVirtual(req));
 
             if (req->header.rc == 0)
             {
                 Console.WriteLine("[VMMDev] Initalized");
-
                 m_initalized = true;
             }
             else
@@ -80,22 +73,32 @@ namespace Sharpen.Drivers.Other
             }
         }
 
-
+        /// <summary>
+        /// Initialization handler
+        /// </summary>
+        /// <param name="dev">This PCI device</param>
         private unsafe static void InitHandler(PCI.PciDevice dev)
         {
             m_dev = dev;
 
             GetGuestInfo();
 
-            if(m_initalized)
+            if (m_initalized)
                 VboxDevFSDriver.Init();
         }
 
+        /// <summary>
+        /// Exit handler
+        /// </summary>
+        /// <param name="dev">This PCI device</param>
         private static void ExitHander(PCI.PciDevice dev)
         {
 
         }
 
+        /// <summary>
+        /// Initialization
+        /// </summary>
         public static void Init()
         {
             PCI.PciDriver driver = new PCI.PciDriver();
@@ -104,7 +107,6 @@ namespace Sharpen.Drivers.Other
             driver.Init = InitHandler;
 
             PCI.RegisterDriver(0x80EE, 0xCAFE, driver);
-
         }
 
         #region Functions

@@ -1,5 +1,4 @@
-﻿using System;
-using Sharpen.Collections;
+﻿using Sharpen.Utilities;
 
 namespace Sharpen.FileSystem
 {
@@ -88,15 +87,15 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         public static unsafe Node GetByPath(string path)
         {
-            int index = String.indexOf(path, "://");
+            int index = String.IndexOf(path, "://");
             if (index == -1)
                 return null;
 
             if (path[String.Length(path) - 1] != '/')
                 path = String.Merge(path, "/");
 
-            string deviceName = String.Substring(path, 0, index);
-            string AfterDeviceName = String.Substring(path, index + 3, String.Length(path) - (index + 3));
+            string deviceName = String.SubString(path, 0, index);
+            string AfterDeviceName = String.SubString(path, index + 3, String.Length(path) - (index + 3));
             int parts = String.Count(AfterDeviceName, '/');
 
             // Find first mount
@@ -112,13 +111,15 @@ namespace Sharpen.FileSystem
             string afterNodeName = AfterDeviceName;
             while (parts > 0)
             {
-                index = String.indexOf(afterNodeName, "/");
+                index = String.IndexOf(afterNodeName, "/");
                 
-                nodeName = String.Substring(afterNodeName, 0, index);
-                afterNodeName = String.Substring(afterNodeName, index + 1, String.Length(path) - 1);
+                nodeName = String.SubString(afterNodeName, 0, index);
+                afterNodeName = String.SubString(afterNodeName, index + 1, String.Length(path) - 1);
                 lastNode = lastNode.FindDir(lastNode, nodeName);
+
                 if (lastNode == null)
                     return null;
+
                 parts--;
             }
             

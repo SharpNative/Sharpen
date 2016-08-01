@@ -1,6 +1,6 @@
 ﻿using Sharpen.Arch;
 
-namespace Sharpen
+namespace Sharpen.Task
 {
     public unsafe class Task
     {

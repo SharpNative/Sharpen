@@ -3,8 +3,8 @@ extern Sharpen_Arch_ISR_Handler_1struct_struct_Sharpen_Arch_Regs__
 ; IRQ Handler
 extern Sharpen_Arch_IRQ_Handler_1struct_struct_Sharpen_Arch_Regs__
 ; Task scheduler
-extern Sharpen_Tasking_Scheduler_1struct_struct_Sharpen_Arch_Regs__
-; Timer scheduler
+extern Sharpen_Task_Tasking_Scheduler_1struct_struct_Sharpen_Arch_Regs__
+; PIT handler
 extern Sharpen_Arch_PIT_Handler_1struct_struct_Sharpen_Arch_Regs__
 
 global Sharpen_Arch_IDT_FlushIDT_1struct_struct_Sharpen_Arch_IDT_IDT_Pointer__
@@ -135,7 +135,7 @@ Sharpen_Arch_IDT_IRQ0_0:
     ; Call both the PIT handler and the task scheduler
     push esp
     call Sharpen_Arch_PIT_Handler_1struct_struct_Sharpen_Arch_Regs__
-    call Sharpen_Tasking_Scheduler_1struct_struct_Sharpen_Arch_Regs__
+    call Sharpen_Task_Tasking_Scheduler_1struct_struct_Sharpen_Arch_Regs__
     mov esp, eax
 
     ; Acknowledge IRQ
@@ -153,8 +153,8 @@ Sharpen_Arch_IDT_IRQ0_0:
     iret
 
 ; Manual scheduler
-global Sharpen_Tasking_ManualSchedule_0
-Sharpen_Tasking_ManualSchedule_0:
+global Sharpen_Task_Tasking_ManualSchedule_0
+Sharpen_Task_Tasking_ManualSchedule_0:
     ; Setup interrupt stack frame
     pushfd
     push cs
@@ -178,7 +178,7 @@ Sharpen_Tasking_ManualSchedule_0:
 
     ; Task scheduler
     push esp
-    call Sharpen_Tasking_Scheduler_1struct_struct_Sharpen_Arch_Regs__
+    call Sharpen_Task_Tasking_Scheduler_1struct_struct_Sharpen_Arch_Regs__
     mov esp, eax
 
     ; Reload original segment

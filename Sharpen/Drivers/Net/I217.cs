@@ -1,30 +1,31 @@
 ﻿using Sharpen.Arch;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.Net
 {
     class I217
     {
-
         private static ushort m_io_base;
 
+        /// <summary>
+        /// Initialization handler
+        /// </summary>
+        /// <param name="dev">This PCI device</param>
         private static void InitHandler(PCI.PciDevice dev)
         {
             m_io_base = dev.Port1;
-
-
         }
 
-
+        /// <summary>
+        /// Exit handler
+        /// </summary>
+        /// <param name="dev">This PCI device</param>
         private static void ExitHander(PCI.PciDevice dev)
         {
-
         }
 
+        /// <summary>
+        /// Initializes
+        /// </summary>
         public static void Init()
         {
             PCI.PciDriver driver = new PCI.PciDriver();
@@ -34,6 +35,5 @@ namespace Sharpen.Drivers.Net
 
             PCI.RegisterDriver(0x8086, 0x100E, driver);
         }
-
     }
 }

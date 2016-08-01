@@ -1,7 +1,7 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Collections;
 
-namespace Sharpen
+namespace Sharpen.Task
 {
     public class Tasking
     {

@@ -1,4 +1,4 @@
-﻿namespace Sharpen
+﻿namespace Sharpen.Utilities
 {
     public sealed class String
     {
@@ -17,10 +17,10 @@
         /// <summary>
         /// IndexOf implementation
         /// </summary>
-        /// <param name="text"></param>
-        /// <param name="occurence"></param>
-        /// <returns></returns>
-        public static int indexOf(string text, string occurence)
+        /// <param name="text">The string to search into</param>
+        /// <param name="occurence">The string to search for</param>
+        /// <returns>The index of the occurrence</returns>
+        public static int IndexOf(string text, string occurence)
         {
             int found = -1;
             int foundCount = 0;
@@ -35,7 +35,6 @@
             {
                 if (occurence[foundCount] == text[textIndex])
                 {
-
                     if (foundCount == 0)
                         found = textIndex;
 
@@ -75,11 +74,11 @@
         /// <summary>
         /// Substring implementation
         /// </summary>
-        /// <param name="str"></param>
-        /// <param name="start"></param>
-        /// <param name="count"></param>
-        /// <returns></returns>
-        public static unsafe string Substring(string str, int start, int count)
+        /// <param name="str">The string</param>
+        /// <param name="start">The starting index</param>
+        /// <param name="count">The count</param>
+        /// <returns>The string</returns>
+        public static unsafe string SubString(string str, int start, int count)
         {
             if (count <= 0)
                 return null;
@@ -103,40 +102,37 @@
             }
             ch[j] = '\0';
             
-            // TODO: Find a method that doesn't give an error in intellisense (works in compiler)
-            return (string)ch;
+            return Util.CharPtrToString(ch);
         }
 
         /// <summary>
-        /// Merge 2 string
+        /// Merge 2 strings
         /// </summary>
-        /// <param name="first"></param>
-        /// <param name="second"></param>
-        /// <returns></returns>
+        /// <param name="first">The first string</param>
+        /// <param name="second">The second string</param>
+        /// <returns>The merged string</returns>
         public static unsafe string Merge(string first, string second)
         {
             int firstLength = Length(first);
             int secondLength = Length(second);
 
-            int allocLength = firstLength + secondLength + 1;
+            int totalLength = firstLength + secondLength;
+            char* outVal = (char*)Heap.Alloc(totalLength + 1);
+            
+            Memory.Memcpy(outVal, Util.ObjectToVoidPtr(first), firstLength);
+            Memory.Memcpy((void*)((int)outVal + firstLength), Util.ObjectToVoidPtr(second), secondLength);
 
-            char* outVal = (char*)Heap.Alloc(allocLength);
+            outVal[totalLength] = '\0';
 
-            int j = 0;
-
-            // TODO: Can't remove brackets, compiler bug?
-            for (int i = 0; i < firstLength; i++)
-            {
-                outVal[j++] = first[i];
-            }
-
-            for (int i = 0; i < secondLength; i++)
-                outVal[j++] = second[i];
-            outVal[j] = '\0';
-
-            return (string)outVal; 
+            return Util.CharPtrToString(outVal);
         }
 
+        /// <summary>
+        /// Checks if two string are equal
+        /// </summary>
+        /// <param name="one">First string</param>
+        /// <param name="two">Second string</param>
+        /// <returns>If the two string are equal</returns>
         public static bool Equals(string one, string two)
         {
             int oneLength = Length(one);

@@ -1,4 +1,6 @@
-﻿namespace Sharpen.Collections
+﻿using Sharpen.Utilities;
+
+namespace Sharpen.Collections
 {
     public class List
     {

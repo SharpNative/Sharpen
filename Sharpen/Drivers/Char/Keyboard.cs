@@ -1,17 +1,11 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Collections;
 using Sharpen.FileSystem;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.Char
 {
     class Keyboard
     {
-
         /// <summary>
         /// Leds
         /// </summary>
@@ -56,7 +50,7 @@ namespace Sharpen.Drivers.Char
             set
             {
                 m_leds = value;
-                updateLeds();
+                UpdateLED();
             }
         }
 
@@ -65,17 +59,15 @@ namespace Sharpen.Drivers.Char
         /// </summary>
         /// <param name="scancode">The charcode</param>
         /// <returns></returns>
-        private static char transformKey(byte scancode)
+        private static char TransformKey(byte scancode)
         {
             char outputChar;
 
             int codeFixed = scancode;
             // test
             outputChar = (m_shift > 0 ? KeyboardMap.Shifted[codeFixed] : KeyboardMap.Normal[codeFixed]);
-            
-            /**
-             * Capslock enabled?
-             */
+
+            // Caps lock enabled?
             if (m_capslock > 0)
             {
                 if (outputChar >= 'a' && outputChar <= 'z')
@@ -86,15 +78,15 @@ namespace Sharpen.Drivers.Char
                 {
                     outputChar = (char)((outputChar - 'A') + 'a');
                 }
-            } 
+            }
 
             return outputChar;
         }
 
-        /**
-         * Update led byte
-         */ 
-        private static void updateLeds()
+        /// <summary>
+        /// Updates the LED
+        /// </summary>
+        private static void UpdateLED()
         {
             PortIO.Out8(0x60, 0xED);
             while ((PortIO.In8(0x64) & 2) > 0) ;
@@ -164,7 +156,7 @@ namespace Sharpen.Drivers.Char
         private static unsafe void Handler(Regs* regsPtr)
         {
             byte scancode = PortIO.In8(0x60);
-            
+
             // Key up?
             if ((scancode & 0x80) > 0)
             {
@@ -175,8 +167,6 @@ namespace Sharpen.Drivers.Char
             }
             else
             {
-                
-
                 if (scancode == 0x3A)
                 {
                     if (m_capslock > 0)
@@ -189,7 +179,7 @@ namespace Sharpen.Drivers.Char
                         m_capslock = 1;
                         m_leds = 4;
                     }
-                    updateLeds();
+                    UpdateLED();
                 }
                 else if (scancode == 0x2A)
                     m_shift |= 0x01;
@@ -197,13 +187,12 @@ namespace Sharpen.Drivers.Char
                     m_shift |= 0x02;
                 else
                 {
-                    readchar = transformKey(scancode);
+                    readchar = TransformKey(scancode);
 
                     m_fifo.WriteByte((byte)readchar);
 
                     readingchar = 0;
                 }
-
             }
         }
     }

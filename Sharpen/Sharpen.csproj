@@ -56,13 +56,13 @@
     <Compile Include="Arch\IDT.cs" />
     <Compile Include="Arch\IRQ.cs" />
     <Compile Include="Arch\ISR.cs" />
-    <Compile Include="Task.cs" />
-    <Compile Include="Tasking.cs" />
+    <Compile Include="Task\Task.cs" />
+    <Compile Include="Task\Tasking.cs" />
     <Compile Include="Arch\PCI.cs" />
     <Compile Include="Arch\PIC.cs" />
     <Compile Include="Arch\PIT.cs" />
     <Compile Include="Arch\Regs.cs" />
-    <Compile Include="ByteUtil.cs" />
+    <Compile Include="Utilities\ByteUtil.cs" />
     <Compile Include="Drivers\Net\I217.cs" />
     <Compile Include="Drivers\Other\VboxDev.cs" />
     <Compile Include="Drivers\Other\VboxDevExtras.cs" />
@@ -101,10 +101,10 @@
     <Compile Include="Arch\Paging.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="String.cs" />
-    <Compile Include="TaskPriority.cs" />
+    <Compile Include="Utilities\String.cs" />
+    <Compile Include="Task\TaskPriority.cs" />
     <Compile Include="Time.cs" />
-    <Compile Include="Util.cs" />
+    <Compile Include="Utilities\Util.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

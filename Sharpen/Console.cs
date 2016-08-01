@@ -107,19 +107,7 @@ namespace Sharpen
                 PutChar(text[i]);
             }
         }
-
-        /// <summary>
-        /// Writes a string to the screen
-        /// </summary>
-        /// <param name="text">The string</param>
-        public static void WriteP(char *text)
-        {
-            for (int i = 0; text[i] != '\0'; i++)
-            {
-                PutChar(text[i]);
-            }
-        }
-
+        
         /// <summary>
         /// Writes a string to the screen with a newline
         /// </summary>
@@ -129,18 +117,7 @@ namespace Sharpen
             Write(text);
             PutChar('\n');
         }
-
-        /// <summary>
-        /// Writes a string to the screen with a newline
-        /// </summary>
-        /// <param name="text">The string</param>
-        public static void WriteLineP(char *text)
-        {
-            WriteP(text);
-            PutChar('\n');
-        }
-
-
+        
         /// <summary>
         /// Writes a hexadecimal integer to the screen
         /// </summary>

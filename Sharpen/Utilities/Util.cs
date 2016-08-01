@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Sharpen
+namespace Sharpen.Utilities
 {
     public sealed class Util
     {

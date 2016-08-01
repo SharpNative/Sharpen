@@ -6,6 +6,8 @@ using Sharpen.Drivers.Other;
 using Sharpen.Drivers.Power;
 using Sharpen.Drivers.Sound;
 using Sharpen.FileSystem;
+using Sharpen.Task;
+using Sharpen.Utilities;
 
 namespace Sharpen
 {
@@ -26,9 +28,9 @@ namespace Sharpen
             Console.Clear();
 
             void* heapStart = (void*)end;
+            uint memSize = 32;
             #region Multiboot
 
-            uint i;
             // Booted by a multiboot bootloader
             if (magic == Multiboot.Magic)
             {
@@ -39,6 +41,9 @@ namespace Sharpen
                     Memory.Memcpy(destination, header, sizeof(Multiboot.Header));
                 }
 
+                // Memory size
+                memSize = m_mbootHeader.MemHi;
+
                 // Check if any modules are loaded
                 if ((m_mbootHeader.Flags & Multiboot.FlagMods) > 0)
                 {
@@ -48,7 +53,7 @@ namespace Sharpen
                     Console.WriteNum((int)modsCount);
                     Console.PutChar('\n');
 
-                    for (i = 0; i < modsCount; i++)
+                    for (int i = 0; i < modsCount; i++)
                     {
                         Multiboot.Module** mods = (Multiboot.Module**)m_mbootHeader.ModsAddr;
                         Multiboot.Module module = *mods[i];
@@ -68,47 +73,58 @@ namespace Sharpen
             }
 
             #endregion
-
+            
             Heap.Init(heapStart);
             GDT.Init();
             PIC.Remap();
             IDT.Init();
             Acpi.Init();
-
-            Paging.Init();
+            
+            Paging.Init(memSize);
             Heap.SetupRealHeap();
-
+            
             PIT.Init();
             CMOS.UpdateTime();
             Keyboard.Init();
-
+            
             DevFS.Init();
             VFS.Init();
             SerialPort.Init();
-
+            
             PCI.Probe();
             //AC97.Init();
-            ATA.Init();
             VboxDev.Init();
             //I217.Init();
-
+            ATA.Init();
+            
             Tasking.Init();
-            Tasking.AddTask(Util.MethodToPtr(Test1), TaskPriority.VERYLOW);
-            Tasking.AddTask(Util.MethodToPtr(Test2), TaskPriority.VERYHIGH);
+            //Tasking.AddTask(Util.MethodToPtr(Test1), TaskPriority.VERYLOW);
+            //Tasking.AddTask(Util.MethodToPtr(Test2), TaskPriority.VERYHIGH);
 
             Console.WriteLine("\nReaddir: devices://");
             Node searchNode = VFS.GetByPath("devices://");
-            i = 0;
-            DirEntry* entry = searchNode.ReadDir(searchNode, i);
-            i++;
+            uint j = 0;
+            DirEntry* entry = searchNode.ReadDir(searchNode, j);
+            j++;
             while (entry != null)
             {
                 Console.Write("\tdevices://");
-                Console.WriteLineP(entry->Name);
+                Console.WriteLine(Util.CharPtrToString(entry->Name));
 
-                entry = searchNode.ReadDir(searchNode, i);
-                i++;
+                entry = searchNode.ReadDir(searchNode, j);
+                j++;
             }
+
+            // SET VM on pause 
+            Console.WriteLine("Set VM on pause");
+            Node node = VFS.GetByPath("devices://VMMDEV/powerstate");
+            Console.WriteHex((int)Util.ObjectToVoidPtr(node));
+            Console.Write(" ");
+            Console.WriteHex((int)Util.ObjectToVoidPtr(ByteUtil.ToBytes((int)VboxDevPowerState.Pause)));
+            Console.Write(" ");
+            Console.WriteHex((int)Util.ObjectToVoidPtr(node.Write));
+            Console.Write(" ");
+            node.Write(node, 0, 4, ByteUtil.ToBytes((int)VboxDevPowerState.Pause));
 
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat32 fat = new Fat32(hddNode, "C");

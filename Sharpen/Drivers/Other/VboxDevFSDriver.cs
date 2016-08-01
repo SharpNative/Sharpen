@@ -1,9 +1,5 @@
 ﻿using Sharpen.FileSystem;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Sharpen.Utilities;
 
 namespace Sharpen.Drivers.Other
 {
@@ -108,7 +104,7 @@ namespace Sharpen.Drivers.Other
 
                     ulong sessionID = VboxDev.GetSessionID();
 
-                    ByteUtil.toBytes((long)sessionID, buffer);
+                    ByteUtil.ToBytes((long)sessionID, buffer);
 
                     return 8;
 
@@ -118,7 +114,7 @@ namespace Sharpen.Drivers.Other
 
                     ulong time = VboxDev.GetHostTime();
 
-                    ByteUtil.toBytes((long)time, buffer);
+                    ByteUtil.ToBytes((long)time, buffer);
 
                     return 8;
 

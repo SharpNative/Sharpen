@@ -32,6 +32,9 @@ namespace Sharpen
         // First block descriptor
         private static unsafe BlockDescriptor* firstDescriptor;
 
+        // Minimal amount of pages in a descriptor
+        private static readonly int MINIMALPAGES = 32;
+
         /// <summary>
         /// Initializes the heap at the given start address
         /// </summary>
@@ -53,9 +56,8 @@ namespace Sharpen
         private static int GetRequiredPageCount(int size)
         {
             // Calculate the required amount of pages
-            // There is a minimal of 16
             int required = size / 0x1000;
-            return (required < 16) ? 16 : required;
+            return (required < MINIMALPAGES) ? MINIMALPAGES : required;
         }
 
         /// <summary>
@@ -71,6 +73,7 @@ namespace Sharpen
             if (descriptor == null)
                 return null;
 
+
             // Setup block
             Block* first = (Block*)((int)descriptor + sizeof(BlockDescriptor));
             first->Next = null;
@@ -82,7 +85,7 @@ namespace Sharpen
             descriptor->FreeSpace = size;
             descriptor->First = first;
             descriptor->Next = null;
-
+            
             return descriptor;
         }
 
@@ -94,7 +97,7 @@ namespace Sharpen
         private static unsafe BlockDescriptor* GetSufficientDescriptor(int size)
         {
             BlockDescriptor* descriptor = firstDescriptor;
-
+            
             // Search for a big enough descriptor
             while (true)
             {
@@ -128,7 +131,7 @@ namespace Sharpen
             CurrentEnd = (void*)address;
 
             // First block descriptor and real heap on
-            firstDescriptor = CreateBlockDescriptor(16 * 0x1000);
+            firstDescriptor = CreateBlockDescriptor(MINIMALPAGES * 0x1000);
             m_realHeap = true;
 
             Console.Write("[HEAP] Currently at ");

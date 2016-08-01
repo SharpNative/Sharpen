@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Sharpen.FileSystem
 {
-    struct DirEntry
+    public struct DirEntry
     {
         public uint Ino;
         public int Offset;

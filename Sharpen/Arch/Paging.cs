@@ -89,20 +89,19 @@ namespace Sharpen.Arch
         /// <summary>
         /// Initializes paging
         /// </summary>
-        public static unsafe void Init()
+        /// <param name="memSize">Memory size</param>
+        public static unsafe void Init(uint memSize)
         {
             // Create kernel directory
             KernelDirectory = (PageDirectory*)Heap.AlignedAlloc(0x1000, sizeof(PageDirectory));
             Memory.Memset(KernelDirectory, 0, sizeof(PageDirectory));
 
             // Bit array to store which frames are free
-            int memsize = 0x1000000; // Assume 16MB for now
-            m_bitmap = new BitArray((memsize / 0x1000) / 32);
+            m_bitmap = new BitArray((int)(memSize / 32));
 
             // Map from [ 0x00 - Heap end ] as kernelspace
             int address = 0;
-            int end = (int)Heap.CurrentEnd + (1024 * 1024);
-            while (address < end)
+            while (address < (int)Heap.CurrentEnd + (sizeof(PageDirectory) * sizeof(PageTable)))
             {
                 int flags = (int)PageFlags.Present | (int)PageFlags.Writable;
                 MapPage(KernelDirectory, address, address, flags);

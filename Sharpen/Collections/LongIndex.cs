@@ -1,4 +1,6 @@
-﻿namespace Sharpen.Collections
+﻿using Sharpen.Utilities;
+
+namespace Sharpen.Collections
 {
     public class LongIndex
     {
@@ -59,8 +61,28 @@
         public void Add(long o)
         {
             EnsureCapacity(Count + 1);
-            Item[Count] = o;
-            Count++;
+            Item[Count++] = o;
+        }
+
+        /// <summary>
+        /// Removes an object at a given index
+        /// </summary>
+        /// <param name="index">The index</param>
+        public unsafe void RemoveAt(int index)
+        {
+            // Check if inside bounds
+            if (index >= Count)
+                return;
+
+            // Copy
+            int destination = (int)Util.ObjectToVoidPtr(Item) + (index * sizeof(long));
+            int source = (int)Util.ObjectToVoidPtr(Item) + ((index + 1) * sizeof(long));
+            Memory.Memcpy((void*)destination, (void*)source, (Count - index - 1) * sizeof(long));
+
+            // Decrease capacity if the list has enough free space
+            Count--;
+            if (Count * 2 < Capacity)
+                Capacity /= 2;
         }
 
         /// <summary>

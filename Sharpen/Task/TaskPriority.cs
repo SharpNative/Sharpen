@@ -1,4 +1,4 @@
-﻿namespace Sharpen
+﻿namespace Sharpen.Task
 {
     public enum TaskPriority
     {

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Sharpen
+﻿namespace Sharpen
 {
     public sealed class Memory
     {
@@ -12,7 +10,14 @@ namespace Sharpen
         /// <param name="num">The number of bytes</param>
         public static extern unsafe void Memcpy(void* destination, void* source, int num);
 
-        internal static unsafe bool Compare(char * s1, char *s2, int n)
+        /// <summary>
+        /// Compares two chunks of memory
+        /// </summary>
+        /// <param name="s1">The first chunk</param>
+        /// <param name="s2">The second chunk</param>
+        /// <param name="n">The amount of memory to compare</param>
+        /// <returns>If the two chunks are equal</returns>
+        internal static unsafe bool Compare(char* s1, char *s2, int n)
         {
             for(int i = 0; i < n; i++)
             {
