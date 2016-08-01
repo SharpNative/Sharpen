@@ -50,9 +50,9 @@ Sharpen_Memory_Memset_3void__int32_t_int32_t_:
     mov edx, eax
 
     ; Remaining part
-    sar ecx, 2
     and edx, 3
-
+    shr ecx, 2
+    
     ; Load value
     mov eax, [esp + 12]
 
