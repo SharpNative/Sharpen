@@ -15,9 +15,9 @@ Sharpen_Memory_Memcpy_3void__void__int32_t_:
     mov ecx, eax
 
     ; Remaining part
-    sar ecx, 2
     and eax, 3
-
+    shr ecx, 2
+    
     ; Clear direction flag
     cld
 
@@ -25,7 +25,7 @@ Sharpen_Memory_Memcpy_3void__void__int32_t_:
     rep movsd
 
     ; Second part (as bytes)
-    mov eax, ecx
+    mov ecx, eax
     rep movsb
 
     ; Done
@@ -63,7 +63,7 @@ Sharpen_Memory_Memset_3void__int32_t_int32_t_:
     rep stosd
 
     ; Second part (as bytes)
-    mov edx, ecx
+    mov ecx, edx
     rep stosb
 
     ; Done

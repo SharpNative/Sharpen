@@ -121,9 +121,9 @@
             
             Memory.Memcpy(outVal, Util.ObjectToVoidPtr(first), firstLength);
             Memory.Memcpy((void*)((int)outVal + firstLength), Util.ObjectToVoidPtr(second), secondLength);
-
+            
             outVal[totalLength] = '\0';
-
+            
             return Util.CharPtrToString(outVal);
         }
 

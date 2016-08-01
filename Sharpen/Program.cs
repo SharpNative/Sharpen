@@ -118,12 +118,6 @@ namespace Sharpen
             // SET VM on pause 
             Console.WriteLine("Set VM on pause");
             Node node = VFS.GetByPath("devices://VMMDEV/powerstate");
-            Console.WriteHex((int)Util.ObjectToVoidPtr(node));
-            Console.Write(" ");
-            Console.WriteHex((int)Util.ObjectToVoidPtr(ByteUtil.ToBytes((int)VboxDevPowerState.Pause)));
-            Console.Write(" ");
-            Console.WriteHex((int)Util.ObjectToVoidPtr(node.Write));
-            Console.Write(" ");
             node.Write(node, 0, 4, ByteUtil.ToBytes((int)VboxDevPowerState.Pause));
 
             Node hddNode = VFS.GetByPath("devices://HDD0");

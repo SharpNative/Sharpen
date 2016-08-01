@@ -13,6 +13,9 @@ namespace Sharpen.Drivers.Other
             "hosttime"
         };
 
+        /// <summary>
+        /// Initializes the Filesystem node for VboxDev
+        /// </summary>
         public static unsafe void Init()
         {
             Device device = new Device();
@@ -27,12 +30,17 @@ namespace Sharpen.Drivers.Other
             Console.WriteLine("[VMMDev] FsDevice registered under VMMDEV");
         }
 
+        /// <summary>
+        /// Reads directory entries from the FS
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="index">The current index</param>
+        /// <returns>The directory entry</returns>
         private static unsafe DirEntry* readDirImpl(Node node, uint index)
         {
             if (index >= num_commands)
                 return null;
-
-
+            
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
 
             int i = 0;
