@@ -55,7 +55,7 @@ namespace Sharpen.Arch
             set
             {
                 m_currentDirectory = value;
-                SetDirectoryInternal(value);
+                setDirectoryInternal(value);
             }
         }
 
@@ -154,13 +154,11 @@ namespace Sharpen.Arch
         /// <returns>The physical address</returns>
         public static unsafe void* GetPhysicalFromVirtual(void* virt)
         {
-            return virt;
-
             // Get indices
             int address = (int)virt;
             int remaining = address % 0x1000;
             int frame = address / 0x1000;
-
+            
             // Find corresponding table to the virtual address
             PageTable* table = (PageTable*)(CurrentDirectory->tables[frame / 1024] & 0xFFFFF000);
             if (table == null)
@@ -267,6 +265,6 @@ namespace Sharpen.Arch
         /// Sets the current paging directory in the CR3 register
         /// </summary>
         /// <param name="directory">The page directory</param>
-        private static unsafe extern void SetDirectoryInternal(PageDirectory* directory);
+        private static unsafe extern void setDirectoryInternal(PageDirectory* directory);
     }
 }

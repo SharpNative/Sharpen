@@ -1,5 +1,4 @@
 ﻿using Sharpen.Arch;
-using Sharpen.Collections;
 
 namespace Sharpen.Task
 {
@@ -133,7 +132,7 @@ namespace Sharpen.Task
 
             // Stack
             newTask.Stack = (int*)((int)Heap.AlignedAlloc(16, 8192) + 8192);
-            newTask.Stack = WriteSchedulerStack(newTask.Stack, 0x08, 0x10, eip);
+            newTask.Stack = writeSchedulerStack(newTask.Stack, 0x08, 0x10, eip);
 
             // Schedule
             ScheduleTask(newTask);
@@ -165,7 +164,7 @@ namespace Sharpen.Task
         /// </summary>
         /// <param name="regsPtr">Pointer to registers</param>
         /// <returns>Pointer to registers</returns>
-        private static unsafe Regs* Scheduler(Regs* regsPtr)
+        private static unsafe Regs* scheduler(Regs* regsPtr)
         {
             // Only do this if tasking is enabled
             if (!m_taskingEnabled)
@@ -191,7 +190,7 @@ namespace Sharpen.Task
         /// <param name="ds">The Data Segment</param>
         /// <param name="eip">The return EIP value</param>
         /// <returns>The new pointer</returns>
-        private static unsafe int* WriteSchedulerStack(int* ptr, int cs, int ds, void* eip)
+        private static unsafe int* writeSchedulerStack(int* ptr, int cs, int ds, void* eip)
         {
             int esp = (int)ptr;
 

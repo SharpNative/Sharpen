@@ -1,15 +1,10 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Collections;
 using Sharpen.FileSystem;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.Char
 {
-    class SerialPort
+    public sealed class SerialPort
     {
         private static SerialPortComport[] comports = new SerialPortComport[4];
 
@@ -47,6 +42,14 @@ namespace Sharpen.Drivers.Char
             DevFS.RegisterDevice(dev);
         }
 
+        /// <summary>
+        /// Write method for filesystem
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="offset">The offset</param>
+        /// <param name="size">The size</param>
+        /// <param name="buffer">The buffer</param>
+        /// <returns>The amount of bytes written</returns>
         private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             uint i = 0;
@@ -55,7 +58,7 @@ namespace Sharpen.Drivers.Char
 
             while(i < size)
             {
-                Write(buffer[i], comports[node.Cookie].Address);
+                write(buffer[i], comports[node.Cookie].Address);
 
                 i++;
             }
@@ -63,6 +66,14 @@ namespace Sharpen.Drivers.Char
             return i;
         }
 
+        /// <summary>
+        /// Read method for filesystem
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="offset">The offset</param>
+        /// <param name="size">The size</param>
+        /// <param name="buffer">The buffer</param>
+        /// <returns>The amount of bytes read</returns>
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             if (comports[node.Cookie].Address == 0)
@@ -74,45 +85,49 @@ namespace Sharpen.Drivers.Char
         /// <summary>
         /// Is the transmit empty?
         /// </summary>
-        /// <param name="port"></param>
-        /// <returns></returns>
-        private static int transmitEmtpy(int port)
+        /// <param name="port">The serialport</param>
+        /// <returns>If the transmit is empty</returns>
+        private static bool isTransmitEmpty(int port)
         {
-            return PortIO.In8((ushort)(port + 0x20)) & 1;
+            return (PortIO.In8((ushort)(port + 0x05)) & 0x20) == 0;
         }
 
         /// <summary>
         /// Byte received on port?
         /// </summary>
-        /// <param name="port"></param>
-        /// <returns></returns>
-        private static int received(int port)
+        /// <param name="port">The serialport</param>
+        /// <returns>If there are bytes received</returns>
+        private static bool hasReceived(int port)
         {
-            return PortIO.In8((ushort)(port + 0x05)) & 1;
+            return (PortIO.In8((ushort)(port + 0x05)) & 1) > 0;
         }
 
         /// <summary>
         /// Read from serial port
         /// </summary>
         /// <param name="port">The serial port</param>
-        /// <returns></returns>
-        private static byte Read(ushort port)
+        /// <returns>Read data</returns>
+        private static byte read(ushort port)
         {
-            while (received(port) == 0)
+            while (!hasReceived(port))
                 CPU.HLT();
 
             return PortIO.In8(port);
         }
 
-        public static void Write(byte d, ushort port)
+        /// <summary>
+        /// Write to serial port
+        /// </summary>
+        /// <param name="d">The data</param>
+        /// <param name="port">The port</param>
+        private static void write(byte d, ushort port)
         {
-            while (transmitEmtpy(port) == 0)
+            while (isTransmitEmpty(port))
                 CPU.HLT();
 
             PortIO.Out8(port, d);
         }
         
-
         /// <summary>
         /// Read bios data area for addresses
         /// </summary>
@@ -120,10 +135,10 @@ namespace Sharpen.Drivers.Char
         {
             ushort* bda = (ushort*)0x00000400;
 
-            comports[0].Address = *bda;          // COM1
-            comports[1].Address = *(bda + 1);    // COM2
-            comports[2].Address = *(bda + 2);    // COM3
-            comports[3].Address = *(bda + 3);	// COM4
+            comports[0].Address = *(bda + 0);   // COM1
+            comports[1].Address = *(bda + 1);   // COM2
+            comports[2].Address = *(bda + 2);   // COM3
+            comports[3].Address = *(bda + 3);   // COM4
         }
 
         /// <summary>
@@ -133,7 +148,7 @@ namespace Sharpen.Drivers.Char
         {
             SerialPortComport port;
 
-            if (comports[0].Address != 0 && received(comports[0].Address) != 0)
+            if (comports[0].Address != 0 && hasReceived(comports[0].Address))
                 port = comports[0];
             else
                 port = comports[2];
@@ -141,8 +156,8 @@ namespace Sharpen.Drivers.Char
             if (port.Address == 0)
                 return;
 
-            while(received(port.Address) != 0)
-                port.Buffer.WriteByte(Read(port.Address));
+            while(hasReceived(port.Address))
+                port.Buffer.WriteByte(read(port.Address));
         }
 
         /// <summary>
@@ -152,7 +167,7 @@ namespace Sharpen.Drivers.Char
         {
             SerialPortComport port;
 
-            if (comports[1].Address != 0 && received(comports[1].Address) != 0)
+            if (comports[1].Address != 0 && hasReceived(comports[1].Address))
                 port = comports[1];
             else
                 port = comports[3];
@@ -160,8 +175,8 @@ namespace Sharpen.Drivers.Char
             if (port.Address == 0)
                 return;
 
-            while (received(port.Address) != 0)
-                port.Buffer.WriteByte(Read(port.Address));
+            while (hasReceived(port.Address))
+                port.Buffer.WriteByte(read(port.Address));
         }
 
         /// <summary>
@@ -187,7 +202,6 @@ namespace Sharpen.Drivers.Char
             
             IRQ.SetHandler(3, Handler24);
             IRQ.SetHandler(4, Handler13);
-
         }
     }
 }

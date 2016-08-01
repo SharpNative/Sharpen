@@ -1,5 +1,5 @@
-global Sharpen_Arch_GDT_FlushGDT_1struct_struct_Sharpen_Arch_GDT_GDT_Pointer__
-Sharpen_Arch_GDT_FlushGDT_1struct_struct_Sharpen_Arch_GDT_GDT_Pointer__:
+global Sharpen_Arch_GDT_flushGDT_1struct_struct_Sharpen_Arch_GDT_GDT_Pointer__
+Sharpen_Arch_GDT_flushGDT_1struct_struct_Sharpen_Arch_GDT_GDT_Pointer__:
     ; Pointer passed as argument
     mov eax, [esp + 4]
     lgdt [eax]

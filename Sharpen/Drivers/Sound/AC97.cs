@@ -58,14 +58,14 @@ namespace Sharpen.Drivers.Sound
             m_nabmbar = dev.Port2;
 
             // Set IRQ handler
-            uint irqNum = PCI.PciRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
+            uint irqNum = PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
             IRQ.SetHandler((int)irqNum, IRQHandler);
 
             // Enable all interrupts
             PortIO.Out8((ushort)(m_nabmbar + CR), (byte)(CR_FEIE | CR_IOCE | CR_LVBIE));
 
             // Enable bus mastering
-            PCI.PciWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, 0x05);
+            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, 0x05);
 
             // Volume
             ushort volume = 0x03 | (0x03 << 8);

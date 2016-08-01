@@ -12,8 +12,8 @@ Sharpen_Arch_Paging_Disable_0:
     mov cr0, eax
     ret
 
-global Sharpen_Arch_Paging_SetDirectoryInternal_1struct_struct_Sharpen_Arch_Paging_PageDirectory__
-Sharpen_Arch_Paging_SetDirectoryInternal_1struct_struct_Sharpen_Arch_Paging_PageDirectory__:
+global Sharpen_Arch_Paging_setDirectoryInternal_1struct_struct_Sharpen_Arch_Paging_PageDirectory__
+Sharpen_Arch_Paging_setDirectoryInternal_1struct_struct_Sharpen_Arch_Paging_PageDirectory__:
     mov eax, [esp + 4]
     mov cr3, eax
     ret

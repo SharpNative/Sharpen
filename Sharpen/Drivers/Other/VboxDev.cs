@@ -50,7 +50,7 @@ namespace Sharpen.Drivers.Other
         /// <summary>
         /// Gets info about the guest
         /// </summary>
-        private unsafe static void GetGuestInfo()
+        private unsafe static void getGuestInfo()
         {
             RequestGuestInfo* req = (RequestGuestInfo*)Heap.Alloc(sizeof(RequestGuestInfo));
             req->header.Size = (uint)sizeof(RequestGuestInfo);
@@ -77,11 +77,11 @@ namespace Sharpen.Drivers.Other
         /// Initialization handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private unsafe static void InitHandler(PCI.PciDevice dev)
+        private unsafe static void initHandler(PCI.PciDevice dev)
         {
             m_dev = dev;
 
-            GetGuestInfo();
+            getGuestInfo();
 
             if (m_initalized)
                 VboxDevFSDriver.Init();
@@ -91,7 +91,7 @@ namespace Sharpen.Drivers.Other
         /// Exit handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private static void ExitHander(PCI.PciDevice dev)
+        private static void exitHander(PCI.PciDevice dev)
         {
 
         }
@@ -103,8 +103,8 @@ namespace Sharpen.Drivers.Other
         {
             PCI.PciDriver driver = new PCI.PciDriver();
             driver.Name = "VboxDev driver";
-            driver.Exit = ExitHander;
-            driver.Init = InitHandler;
+            driver.Exit = exitHander;
+            driver.Init = initHandler;
 
             PCI.RegisterDriver(0x80EE, 0xCAFE, driver);
         }
@@ -148,7 +148,7 @@ namespace Sharpen.Drivers.Other
         /// <summary>
         /// Get host time
         /// </summary>
-        /// <returns>Time sinds linux epoch</returns>
+        /// <returns>Time since unix epoch</returns>
         public unsafe static ulong GetHostTime()
         {
             RequestHostTime* req = (RequestHostTime*)Heap.Alloc(sizeof(RequestHostTime));

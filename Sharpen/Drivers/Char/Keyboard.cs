@@ -4,7 +4,7 @@ using Sharpen.FileSystem;
 
 namespace Sharpen.Drivers.Char
 {
-    class Keyboard
+    public sealed class Keyboard
     {
         /// <summary>
         /// Leds
@@ -50,7 +50,7 @@ namespace Sharpen.Drivers.Char
             set
             {
                 m_leds = value;
-                UpdateLED();
+                updateLED();
             }
         }
 
@@ -58,8 +58,8 @@ namespace Sharpen.Drivers.Char
         /// Transform charcode into char
         /// </summary>
         /// <param name="scancode">The charcode</param>
-        /// <returns></returns>
-        private static char TransformKey(byte scancode)
+        /// <returns>The transformed char</returns>
+        private static char transformKey(byte scancode)
         {
             char outputChar;
 
@@ -86,7 +86,7 @@ namespace Sharpen.Drivers.Char
         /// <summary>
         /// Updates the LED
         /// </summary>
-        private static void UpdateLED()
+        private static void updateLED()
         {
             PortIO.Out8(0x60, 0xED);
             while ((PortIO.In8(0x64) & 2) > 0) ;
@@ -100,7 +100,7 @@ namespace Sharpen.Drivers.Char
         public static unsafe void Init()
         {
             // Install the IRQ handler
-            IRQ.SetHandler(1, Handler);
+            IRQ.SetHandler(1, handler);
 
             Device device = new Device();
             device.Name = "keyboard";
@@ -114,11 +114,11 @@ namespace Sharpen.Drivers.Char
         /// <summary>
         /// There no write!
         /// </summary>
-        /// <param name="node"></param>
-        /// <param name="offset"></param>
-        /// <param name="size"></param>
-        /// <param name="buffer"></param>
-        /// <returns></returns>
+        /// <param name="node">The node</param>
+        /// <param name="offset">The offset</param>
+        /// <param name="size">The size</param>
+        /// <param name="buffer">The buffer</param>
+        /// <returns>Zero</returns>
         private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             return 0;
@@ -127,11 +127,11 @@ namespace Sharpen.Drivers.Char
         /// <summary>
         /// Read from keyboard
         /// </summary>
-        /// <param name="node"></param>
-        /// <param name="offset"></param>
-        /// <param name="size"></param>
-        /// <param name="buffer"></param>
-        /// <returns></returns>
+        /// <param name="node">The node</param>
+        /// <param name="offset">The offset</param>
+        /// <param name="size">The size</param>
+        /// <param name="buffer">The buffer</param>
+        /// <returns>The amount of bytes read</returns>
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             return m_fifo.ReadWait(buffer, (ushort)size);
@@ -140,7 +140,7 @@ namespace Sharpen.Drivers.Char
         /// <summary>
         /// Get char from keyboard
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The char</returns>
         public static char Getch()
         {
             readingchar = 1;
@@ -153,7 +153,7 @@ namespace Sharpen.Drivers.Char
         /// Keyboard IRQ handler
         /// </summary>
         /// <param name="regsPtr"></param>
-        private static unsafe void Handler(Regs* regsPtr)
+        private static unsafe void handler(Regs* regsPtr)
         {
             byte scancode = PortIO.In8(0x60);
 
@@ -179,7 +179,7 @@ namespace Sharpen.Drivers.Char
                         m_capslock = 1;
                         m_leds = 4;
                     }
-                    UpdateLED();
+                    updateLED();
                 }
                 else if (scancode == 0x2A)
                     m_shift |= 0x01;
@@ -187,7 +187,7 @@ namespace Sharpen.Drivers.Char
                     m_shift |= 0x02;
                 else
                 {
-                    readchar = TransformKey(scancode);
+                    readchar = transformKey(scancode);
 
                     m_fifo.WriteByte((byte)readchar);
 

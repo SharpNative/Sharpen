@@ -3,12 +3,12 @@ extern Sharpen_Arch_ISR_Handler_1struct_struct_Sharpen_Arch_Regs__
 ; IRQ Handler
 extern Sharpen_Arch_IRQ_Handler_1struct_struct_Sharpen_Arch_Regs__
 ; Task scheduler
-extern Sharpen_Task_Tasking_Scheduler_1struct_struct_Sharpen_Arch_Regs__
+extern Sharpen_Task_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
 ; PIT handler
 extern Sharpen_Arch_PIT_Handler_1struct_struct_Sharpen_Arch_Regs__
 
-global Sharpen_Arch_IDT_FlushIDT_1struct_struct_Sharpen_Arch_IDT_IDT_Pointer__
-Sharpen_Arch_IDT_FlushIDT_1struct_struct_Sharpen_Arch_IDT_IDT_Pointer__:
+global Sharpen_Arch_IDT_flushIDT_1struct_struct_Sharpen_Arch_IDT_IDT_Pointer__
+Sharpen_Arch_IDT_flushIDT_1struct_struct_Sharpen_Arch_IDT_IDT_Pointer__:
     ; Pointer passed as an argument
     mov eax, [esp + 4]
     lidt [eax]

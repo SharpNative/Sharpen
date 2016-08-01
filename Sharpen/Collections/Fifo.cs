@@ -1,36 +1,41 @@
 ﻿using Sharpen.Arch;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Collections
 {
-    class Fifo
+    public class Fifo
     {
         private byte[] m_buffer;
         private bool m_wait = true;
         private int m_head = 0;
         private int m_tail = 0;
-        private int m_size = 0;
+        private int m_size;
 
+        /// <summary>
+        /// Creates a fifo buffer
+        /// </summary>
+        /// <param name="size">The size of the buffer</param>
         public Fifo(int size)
         {
             m_buffer = new byte[size];
             m_size = size;
         }
 
-        public unsafe uint ReadWait(byte[] buffer, ushort size)
+        /// <summary>
+        /// Read until the buffer is full with the requested amount of data
+        /// </summary>
+        /// <param name="buffer">The buffer where to put the data into</param>
+        /// <param name="size">The amount of bytes to read</param>
+        /// <returns>The amount of read bytes</returns>
+        public unsafe uint ReadWait(byte[] buffer, uint size)
         {
-            ushort left = size;
+            uint left = size;
             uint offset = 0;
 
-            while(left > 0)
+            while (left > 0)
             {
                 uint sz = Read(buffer, left, offset);
 
-                left -= (ushort)sz;
+                left -= sz;
                 offset += sz;
             }
 
@@ -38,23 +43,24 @@ namespace Sharpen.Collections
         }
 
         /// <summary>
-        /// Read from fifo struct
+        /// Read from fifo
         /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        public unsafe uint Read(byte[] buffer, ushort size)
+        /// <param name="buffer">The buffer where to put the data into</param>
+        /// <param name="size">The amount of bytes read</param>
+        /// <returns>The amount of read bytes</returns>
+        public unsafe uint Read(byte[] buffer, uint size)
         {
             return Read(buffer, size, 0);
         }
 
         /// <summary>
-        /// Read from fifo struct
+        /// Read from fifo
         /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        public unsafe uint Read(byte[] buffer, ushort size, uint offset)
+        /// <param name="buffer">The buffer where to put the data into</param>
+        /// <param name="size">The amount of bytes read</param>
+        /// <param name="offset">The offset in the buffer</param>
+        /// <returns>The amount of read bytes</returns>
+        public unsafe uint Read(byte[] buffer, uint size, uint offset)
         {
             uint j = offset;
 
@@ -86,7 +92,7 @@ namespace Sharpen.Collections
                     return i;
                 }
             }
-            
+
             return size;
         }
 
@@ -95,31 +101,31 @@ namespace Sharpen.Collections
         /// </summary>
         /// <param name="buffer">Buffer</param>
         /// <param name="size">Size of buffer</param>
-        /// <returns></returns>
+        /// <returns>The amount of bytes written</returns>
         public unsafe uint Write(byte* buffer, uint size)
         {
             byte* current = buffer;
 
-            for(uint i = 0; i < size; i++)
+            for (uint i = 0; i < size; i++)
             {
-                if (WriteByte(*current++) == 0)
+                if (!WriteByte(*current++))
                     return i;
             }
 
             return size;
-        } 
+        }
 
         /// <summary>
         /// Write byte to fifo struct
         /// </summary>
         /// <param name="byt">Byte</param>
-        /// <returns></returns>
-        public unsafe uint WriteByte(byte byt)
+        /// <returns>If the write was successful</returns>
+        public unsafe bool WriteByte(byte byt)
         {
             // Is there any room?
-            if((m_head + 1 == m_tail) || ((m_head + 1 == m_size) && m_tail == 0))
+            if ((m_head + 1 == m_tail) || ((m_head + 1 == m_size) && m_tail == 0))
             {
-                return 0;
+                return false;
             }
             else
             {
@@ -131,7 +137,7 @@ namespace Sharpen.Collections
                     m_head = 0;
             }
 
-            return 1;
+            return true;
         }
     }
 }

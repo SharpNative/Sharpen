@@ -123,7 +123,7 @@ namespace Sharpen.Arch
             // Flush GDT
             fixed (GDT_Pointer* ptr = &m_ptr)
             {
-                FlushGDT(ptr);
+                flushGDT(ptr);
             }
         }
 
@@ -131,6 +131,6 @@ namespace Sharpen.Arch
         /// Flushes the GDT table
         /// </summary>
         /// <param name="ptr">The pointer to the table</param>
-        private static extern unsafe void FlushGDT(GDT_Pointer* ptr);
+        private static extern unsafe void flushGDT(GDT_Pointer* ptr);
     }
 }

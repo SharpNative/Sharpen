@@ -1,11 +1,10 @@
-﻿using System;
-using Sharpen.Arch;
+﻿using Sharpen.Arch;
 using Sharpen.FileSystem;
 using Sharpen.Utilities;
 
 namespace Sharpen.Drivers.Block
 {
-    unsafe partial class ATA
+    public class ATA
     {
         #region ATA data
 
@@ -86,53 +85,26 @@ namespace Sharpen.Drivers.Block
         /// </summary>
         /// <param name="channel">Channel slave of master?</param>
         /// <param name="drive">Drive slave of master?</param>
-        private static void select_drive(byte channel, byte drive)
+        private static void selectDrive(byte channel, byte drive)
         {
-            if (channel == ATA_PRIMARY)
-            {
-                if (drive == ATA_MASTER)
-                {
-                    PortIO.Out8((ushort)(ATA_PRIMARY_IO + ATA_REG_DRIVE), 0xA0);
-                }
-                else
-                {
-                    PortIO.Out8((ushort)(ATA_PRIMARY_IO + ATA_REG_DRIVE), 0xB0);
-                }
-            }
-            else
-            {
-                if (drive == ATA_MASTER)
-                {
-                    PortIO.Out8((ushort)(ATA_SECONDARY_IO + ATA_REG_DRIVE), 0xA0);
-                }
-                else
-                {
-                    PortIO.Out8((ushort)(ATA_SECONDARY_IO + ATA_REG_DRIVE), 0xB0);
-                }
-            }
+            ushort io = (channel == ATA_PRIMARY) ? ATA_PRIMARY_IO : ATA_SECONDARY_IO;
+            byte data = (drive == ATA_MASTER) ? (byte)0xA0 : (byte)0xB0;
+            PortIO.Out8((ushort)(io + ATA_REG_DRIVE), data);
         }
 
         /// <summary>
-        /// IDE idenitify
+        /// IDE identify
         /// </summary>
         /// <param name="channel">Channel</param>
         /// <param name="drive">Slave or master?</param>
-        /// <returns></returns>
-        private static byte[] Identify(byte channel, byte drive)
+        /// <returns>The identification buffer</returns>
+        private static byte[] identify(byte channel, byte drive)
         {
             // Select correct drive
-            select_drive(channel, drive);
+            selectDrive(channel, drive);
 
             // Select base port for ATA drive
-            ushort port;
-            if (channel == ATA_PRIMARY)
-            {
-                port = ATA_PRIMARY_IO;
-            }
-            else
-            {
-                port = ATA_SECONDARY_IO;
-            }
+            ushort port = (channel == ATA_PRIMARY) ? ATA_PRIMARY_IO : ATA_SECONDARY_IO;
 
             // Set to first LBA
             PortIO.Out8((ushort)(port + ATA_REG_SECCNT), 0x00);
@@ -181,7 +153,7 @@ namespace Sharpen.Drivers.Block
         /// Wait for drive to be finished
         /// </summary>
         /// <param name="port">Port IO base</param>
-        private static void Poll(uint port)
+        private static void poll(uint port)
         {
             wait400ns(port);
 
@@ -217,8 +189,6 @@ namespace Sharpen.Drivers.Block
 
             // Get IDE device from array
             IDE_Device device = Devices[device_num];
-
-            // Does the drive exist?
             if (!device.Exists)
                 return 0;
 
@@ -245,7 +215,7 @@ namespace Sharpen.Drivers.Block
             PortIO.Out8((ushort)(port + ATA_REG_CMD), ATA_CMD_PIO_READ);
 
             // Wait till done
-            Poll(port);
+            poll(port);
 
             // Read data
             int offset = 0;
@@ -275,8 +245,6 @@ namespace Sharpen.Drivers.Block
 
             // Get IDE device from array
             IDE_Device device = Devices[device_num];
-
-            // Does the drive exist?
             if (!device.Exists)
                 return 0;
 
@@ -303,7 +271,7 @@ namespace Sharpen.Drivers.Block
             PortIO.Out8((ushort)(port + ATA_REG_CMD), ATA_CMD_PIO_WRITE);
 
             // Wait till done
-            Poll(port);
+            poll(port);
 
             // Wait for 400ns
             wait400ns(port);
@@ -332,7 +300,7 @@ namespace Sharpen.Drivers.Block
         /// <summary>
         /// IDE Prope
         /// </summary>
-        private static void probe()
+        private static unsafe void probe()
         {
             int num = 0;
 
@@ -369,8 +337,7 @@ namespace Sharpen.Drivers.Block
                 Devices[num].Channel = channel;
                 Devices[num].Drive = drive;
                 
-                byte[] result = Identify(channel, drive);
-                
+                byte[] result = identify(channel, drive);
                 if (result == null)
                 {
                     Devices[num].Exists = false;
@@ -417,6 +384,9 @@ namespace Sharpen.Drivers.Block
             }
         }
 
+        /// <summary>
+        /// Initializes ATA
+        /// </summary>
         public static void Init()
         {
             probe();
@@ -435,6 +405,14 @@ namespace Sharpen.Drivers.Block
             }
         }
 
+        /// <summary>
+        /// Write method for filesystem
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="offset">The offset</param>
+        /// <param name="size">The size</param>
+        /// <param name="buffer">The buffer</param>
+        /// <returns>The amount of bytes written</returns>
         private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             // Only support sizes in magnitutes of 512
@@ -446,6 +424,14 @@ namespace Sharpen.Drivers.Block
             return (uint)WriteSector(node.Cookie, offset, (byte)inSize, buffer);
         }
 
+        /// <summary>
+        /// Read method for filesystem
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="offset">The offset</param>
+        /// <param name="size">The size</param>
+        /// <param name="buffer">The buffer</param>
+        /// <returns>The amount of bytes read</returns>
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             // Only support sizes in magnitutes of 512
