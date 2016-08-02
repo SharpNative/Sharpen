@@ -147,5 +147,15 @@
 
             return true;
         }
+
+        /// <summary>
+        /// Converts a char to uppercase
+        /// </summary>
+        /// <param name="c">The character</param>
+        /// <returns>The uppercase character</returns>
+        public static char ToUpper(char c)
+        {
+            return (c >= 'a' && c <= 'z') ? (char)(c + ('A' - 'a')) : c;
+        }
     }
 }

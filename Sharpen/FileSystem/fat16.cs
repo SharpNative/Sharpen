@@ -1,9 +1,4 @@
 ﻿using Sharpen.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.FileSystem
 {
@@ -30,6 +25,10 @@ namespace Sharpen.FileSystem
 
         private static Fat16BPB* m_bpb;
         private static FatDirEntry[] m_dirEntries;
+        private static uint m_numDirEntries;
+        private static ushort[] m_fat;
+
+        private static readonly byte LFN = 0x0F;
         
 
         private static unsafe void initFAT(Node dev)
@@ -38,8 +37,6 @@ namespace Sharpen.FileSystem
             byte[] firstSector = new byte[512];
             firstSector[0x00] = 0xFF;
             dev.Read(dev, 0, 512, firstSector);
-
-            Console.WriteHex(firstSector[FirstPartitonEntry + EntryType]);
 
             // Get partition type from first entry
             // Detect if FAT16
@@ -99,6 +96,7 @@ namespace Sharpen.FileSystem
             int offset = 0;
             for (int i = 0; i < m_bpb->NumDirEntries; i++)
             {
+                // 512 / sizeof fatentry == 16
                 if (offset == 16)
                 {
                     sectorOffset++;
@@ -107,15 +105,47 @@ namespace Sharpen.FileSystem
                     offset = 0;
                 }
 
+                // TODO: I think this can be overriden 
                 m_dirEntries[i] = curBufPtr[offset];
 
                 offset++;
             }
+
+            // Read FAT in memory
+            int beginFat = m_beginLBA + m_bpb->ReservedSectors;
+            uint size = m_bpb->SectorsPerFat16;
             
+            m_fat = new ushort[size];
+
+            byte[] fatBuffer = new byte[512];
+            m_dev.Read(m_dev, (uint)(beginFat), 512, fatBuffer);
+
+
+            ushort* fatBufPtr = (ushort*)Util.ObjectToVoidPtr(fatBuffer);
+
+            sectorOffset = 0;
+            offset = 0;
+            for (int i = 0; i < size; i++)
+            {
+                // 512 / sizeof fatentry == 16
+                if (offset == 256)
+                {
+                    sectorOffset++;
+                    m_dev.Read(m_dev, (uint)(beginFat + sectorOffset), 1, fatBuffer);
+
+                    offset = 0;
+                }
+                
+                m_fat[i] = fatBufPtr[offset];
+
+                offset++;
+            }
+            
+            m_numDirEntries = m_bpb->NumDirEntries;
             m_beginDataLBA = m_clusterBeginLBA + ((m_bpb->NumDirEntries * 32) / m_bpb->BytesPerSector);
         }
 
-        public static uint Data_clust_to_lba(int cluster)
+        public static uint Data_clust_to_lba(uint cluster)
         {
             return (uint)(m_beginDataLBA + (cluster - 2) * m_bpb->SectorsPerCluster);
         }
@@ -132,25 +162,193 @@ namespace Sharpen.FileSystem
             p.Name = "C";
             p.Node = new Node();
             p.Node.ReadDir = readDirImpl;
+            p.Node.FindDir = findDirImpl;
 
             VFS.AddMountPoint(p);
         }
 
-        private static DirEntry* readDirImpl(Node node, uint index)
+        public static Node CreateNode(int dirEntry)
         {
-            if (index > 5)
+            Node node = new Node();
+            node.Cookie = (uint)dirEntry;
+            node.Read = readImpl;
+            node.Write = writeImpl;
+
+            return node;
+        }
+
+        private static Node findDirImpl(Node node, string name)
+        {
+            int length = String.Length(name);
+            if (length > 12)
                 return null;
 
-            FatDirEntry entry = m_dirEntries[index];
+            int dot = String.IndexOf(name, ".");
+            if (dot > 8)
+                return null;
 
-            if (entry.Name[0] == 0 || entry.Name[0] == 0xE5)
-                return (DirEntry *)Heap.Alloc(sizeof(DirEntry));
+            char* testFor = (char*)Heap.Alloc(11);
+            for(int i = 0; i < 11; i++)
+            {
+                if (i < dot)
+                    testFor[i] = String.ToUpper(name[i]);
+                else if (i >= 8)
+                    testFor[i] = String.ToUpper(name[i - 8 + 1 + dot]);
+                else
+                    testFor[i] = ' ';
+            }
+            
+            for (int i = 0; i < m_numDirEntries; i++)
+            {
+                FatDirEntry entry = m_dirEntries[i];
 
-            DirEntry* dir = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
-            Memory.Memcpy(dir->Name, entry.Name, 11);
-            dir->Name[11] = '\0';
+                if (entry.Name[0] == 0 || entry.Name[0] == 0xE5 || entry.Attribs == 0xF || (entry.Attribs & 0x08) > 0)
+                    continue;
 
-            return dir;
+                if(Memory.Compare(testFor, entry.Name, 11))
+                {
+                    Heap.Free(testFor);
+                    return CreateNode(i);
+                }
+            }
+
+            Heap.Free(testFor);
+            return null;
+        }
+
+
+        private static DirEntry* readDirImpl(Node node, uint index)
+        {
+            if (index > m_numDirEntries)
+                return null;
+
+            int j = 0;
+
+            for (int i = 0; i < m_numDirEntries; i++)
+            {
+                FatDirEntry entry = m_dirEntries[i];
+
+                if (entry.Name[0] == 0 || entry.Name[0] == 0xE5 || entry.Attribs == 0xF || (entry.Attribs & 0x08) > 0)
+                    continue;
+
+                if (j >= index)
+                {
+                    DirEntry* dir = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
+                    Memory.Memcpy(dir->Name, entry.Name, 11);
+                    dir->Name[11] = '\0';
+
+
+                    return dir;
+                }
+
+                j++;
+            }
+
+            return null;
+        }
+
+        private static uint FindNextCluster(uint cluster)
+        {
+            ushort nextCluster = m_fat[cluster];
+            
+            if (nextCluster >= 0xFF8)
+                return 0xFFFF;
+            
+            return nextCluster;
+        }
+
+        private static uint readFile(uint nodeID, uint offset, uint size, byte[] buffer)
+        {
+            FatDirEntry entry = m_dirEntries[nodeID];
+
+            // If bytes to read is bigger than the file size, set the size to the file size minus offset
+            if (offset + size > entry.Size)
+                size = entry.Size - offset;
+
+            uint startCluster = entry.ClusterNumberLo;
+
+            // Calculate starting cluster
+            uint dataPerCluster = m_bpb->SectorsPerCluster;
+            uint sectorsOffset = (uint)((int)offset / 512);
+
+            uint clusterOffset = sectorsOffset / dataPerCluster;
+
+            if (clusterOffset > 0)
+            {
+                for (int i = 0; i < clusterOffset; i++)
+                {
+                    startCluster = FindNextCluster(startCluster);
+
+                    if (startCluster == 0xFFFF)
+                        return 0;
+                }
+            }
+
+            sectorsOffset = sectorsOffset - (clusterOffset * m_bpb->SectorsPerCluster);
+            uint StartOffset = offset - (sectorsOffset * 512);
+
+            // Read starting cluster
+            byte[] buf = new byte[512];
+            m_dev.Read(m_dev, Data_clust_to_lba(startCluster), 512, buf);
+
+            // Calculate size in sectors
+            uint sizeInSectors = size / 512;
+            if (sizeInSectors == 0)
+                sizeInSectors++;
+
+            uint offsetInCluser = sectorsOffset;
+            uint offsetInSector = StartOffset;
+            uint currentCluster = startCluster;
+            uint currentOffset = 0;
+            int sizeLeft = (int)size;
+
+            for (int i = 0; i < sizeInSectors; i++)
+            {
+                if (offsetInCluser == m_bpb->SectorsPerCluster)
+                {
+                    currentCluster = FindNextCluster(currentCluster);
+
+                    if (currentCluster == 0xFFFF)
+                        return currentOffset;
+
+                    offsetInCluser = 0;
+                }
+
+                m_dev.Read(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluser, 512, buf);
+
+                int sizeTemp = (sizeLeft > 512) ? 512 : sizeLeft;
+
+                int sizeLeftinSector = 512;
+                sizeLeftinSector -= (int)offsetInSector;
+                if (sizeLeft > sizeLeftinSector)
+                {
+                    sizeTemp = sizeLeftinSector;
+                    sizeInSectors++;
+                }
+
+                Memory.Memcpy((void*)((int)Util.ObjectToVoidPtr(buffer) + currentOffset), (void*)((int)Util.ObjectToVoidPtr(buf) + offsetInSector), sizeTemp);
+
+                currentOffset += (uint)sizeTemp;
+                sizeLeft -= sizeTemp;
+                offsetInCluser++;
+                offsetInSector = 0;
+            }
+
+
+            return size;
+        }
+
+        private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
+        {
+            if (node.Cookie > m_numDirEntries)
+                return 0;
+
+            return readFile(node.Cookie, offset, size, buffer);
+        }
+
+        private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
+        {
+            return 0;
         }
     }
 }

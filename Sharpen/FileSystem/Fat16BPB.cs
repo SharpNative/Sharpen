@@ -41,7 +41,7 @@ namespace Sharpen.FileSystem
     unsafe struct FatDirEntry
     {
         public fixed char Name[11];
-        public byte Length;
+        public byte Attribs;
         public byte Reserved;
         public byte CreationTime;
         public ushort TimeCreated;

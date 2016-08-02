@@ -102,22 +102,17 @@ namespace Sharpen
             // Tasking.AddTask(Util.MethodToPtr(Test1), TaskPriority.VERYLOW);
             // Tasking.AddTask(Util.MethodToPtr(Test2), TaskPriority.VERYHIGH);
 
-            Console.WriteLine("\nReaddir: devices://");
-            Node searchNode = VFS.GetByPath("devices://");
-            uint j = 0;
-            DirEntry* entry = searchNode.ReadDir(searchNode, j);
-            j++;
-            while (entry != null)
-            {
-                Console.Write("\tdevices://");
-                Console.WriteLine(Util.CharPtrToString(entry->Name));
-
-                entry = searchNode.ReadDir(searchNode, j);
-                j++;
-            }
-            
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
+            
+            byte[] buf = new byte[300];
+            Node node = VFS.GetByPath("C://test.txt");
+            node.Read(node, 0, 300, buf);
+            Console.WriteLine("");
+
+            for (int i = 0; i < 300; i++)
+                Console.PutChar((char)buf[i]);
+            Console.WriteLine("");
             
             // Idle loop
             while (true)
