@@ -105,15 +105,17 @@ namespace Sharpen
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
             
+
             byte[] buf = new byte[300];
             Node node = VFS.GetByPath("C://test.txt");
-            node.Read(node, 0, 300, buf);
-            Console.WriteLine("");
+            node.Read(node, 0, 10, buf);
 
-            for (int i = 0; i < 300; i++)
-                Console.PutChar((char)buf[i]);
-            Console.WriteLine("");
-            
+            node = VFS.GetByPath("C://testt");
+            SubDirectory a = Fat16.readDirectory(7);
+
+            Node nd =  Fat16.FindFileInDirectory(a, (char *)Util.ObjectToVoidPtr("TEST    TXT"));
+            Console.WriteHex(nd.Cookie);
+
             // Idle loop
             while (true)
                 CPU.HLT();

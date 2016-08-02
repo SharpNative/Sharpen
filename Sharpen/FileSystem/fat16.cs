@@ -7,14 +7,17 @@ namespace Sharpen.FileSystem
 
         private static readonly int FirstPartitonEntry = 0x1BE;
 
-        private static readonly int EntryActive = 0;
-        private static readonly int EntryBeginHead = 0x01;
-        private static readonly int EntryBeginCylSec = 0x02;
-        private static readonly int EntryType = 0x04;
-        private static readonly int EntryEndHead = 0x05;
-        private static readonly int EntryEndCylSec = 0x06;
-        private static readonly int EntryNumSectorsBetween = 0x08;
-        private static readonly int EntryNumSectors = 0x0C;
+        private static readonly int ENTRYACTIVE = 0;
+        private static readonly int ENTRYBEGINHEAD = 0x01;
+        private static readonly int ENTRYBEGINCYLSEC = 0x02;
+        private static readonly int ENTRYTYPE = 0x04;
+        private static readonly int ENTRYENDHEAD = 0x05;
+        private static readonly int ENTRYENDCYLSEC = 0x06;
+        private static readonly int ENTRYNUMSECTORSBETWEEN = 0x08;
+        private static readonly int ENTRYNUMSECTORS = 0x0C;
+
+        private static readonly int FAT_FREE = 0x00;
+        private static readonly int FAT_EOF = 0xFF8;
 
         private static Node m_dev;
         private static int m_bytespersector;
@@ -40,15 +43,15 @@ namespace Sharpen.FileSystem
 
             // Get partition type from first entry
             // Detect if FAT16
-            if (firstSector[FirstPartitonEntry + EntryType] != 0x06)
+            if (firstSector[FirstPartitonEntry + ENTRYTYPE] != 0x06)
                 return;
             
-            byte BeginHead = firstSector[FirstPartitonEntry + EntryBeginHead];
-            byte Sector = (byte)(firstSector[FirstPartitonEntry + EntryBeginCylSec] & 0x3F);
+            byte BeginHead = firstSector[FirstPartitonEntry + ENTRYBEGINHEAD];
+            byte Sector = (byte)(firstSector[FirstPartitonEntry + ENTRYBEGINCYLSEC] & 0x3F);
 
-            int tmp = firstSector[FirstPartitonEntry + EntryBeginCylSec] >> 8;
+            int tmp = firstSector[FirstPartitonEntry + ENTRYBEGINCYLSEC] >> 8;
             byte cylinderHi = (byte)(tmp & 0x3);
-            byte cylinderLo = firstSector[FirstPartitonEntry + EntryBeginCylSec + 1];
+            byte cylinderLo = firstSector[FirstPartitonEntry + ENTRYBEGINCYLSEC + 1];
 
             short cylinder = (short)(cylinderHi << 10 | cylinderLo);
 
@@ -151,7 +154,6 @@ namespace Sharpen.FileSystem
         }
 
 
-
         public static unsafe void Init(Node dev, string name)
         {
             m_dev = dev;
@@ -186,36 +188,61 @@ namespace Sharpen.FileSystem
             int dot = String.IndexOf(name, ".");
             if (dot > 8)
                 return null;
+            
 
             char* testFor = (char*)Heap.Alloc(11);
-            for(int i = 0; i < 11; i++)
+            Memory.Memset(testFor, ' ', 11);
+            
+            for(int i = 0; i < 8; i++)
             {
-                if (i < dot)
+                if ((dot > 0 && i < length && i < dot) || (dot == -1 && i < length))
                     testFor[i] = String.ToUpper(name[i]);
-                else if (i >= 8)
-                    testFor[i] = String.ToUpper(name[i - 8 + 1 + dot]);
                 else
                     testFor[i] = ' ';
+               
             }
-            
-            for (int i = 0; i < m_numDirEntries; i++)
+
+            if(dot != -1)
             {
-                FatDirEntry entry = m_dirEntries[i];
+                int lengthExt = length - dot - 1;
+
+                for(int i = 0; i < 3; i++)
+                {
+                    if (i < lengthExt)
+                        testFor[i + 8] = String.ToUpper(name[i + dot + 1]);
+                    else
+                        testFor[i + 8] = ' '; 
+                }
+            }
+
+            SubDirectory dir = new SubDirectory();
+            dir.Length = m_numDirEntries;
+            dir.DirEntries = m_dirEntries;
+
+            Node nd = FindFileInDirectory(dir, testFor);
+            
+            Heap.Free(testFor);
+            return nd;
+        }
+
+
+        public static Node FindFileInDirectory(SubDirectory dir, char *testFor)
+        {
+            for (int i = 0; i < dir.Length; i++)
+            {
+                FatDirEntry entry = dir.DirEntries[i];
 
                 if (entry.Name[0] == 0 || entry.Name[0] == 0xE5 || entry.Attribs == 0xF || (entry.Attribs & 0x08) > 0)
                     continue;
 
-                if(Memory.Compare(testFor, entry.Name, 11))
+                if (Memory.Compare(testFor, entry.Name, 11))
                 {
-                    Heap.Free(testFor);
                     return CreateNode(i);
                 }
             }
 
-            Heap.Free(testFor);
             return null;
         }
-
 
         private static DirEntry* readDirImpl(Node node, uint index)
         {
@@ -247,26 +274,42 @@ namespace Sharpen.FileSystem
             return null;
         }
 
+        /// <summary>
+        /// Find next clust
+        /// </summary>
+        /// <param name="cluster">Cluster number</param>
+        /// <returns></returns>
         private static uint FindNextCluster(uint cluster)
         {
             ushort nextCluster = m_fat[cluster];
             
-            if (nextCluster >= 0xFF8)
+            // End of file?
+            if (nextCluster >= FAT_EOF)
                 return 0xFFFF;
             
             return nextCluster;
         }
 
-        private static uint readFile(uint nodeID, uint offset, uint size, byte[] buffer)
+        /// <summary>
+        /// Find next free sector in FAT
+        /// </summary>
+        /// <returns></returns>
+        private static uint FirstFirstFreeSector()
         {
-            FatDirEntry entry = m_dirEntries[nodeID];
+            for(uint i = 0; i < m_bpb->SectorsPerFat16; i++)
+            {
+                ushort nextCluster = m_fat[i];
 
-            // If bytes to read is bigger than the file size, set the size to the file size minus offset
-            if (offset + size > entry.Size)
-                size = entry.Size - offset;
+                if (nextCluster == FAT_FREE)
+                    return i;
+            }
 
-            uint startCluster = entry.ClusterNumberLo;
+            // FULL!!! :O
+            return 0;
+        }
 
+        private static uint readFile(uint startCluster, uint offset, uint size, byte[] buffer)
+        {
             // Calculate starting cluster
             uint dataPerCluster = m_bpb->SectorsPerCluster;
             uint sectorsOffset = (uint)((int)offset / 512);
@@ -338,12 +381,51 @@ namespace Sharpen.FileSystem
             return size;
         }
 
+        public static SubDirectory readDirectory(uint cluster)
+        {
+
+            byte[] buffer = new byte[m_bpb->NumDirEntries];
+            readFile(cluster, 0, m_bpb->NumDirEntries, buffer);
+
+            FatDirEntry[] entries = new FatDirEntry[m_bpb->NumDirEntries];
+
+            FatDirEntry* curBufPtr = (FatDirEntry*)Util.ObjectToVoidPtr(buffer);
+
+            int length = 0;
+            for (int i = 0; i < m_bpb->NumDirEntries; i++)
+            {
+                entries[i] = curBufPtr[i];
+
+                if (curBufPtr[i].Name[0] == 0x00)
+                {
+                    break;
+
+                }
+
+                length++;
+            }
+
+            SubDirectory subDir = new SubDirectory();
+            subDir.DirEntries = entries;
+            subDir.Length = (uint)length;
+
+            return subDir;
+        }
+
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             if (node.Cookie > m_numDirEntries)
                 return 0;
 
-            return readFile(node.Cookie, offset, size, buffer);
+            FatDirEntry entry = m_dirEntries[node.Cookie];
+
+            // If bytes to read is bigger than the file size, set the size to the file size minus offset
+            if (offset + size > entry.Size)
+                size = entry.Size - offset;
+
+            uint startCluster = entry.ClusterNumberLo;
+
+            return readFile(entry.ClusterNumberLo, offset, size, buffer);
         }
 
         private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
