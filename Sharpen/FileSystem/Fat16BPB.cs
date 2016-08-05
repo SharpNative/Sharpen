@@ -55,10 +55,10 @@ namespace Sharpen.FileSystem
         public fixed char Bullshit[2];
     }
 
-    class SubDirectory
+    unsafe class SubDirectory
     {
         public uint Length;
 
-        public FatDirEntry[] DirEntries;
+        public FatDirEntry *DirEntries;
     }
 }

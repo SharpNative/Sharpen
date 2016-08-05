@@ -116,18 +116,21 @@ namespace Sharpen.FileSystem
             // TODO: Optimize this process!
             string nodeName = AfterDeviceName;
             string afterNodeName = AfterDeviceName;
+            int i = 0;
             while (parts > 0)
             {
                 index = String.IndexOf(afterNodeName, "/");
-                
                 nodeName = String.SubString(afterNodeName, 0, index);
-                afterNodeName = String.SubString(afterNodeName, index + 1, String.Length(path) - 1);
+
+                if (parts > 1)
+                    afterNodeName = String.SubString(afterNodeName, index + 1, String.Length(path) - 1);
+
                 lastNode = lastNode.FindDir(lastNode, nodeName);
-                
                 if (lastNode == null)
                     return null;
 
                 parts--;
+                i++;
             }
             
             return lastNode;

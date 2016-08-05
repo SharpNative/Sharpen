@@ -150,7 +150,7 @@ namespace Sharpen
                 // Find a descriptor that is big enough to hold the block header and its data
                 // We need to look for something that can hold an aligned size if alignment is requested
                 size += sizeof(Block);
-
+                
                 // Safe size
                 int alignedSize = size * 2;
                 if (alignedSize % alignment != 0)
@@ -189,14 +189,14 @@ namespace Sharpen
                                 // Padding size is the difference between the new block address and the old block address
                                 int paddingSize = address - (int)currentBlock;
                                 int remainingAfterSplit = currentBlock->Size - paddingSize;
-
+                                
                                 Block* afterPadding = (Block*)((int)padding + paddingSize);
                                 if (paddingSize <= sizeof(Block))
                                 {
                                     // Waste of space to include padding and also impossible
                                     Block* next = currentBlock->Next;
                                     Block* prev = currentBlock->Prev;
-
+                                    
                                     prev->Next = afterPadding;
                                     afterPadding->Next = next;
                                     afterPadding->Prev = prev;
@@ -234,6 +234,9 @@ namespace Sharpen
                             newNext->Next = currentBlock->Next;
                             newNext->Size = remaining;
                             newNext->Descriptor = descriptor;
+
+                            if (newNext->Next != null)
+                                newNext->Next->Prev = newNext;
                         }
 
                         // Update current block
@@ -249,7 +252,12 @@ namespace Sharpen
                     // Next block
                     currentBlock = currentBlock->Next;
                     if (currentBlock == null)
+                    {
+                        Dump();
+                        for (;;) ;
+                        Console.WriteLine("ik kom hier like wtf");
                         return null;
+                    }
                 }
             }
             else
@@ -276,6 +284,7 @@ namespace Sharpen
         /// <param name="ptr">The pointer</param>
         public static unsafe void Free(void* ptr)
         {
+            return;
             // Grab block (header is just before the data)
             Block* block = (Block*)((int)ptr - sizeof(Block));
 
@@ -289,7 +298,9 @@ namespace Sharpen
                 Block* next = block->Next;
                 block->Size += next->Size;
                 block->Next = next->Next;
-                next->Next->Prev = block;
+
+                if(next->Next != null)
+                    next->Next->Prev = block;
             }
 
             // Merge backwards
@@ -298,7 +309,9 @@ namespace Sharpen
                 Block* prev = block->Prev;
                 prev->Size += block->Size;
                 prev->Next = block->Next;
-                block->Next->Prev = prev;
+
+                if(block->Next != null)
+                    block->Next->Prev = prev;
             }
         }
 

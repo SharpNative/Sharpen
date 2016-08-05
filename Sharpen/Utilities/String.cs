@@ -87,6 +87,7 @@
 
             if (start > stringLength)
                 return "";
+
             
             char* ch = (char *)Heap.Alloc(count + 1);
             int j = 0;

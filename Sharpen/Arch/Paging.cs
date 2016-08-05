@@ -95,7 +95,7 @@ namespace Sharpen.Arch
             // Create kernel directory
             KernelDirectory = (PageDirectory*)Heap.AlignedAlloc(0x1000, sizeof(PageDirectory));
             Memory.Memset(KernelDirectory, 0, sizeof(PageDirectory));
-
+            
             // Bit array to store which frames are free
             m_bitmap = new BitArray((int)(memSize / 32));
 
