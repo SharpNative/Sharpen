@@ -161,102 +161,111 @@ namespace Sharpen
 
                 BlockDescriptor* descriptor = getSufficientDescriptor(alignedSize);
                 Block* currentBlock = descriptor->First;
+                Block* previousBlock = null;
 
                 // Search in the descriptor
                 while (true)
                 {
                     // Can fit in here
-                    if (!currentBlock->Used && currentBlock->Size >= size)
+                    if (currentBlock->Used || currentBlock->Size < size)
+                        goto nextBlock;
+                    
+                    // Check if this block data would be aligned
+                    int currentData = (int)currentBlock + sizeof(Block);
+                    int remainder = currentData % alignment;
+
+                    // Not aligned
+                    if (remainder != 0)
                     {
-                        // Check if this block data would be aligned
-                        {
-                            int currentData = (int)currentBlock + sizeof(Block);
+                        // Split the current block into two
+                        // The first part is a padding
+                        // The second part is the block we want for allocation
+                        // This only happens if there is enough space left
 
-                            // Not aligned
-                            if (currentData % alignment != 0)
-                            {
-                                // Split the current block into two
-                                // The first part is a padding
-                                // The second part is the block we want for allocation
-                                Block* padding = currentBlock;
+                        // Size of gap
+                        int gapSize = alignment - remainder;
+                        int newSize = currentBlock->Size - gapSize;
 
-                                // Align
-                                int address = currentData;
-                                address = address - (address % alignment);
-                                address += alignment;
-                                address -= sizeof(Block);
+                        // Would the new block be too small to fit our data into?
+                        if (newSize < size)
+                            goto nextBlock;
 
-                                // Padding size is the difference between the new block address and the old block address
-                                int paddingSize = address - (int)currentBlock;
-                                int remainingAfterSplit = currentBlock->Size - paddingSize;
-                                
-                                Block* afterPadding = (Block*)((int)padding + paddingSize);
-                                if (paddingSize <= sizeof(Block))
-                                {
-                                    // Waste of space to include padding and also impossible
-                                    Block* next = currentBlock->Next;
-                                    Block* prev = currentBlock->Prev;
-                                    
-                                    prev->Next = afterPadding;
-                                    afterPadding->Next = next;
-                                    afterPadding->Prev = prev;
-                                    afterPadding->Size = remainingAfterSplit;
-                                    afterPadding->Descriptor = descriptor;
-                                }
-                                else
-                                {
-                                    padding->Used = false;
-                                    padding->Size = paddingSize;
+                        // Store old data
+                        Block* newNext = currentBlock->Next;
+                        bool newUsed = currentBlock->Used;
 
-                                    // Remaining block after padding
-                                    afterPadding->Next = padding->Next;
-                                    padding->Next = afterPadding;
-                                    afterPadding->Prev = padding;
-                                    afterPadding->Size = remainingAfterSplit;
-                                    afterPadding->Descriptor = descriptor;
-                                }
-
-                                currentBlock = afterPadding;
-                            }
-                        }
-
-                        // Calculate remaining size when splitting this block into two
-                        int remaining = currentBlock->Size - size;
-
-                        // When needed, create a block that follows this block
-                        Block* newNext = null;
-                        if (remaining > sizeof(Block))
-                        {
-                            // Create block
-                            newNext = (Block*)((int)currentBlock + size);
-                            newNext->Used = false;
-                            newNext->Prev = currentBlock;
-                            newNext->Next = currentBlock->Next;
-                            newNext->Size = remaining;
-                            newNext->Descriptor = descriptor;
-
-                            if (newNext->Next != null)
-                                newNext->Next->Prev = newNext;
-                        }
-
-                        // Update current block
-                        currentBlock->Used = true;
+                        // Move block forward
+                        currentBlock = (Block*)((int)currentBlock + gapSize);
+                        currentBlock->Used = newUsed;
+                        currentBlock->Prev = previousBlock;
                         currentBlock->Next = newNext;
-                        currentBlock->Size = size;
-                        descriptor->FreeSpace -= size;
+                        currentBlock->Size = newSize;
+                        currentBlock->Descriptor = descriptor;
+                        
+                        // Increase size of previous block if needed
+                        if (previousBlock != null)
+                        {
+                            previousBlock->Next = currentBlock;
+                            previousBlock->Size += gapSize;
 
-                        // Return block (skip header)
-                        return (void*)((int)currentBlock + sizeof(Block));
+                            // If the block is used and the gap is merged
+                            // that means that the total free space in this descriptor decreases
+                            if (currentBlock->Used)
+                                descriptor->FreeSpace -= gapSize;
+                        }
+                        // This is the first block that was moved
+                        else if (gapSize >= sizeof(Block))
+                        {
+                            // Update header
+                            Block* first = descriptor->First;
+                            descriptor->FreeSpace -= gapSize;
+
+                            first->Used = false;
+                            first->Prev = null;
+                            first->Next = currentBlock;
+                            first->Size = gapSize;
+                            first->Descriptor = descriptor;
+                            currentBlock->Prev = first;
+                        }
                     }
 
-                    // Next block
-                    currentBlock = currentBlock->Next;
-                    if (currentBlock == null)
+                    // Calculate leftover part for the next block
+                    int leftover = currentBlock->Size - size;
+
+                    // Update header
+                    currentBlock->Used = true;
+                    currentBlock->Descriptor = descriptor;
+                    currentBlock->Prev = previousBlock;
+                    descriptor->FreeSpace -= size;
+
+                    // If we have something left over, create a new block
+                    if (leftover > sizeof(Block) + 4)
                     {
-                        Dump();
-                        for (;;) ;
-                        Console.WriteLine("ik kom hier like wtf");
-                        return null;
+                        // Update header
+                        Block* afterBlock = (Block*)((int)currentBlock + size);
+                        afterBlock->Size = leftover;
+                        afterBlock->Used = false;
+                        afterBlock->Next = currentBlock->Next;
+                        afterBlock->Prev = currentBlock;
+                        afterBlock->Descriptor = descriptor;
+
+                        if (currentBlock->Next != null)
+                            currentBlock->Next->Prev = afterBlock;
+
+                        currentBlock->Next = afterBlock;
+                        currentBlock->Size = size;
+                    }
+
+                    // Return block (skip header)
+                    return (void*)((int)currentBlock + sizeof(Block));
+
+                    // Next block
+                    nextBlock:
+                    {
+                        previousBlock = currentBlock;
+                        currentBlock = currentBlock->Next;
+                        if (currentBlock == null)
+                            return null;
                     }
                 }
             }
@@ -284,7 +293,6 @@ namespace Sharpen
         /// <param name="ptr">The pointer</param>
         public static unsafe void Free(void* ptr)
         {
-            return;
             // Grab block (header is just before the data)
             Block* block = (Block*)((int)ptr - sizeof(Block));
 
