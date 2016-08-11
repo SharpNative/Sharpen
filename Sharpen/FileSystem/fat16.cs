@@ -284,9 +284,32 @@ namespace Sharpen.FileSystem
                 if (j >= index)
                 {
                     DirEntry* outDir = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
-                    Memory.Memcpy(outDir->Name, entry.Name, 11);
-                    outDir->Name[11] = '\0';
+                    //Memory.Memcpy(outDir->Name, entry.Name, 11);
+                    //outDir->Name[11] = '\0';
+
+                    int fnLength = String.IndexOf(Util.CharPtrToString(entry.Name), " ");
+
+                    if (fnLength > 8 || fnLength == -1)
+                        fnLength = 8;
+
+                    int extLength = String.IndexOf(Util.CharPtrToString(entry.Name + 8), " ");
+                    if (extLength == -1)
+                        extLength = 3;
                     
+                    int offset = 0;
+                    for (int z = 0; z < fnLength; z++)
+                        outDir->Name[offset++] = entry.Name[z];
+
+                    outDir->Name[offset++] = '.';
+                    
+                    for (int z = 0; z < extLength; z++)
+                        outDir->Name[offset++] = entry.Name[z + 8];
+
+                    outDir->Name[offset] = '\0';
+
+                    for (int z = 0; z < offset; z++)
+                        outDir->Name[z] = String.ToLower(outDir->Name[z]);
+
                     return outDir;
                 }
 
@@ -449,9 +472,7 @@ namespace Sharpen.FileSystem
             // If bytes to read is bigger than the file size, set the size to the file size minus offset
             if (offset + size > entry->Size)
                 size = entry->Size - offset;
-
-            uint startCluster = entry->ClusterNumberLo;
-
+            
             return readFile(entry->ClusterNumberLo, offset, size, buffer);
         }
 

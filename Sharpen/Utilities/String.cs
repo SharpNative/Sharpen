@@ -158,5 +158,19 @@
         {
             return (c >= 'a' && c <= 'z') ? (char)(c + ('A' - 'a')) : c;
         }
+
+
+        /// <summary>
+        /// Converts a char to lowercase
+        /// </summary>
+        /// <param name="c">The character</param>
+        /// <returns>The lowercase character</returns>
+        public static char ToLower(char c)
+        {
+            if ((c >= 65) && (c <= 90))
+                c = (char)(c + (int)32);
+
+            return c;
+        }
     }
 }
