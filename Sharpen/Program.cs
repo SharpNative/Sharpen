@@ -99,8 +99,8 @@ namespace Sharpen
             ATA.Init();
             
             Tasking.Init();
-            // Tasking.AddTask(Util.MethodToPtr(Test1), TaskPriority.VERYLOW);
-            // Tasking.AddTask(Util.MethodToPtr(Test2), TaskPriority.VERYHIGH);
+            Tasking.AddTask(Util.MethodToPtr(Test1), TaskPriority.VERYLOW);
+            Tasking.AddTask(Util.MethodToPtr(Test2), TaskPriority.VERYHIGH);
 
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");

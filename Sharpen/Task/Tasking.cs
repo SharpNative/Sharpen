@@ -91,6 +91,7 @@ namespace Sharpen.Task
             previous.Next = current.Next;
             Heap.Free(current.FPUContext);
             Heap.Free(current.Stack);
+            Paging.FreeDirectory(current.PageDir);
 
             // End of critical section
             CPU.STI();
@@ -134,7 +135,7 @@ namespace Sharpen.Task
             newTask.PID = m_lastPid++;
             newTask.GID = 0;
             newTask.UID = 0;
-            newTask.PageDir = Paging.KernelDirectory;
+            newTask.PageDir = Paging.CloneDirectory(Paging.CurrentDirectory);
             newTask.TimeFull = (int)priority;
 
             // Stack

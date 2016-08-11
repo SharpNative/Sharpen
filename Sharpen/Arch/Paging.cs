@@ -1,9 +1,4 @@
 ﻿using Sharpen.Collections;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Arch
 {
@@ -94,24 +89,23 @@ namespace Sharpen.Arch
         {
             // Create kernel directory
             KernelDirectory = (PageDirectory*)Heap.AlignedAlloc(0x1000, sizeof(PageDirectory));
+            CurrentDirectory = KernelDirectory;
             Memory.Memset(KernelDirectory, 0, sizeof(PageDirectory));
             
             // Bit array to store which frames are free
             m_bitmap = new BitArray((int)(memSize / 32));
 
-            // Map from [ 0x00 - Heap end ] as kernelspace
+            // Map kernelspace
             int address = 0;
             while (address < (int)Heap.CurrentEnd + (sizeof(PageDirectory)))
             {
                 int flags = (int)PageFlags.Present | (int)PageFlags.Writable;
                 MapPage(KernelDirectory, address, address, flags);
-                //AllocateFrame(GetPage(KernelDirectory, address), flags);
                 SetFrame(address);
                 address += 0x1000;
             }
 
             // Enable paging
-            CurrentDirectory = KernelDirectory;
             Enable();
         }
 
@@ -244,13 +238,69 @@ namespace Sharpen.Arch
             {
                 int flags = (int)PageFlags.Present | (int)PageFlags.Writable;
                 
-                MapPage(KernelDirectory, address, address, flags);
+                MapPage(CurrentDirectory, address, address, flags);
+                if (CurrentDirectory != KernelDirectory)
+                    MapPage(CurrentDirectory, address, address, flags);
+
                 SetFrame(address);
                 
                 address += 0x1000;
             }
 
             return (void*)start;
+        }
+
+        /// <summary>
+        /// Clones a page directory and its tables
+        /// </summary>
+        /// <param name="source">The source page directory</param>
+        /// <returns>The cloned page directory</returns>
+        public static unsafe PageDirectory* CloneDirectory(PageDirectory* source)
+        {
+            PageDirectory* destination = (PageDirectory*)Heap.AlignedAlloc(0x1000, sizeof(PageDirectory));
+            if (destination == null)
+                return null;
+
+            Memory.Memset(destination, 0, sizeof(PageDirectory));
+
+            // Go through every page table
+            for (int table = 0; table < 1024; table++)
+            {
+                // Get source
+                int sourceTable = source->tables[table];
+                if (sourceTable == 0)
+                    continue;
+
+                PageTable* sourceTablePtr = (PageTable*)(sourceTable & 0xFFFFF000);
+
+                // Grab flags and allocate new table
+                int flags = sourceTable & 0xFFF;
+                PageTable* newTable = (PageTable*)Heap.AlignedAlloc(0x1000, sizeof(PageTable));
+                Memory.Memcpy(newTable, sourceTablePtr, sizeof(PageTable));
+                destination->tables[table] = (int)newTable | flags;
+            }
+
+            return destination;
+        }
+
+        /// <summary>
+        /// Frees a page directory
+        /// </summary>
+        /// <param name="directory">The directory</param>
+        public static unsafe void FreeDirectory(PageDirectory* directory)
+        {
+            // Loop through every table of the directory
+            for(int table = 0; table < 1024; table++)
+            {
+                // Get table
+                int pageTable = directory->tables[table];
+                if (pageTable == 0)
+                    continue;
+
+                // Grab pointer and free
+                PageTable* pageTablePtr = (PageTable*)(pageTable & 0xFFFFF000);
+                Heap.Free(pageTablePtr);
+            }
         }
 
         /// <summary>
