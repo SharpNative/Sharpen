@@ -212,10 +212,15 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 
-C/tools
 C/build
-*.dll
-os.img
 C/output.c
-bochsrc.bxrc
 C/kernel
+
+tools
+bochsrc.bxrc
+*.img
+*.a
+*.o
+
+user/build
+user/newlib/include

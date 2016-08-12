@@ -57,6 +57,9 @@
     <Compile Include="Arch\IDT.cs" />
     <Compile Include="Arch\IRQ.cs" />
     <Compile Include="Arch\ISR.cs" />
+    <Compile Include="ErrorCode.cs" />
+    <Compile Include="Exec\ELFLoader.cs" />
+    <Compile Include="Exec\Loader.cs" />
     <Compile Include="FileSystem\Fat16BPB.cs" />
     <Compile Include="Task\Task.cs" />
     <Compile Include="Task\Tasking.cs" />

@@ -134,9 +134,14 @@ namespace Sharpen
 
             // Node nd =  Fat16.FindFileInDirectory(a, (char *)Util.ObjectToVoidPtr("TEST    TXT"));
             //Console.WriteHex(nd.Cookie);
-
-
             
+            ErrorCode error = Loader.StartProcess("C://test", null);
+            if (error != ErrorCode.SUCCESS)
+            {
+                Console.Write("Failed to start initial process: 0x");
+                Console.WriteHex((int)error);
+                Console.PutChar('\n');
+            }
 
             // Idle loop
             while (true)

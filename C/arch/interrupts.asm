@@ -1,13 +1,10 @@
-; ISR Handler
-extern Sharpen_Arch_ISR_Handler_1struct_struct_Sharpen_Arch_Regs__
-; IRQ Handler
-extern Sharpen_Arch_IRQ_Handler_1struct_struct_Sharpen_Arch_Regs__
 ; Task scheduler
 extern Sharpen_Task_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
 ; PIT handler
 extern Sharpen_Arch_PIT_Handler_1struct_struct_Sharpen_Arch_Regs__
 
 %macro INT_COMMON 2
+    extern %2
     global %1
     %1:
         ; Store data
@@ -71,6 +68,7 @@ extern Sharpen_Arch_PIT_Handler_1struct_struct_Sharpen_Arch_Regs__
 ; Interrupt handlers
 INT_COMMON isr_common, Sharpen_Arch_ISR_Handler_1struct_struct_Sharpen_Arch_Regs__
 INT_COMMON irq_common, Sharpen_Arch_IRQ_Handler_1struct_struct_Sharpen_Arch_Regs__
+INT_COMMON int_common, Sharpen_Arch_IDT_Handler_1struct_struct_Sharpen_Arch_Regs__
 
 ; ISR routines
 ISR_NO_ERROR 0
@@ -105,6 +103,13 @@ ISR_NO_ERROR 28
 ISR_NO_ERROR 29
 ISR_NO_ERROR 30
 ISR_NO_ERROR 31
+
+; Syscall handler
+global Sharpen_Arch_IDT_Syscall_0
+Sharpen_Arch_IDT_Syscall_0:
+    push 0
+    push 0x80
+    jmp int_common
 
 ; Special IRQ routine for IRQ 0 (PIT)
 global Sharpen_Arch_IDT_IRQ0_0

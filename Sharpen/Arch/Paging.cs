@@ -5,7 +5,7 @@ namespace Sharpen.Arch
     public sealed class Paging
     {
         // Flags on a page
-        enum PageFlags
+        public enum PageFlags
         {
             Present = 1,
             Writable = (1 << 0x1),
@@ -14,7 +14,7 @@ namespace Sharpen.Arch
         }
 
         // Flags on a table
-        enum TableFlags
+        public enum TableFlags
         {
             Present = 1,
             Writable = (1 << 0x1),
@@ -239,9 +239,9 @@ namespace Sharpen.Arch
                 int flags = (int)PageFlags.Present | (int)PageFlags.Writable;
                 
                 MapPage(CurrentDirectory, address, address, flags);
-                if (CurrentDirectory != KernelDirectory)
-                    MapPage(CurrentDirectory, address, address, flags);
-
+                // if (CurrentDirectory != KernelDirectory)
+                    // MapPage(KernelDirectory, address, address, flags);
+                
                 SetFrame(address);
                 
                 address += 0x1000;

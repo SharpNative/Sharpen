@@ -86,6 +86,17 @@ namespace Sharpen.Arch
         }
 
         /// <summary>
+        /// INT handler
+        /// </summary>
+        /// <param name="regsPtr">Pointer to registers</param>
+        public static unsafe void Handler(Regs* regsPtr)
+        {
+            int isrNum = (*regsPtr).IntNum;
+            Console.WriteHex(isrNum);
+            Console.PutChar('\n');
+        }
+
+        /// <summary>
         /// Initializes the IDT
         /// </summary>
         public static unsafe void Init()
@@ -174,6 +185,12 @@ namespace Sharpen.Arch
 
             #endregion
 
+            #region Syscall
+
+            SetEntry(0x80, Util.MethodToPtr(Syscall), 0x08, FLAG_INT);
+
+            #endregion
+
             #region Finish
 
             // Flush IDT
@@ -249,6 +266,12 @@ namespace Sharpen.Arch
         private static extern void IRQ13();
         private static extern void IRQ14();
         private static extern void IRQ15();
+
+        #endregion
+
+        #region INT routines
+
+        private static extern void Syscall();
 
         #endregion
     }
