@@ -8,8 +8,10 @@ namespace Sharpen.FileSystem
 {
     public class Node
     {
-        public uint Flags;
+        public uint Size;
         public uint Cookie;
+        public FileMode FileMode;
+        public NodeFlags Flags;
 
         public FSRead Read;
         public FSWrite Write;
@@ -20,16 +22,24 @@ namespace Sharpen.FileSystem
         
         public unsafe delegate uint FSRead(Node node, uint offset, uint size, byte[] buffer);
         public unsafe delegate uint FSWrite(Node node, uint offset, uint size, byte[] buffer);
-        public unsafe delegate void FSOpen(Node node, uint read, uint write);
+        public unsafe delegate void FSOpen(Node node);
         public unsafe delegate void FSClose(Node node);
         public unsafe delegate Node FSFindDir(Node node, string name);
-        public unsafe delegate DirEntry *FSReaddir(Node node, uint index);
+        public unsafe delegate DirEntry* FSReaddir(Node node, uint index);
     }
 
-    public class NodeFlags
+    public enum NodeFlags
     {
-        public static uint DIRECTORY = (1 << 0);
-        public static uint FILE = (1 << 1);
-        public static uint DEVICE = (1 << 2);
+        DIRECTORY = (1 << 0),
+        FILE = (1 << 1),
+        DEVICE = (1 << 2)
+    }
+
+    public enum FileMode
+    {
+        O_RDONLY = 0,
+        O_WRONLY = 1,
+        O_RDWR = 2,
+        O_NONE = 3
     }
 }

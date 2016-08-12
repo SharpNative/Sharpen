@@ -135,5 +135,100 @@ namespace Sharpen.FileSystem
             
             return lastNode;
         }
+
+        /// <summary>
+        /// Opens a node
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="fileMode">The filemode (read/write/readwrite)</param>
+        public static void Open(Node node, FileMode fileMode)
+        {
+            node.FileMode = fileMode;
+
+            if (node.Open == null)
+                return;
+            
+            node.Open(node);
+        }
+
+        /// <summary>
+        /// Closes a node
+        /// </summary>
+        /// <param name="node">The node</param>
+        public static void Close(Node node)
+        {
+            node.FileMode = FileMode.O_NONE;
+
+            if (node.Close == null)
+                return;
+            
+            node.Close(node);
+        }
+
+        /// <summary>
+        /// Reads data from a node
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="offset">The offset</param>
+        /// <param name="size">The size</param>
+        /// <param name="buffer">The buffer to put the data into</param>
+        /// <returns>The amount of read bytes</returns>
+        public static uint Read(Node node, uint offset, uint size, byte[] buffer)
+        {
+            if (node.Read == null)
+                return 0;
+
+            if (node.FileMode == FileMode.O_RDWR && node.FileMode != FileMode.O_RDONLY)
+                return 0;
+
+            return node.Read(node, offset, size, buffer);
+        }
+
+        /// <summary>
+        /// Writes data to a node
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="offset">The offset</param>
+        /// <param name="size">The size</param>
+        /// <param name="buffer">The buffer to get the data from</param>
+        /// <returns>The amount of written bytes</returns>
+        public static uint Write(Node node, uint offset, uint size, byte[] buffer)
+        {
+            if (node.Write == null)
+                return 0;
+
+            if (node.FileMode == FileMode.O_RDWR && node.FileMode != FileMode.O_WRONLY)
+                return 0;
+
+            return node.Write(node, offset, size, buffer);
+        }
+
+        /// <summary>
+        /// Finds a node in another node (directory node)
+        /// </summary>
+        /// <param name="node">The directory node</param>
+        /// <param name="name">The filename</param>
+        /// <returns>The found node</returns>
+        public static Node FindDir(Node node, string name)
+        {
+            if (node.FindDir == null)
+                return null;
+
+            return node.FindDir(node, name);
+        }
+
+        /// <summary>
+        /// Finds a directory entry in another node (directory node)
+        /// </summary>
+        /// <param name="node">The directory node</param>
+        /// <param name="index">The file index</param>
+        /// <returns>The found directory entry</returns>
+        public static unsafe DirEntry* ReadDir(Node node, uint index)
+        {
+            if (node.ReadDir == null)
+                return null;
+
+            return node.ReadDir(node, index);
+        }
     }
 }

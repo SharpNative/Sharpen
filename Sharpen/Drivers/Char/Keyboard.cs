@@ -106,24 +106,10 @@ namespace Sharpen.Drivers.Char
             device.Name = "keyboard";
             device.node = new Node();
             device.node.Read = readImpl;
-            device.node.Write = writeImpl;
 
             DevFS.RegisterDevice(device);
         }
-
-        /// <summary>
-        /// There no write!
-        /// </summary>
-        /// <param name="node">The node</param>
-        /// <param name="offset">The offset</param>
-        /// <param name="size">The size</param>
-        /// <param name="buffer">The buffer</param>
-        /// <returns>Zero</returns>
-        private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
-        {
-            return 0;
-        }
-
+        
         /// <summary>
         /// Read from keyboard
         /// </summary>
