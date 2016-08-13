@@ -134,7 +134,7 @@ namespace Sharpen.FileSystem
                 if (offset == 256)
                 {
                     sectorOffset++;
-                    m_dev.Read(m_dev, (uint)(beginFat + sectorOffset), 1, fatBuffer);
+                    m_dev.Read(m_dev, (uint)(beginFat + sectorOffset), 512, fatBuffer);
 
                     offset = 0;
                 }
