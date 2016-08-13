@@ -204,7 +204,7 @@ namespace Sharpen.Exec
             // Map memory
             for (uint j = 0; j < size; j += 0x1000)
             {
-                Paging.MapPage(Paging.CurrentDirectory, (int)(elf + j), (int)((uint)allocated + j), (int)Paging.PageFlags.Present | (int)Paging.PageFlags.Writable | (int)Paging.PageFlags.UserMode);
+                Paging.MapPage(Paging.CurrentDirectory, (int)(virtAddress + j), (int)((uint)allocated + j), (int)Paging.PageFlags.Present | (int)Paging.PageFlags.Writable | (int)Paging.PageFlags.UserMode);
             }
             
             Tasking.AddTask((void*)elf->Entry, TaskPriority.NORMAL);

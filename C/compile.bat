@@ -8,7 +8,7 @@ mkdir build
 del build\*.o
 
 echo Assembling..
-nasm -f elf32 arch\arch.asm -o build\arch.o
+"../tools/nasm/nasm" -f elf32 arch\arch.asm -o build\arch.o
 
 echo Compiling..
 i686-elf-gcc -I./include -m32 -Wall -O2 -std=c99 -nostdlib kernel.c -c -o build\kernel.o

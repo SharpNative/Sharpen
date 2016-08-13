@@ -17,7 +17,7 @@ namespace Sharpen.FileSystem
         private static readonly int ENTRYNUMSECTORS = 0x0C;
 
         private static readonly int FAT_FREE = 0x00;
-        private static readonly int FAT_EOF = 0xFF8;
+        private static readonly int FAT_EOF = 0xFFF8;
 
         private static Node m_dev;
         private static int m_bytespersector;
@@ -29,7 +29,8 @@ namespace Sharpen.FileSystem
         private static Fat16BPB* m_bpb;
         private static FatDirEntry* m_dirEntries;
         private static uint m_numDirEntries;
-        private static ushort[] m_fat;
+
+        private static uint m_sectorOffset;
 
         private static readonly byte LFN = 0x0F;
 
@@ -46,20 +47,7 @@ namespace Sharpen.FileSystem
             // Detect if FAT16
             if (firstSector[FirstPartitonEntry + ENTRYTYPE] != 0x06)
                 return;
-            byte BeginHead = firstSector[FirstPartitonEntry + ENTRYBEGINHEAD];
-            byte Sector = (byte)(firstSector[FirstPartitonEntry + ENTRYBEGINCYLSEC] & 0x3F);
-
-            int tmp = firstSector[FirstPartitonEntry + ENTRYBEGINCYLSEC] >> 8;
-            byte cylinderHi = (byte)(tmp & 0x3);
-            byte cylinderLo = firstSector[FirstPartitonEntry + ENTRYBEGINCYLSEC + 1];
-
-            short cylinder = (short)(cylinderHi << 10 | cylinderLo);
-
-
-            // TODO: Get this from the drive
-            int hpc = 16;
-            int spt = 63;
-
+            
             /*
              * 
              * LBA = (C × HPC + H) × SPT + (S - 1)
@@ -69,7 +57,10 @@ namespace Sharpen.FileSystem
              * SPT is the maximum number of sectors per track (reported by disk drive, typically 63 for 28-bit LBA)
              * 
              */
-            m_beginLBA = (cylinder * hpc + BeginHead) * spt + (Sector - 1);
+            //m_beginLBA = (cylinder * hpc + BeginHead) * spt + (Sector - 1);
+            int off = FirstPartitonEntry + ENTRYNUMSECTORSBETWEEN;
+            m_beginLBA = firstSector[off + 3] << 24 | firstSector[off + 2] << 16 | firstSector[off + 1] << 8 | firstSector[off];
+
 
             byte[] bootSector = new byte[512];
             dev.Read(dev, (uint)m_beginLBA, 512, bootSector);
@@ -113,37 +104,8 @@ namespace Sharpen.FileSystem
 
                 offset++;
             }
-
-            // Read FAT in memory
-            int beginFat = m_beginLBA + m_bpb->ReservedSectors;
-            uint size = m_bpb->SectorsPerFat16;
-
-            m_fat = new ushort[size];
-
-            byte[] fatBuffer = new byte[512];
-            m_dev.Read(m_dev, (uint)(beginFat), 512, fatBuffer);
-
-
-            ushort* fatBufPtr = (ushort*)Util.ObjectToVoidPtr(fatBuffer);
-
-            sectorOffset = 0;
-            offset = 0;
-            for (int i = 0; i < size; i++)
-            {
-                // 512 / sizeof fatentry == 16
-                if (offset == 256)
-                {
-                    sectorOffset++;
-                    m_dev.Read(m_dev, (uint)(beginFat + sectorOffset), 512, fatBuffer);
-
-                    offset = 0;
-                }
-
-                m_fat[i] = fatBufPtr[offset];
-
-                offset++;
-            }
-
+            
+            
             m_numDirEntries = m_bpb->NumDirEntries;
             m_beginDataLBA = m_clusterBeginLBA + ((m_bpb->NumDirEntries * 32) / m_bpb->BytesPerSector);
         }
@@ -321,18 +283,30 @@ namespace Sharpen.FileSystem
         }
 
         /// <summary>
-        /// Find next clust
+        /// Find next cluster in file
         /// </summary>
         /// <param name="cluster">Cluster number</param>
         /// <returns></returns>
-        private static uint FindNextCluster(uint cluster)
+        private static unsafe uint FindNextCluster(uint cluster)
         {
-            ushort nextCluster = m_fat[cluster];
+            int beginFat = m_beginLBA + m_bpb->ReservedSectors;
+            uint clusters = (cluster / 256);
+            uint adr = (uint)(beginFat + clusters);
+            uint offset = (cluster * 2) - (clusters * 512);
 
-            // End of file?
+
+            byte[] fatBuffer = new byte[512];
+            m_dev.Read(m_dev, (uint)(adr), 512, fatBuffer);
+
+            byte* ptr = (byte *)Util.ObjectToVoidPtr(fatBuffer);
+            ushort* pointer = (ushort*)(ptr + offset);
+
+
+            ushort nextCluster = *pointer;
+
             if (nextCluster >= FAT_EOF)
                 return 0xFFFF;
-
+            
             return nextCluster;
         }
 
@@ -342,13 +316,13 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         private static uint FirstFirstFreeSector()
         {
-            for (uint i = 0; i < m_bpb->SectorsPerFat16; i++)
-            {
-                ushort nextCluster = m_fat[i];
+            //for (uint i = 0; i < m_bpb->SectorsPerFat16; i++)
+            //{
+            //    ushort nextCluster = m_fat[i];
 
-                if (nextCluster == FAT_FREE)
-                    return i;
-            }
+            //    if (nextCluster == FAT_FREE)
+            //        return i;
+            //}
 
             // FULL!!! :O
             return 0;
@@ -385,25 +359,26 @@ namespace Sharpen.FileSystem
             if (sizeInSectors == 0)
                 sizeInSectors++;
 
-            uint offsetInCluser = sectorsOffset;
+            uint offsetInCluster = sectorsOffset;
             uint offsetInSector = StartOffset;
             uint currentCluster = startCluster;
             uint currentOffset = 0;
             int sizeLeft = (int)size;
 
+
             for (int i = 0; i < sizeInSectors; i++)
             {
-                if (offsetInCluser == m_bpb->SectorsPerCluster)
+                if (offsetInCluster == m_bpb->SectorsPerCluster)
                 {
                     currentCluster = FindNextCluster(currentCluster);
 
                     if (currentCluster == 0xFFFF)
                         return currentOffset;
-
-                    offsetInCluser = 0;
+                    
+                    offsetInCluster = 0;
                 }
 
-                m_dev.Read(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluser, 512, buf);
+                m_dev.Read(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
 
                 int sizeTemp = (sizeLeft > 512) ? 512 : sizeLeft;
 
@@ -419,7 +394,7 @@ namespace Sharpen.FileSystem
 
                 currentOffset += (uint)sizeTemp;
                 sizeLeft -= sizeTemp;
-                offsetInCluser++;
+                offsetInCluster++;
                 offsetInSector = 0;
             }
 
@@ -469,11 +444,11 @@ namespace Sharpen.FileSystem
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             FatDirEntry* entry = (FatDirEntry*)node.Cookie;
-
+            
             // If bytes to read is bigger than the file size, set the size to the file size minus offset
             if (offset + size > entry->Size)
                 size = entry->Size - offset;
-
+            
             return readFile(entry->ClusterNumberLo, offset, size, buffer);
         }
 
