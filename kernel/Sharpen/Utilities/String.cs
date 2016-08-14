@@ -106,6 +106,22 @@
             return Util.CharPtrToString(ch);
         }
 
+        public long toLong(string str)
+        {
+            int len = String.Length(str);
+            int num = 0;
+            for (int i = 0; i < len; i++)
+            {
+                num *= 16;
+                if (str[i] > '9')
+                    num += str[i] - 'A' + 10;
+                else
+                    num += str[i] - '0';
+            }
+
+            return num;
+        }
+
         /// <summary>
         /// Merge 2 strings
         /// </summary>

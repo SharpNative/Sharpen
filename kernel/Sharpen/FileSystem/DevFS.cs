@@ -7,6 +7,11 @@ namespace Sharpen.FileSystem
         private static Dictionary m_devices = new Dictionary();
         private static Node m_currentNode;
 
+        public static int Count
+        {
+                get { return m_devices.Count(); }
+        }
+
         /// <summary>
         /// Initializes DevFS
         /// </summary>
@@ -65,7 +70,7 @@ namespace Sharpen.FileSystem
         private static unsafe Node findDirImpl(Node node, string name)
         {
             long hash = GenerateHash(name);
-
+            
             Device dev = (Device)m_devices.GetByKey(hash);
             if (dev == null)
                 return null;

@@ -137,7 +137,7 @@ namespace Sharpen.Task
             newTask.PID = m_lastPid++;
             newTask.GID = 0;
             newTask.UID = 0;
-            newTask.PageDir = Paging.CloneDirectory(Paging.CurrentDirectory);
+            newTask.PageDir = /*Paging.CloneDirectory*/(Paging.CurrentDirectory);
             newTask.TimeFull = (int)priority;
 
             // Stack
@@ -301,7 +301,7 @@ namespace Sharpen.Task
                 current.FileDescriptors.Nodes = newNodeArray;
                 current.FileDescriptors.Offsets = newOffsetArray;
             }
-
+            
             // Find a free descriptor
             int i = 0;
             for (; i < current.FileDescriptors.Capacity; i++)
@@ -313,7 +313,7 @@ namespace Sharpen.Task
                     break;
                 }
             }
-
+            
             current.FileDescriptors.Used++;
             return i;
         }

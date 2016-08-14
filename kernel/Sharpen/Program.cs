@@ -94,7 +94,7 @@ namespace Sharpen
             VFS.Init();
             STDOUT.Init();
             SerialPort.Init();
-            
+
             PCI.Init();
             //AC97.Init();
             VboxDev.Init();
@@ -105,12 +105,7 @@ namespace Sharpen
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
 
-            byte[] buf = new byte[6];
-            Network.GetMac((byte *)Util.ObjectToVoidPtr(buf));
-            NetworkTools.WakeOnLan(buf);
-            NetworkTools.WakeOnLan(buf);
-
-            ErrorCode error = Loader.StartProcess("C://test", null);
+            ErrorCode error = Loader.StartProcess("C://shell", null);
             if (error != ErrorCode.SUCCESS)
             {
                 Console.Write("Failed to start initial process: 0x");

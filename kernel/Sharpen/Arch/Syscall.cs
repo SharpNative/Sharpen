@@ -15,7 +15,7 @@ namespace Sharpen.Arch
             int function = regsPtr->EAX;
             if (function > 8)
                 return;
-
+            
             int ret = 0;
             switch (function)
             {

@@ -131,8 +131,10 @@ namespace Sharpen.FileSystem
 
                 if (parts > 1)
                     afterNodeName = String.SubString(afterNodeName, index + 1, String.Length(path) - 1);
-
+                
                 lastNode = lastNode.FindDir(lastNode, nodeName);
+
+
                 if (lastNode == null)
                     return null;
 
@@ -185,7 +187,7 @@ namespace Sharpen.FileSystem
             if (node.Read == null)
                 return 0;
 
-            if (node.FileMode == FileMode.O_RDWR && node.FileMode != FileMode.O_RDONLY)
+            if (node.FileMode != FileMode.O_RDWR && node.FileMode != FileMode.O_RDONLY)
                 return 0;
 
             return node.Read(node, offset, size, buffer);
@@ -204,7 +206,7 @@ namespace Sharpen.FileSystem
             if (node.Write == null)
                 return 0;
 
-            if (node.FileMode == FileMode.O_RDWR && node.FileMode != FileMode.O_WRONLY)
+            if (node.FileMode != FileMode.O_RDWR && node.FileMode != FileMode.O_WRONLY)
                 return 0;
 
             return node.Write(node, offset, size, buffer);

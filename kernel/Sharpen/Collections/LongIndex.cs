@@ -28,7 +28,7 @@ namespace Sharpen.Collections
             set
             {
                 long[] newArray = new long[value];
-                Memory.Memcpy(Util.ObjectToVoidPtr(newArray), Util.ObjectToVoidPtr(Item), (m_currentCap + 1) * sizeof(void*));
+                Memory.Memcpy(Util.ObjectToVoidPtr(newArray), Util.ObjectToVoidPtr(Item), (m_currentCap + 1) * sizeof(long));
                 Item = newArray;
                 m_currentCap = value;
             }

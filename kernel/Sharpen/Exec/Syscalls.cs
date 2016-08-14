@@ -72,10 +72,10 @@ namespace Sharpen.Exec
             Node node = Tasking.GetNodeFromDescriptor(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
-
+            
             uint offset = Tasking.GetOffsetFromDescriptor(descriptor);
             Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] += size;
-
+            
             return (int)VFS.Write(node, offset, size, buffer);
         }
 
@@ -110,6 +110,8 @@ namespace Sharpen.Exec
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
 
+            // TODO: get filemode from flags etc
+            VFS.Open(node, FileMode.O_RDWR);
             return Tasking.AddNodeToDescriptor(node);
         }
 

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Sharpen.FileSystem;
+using Sharpen.Utilities;
 
 namespace Sharpen.Arch
 {
@@ -275,13 +272,19 @@ namespace Sharpen.Arch
         /// <summary>
         /// Brute force scan over bus 0
         /// </summary>
-        public static void Probe()
+        public static unsafe void Probe()
         {
             checkBus(0);
 
             Console.Write("[PCI] ");
             Console.WriteNum((int)m_currentdevice - 1);
             Console.WriteLine(" devices detected");
+        }
+        
+
+        private static Node findDirImpl(Node node, string name)
+        {
+            return new FileSystem.Node();
         }
 
         /// <summary>

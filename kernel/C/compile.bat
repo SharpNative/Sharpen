@@ -1,5 +1,5 @@
 @echo off
-set PATH=%PATH%;..\tools\gcc\bin
+set PATH=%PATH%;..\..\tools\gcc\bin;..\..\tools\nasm
 
 IF EXIST build GOTO nocreatedir
 mkdir build
@@ -8,7 +8,7 @@ mkdir build
 del build\*.o
 
 echo Assembling..
-"../tools/nasm/nasm" -f elf32 arch\arch.asm -o build\arch.o
+nasm -f elf32 arch\arch.asm -o build\arch.o
 
 echo Compiling..
 i686-elf-gcc -I./include -Wall -O2 -std=c99 kernel.c -c -o build\kernel.o

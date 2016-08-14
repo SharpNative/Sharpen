@@ -1,4 +1,7 @@
-﻿namespace Sharpen.Lib
+﻿using System;
+using Sharpen.FileSystem;
+
+namespace Sharpen.Lib
 {
     public enum AudioActions
     {
@@ -37,6 +40,21 @@
         public unsafe static void RequestBuffer(uint size, ushort* buffer)
         {
 
+        }
+
+        public unsafe static void Init()
+        {
+            Device dev = new Device();
+            dev.Name = "Audio";
+            dev.node = new Node();
+            dev.node.Write = writeImpl;
+
+            DevFS.RegisterDevice(dev);
+        }
+
+        private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
+        {
+            return 0;
         }
     }
 }
