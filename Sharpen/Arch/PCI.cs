@@ -133,7 +133,7 @@ namespace Sharpen.Arch
         /// <param name="device">Device</param>
         /// <param name="function">Function</param>
         /// <returns>Device ID</returns>
-        private static ushort getDeviceID(ushort bus, ushort device, ushort function)
+        public static ushort getDeviceID(ushort bus, ushort device, ushort function)
         {
             return readWord(bus, device, function, 0x2);
         }
