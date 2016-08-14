@@ -100,7 +100,7 @@ namespace Sharpen.FileSystem
                 }
 
                 // TODO: I think this can be overriden 
-                m_dirEntries[i] = curBufPtr[offset];
+                m_dirEntries[i] = curBufPtr[offset];    
 
                 offset++;
             }

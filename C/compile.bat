@@ -22,4 +22,4 @@ copy kernel G:\kernel
 imdisk -D -m G:
 
 echo Starting QEMU...
-"C:\Program Files\qemu\qemu-system-i386.exe" os.img -m 256
+"C:\Program Files\qemu\qemu-system-i386.exe" os.img -soundhw ac97 -net nic,model=rtl8139 -m 256 -D qemu.log

@@ -57,6 +57,7 @@
     <Compile Include="Arch\IDT.cs" />
     <Compile Include="Arch\IRQ.cs" />
     <Compile Include="Arch\ISR.cs" />
+    <Compile Include="Drivers\Net\rtl8139.cs" />
     <Compile Include="ErrorCode.cs" />
     <Compile Include="Exec\ELFLoader.cs" />
     <Compile Include="Exec\Loader.cs" />
@@ -68,7 +69,6 @@
     <Compile Include="Arch\PIT.cs" />
     <Compile Include="Arch\Regs.cs" />
     <Compile Include="Utilities\ByteUtil.cs" />
-    <Compile Include="Drivers\Net\I217.cs" />
     <Compile Include="Drivers\Other\VboxDev.cs" />
     <Compile Include="Drivers\Other\VboxDevExtras.cs" />
     <Compile Include="Drivers\Other\VboxDevFSDriver.cs" />

@@ -94,54 +94,15 @@ namespace Sharpen
             SerialPort.Init();
             
             PCI.Probe();
-            //AC97.Init();
+            AC97.Init();
             VboxDev.Init();
-            //I217.Init();
+            rtl8139.Init();
             ATA.Init();
             Tasking.Init();
 
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
-
-            //Console.WriteLine("\nReaddir: C://a/");
-            //Node searchNode = VFS.GetByPath("C://a/");
-            //uint j = 0;
-            //DirEntry* entry = null;
-            //do
-            //{
-            //    entry = VFS.ReadDir(searchNode, j);
-            //    if (entry == null)
-            //        break;
-
-            //    Console.Write("C://a/");
-            //    Console.WriteLine(Util.CharPtrToString(entry->Name));
-
-            //    j++;
-            //}
-            //while (entry != null);
             
-            Node node = VFS.GetByPath("C://hi.txt");
-            byte[] buf = new byte[node.Size];
-            VFS.Open(node, FileMode.O_RDONLY);
-            uint bytes = VFS.Read(node, 0, node.Size, buf);
-            VFS.Close(node);
-
-            //for (int i = 0; i < bytes; i++)
-            //    Console.PutChar((char)buf[i]);
-
-            //node = VFS.GetByPath("C://testt");
-            //SubDirectory a = Fat16.readDirectory(7);
-
-            //Node nd = Fat16.FindFileInDirectory(a, (char*)Util.ObjectToVoidPtr("TEST    TXT"));
-            //Console.WriteHex(nd.Cookie);
-            //Console.WriteLine("YES");
-            ErrorCode error = Loader.StartProcess("C://test", null);
-            if (error != ErrorCode.SUCCESS)
-            {
-                Console.Write("Failed to start initial process: 0x");
-                Console.WriteHex((int)error);
-                Console.PutChar('\n');
-            }
 
             // Idle loop
             while (true)
