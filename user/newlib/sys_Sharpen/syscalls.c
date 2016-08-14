@@ -85,9 +85,9 @@ void _exit()
     sys_exit(0);
 }
 
-int lseek(int file, int ptr, int dir)
+int lseek(int file, int offset, int dir)
 {
-    int ret = sys_seek(file, ptr, dir);
+    int ret = sys_seek(file, offset, dir);
     if(ret < 0)
     {
         errno = -ret;

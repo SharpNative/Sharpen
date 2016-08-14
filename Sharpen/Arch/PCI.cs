@@ -34,7 +34,7 @@ namespace Sharpen.Arch
         public unsafe delegate void PciDriverInit(PciDevice dev);
         public unsafe delegate void PciDriverExit(PciDevice dev);
 
-        private static PciDevice[] m_devices = new PciDevice[300];
+        private static PciDevice[] m_devices;
         private static uint m_currentdevice = 0;
 
         /// <summary>
@@ -282,6 +282,15 @@ namespace Sharpen.Arch
             Console.Write("[PCI] ");
             Console.WriteNum((int)m_currentdevice - 1);
             Console.WriteLine(" devices detected");
+        }
+
+        /// <summary>
+        /// Initialize PCI
+        /// </summary>
+        public static void Init()
+        {
+            m_devices = new PciDevice[300];
+            Probe();
         }
     }
 }

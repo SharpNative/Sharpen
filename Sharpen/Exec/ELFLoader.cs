@@ -95,6 +95,7 @@ namespace Sharpen.Exec
             public uint Flags;
             public uint Address;
             public uint Offset;
+            public uint Size;
             public uint Link;
             public uint Info;
             public uint AddressAlignment;
@@ -156,11 +157,6 @@ namespace Sharpen.Exec
         /// <returns>The error code</returns>
         public static unsafe ErrorCode Execute(byte[] buffer, uint size, string[] argv)
         {
-            for(int i = 0; i < size; i++)
-            {if(buffer[i]!=0)
-                Console.WriteHex(buffer[i]);
-            }
-
             ELF32* elf;
             fixed (byte* ptr = buffer)
             {
@@ -179,32 +175,30 @@ namespace Sharpen.Exec
             for (uint i = 0; i < elf->ShNum; i++)
             {
                 SectionHeader* section = getSection(elf, i);
-                Console.WriteHex(section->Name);
-                Console.WriteLine(getString(elf, section->Name));
+                
                 // Only loadable sections
                 if (section->Address == 0)
                     continue;
-
                 
-
                 uint offset = section->Address - virtAddress;
-
+                
                 // BSS
                 if (section->Type == (uint)SectionHeaderType.SHT_NOBITS)
                 {
-                    Memory.Memset((void*)((uint)allocated + offset), 0, (int)section->EntrySize);
+                    Memory.Memset((void*)((uint)allocated + offset), 0, (int)section->Size);
                 }
                 // Copy
                 else
                 {
-                    Memory.Memcpy((void*)((uint)allocated + offset), (void*)((uint)elf + section->Offset), (int)section->EntrySize);
+                    
+                    Memory.Memcpy((void*)((uint)allocated + offset), (void*)((uint)elf + section->Offset), (int)section->Size);
                 }
             }
 
             // Map memory
-            for (uint j = 0; j < size; j += 0x1000)
+            for (uint j = 0; j < size + 0x1000; j += 0x1000)
             {
-                Paging.MapPage(Paging.CurrentDirectory, (int)(virtAddress + j), (int)((uint)allocated + j), (int)Paging.PageFlags.Present | (int)Paging.PageFlags.Writable | (int)Paging.PageFlags.UserMode);
+                Paging.MapPage(Paging.CurrentDirectory, (int)((uint)allocated + j), (int)(virtAddress + j), (int)Paging.PageFlags.Present | (int)Paging.PageFlags.Writable | (int)Paging.PageFlags.UserMode);
             }
             
             Tasking.AddTask((void*)elf->Entry, TaskPriority.NORMAL);

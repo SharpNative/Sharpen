@@ -2,6 +2,8 @@
 extern Sharpen_Task_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
 ; PIT handler
 extern Sharpen_Arch_PIT_Handler_1struct_struct_Sharpen_Arch_Regs__
+; Syscall handler
+extern Sharpen_Arch_Syscall_Handler_1struct_struct_Sharpen_Arch_Regs__
 
 %macro INT_COMMON 2
     extern %2
@@ -68,7 +70,6 @@ extern Sharpen_Arch_PIT_Handler_1struct_struct_Sharpen_Arch_Regs__
 ; Interrupt handlers
 INT_COMMON isr_common, Sharpen_Arch_ISR_Handler_1struct_struct_Sharpen_Arch_Regs__
 INT_COMMON irq_common, Sharpen_Arch_IRQ_Handler_1struct_struct_Sharpen_Arch_Regs__
-INT_COMMON int_common, Sharpen_Arch_IDT_Handler_1struct_struct_Sharpen_Arch_Regs__
 
 ; ISR routines
 ISR_NO_ERROR 0
@@ -107,9 +108,36 @@ ISR_NO_ERROR 31
 ; Syscall handler
 global Sharpen_Arch_IDT_Syscall_0
 Sharpen_Arch_IDT_Syscall_0:
-    push 0
-    push 0x80
-    jmp int_common
+    ; Store data
+    pusha
+
+    ; Store segment
+    push ds
+    push es
+    push fs
+    push gs
+
+    ; Load kernel segment
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    ; Call interrupt handler
+    push esp
+    call Sharpen_Arch_Syscall_Handler_1struct_struct_Sharpen_Arch_Regs__
+    add esp, 4
+
+    ; Reload original segment
+    pop gs
+    pop fs
+    pop es
+    pop ds
+
+    ; Pop data
+    popa
+    iret
 
 ; Special IRQ routine for IRQ 0 (PIT)
 global Sharpen_Arch_IDT_IRQ0_0

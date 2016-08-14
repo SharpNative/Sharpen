@@ -61,13 +61,16 @@
     <Compile Include="ErrorCode.cs" />
     <Compile Include="Exec\ELFLoader.cs" />
     <Compile Include="Exec\Loader.cs" />
+    <Compile Include="Exec\Syscalls.cs" />
     <Compile Include="FileSystem\Fat16BPB.cs" />
+    <Compile Include="FileSystem\STDOUT.cs" />
     <Compile Include="Task\Task.cs" />
     <Compile Include="Task\Tasking.cs" />
     <Compile Include="Arch\PCI.cs" />
     <Compile Include="Arch\PIC.cs" />
     <Compile Include="Arch\PIT.cs" />
     <Compile Include="Arch\Regs.cs" />
+    <Compile Include="Arch\Syscall.cs" />
     <Compile Include="Utilities\ByteUtil.cs" />
     <Compile Include="Drivers\Other\VboxDev.cs" />
     <Compile Include="Drivers\Other\VboxDevExtras.cs" />

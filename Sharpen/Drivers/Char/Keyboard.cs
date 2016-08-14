@@ -120,7 +120,7 @@ namespace Sharpen.Drivers.Char
         /// <returns>The amount of bytes read</returns>
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            return m_fifo.ReadWait(buffer, (ushort)size);
+            return m_fifo.Read(buffer, (ushort)size);
         }
 
         /// <summary>

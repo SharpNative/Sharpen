@@ -10,8 +10,7 @@
 
         // Delegate of IRQ Handler
         public unsafe delegate void IRQHandler(Regs* regsPtr);
-
-
+        
         // IRQ handlers
         private static IRQHandler[] handlers = { null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null };
 

@@ -99,7 +99,7 @@ namespace Sharpen.Arch
             int address = 0;
             while (address < (int)Heap.CurrentEnd + (sizeof(PageDirectory)))
             {
-                int flags = (int)PageFlags.Present | (int)PageFlags.Writable;
+                int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
                 MapPage(KernelDirectory, address, address, flags);
                 SetFrame(address);
                 address += 0x1000;
@@ -118,6 +118,7 @@ namespace Sharpen.Arch
         /// <param name="flags">The flags</param>
         public static unsafe void MapPage(PageDirectory* directory, int phys, int virt, int flags)
         {
+            flags |= (int)PageFlags.UserMode;
             // Get indices
             int pageIndex = virt / 0x1000;
             int tableIndex = pageIndex / 1024;
@@ -133,7 +134,7 @@ namespace Sharpen.Arch
                 Memory.Memset(newTable, 0, sizeof(PageTable));
 
                 // Set flags
-                int flaggedTable = (int)newTable | (int)TableFlags.Present | (int)TableFlags.Writable;
+                int flaggedTable = (int)newTable | flags;
                 directory->tables[tableIndex] = flaggedTable;
             }
 
@@ -236,7 +237,7 @@ namespace Sharpen.Arch
             int end = (int)(address + sizeAligned);
             while (address < end)
             {
-                int flags = (int)PageFlags.Present | (int)PageFlags.Writable;
+                int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
                 
                 MapPage(CurrentDirectory, address, address, flags);
                 // if (CurrentDirectory != KernelDirectory)
