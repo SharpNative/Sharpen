@@ -319,5 +319,7 @@ namespace Sharpen.Arch
         /// </summary>
         /// <param name="directory">The page directory</param>
         private static unsafe extern void setDirectoryInternal(PageDirectory* directory);
+
+        public static unsafe extern int ReadCR2();
     }
 }

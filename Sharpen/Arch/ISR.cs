@@ -35,6 +35,7 @@
             int isrNum = (*regsPtr).IntNum;
             // Panic.DoPanic(m_errorCodes[isrNum]);
             Console.WriteLine(m_errorCodes[isrNum]);
+            Console.WriteHex(Paging.ReadCR2());
             CPU.CLI();
             CPU.HLT();
         }

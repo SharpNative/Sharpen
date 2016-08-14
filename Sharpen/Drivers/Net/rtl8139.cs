@@ -39,7 +39,7 @@ namespace Sharpen.Drivers.Net
         private static readonly byte MS_LINKB = 0x04;
         private static readonly byte MS_SPEED_10 = 0x08;
 
-        private static readonly byte[] m_mac = new byte[6];
+        private static byte[] m_mac;
 
         private static ushort m_io_base;
         private static int m_linkSpeed;
@@ -47,11 +47,11 @@ namespace Sharpen.Drivers.Net
         private static int m_irqNum;
         private static int m_curBuffer = 0;
 
-        private static byte[] m_buffer = new byte[8192 + 16];
-        private static byte[] m_transmit0 = new byte[8192 + 16];
-        private static byte[] m_transmit1 = new byte[8192 + 16];
-        private static byte[] m_transmit2 = new byte[8192 + 16];
-        private static byte[] m_transmit3 = new byte[8192 + 16];
+        private static byte[] m_buffer;
+        private static byte[] m_transmit0;
+        private static byte[] m_transmit1;
+        private static byte[] m_transmit2;
+        private static byte[] m_transmit3;
         
         /// <summary>
         /// Initialization handler
@@ -60,12 +60,18 @@ namespace Sharpen.Drivers.Net
         private static unsafe void initHandler(PCI.PciDevice dev)
         {
             m_io_base = dev.Port1;
-            
+            m_mac = new byte[6];
+            m_buffer = new byte[8192 + 16];
+            m_transmit0 = new byte[8192 + 16];
+            m_transmit1 = new byte[8192 + 16];
+            m_transmit2 = new byte[8192 + 16];
+            m_transmit3 = new byte[8192 + 16];
+
 
             // Write irq "10"
             uint outVal = PCI.PCIReadWord(dev, 0x3C);
             outVal &= 0x00;
-            outVal |= 10;
+            outVal |= 11;
 
             PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, 0x3C, outVal);
 
@@ -100,7 +106,7 @@ namespace Sharpen.Drivers.Net
 
             updateLinkStatus();
 
-            IRQ.SetHandler(m_irqNum, handler);
+            IRQ.SetHandler(11, handler);
 
             inAdr = Util.ObjectToVoidPtr(m_transmit0);
             adr = (uint)Paging.GetPhysicalFromVirtual(inAdr);
