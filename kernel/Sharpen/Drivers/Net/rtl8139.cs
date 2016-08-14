@@ -52,7 +52,7 @@ namespace Sharpen.Drivers.Net
         private static byte[] m_transmit1;
         private static byte[] m_transmit2;
         private static byte[] m_transmit3;
-        
+
         /// <summary>
         /// Initialization handler
         /// </summary>
@@ -60,17 +60,18 @@ namespace Sharpen.Drivers.Net
         private static unsafe void initHandler(PCI.PciDevice dev)
         {
             m_io_base = dev.Port1;
-            m_mac = new byte[6];
+
             m_buffer = new byte[8192 + 16];
             m_transmit0 = new byte[8192 + 16];
             m_transmit1 = new byte[8192 + 16];
             m_transmit2 = new byte[8192 + 16];
             m_transmit3 = new byte[8192 + 16];
-            
+            m_mac = new byte[6];
+
             // Write irq "10"
             uint outVal = PCI.PCIReadWord(dev, 0x3C);
             outVal &= 0x00;
-            outVal |= 11;
+            outVal |= 10;
 
             PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, 0x3C, outVal);
 
@@ -87,26 +88,27 @@ namespace Sharpen.Drivers.Net
 
             // Wait till done resettings :D
             while ((PortIO.In8((ushort)(m_io_base + REG_CMD)) & CMD_RST) != 0) { }
-            
+
             // Set receive buffer
             void* inAdr = Util.ObjectToVoidPtr(m_buffer);
             uint adr = (uint)Paging.GetPhysicalFromVirtual(inAdr);
 
-            PortIO.Out32((ushort)(m_io_base + REG_BUF), adr);
-            
+            PortIO.Out32((ushort)(m_io_base + REG_BUF), 0xFFFF);
+
             // SET IMR + ISR
-            setInterruptMask(0x0005);
+            setInterruptMask(0x0000);
 
             // RCR
             PortIO.Out32((ushort)(m_io_base + REG_RC), 0xf | (1 << 7));
+            PortIO.Out32((ushort)(m_io_base + REG_TC), 0x700);
 
             // Enable receive and Transmit
             PortIO.Out8((ushort)(m_io_base + REG_CMD), (byte)(CMD_TXE | CMD_RXE));
 
             updateLinkStatus();
-            
-            IRQ.SetHandler(11, handler);
-            
+
+            IRQ.SetHandler(m_irqNum, handler);
+
             inAdr = Util.ObjectToVoidPtr(m_transmit0);
             adr = (uint)Paging.GetPhysicalFromVirtual(inAdr);
 
@@ -127,7 +129,7 @@ namespace Sharpen.Drivers.Net
             adr = (uint)Paging.GetPhysicalFromVirtual(inAdr);
 
             PortIO.Out32((ushort)(m_io_base + REG_TSAD3), adr);
-            
+
             readMac();
 
             // Register device as the main network device
@@ -145,39 +147,39 @@ namespace Sharpen.Drivers.Net
                 mac[i] = m_mac[i];
         }
 
-        public static unsafe void Transmit(byte *bytes, uint size)
+        public static unsafe void Transmit(byte* bytes, uint size)
         {
-            byte *dataAddr = (byte *)Util.ObjectToVoidPtr(m_transmit0);
-            ushort portAddress = (ushort)(m_io_base + REG_TSD0);
+            byte* inAdr = (byte*)Util.ObjectToVoidPtr(m_transmit0);
+            ushort adr = (ushort)(m_io_base + REG_TSD0);
 
-            if(m_curBuffer == 0)
+            if (m_curBuffer == 0)
             {
                 m_curBuffer++;
             }
-            else if(m_curBuffer == 1)
+            else if (m_curBuffer == 1)
             {
-                dataAddr = (byte*)Util.ObjectToVoidPtr(m_transmit1);
-                portAddress = (ushort)(m_io_base + REG_TSD1);
+                inAdr = (byte*)Util.ObjectToVoidPtr(m_transmit1);
+                adr = (ushort)(m_io_base + REG_TSD1);
                 m_curBuffer++;
             }
             else if (m_curBuffer == 2)
             {
-                dataAddr = (byte*)Util.ObjectToVoidPtr(m_transmit2);
-                portAddress = (ushort)(m_io_base + REG_TSD2);
+                inAdr = (byte*)Util.ObjectToVoidPtr(m_transmit2);
+                adr = (ushort)(m_io_base + REG_TSD2);
                 m_curBuffer++;
             }
             else if (m_curBuffer == 3)
             {
-                dataAddr = (byte*)Util.ObjectToVoidPtr(m_transmit3);
-                portAddress = (ushort)(m_io_base + REG_TSD3);
+                inAdr = (byte*)Util.ObjectToVoidPtr(m_transmit3);
+                adr = (ushort)(m_io_base + REG_TSD3);
                 m_curBuffer = 0;
             }
 
             // Clear transmit buffer
-            Memory.Memset(dataAddr, 0x00, 8192 + 16);
-            Memory.Memcpy(dataAddr, bytes, (int)size);
+            Memory.Memset(inAdr, 0x00, 8192 + 16);
+            Memory.Memcpy(inAdr, bytes, (int)size);
 
-            PortIO.Out32(portAddress, size);
+            PortIO.Out32(adr, size);
 
         }
 
@@ -225,10 +227,10 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         private static void readMac()
         {
-            for(int i = 0; i < 6; i++)
+            for (int i = 0; i < 6; i++)
                 m_mac[i] = PortIO.In8((ushort)(m_io_base + REG_MAC + i));
         }
-        
+
         /// <summary>
         /// Set interrupt mask
         /// </summary>
@@ -236,7 +238,7 @@ namespace Sharpen.Drivers.Net
         {
             PortIO.Out16((ushort)(m_io_base + REG_IM), mask); // for now enable everything!
         }
-        
+
         /// <summary>
         /// Acknowledge interrupt
         /// </summary>
