@@ -68,12 +68,6 @@ namespace Sharpen.Drivers.Net
             m_transmit3 = new byte[8192 + 16];
 
 
-            // Write irq "10"
-            uint outVal = PCI.PCIReadWord(dev, 0x3C);
-            outVal &= 0x00;
-            outVal |= 11;
-
-            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, 0x3C, outVal);
 
             m_irqNum = PCI.PCIReadWord(dev, 0x3C) & 0xFF;
 
@@ -148,8 +142,8 @@ namespace Sharpen.Drivers.Net
 
         public static unsafe void Transmit(byte *bytes, uint size)
         {
-            byte *inAdr = (byte *)Util.ObjectToVoidPtr(m_transmit0);
-            ushort adr = (ushort)(m_io_base + REG_TSD0);
+            byte *dataAddr = (byte *)Util.ObjectToVoidPtr(m_transmit0);
+            ushort portAddress = (ushort)(m_io_base + REG_TSD0);
 
             if(m_curBuffer == 0)
             {
@@ -157,28 +151,28 @@ namespace Sharpen.Drivers.Net
             }
             else if(m_curBuffer == 1)
             {
-                inAdr = (byte*)Util.ObjectToVoidPtr(m_transmit1);
-                adr = (ushort)(m_io_base + REG_TSD1);
+                dataAddr = (byte*)Util.ObjectToVoidPtr(m_transmit1);
+                portAddress = (ushort)(m_io_base + REG_TSD1);
                 m_curBuffer++;
             }
             else if (m_curBuffer == 2)
             {
-                inAdr = (byte*)Util.ObjectToVoidPtr(m_transmit2);
-                adr = (ushort)(m_io_base + REG_TSD2);
+                dataAddr = (byte*)Util.ObjectToVoidPtr(m_transmit2);
+                portAddress = (ushort)(m_io_base + REG_TSD2);
                 m_curBuffer++;
             }
             else if (m_curBuffer == 3)
             {
-                inAdr = (byte*)Util.ObjectToVoidPtr(m_transmit3);
-                adr = (ushort)(m_io_base + REG_TSD3);
+                dataAddr = (byte*)Util.ObjectToVoidPtr(m_transmit3);
+                portAddress = (ushort)(m_io_base + REG_TSD3);
                 m_curBuffer = 0;
             }
 
             // Clear transmit buffer
-            Memory.Memset(inAdr, 0x00, 8192 + 16);
-            Memory.Memcpy(inAdr, bytes, (int)size);
+            Memory.Memset(dataAddr, 0x00, 8192 + 16);
+            Memory.Memcpy(dataAddr, bytes, (int)size);
 
-            PortIO.Out32(adr, size);
+            PortIO.Out32(portAddress, size);
 
         }
 
