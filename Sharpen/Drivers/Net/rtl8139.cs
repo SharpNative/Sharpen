@@ -23,9 +23,11 @@ namespace Sharpen.Drivers.Net
         private static readonly ushort REG_TSAD0 = 0x20;
         private static readonly ushort REG_TSAD1 = 0x24;
         private static readonly ushort REG_TSAD2 = 0x28;
-        private static readonly ushort REG_TSAD3 = 0x3C;
+        private static readonly ushort REG_TSAD3 = 0x2C;
         private static readonly ushort REG_TSD0 = 0x10;
         private static readonly ushort REG_TSD1 = 0x14;
+        private static readonly ushort REG_TSD2 = 0x18;
+        private static readonly ushort REG_TSD3 = 0x1C;
 
 
         private static readonly ushort CMD_RXEMPTY = 0x01;
@@ -42,6 +44,7 @@ namespace Sharpen.Drivers.Net
         private static int m_linkSpeed;
         private static bool m_linkFail = true;
         private static int m_irqNum;
+        private static int m_curBuffer = 0;
 
         private static byte[] m_buffer = new byte[8192 + 16];
         private static byte[] m_transmit0 = new byte[8192 + 16];
@@ -83,7 +86,7 @@ namespace Sharpen.Drivers.Net
             void* inAdr = Util.ObjectToVoidPtr(m_buffer);
             uint adr = (uint)Paging.GetPhysicalFromVirtual(inAdr);
 
-            PortIO.Out32((ushort)(m_io_base + REG_BUF), adr);
+            PortIO.Out32((ushort)(m_io_base + REG_BUF), 0xFFFF);
 
             // SET IMR + ISR
             setInterruptMask(0x0005);
@@ -118,23 +121,66 @@ namespace Sharpen.Drivers.Net
             adr = (uint)Paging.GetPhysicalFromVirtual(inAdr);
 
             PortIO.Out32((ushort)(m_io_base + REG_TSAD3), adr);
-            
-            //m_transmit0[0] = 0xFF;
-            //m_transmit0[1] = 0xFF;
-            //m_transmit0[2] = 0xFF;
-            //m_transmit0[3] = 0xFF;
-            //m_transmit0[4] = 0xFF;
-            //m_transmit0[5] = 0xFF;
 
-            //for (int i = 0; i < 16; i++)
-            //    for (int j = 0; j < 6; j++)
-            //        m_transmit0[6 + (i * 6) + j] = m_mac[j];
-
-            //PortIO.Out32((ushort)(m_io_base + REG_TSD0), 102);
+            WoLTest();
 
             readMac();
 
             PrintRes();
+        }
+
+        public static unsafe void Transmit(byte *bytes, uint size)
+        {
+            byte *inAdr = (byte *)Util.ObjectToVoidPtr(m_transmit0);
+            ushort adr = (ushort)(m_io_base + REG_TSD0);
+
+            if(m_curBuffer == 0)
+            {
+                m_curBuffer++;
+            }
+            else if(m_curBuffer == 1)
+            {
+                inAdr = (byte*)Util.ObjectToVoidPtr(m_transmit1);
+                adr = (ushort)(m_io_base + REG_TSD1);
+                m_curBuffer++;
+            }
+            else if (m_curBuffer == 2)
+            {
+                inAdr = (byte*)Util.ObjectToVoidPtr(m_transmit2);
+                adr = (ushort)(m_io_base + REG_TSD2);
+                m_curBuffer++;
+            }
+            else if (m_curBuffer == 3)
+            {
+                inAdr = (byte*)Util.ObjectToVoidPtr(m_transmit3);
+                adr = (ushort)(m_io_base + REG_TSD3);
+                m_curBuffer = 0;
+            }
+
+            // Clear transmit buffer
+            Memory.Memset(inAdr, 0x00, 8192 + 16);
+            Memory.Memcpy(inAdr, bytes, (int)size);
+
+            PortIO.Out32(adr, size);
+
+        }
+
+        public static unsafe void WoLTest()
+        {
+            byte* bytes = (byte*)Heap.Alloc(102);
+
+            bytes[0] = 0xFF;
+            bytes[1] = 0xFF;
+            bytes[2] = 0xFF;
+            bytes[3] = 0xFF;
+            bytes[4] = 0xFF;
+            bytes[5] = 0xFF;
+
+            for (int i = 0; i < 16; i++)
+                for (int j = 0; j < 6; j++)
+                    bytes[6 + (i * 6) + j] = m_mac[j];
+
+            Transmit(bytes, 102);
         }
 
         private static void PrintRes()
