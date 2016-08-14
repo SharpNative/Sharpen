@@ -67,7 +67,6 @@ namespace Sharpen.Drivers.Net
             m_transmit2 = new byte[8192 + 16];
             m_transmit3 = new byte[8192 + 16];
 
-
             // Write irq "10"
             uint outVal = PCI.PCIReadWord(dev, 0x3C);
             outVal &= 0x00;
@@ -93,8 +92,8 @@ namespace Sharpen.Drivers.Net
             void* inAdr = Util.ObjectToVoidPtr(m_buffer);
             uint adr = (uint)Paging.GetPhysicalFromVirtual(inAdr);
 
-            PortIO.Out32((ushort)(m_io_base + REG_BUF), 0xFFFF);
-
+            PortIO.Out32((ushort)(m_io_base + REG_BUF), adr);
+            
             // SET IMR + ISR
             setInterruptMask(0x0005);
 
@@ -105,9 +104,9 @@ namespace Sharpen.Drivers.Net
             PortIO.Out8((ushort)(m_io_base + REG_CMD), (byte)(CMD_TXE | CMD_RXE));
 
             updateLinkStatus();
-
+            
             IRQ.SetHandler(11, handler);
-
+            
             inAdr = Util.ObjectToVoidPtr(m_transmit0);
             adr = (uint)Paging.GetPhysicalFromVirtual(inAdr);
 
