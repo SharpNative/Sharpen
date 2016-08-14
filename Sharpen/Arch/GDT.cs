@@ -24,6 +24,39 @@ namespace Sharpen.Arch
             public uint   BaseAddress;
         }
 
+        // TSS entry
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct TSS
+        {
+            public uint PreviousTSS;     /* The previous TSS */
+            public uint ESP0;             /* The stack pointer of RING0 */
+            public uint SS0;              /* The Stack Segment of RING0 */
+            public uint ESP1;             /* The stack pointer of RING1 */
+            public uint SS1;              /* The Stack Segment of RING1 */
+            public uint ESP2;             /* The stack pointer of RING2 */
+            public uint SS2;              /* The Stack Segment of RING2 */
+            public uint CR3;              /* CR3 prior to switching */
+            public uint EIP;              /* EIP prior to switching */
+            public uint EFlags;           /* EFlags prior to switching */
+            public uint EAX;              /* EAX prior to switching */
+            public uint ECX;              /* ECX prior to switching */
+            public uint EDX;              /* EDX prior to switching */
+            public uint EBX;              /* EBX prior to switching */
+            public uint ESP;              /* ESP prior to switching */
+            public uint EBP;              /* EBP prior to switching */
+            public uint ESI;              /* ESI prior to switching */
+            public uint EDI;              /* EDI prior to switching */
+            public uint ES;               /* The ES to load */
+            public uint CS;               /* The CS to load */
+            public uint SS;               /* The SS to load */
+            public uint DS;               /* The DS to load */
+            public uint FS;               /* The FS to load */
+            public uint GS;               /* The GS to load */
+            public uint LDT;              /* LDT prior to switching */
+            public ushort Trap;           /* Set if switch should cause a Debug Exception */
+            public ushort IOMap;          /* Offset in structure to IOMAP */
+        }
+
         // Data selector constants
         enum GDT_Data
         {
@@ -47,6 +80,8 @@ namespace Sharpen.Arch
 
         private static GDT_Entry[] m_entries;
         private static GDT_Pointer m_ptr;
+
+        public static unsafe TSS* TSS_Entry { get; private set; }
 
         #region Helpers
         
@@ -79,7 +114,7 @@ namespace Sharpen.Arch
         /// <param name="limit">The limit</param>
         /// <param name="access">The access type</param>
         /// <param name="granularity">Granularity</param>
-        public static void SetEntry(int num, ulong base_address, ulong limit, int access, int granularity)
+        private static void setEntry(int num, ulong base_address, ulong limit, int access, int granularity)
         {
             // Address
             m_entries[num].BaseLow = (ushort)(base_address & 0xFFFF);
@@ -96,35 +131,75 @@ namespace Sharpen.Arch
         }
 
         /// <summary>
+        /// Writes a TSS entry into the GDT
+        /// </summary>
+        /// <param name="num">The index of the corresponding GDT entry</param>
+        /// <param name="tss">The TSS</param>
+        private static unsafe void setTSS(int num, TSS* tss)
+        {
+            // Base and limit
+            uint baseAddr = (uint)tss;
+            uint limit = (uint)(baseAddr + sizeof(TSS));
+
+            // Set TSS
+            // Kernel Data Selector = 0x10, Kernel Code Selector = 0x08
+            Memory.Memset(tss, 0, sizeof(TSS));
+            tss->SS0 = 0x10;
+            tss->IOMap = (ushort)sizeof(TSS);
+            tss->CS = 0x08;
+            tss->DS = 0x10;
+            tss->ES = 0x10;
+            tss->FS = 0x10;
+            tss->GS = 0x10;
+            tss->SS = 0x10;
+
+            // Add TSS descriptor to GDT
+            setEntry(num, baseAddr, limit, (int)GDT_Data.EA | Privilege(3) | (int)GDTFlags.Present, 0);
+        }
+
+        /// <summary>
         /// Initializes the GDT
         /// </summary>
         public static unsafe void Init()
         {
             // Allocate data
-            m_entries = new GDT_Entry[3];
+            m_entries = new GDT_Entry[6];
             m_ptr = new GDT_Pointer();
 
             // Set GDT table pointer
-            m_ptr.Limit = (ushort)((3 * sizeof(GDT_Entry)) - 1);
+            m_ptr.Limit = (ushort)((6 * sizeof(GDT_Entry)) - 1);
             fixed (GDT_Entry* ptr = m_entries)
             {
                 m_ptr.BaseAddress = (uint)ptr;
             }
 
             // NULL segment
-            SetEntry(0, 0, 0, 0, 0);
+            setEntry(0, 0, 0, 0, 0);
 
             // Kernel code segment
-            SetEntry(1, 0, 0xFFFFFFFF, (int)GDT_Data.ER | (int)GDTFlags.DescriptorCodeOrData | Privilege(0) | (int)GDTFlags.Present, (int)GDTFlags.Size32 | (int)GDTFlags.Granularity);
+            setEntry(1, 0, 0xFFFFFFFF, (int)GDT_Data.ER | (int)GDTFlags.DescriptorCodeOrData | Privilege(0) | (int)GDTFlags.Present, (int)GDTFlags.Size32 | (int)GDTFlags.Granularity);
 
             // Kernel data segment
-            SetEntry(2, 0, 0xFFFFFFFF, (int)GDT_Data.RW | (int)GDTFlags.DescriptorCodeOrData | Privilege(0) | (int)GDTFlags.Present, (int)GDTFlags.Size32 | (int)GDTFlags.Granularity);
+            setEntry(2, 0, 0xFFFFFFFF, (int)GDT_Data.RW | (int)GDTFlags.DescriptorCodeOrData | Privilege(0) | (int)GDTFlags.Present, (int)GDTFlags.Size32 | (int)GDTFlags.Granularity);
+
+            // User code segment
+            setEntry(3, 0, 0xFFFFFFFF, (int)GDT_Data.ER | (int)GDTFlags.DescriptorCodeOrData | Privilege(3) | (int)GDTFlags.Present, (int)GDTFlags.Size32 | (int)GDTFlags.Granularity);
+
+            // User data segment
+            setEntry(4, 0, 0xFFFFFFFF, (int)GDT_Data.RW | (int)GDTFlags.DescriptorCodeOrData | Privilege(3) | (int)GDTFlags.Present, (int)GDTFlags.Size32 | (int)GDTFlags.Granularity);
+
+            // TSS
+            TSS_Entry = (TSS*)Heap.Alloc(sizeof(TSS));
+            setTSS(5, TSS_Entry);
 
             // Flush GDT
             fixed (GDT_Pointer* ptr = &m_ptr)
             {
                 flushGDT(ptr);
             }
+
+            // Flush TSS
+            flushTSS();
         }
 
         /// <summary>
@@ -132,5 +207,10 @@ namespace Sharpen.Arch
         /// </summary>
         /// <param name="ptr">The pointer to the table</param>
         private static extern unsafe void flushGDT(GDT_Pointer* ptr);
+
+        /// <summary>
+        /// Flushes the TSS
+        /// </summary>
+        private static extern void flushTSS();
     }
 }

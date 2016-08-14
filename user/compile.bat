@@ -8,7 +8,7 @@ mkdir build
 del build\*.o
 
 echo Compiling...
-i686-elf-gcc -I./newlib/include -m32 -Wall -O2 -std=c99 -fno-builtin test.c -c -o build\test.o
+i686-elf-gcc -I./newlib/include -Wall -O2 -std=c99 test.c -c -o build\test.o
 
 echo Linking...
 i686-elf-ld -s -Tlink.ld build\test.o newlib\libc.a -o test

@@ -286,6 +286,34 @@ namespace Sharpen
         {
             return AlignedAlloc(4, size);
         }
+        
+        /// <summary>
+        /// Gets the block from the pointer
+        /// </summary>
+        /// <param name="ptr">The pointer</param>
+        /// <returns>The block</returns>
+        private static unsafe Block* getBlockFromPtr(void* ptr)
+        {
+            Block* block = (Block*)((int)ptr - sizeof(Block));
+            return block;
+        }
+
+        /// <summary>
+        /// Expands the memory block of ptr to newSize
+        /// </summary>
+        /// <param name="ptr">The pointer to the memory block</param>
+        /// <param name="newSize">The new size of the block</param>
+        /// <returns>The memory block</returns>
+        public static unsafe void* Expand(void* ptr, int newSize)
+        {
+            Block* block = getBlockFromPtr(ptr);
+
+            void* newPtr = AlignedAlloc(4, newSize);
+            Memory.Memcpy(newPtr, ptr, block->Size);
+            Free(ptr);
+
+            return newPtr;
+        }
 
         /// <summary>
         /// Frees a piece of memory
@@ -294,7 +322,7 @@ namespace Sharpen
         public static unsafe void Free(void* ptr)
         {
             // Grab block (header is just before the data)
-            Block* block = (Block*)((int)ptr - sizeof(Block));
+            Block* block = getBlockFromPtr(ptr);
 
             // Not used anymore
             block->Used = false;

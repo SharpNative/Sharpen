@@ -3,7 +3,14 @@ using Sharpen.Utilities;
 
 namespace Sharpen.FileSystem
 {
-    class VFS
+    public enum FileWhence
+    {
+        SEEK_SET = 0,
+        SEEK_CUR = 1,
+        SEEK_END = 2
+    }
+
+    public class VFS
     {
         private static Dictionary m_dictionary = new Dictionary();
 

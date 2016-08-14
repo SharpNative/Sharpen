@@ -84,18 +84,7 @@ namespace Sharpen.Arch
             m_entries[num].Zero = 0;
             m_entries[num].Flags = flags;
         }
-
-        /// <summary>
-        /// INT handler
-        /// </summary>
-        /// <param name="regsPtr">Pointer to registers</param>
-        public static unsafe void Handler(Regs* regsPtr)
-        {
-            int isrNum = (*regsPtr).IntNum;
-            Console.WriteHex(isrNum);
-            Console.PutChar('\n');
-        }
-
+        
         /// <summary>
         /// Initializes the IDT
         /// </summary>

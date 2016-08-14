@@ -8,7 +8,6 @@ using Sharpen.Drivers.Sound;
 using Sharpen.Exec;
 using Sharpen.FileSystem;
 using Sharpen.Task;
-using Sharpen.Utilities;
 
 namespace Sharpen
 {
@@ -91,9 +90,10 @@ namespace Sharpen
             
             DevFS.Init();
             VFS.Init();
+            STDOUT.Init();
             SerialPort.Init();
             
-            PCI.Probe();
+            PCI.Init();
             AC97.Init();
             VboxDev.Init();
             rtl8139.Init();
@@ -102,23 +102,18 @@ namespace Sharpen
 
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
-            
 
+            ErrorCode error = Loader.StartProcess("C://test", null);
+            if (error != ErrorCode.SUCCESS)
+            {
+                Console.Write("Failed to start initial process: 0x");
+                Console.WriteHex((int)error);
+                Console.PutChar('\n');
+            }
+            
             // Idle loop
             while (true)
                 CPU.HLT();
-        }
-
-        public static void Test1()
-        {
-            while (true)
-                Console.PutChar('a');
-        }
-
-        public static void Test2()
-        {
-            while (true)
-                Console.PutChar('b');
         }
     }
 }

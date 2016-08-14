@@ -19,6 +19,14 @@ Sharpen_Arch_GDT_flushGDT_1struct_struct_Sharpen_Arch_GDT_GDT_Pointer__:
 .flush:
     ret
 
+global Sharpen_Arch_GDT_flushTSS_0
+Sharpen_Arch_GDT_flushTSS_0:
+    ; Index = 5
+    ; Privilege = 3
+    mov ax, (5 * 8) | 3 ; (Index * 8) | Privilege
+    ltr ax
+    ret
+
 global Sharpen_Arch_IDT_flushIDT_1struct_struct_Sharpen_Arch_IDT_IDT_Pointer__
 Sharpen_Arch_IDT_flushIDT_1struct_struct_Sharpen_Arch_IDT_IDT_Pointer__:
     ; Pointer passed as an argument

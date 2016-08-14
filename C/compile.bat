@@ -11,7 +11,7 @@ echo Assembling..
 "../tools/nasm/nasm" -f elf32 arch\arch.asm -o build\arch.o
 
 echo Compiling..
-i686-elf-gcc -I./include -m32 -Wall -O2 -std=c99 -nostdlib kernel.c -c -o build\kernel.o
+i686-elf-gcc -I./include -Wall -O2 -std=c99 kernel.c -c -o build\kernel.o
 
 echo Linking kernel...
 i686-elf-ld -Tlinker.ld -s build\*.o -o kernel

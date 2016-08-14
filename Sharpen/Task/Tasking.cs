@@ -1,4 +1,6 @@
 ﻿using Sharpen.Arch;
+using Sharpen.FileSystem;
+using Sharpen.Utilities;
 
 namespace Sharpen.Task
 {
@@ -140,7 +142,17 @@ namespace Sharpen.Task
 
             // Stack
             newTask.Stack = (int*)((int)Heap.AlignedAlloc(16, 8192) + 8192);
-            newTask.Stack = writeSchedulerStack(newTask.Stack, 0x08, 0x10, eip);
+            newTask.Stack = writeSchedulerStack(newTask.Stack, 0x1B, 0x23, eip);
+            newTask.KernelStack = (int*)((int)Heap.AlignedAlloc(16, 4096) + 4096);
+
+            // Program data space end
+            newTask.DataEnd = null;
+
+            // File descriptor
+            newTask.FileDescriptors.Capacity = 16;
+            newTask.FileDescriptors.Used = 0;
+            newTask.FileDescriptors.Nodes = new Node[newTask.FileDescriptors.Capacity];
+            newTask.FileDescriptors.Offsets = new uint[newTask.FileDescriptors.Capacity];
 
             // FPU context
             newTask.FPUContext = Heap.AlignedAlloc(16, 512);
@@ -185,12 +197,14 @@ namespace Sharpen.Task
             // Store old context
             Task oldTask = CurrentTask;
             oldTask.Stack = (int*)regsPtr;
+            oldTask.KernelStack = (int*)GDT.TSS_Entry->ESP0;
             FPU.StoreContext(oldTask.FPUContext);
 
             // Switch to next task
             Task current = FindNextTask();
             Paging.CurrentDirectory = current.PageDir;
             FPU.RestoreContext(current.FPUContext);
+            GDT.TSS_Entry->ESP0 = (uint)current.KernelStack;
             CurrentTask = current;
 
             // Return the next task context
@@ -212,7 +226,7 @@ namespace Sharpen.Task
             // Data pushed by CPU
             *--ptr = ds;        // Data Segment
             *--ptr = esp;       // Old stack
-            *--ptr = 0x202;     // EFLAGS
+            *--ptr = 0x200;     // EFLAGS
             *--ptr = cs;        // Code Segment
             *--ptr = (int)eip;  // Initial EIP
 
@@ -234,6 +248,74 @@ namespace Sharpen.Task
 
             // New location of stack
             return ptr;
+        }
+
+        /// <summary>
+        /// Gets a node from the descriptor
+        /// </summary>
+        /// <param name="descriptor">The descriptor</param>
+        /// <returns>The node</returns>
+        public static Node GetNodeFromDescriptor(int descriptor)
+        {
+            Task current = CurrentTask;
+            if (descriptor >= current.FileDescriptors.Capacity)
+                return null;
+
+            return current.FileDescriptors.Nodes[descriptor];
+        }
+
+        /// <summary>
+        /// Gets an offset of a node from the descriptor
+        /// </summary>
+        /// <param name="descriptor">The descriptor</param>
+        /// <returns>The offset</returns>
+        public static uint GetOffsetFromDescriptor(int descriptor)
+        {
+            Task current = CurrentTask;
+            if (descriptor >= current.FileDescriptors.Capacity)
+                return 0;
+
+            return current.FileDescriptors.Offsets[descriptor];
+        }
+
+        /// <summary>
+        /// Adds a node to the file descriptor
+        /// </summary>
+        /// <param name="node">The node to add</param>
+        /// <returns>The file descriptor ID</returns>
+        public static unsafe int AddNodeToDescriptor(Node node)
+        {
+            Task current = CurrentTask;
+            if (current.FileDescriptors.Used == current.FileDescriptors.Capacity)
+            {
+                // Expand if needed
+                int oldCap = current.FileDescriptors.Capacity;
+                current.FileDescriptors.Capacity += 8;
+
+                Node[] newNodeArray = new Node[current.FileDescriptors.Capacity];
+                uint[] newOffsetArray = new uint[current.FileDescriptors.Capacity];
+
+                Memory.Memcpy(Util.ObjectToVoidPtr(newNodeArray), Util.ObjectToVoidPtr(current.FileDescriptors.Nodes), oldCap * sizeof(void*));
+                Memory.Memcpy(Util.ObjectToVoidPtr(newOffsetArray), Util.ObjectToVoidPtr(current.FileDescriptors.Offsets), oldCap * sizeof(uint));
+
+                current.FileDescriptors.Nodes = newNodeArray;
+                current.FileDescriptors.Offsets = newOffsetArray;
+            }
+
+            // Find a free descriptor
+            int i = 0;
+            for (; i < current.FileDescriptors.Capacity; i++)
+            {
+                if(current.FileDescriptors.Nodes[i] == null)
+                {
+                    current.FileDescriptors.Nodes[i] = node;
+                    current.FileDescriptors.Offsets[i] = 0;
+                    break;
+                }
+            }
+
+            current.FileDescriptors.Used++;
+            return i;
         }
 
         /// <summary>

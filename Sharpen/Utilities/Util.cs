@@ -10,6 +10,13 @@ namespace Sharpen.Utilities
         /// <param name="ptr">The char pointer</param>
         /// <returns>The string</returns>
         public static unsafe extern string CharPtrToString(char* ptr);
+
+        /// <summary>
+        /// Converts a byte pointer to a byte array
+        /// </summary>
+        /// <param name="ptr">The byte pointer</param>
+        /// <returns>The byte array</returns>
+        public static unsafe extern byte[] BytePtrToByteArray(byte* ptr);
         
         /// <summary>
         /// Converts an object to a void pointer
