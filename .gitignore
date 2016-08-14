@@ -224,3 +224,4 @@ bochsrc.bxrc
 
 user/build
 user/newlib/include
+*.wcap
