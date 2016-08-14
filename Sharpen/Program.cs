@@ -7,7 +7,9 @@ using Sharpen.Drivers.Power;
 using Sharpen.Drivers.Sound;
 using Sharpen.Exec;
 using Sharpen.FileSystem;
+using Sharpen.Net;
 using Sharpen.Task;
+using Sharpen.Utilities;
 
 namespace Sharpen
 {
@@ -103,14 +105,19 @@ namespace Sharpen
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
 
-            ErrorCode error = Loader.StartProcess("C://test", null);
-            if (error != ErrorCode.SUCCESS)
-            {
-                Console.Write("Failed to start initial process: 0x");
-                Console.WriteHex((int)error);
-                Console.PutChar('\n');
-            }
-            
+            byte[] buf = new byte[6];
+            Network.GetMac((byte *)Util.ObjectToVoidPtr(buf));
+            NetworkTools.WakeOnLan(buf);
+            DHCP.Sample();
+
+            //ErrorCode error = Loader.StartProcess("C://test", null);
+            //if (error != ErrorCode.SUCCESS)
+            //{
+            //    Console.Write("Failed to start initial process: 0x");
+            //    Console.WriteHex((int)error);
+            //    Console.PutChar('\n');
+            //}
+
             // Idle loop
             while (true)
                 CPU.HLT();

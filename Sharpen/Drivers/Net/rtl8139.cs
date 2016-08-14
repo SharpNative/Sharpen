@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Net;
 using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
@@ -89,7 +90,7 @@ namespace Sharpen.Drivers.Net
             PortIO.Out32((ushort)(m_io_base + REG_BUF), 0xFFFF);
 
             // SET IMR + ISR
-            setInterruptMask(0x0005);
+            setInterruptMask(0x0000);
 
             // RCR
             PortIO.Out32((ushort)(m_io_base + REG_RC), 0xf | (1 << 7));
@@ -121,12 +122,22 @@ namespace Sharpen.Drivers.Net
             adr = (uint)Paging.GetPhysicalFromVirtual(inAdr);
 
             PortIO.Out32((ushort)(m_io_base + REG_TSAD3), adr);
-
-            WoLTest();
-
+            
             readMac();
 
-            PrintRes();
+            // Register device as the main network device
+            Network.NetDevice netDev = new Network.NetDevice();
+            netDev.ID = dev.Device;
+            netDev.Transmit = Transmit;
+            netDev.GetMac = GetMac;
+
+            Network.Set(netDev);
+        }
+
+        private static unsafe void GetMac(byte* mac)
+        {
+            for (int i = 0; i < 6; i++)
+                mac[i] = m_mac[i];
         }
 
         public static unsafe void Transmit(byte *bytes, uint size)
@@ -163,24 +174,6 @@ namespace Sharpen.Drivers.Net
 
             PortIO.Out32(adr, size);
 
-        }
-
-        public static unsafe void WoLTest()
-        {
-            byte* bytes = (byte*)Heap.Alloc(102);
-
-            bytes[0] = 0xFF;
-            bytes[1] = 0xFF;
-            bytes[2] = 0xFF;
-            bytes[3] = 0xFF;
-            bytes[4] = 0xFF;
-            bytes[5] = 0xFF;
-
-            for (int i = 0; i < 16; i++)
-                for (int j = 0; j < 6; j++)
-                    bytes[6 + (i * 6) + j] = m_mac[j];
-
-            Transmit(bytes, 102);
         }
 
         private static void PrintRes()
