@@ -90,7 +90,7 @@ namespace Sharpen.Drivers.Net
             PortIO.Out32((ushort)(m_io_base + REG_BUF), 0xFFFF);
 
             // SET IMR + ISR
-            setInterruptMask(0x0000);
+            setInterruptMask(0x0005);
 
             // RCR
             PortIO.Out32((ushort)(m_io_base + REG_RC), 0xf | (1 << 7));

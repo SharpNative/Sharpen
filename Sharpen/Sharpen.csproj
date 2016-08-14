@@ -64,6 +64,7 @@
     <Compile Include="Exec\Syscalls.cs" />
     <Compile Include="FileSystem\Fat16BPB.cs" />
     <Compile Include="FileSystem\STDOUT.cs" />
+    <Compile Include="Net\DHCP.cs" />
     <Compile Include="Net\Network.cs" />
     <Compile Include="Net\NetworkTools.cs" />
     <Compile Include="Task\Task.cs" />

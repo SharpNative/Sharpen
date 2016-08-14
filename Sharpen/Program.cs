@@ -108,15 +108,15 @@ namespace Sharpen
             byte[] buf = new byte[6];
             Network.GetMac((byte *)Util.ObjectToVoidPtr(buf));
             NetworkTools.WakeOnLan(buf);
-            DHCP.Sample();
+            NetworkTools.WakeOnLan(buf);
 
-            //ErrorCode error = Loader.StartProcess("C://test", null);
-            //if (error != ErrorCode.SUCCESS)
-            //{
-            //    Console.Write("Failed to start initial process: 0x");
-            //    Console.WriteHex((int)error);
-            //    Console.PutChar('\n');
-            //}
+            ErrorCode error = Loader.StartProcess("C://test", null);
+            if (error != ErrorCode.SUCCESS)
+            {
+                Console.Write("Failed to start initial process: 0x");
+                Console.WriteHex((int)error);
+                Console.PutChar('\n');
+            }
 
             // Idle loop
             while (true)
