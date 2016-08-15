@@ -3,27 +3,27 @@
     public sealed class CMOS
     {
         // CMOS ports
-        public static readonly ushort CMOS_CMD = 0x70;
-        public static readonly ushort CMOS_DATA = 0x71;
+        public const ushort CMOS_CMD = 0x70;
+        public const ushort CMOS_DATA = 0x71;
 
         // RTC CMOS registers
-        public static readonly byte CMOS_RTC_SECONDS = 0x00;
-        public static readonly byte CMOS_RTC_MINUTES = 0x02;
-        public static readonly byte CMOS_RTC_HOURS = 0x04;
-        public static readonly byte CMOS_RTC_WEEKDAY = 0x06;
-        public static readonly byte CMOS_RTC_MONTHDAY = 0x07;
-        public static readonly byte CMOS_RTC_MONTH = 0x08;
-        public static readonly byte CMOS_RTC_YEAR = 0x09;
+        public const byte CMOS_RTC_SECONDS = 0x00;
+        public const byte CMOS_RTC_MINUTES = 0x02;
+        public const byte CMOS_RTC_HOURS = 0x04;
+        public const byte CMOS_RTC_WEEKDAY = 0x06;
+        public const byte CMOS_RTC_MONTHDAY = 0x07;
+        public const byte CMOS_RTC_MONTH = 0x08;
+        public const byte CMOS_RTC_YEAR = 0x09;
 
         // CMOS status
-        public static readonly byte CMOS_STATUS_A = 0x0A;
-        public static readonly byte CMOS_STATUS_B = 0x0B;
+        public const byte CMOS_STATUS_A = 0x0A;
+        public const byte CMOS_STATUS_B = 0x0B;
 
         // RTC flags in CMOS status
-        public static readonly int CMOS_RTC_UPDATING = (1 << 7); // Bit 7 in status register A is set when RTC update is happening
-        public static readonly int CMOS_RTC_24H = (1 << 1);      // Bit 1 in status register B is set for 24h mode
-        public static readonly int CMOS_RTC_BIN_MODE = (1 << 2); // Bit 2 in status register B is set for binary mode
-        public static readonly int CMOS_RTC_HOURS_PM = (1 << 7); // Bit 7 is set on read hours value if it's in pm
+        public const int CMOS_RTC_UPDATING = (1 << 7); // Bit 7 in status register A is set when RTC update is happening
+        public const int CMOS_RTC_24H = (1 << 1);      // Bit 1 in status register B is set for 24h mode
+        public const int CMOS_RTC_BIN_MODE = (1 << 2); // Bit 2 in status register B is set for binary mode
+        public const int CMOS_RTC_HOURS_PM = (1 << 7); // Bit 7 is set on read hours value if it's in pm
 
         /// <summary>
         /// Gets data from a CMOS register

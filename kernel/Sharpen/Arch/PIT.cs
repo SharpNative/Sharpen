@@ -27,14 +27,14 @@
         }
 
         // In MHz
-        public static readonly int PIT_OSCILLATOR = 1193182;
+        public const int PIT_OSCILLATOR = 1193182;
 
         // PIT channel 0 data port
         // We use channel 0 because it is linked to IRQ 0
-        public static readonly ushort PIT_DATA = 0x40;
+        public const ushort PIT_DATA = 0x40;
 
         // PIT mode / command port
-        public static readonly ushort PIT_CMD = 0x43;
+        public const ushort PIT_CMD = 0x43;
 
         // Frequency in Hz
         private static int m_frequency;

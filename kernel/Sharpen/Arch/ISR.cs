@@ -33,7 +33,7 @@
         public static unsafe void Handler(Regs* regsPtr)
         {
             int isrNum = (*regsPtr).IntNum;
-            // Panic.DoPanic(m_errorCodes[isrNum]);
+            //Panic.DoPanic(m_errorCodes[isrNum], Paging.ReadCR2());
             Console.WriteLine(m_errorCodes[isrNum]);
             Console.WriteHex(Paging.ReadCR2());
             CPU.CLI();

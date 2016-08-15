@@ -3,10 +3,10 @@
     public sealed class IRQ
     {
         // IRQ master offset (32 - 39)
-        public static readonly byte MASTER_OFFSET = 32;
+        public const byte MASTER_OFFSET = 32;
 
         // IRQ slave offset (40 - 47)
-        public static readonly byte SLAVE_OFFSET = 40;
+        public const byte SLAVE_OFFSET = 40;
 
         // Delegate of IRQ Handler
         public unsafe delegate void IRQHandler(Regs* regsPtr);

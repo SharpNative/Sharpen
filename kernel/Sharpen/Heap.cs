@@ -25,7 +25,7 @@ namespace Sharpen
 
         // Current end address of the heap
         public static void* CurrentEnd { get; private set; }
-
+        
         // If we use the real heap or not
         private static bool m_realHeap = false;
 
@@ -33,7 +33,7 @@ namespace Sharpen
         private static unsafe BlockDescriptor* firstDescriptor;
 
         // Minimal amount of pages in a descriptor
-        private static readonly int MINIMALPAGES = 32;
+        private const int MINIMALPAGES = 32;
 
         /// <summary>
         /// Initializes the heap at the given start address
@@ -160,9 +160,11 @@ namespace Sharpen
                     safeSize += alignment;
                 }
 
-                if (safeSize < 0x4000)
-                    safeSize = 0x4000;
-                
+                // Make sure there is always enough room for new page directory
+                // (64KB)
+                if (safeSize < 0x10000)
+                    safeSize = 0x10000;
+
                 BlockDescriptor* descriptor = getSufficientDescriptor(safeSize);
                 Block* currentBlock = descriptor->First;
                 Block* previousBlock = null;

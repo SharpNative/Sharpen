@@ -5,7 +5,7 @@ namespace Sharpen.Arch
 {
     class PCI
     {
-        public static readonly ushort COMMAND = 0x04;
+        public const ushort COMMAND = 0x04;
 
         public struct PciDriver
         {

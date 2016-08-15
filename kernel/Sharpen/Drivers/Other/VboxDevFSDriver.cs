@@ -5,7 +5,7 @@ namespace Sharpen.Drivers.Other
 {
     class VboxDevFSDriver
     {
-        private static readonly int m_numCommands = 3;
+        private const int m_numCommands = 3;
         public static readonly string[] m_commands =
         {
             "sessionid",

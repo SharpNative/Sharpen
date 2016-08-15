@@ -3,28 +3,28 @@
     public sealed class PIC
     {
         // Command port of master PIC
-        public static readonly ushort MASTER_PIC_CMD = 0x20;
+        public const ushort MASTER_PIC_CMD = 0x20;
 
         // Data port of master PIC
-        public static readonly ushort MASTER_PIC_DATA = 0x21;
+        public const ushort MASTER_PIC_DATA = 0x21;
 
         // Command port of slave PIC
-        public static readonly ushort SLAVE_PIC_CMD = 0xA0;
+        public const ushort SLAVE_PIC_CMD = 0xA0;
 
         // Data port of slave PIC
-        public static readonly ushort SLAVE_PIC_DATA = 0xA1;
+        public const ushort SLAVE_PIC_DATA = 0xA1;
 
         // Initialize command
-        public static readonly byte PIC_INIT = 0x11;
+        public const byte PIC_INIT = 0x11;
 
         // End Of Interrupt
-        public static readonly byte PIC_EOI = 0x20;
+        public const byte PIC_EOI = 0x20;
 
         // 8086 / 8088 mode
-        public static readonly byte PIC_8086 = 0x01;
+        public const byte PIC_8086 = 0x01;
 
         // Single / cascade mode
-        public static readonly byte PIC_CASCADE = 0x04;
+        public const byte PIC_CASCADE = 0x04;
 
         /// <summary>
         /// Sends an EOI signal

@@ -3,43 +3,43 @@
     public sealed class Multiboot
     {
         // Magic value used in the multiboot header
-        public static readonly int HeaderMagic = 0x1BADB002;
+        public const int HeaderMagic = 0x1BADB002;
 
         // Magic value that needs to be checked against
-        public static readonly int Magic = 0x2BADB002;
+        public const int Magic = 0x2BADB002;
 
         // Memory information provided
-        public static readonly int FlagMem = 0x001;
+        public const int FlagMem = 0x001;
 
         // Device information provided
-        public static readonly int FlagDevice = 0x002;
+        public const int FlagDevice = 0x002;
 
         // Commandline provided
-        public static readonly int FlagCMDLine = 0x004;
+        public const int FlagCMDLine = 0x004;
 
         // Modules provided
-        public static readonly int FlagMods = 0x008;
+        public const int FlagMods = 0x008;
 
         // If AOUT
-        public static readonly int FlagAOUT = 0x010;
+        public const int FlagAOUT = 0x010;
 
         // If ELF
-        public static readonly int FlagELF = 0x020;
+        public const int FlagELF = 0x020;
 
         // MMAP information provided
-        public static readonly int FlagMMAP = 0x040;
+        public const int FlagMMAP = 0x040;
 
         // Config table provided
-        public static readonly int FlagConfig = 0x080;
+        public const int FlagConfig = 0x080;
 
         // Load information
-        public static readonly int FlagLoader = 0x100;
+        public const int FlagLoader = 0x100;
 
         // APM table provided
-        public static readonly int FlagAPM = 0x200;
+        public const int FlagAPM = 0x200;
 
         // VBE information provided
-        public static readonly int FlagVBE = 0x400;
+        public const int FlagVBE = 0x400;
 
         // Multiboot header structure
         public unsafe struct Header

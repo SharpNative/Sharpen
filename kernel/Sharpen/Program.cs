@@ -102,7 +102,7 @@ namespace Sharpen
             ATA.Init();
             Tasking.Init();
 
-            NetworkTools.WakeOnLan(new byte[6]);
+            //NetworkTools.WakeOnLan(new byte[6]);
 
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");

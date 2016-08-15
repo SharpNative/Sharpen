@@ -10,6 +10,16 @@ namespace Sharpen
         /// <param name="str">The message</param>
         public static void DoPanic(string str)
         {
+            DoPanic(str, 0);
+        }
+
+        /// <summary>
+        /// Does a kernel panic
+        /// </summary>
+        /// <param name="str">The message</param>
+        /// <param name="extraData">Extra data</param>
+        public static void DoPanic(string str, int extraData)
+        {
             // Clear interrupts
             CPU.CLI();
 
@@ -29,7 +39,9 @@ namespace Sharpen
 
             // Message
             Console.Write("\tMessage: ");
-            Console.Write(str);
+            Console.WriteLine(str);
+            Console.Write("\tExtra Data: ");
+            Console.WriteHex(extraData);
 
             // HALT
             CPU.HLT();

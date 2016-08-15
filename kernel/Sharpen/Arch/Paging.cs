@@ -228,7 +228,7 @@ namespace Sharpen.Arch
                 sizeAligned &= 0xFFFFF000;
                 sizeAligned += 0x1000;
             }
-
+            
             // Allocate
             int free = m_bitmap.FindFirstFree();
             int start = free * 0x1000;
@@ -256,10 +256,13 @@ namespace Sharpen.Arch
         {
             PageDirectory* destination = (PageDirectory*)Heap.AlignedAlloc(0x1000, sizeof(PageDirectory));
             if (destination == null)
+            {
+                Panic.DoPanic("Couldn't clone directory: destination==null");
                 return null;
+            }
 
             Memory.Memset(destination, 0, sizeof(PageDirectory));
-
+            
             // Go through every page table
             for (int table = 0; table < 1024; table++)
             {

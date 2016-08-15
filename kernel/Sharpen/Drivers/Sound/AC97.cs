@@ -5,33 +5,33 @@ namespace Sharpen.Drivers.Sound
 {
     unsafe class AC97
     {
-        private static readonly int BDBAR = 0x10;
-        private static readonly int CIV = 0x14;
-        private static readonly int LVI = 0x15;
-        private static readonly int m_sr = 0x16;
-        private static readonly int PICB = 0x18;
-        private static readonly int CR = 0x1B;
+        private const int BDBAR = 0x10;
+        private const int CIV = 0x14;
+        private const int LVI = 0x15;
+        private const int m_sr = 0x16;
+        private const int PICB = 0x18;
+        private const int CR = 0x1B;
 
-        private static readonly int CR_RPBM = (1 << 0); // Run or Pause
-        private static readonly int CR_PR = (1 << 1); // Reset registers
-        private static readonly int CR_LVBIE = (1 << 2); // Enable last valid buffer interrupt
-        private static readonly int CR_FEIE = (1 << 3); // Enable FIFO error interrupt
-        private static readonly int CR_IOCE = (1 << 4); // Enable interrupt on completion
+        private const int CR_RPBM = (1 << 0); // Run or Pause
+        private const int CR_PR = (1 << 1); // Reset registers
+        private const int CR_LVBIE = (1 << 2); // Enable last valid buffer interrupt
+        private const int CR_FEIE = (1 << 3); // Enable FIFO error interrupt
+        private const int CR_IOCE = (1 << 4); // Enable interrupt on completion
 
-        private static readonly int RESET = 0x00;
-        private static readonly int MASTER_VOLUME = 0x02;
-        private static readonly int AUX_OUT_VALUE = 0x04;
-        private static readonly int MONO_VOLUME = 0x06;
-        private static readonly int PCM_OUT_VOLUME = 0x18;
+        private const int RESET = 0x00;
+        private const int MASTER_VOLUME = 0x02;
+        private const int AUX_OUT_VALUE = 0x04;
+        private const int MONO_VOLUME = 0x06;
+        private const int PCM_OUT_VOLUME = 0x18;
 
-        private static readonly int CL_BUP = (1 << 30);
-        private static readonly int CL_IOC = (1 << 31);
+        private const int CL_BUP = (1 << 30);
+        private const int CL_IOC = (1 << 31);
 
-        private static readonly ushort SR_DCH = (1 << 0);
-        private static readonly ushort SR_CELV = (1 << 1);
-        private static readonly ushort SR_LVBCI = (1 << 2);
-        private static readonly ushort SR_BCIS = (1 << 3);
-        private static readonly ushort SR_FIFOE = (1 << 4);
+        private const ushort SR_DCH = (1 << 0);
+        private const ushort SR_CELV = (1 << 1);
+        private const ushort SR_LVBCI = (1 << 2);
+        private const ushort SR_BCIS = (1 << 3);
+        private const ushort SR_FIFOE = (1 << 4);
 
         private static PCI.PciDevice m_dev;
         private static ushort m_nambar;

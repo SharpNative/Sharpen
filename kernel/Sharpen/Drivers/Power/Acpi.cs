@@ -12,7 +12,7 @@ namespace Sharpen.Drivers.Power
         private static ushort SLP_TYPa;
         private static ushort SLP_TYPb;
 
-        private static readonly uint SLP_EN = 1 << 13;
+        private const uint SLP_EN = 1 << 13;
 
         /// <summary>
         /// Find the RSDT and other entries

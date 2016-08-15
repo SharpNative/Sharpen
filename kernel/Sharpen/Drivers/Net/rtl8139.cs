@@ -11,33 +11,33 @@ namespace Sharpen.Drivers.Net
 {
     class rtl8139
     {
-        private static readonly ushort CONFIG_1 = 0x52;
+        private const ushort CONFIG_1 = 0x52;
 
-        private static readonly ushort REG_MAC = 0x00;
-        private static readonly ushort REG_BUF = 0x30;
-        private static readonly ushort REG_CMD = 0x37;
-        private static readonly ushort REG_IM = 0x3C;
-        private static readonly ushort REG_IS = 0x3E;
-        private static readonly ushort REG_TC = 0x40;
-        private static readonly ushort REG_RC = 0x44;
-        private static readonly ushort REG_MS = 0x58;
-        private static readonly ushort REG_TSAD0 = 0x20;
-        private static readonly ushort REG_TSAD1 = 0x24;
-        private static readonly ushort REG_TSAD2 = 0x28;
-        private static readonly ushort REG_TSAD3 = 0x2C;
-        private static readonly ushort REG_TSD0 = 0x10;
-        private static readonly ushort REG_TSD1 = 0x14;
-        private static readonly ushort REG_TSD2 = 0x18;
-        private static readonly ushort REG_TSD3 = 0x1C;
+        private const ushort REG_MAC = 0x00;
+        private const ushort REG_BUF = 0x30;
+        private const ushort REG_CMD = 0x37;
+        private const ushort REG_IM = 0x3C;
+        private const ushort REG_IS = 0x3E;
+        private const ushort REG_TC = 0x40;
+        private const ushort REG_RC = 0x44;
+        private const ushort REG_MS = 0x58;
+        private const ushort REG_TSAD0 = 0x20;
+        private const ushort REG_TSAD1 = 0x24;
+        private const ushort REG_TSAD2 = 0x28;
+        private const ushort REG_TSAD3 = 0x2C;
+        private const ushort REG_TSD0 = 0x10;
+        private const ushort REG_TSD1 = 0x14;
+        private const ushort REG_TSD2 = 0x18;
+        private const ushort REG_TSD3 = 0x1C;
 
 
-        private static readonly ushort CMD_RXEMPTY = 0x01;
-        private static readonly ushort CMD_TXE = 0x04;
-        private static readonly ushort CMD_RXE = 0x08;
-        private static readonly ushort CMD_RST = 0x10;
+        private const ushort CMD_RXEMPTY = 0x01;
+        private const ushort CMD_TXE = 0x04;
+        private const ushort CMD_RXE = 0x08;
+        private const ushort CMD_RST = 0x10;
 
-        private static readonly byte MS_LINKB = 0x04;
-        private static readonly byte MS_SPEED_10 = 0x08;
+        private const byte MS_LINKB = 0x04;
+        private const byte MS_SPEED_10 = 0x08;
 
         private static byte[] m_mac;
 
@@ -60,14 +60,14 @@ namespace Sharpen.Drivers.Net
         private static unsafe void initHandler(PCI.PciDevice dev)
         {
             m_io_base = dev.Port1;
-
+            
             m_buffer = new byte[8192 + 16];
             m_transmit0 = new byte[8192 + 16];
             m_transmit1 = new byte[8192 + 16];
             m_transmit2 = new byte[8192 + 16];
             m_transmit3 = new byte[8192 + 16];
             m_mac = new byte[6];
-
+            
             // Write irq "10"
             uint outVal = PCI.PCIReadWord(dev, 0x3C);
             outVal &= 0x00;
@@ -82,7 +82,7 @@ namespace Sharpen.Drivers.Net
 
             // Turn device on
             turnOn();
-
+            
             // Reset
             PortIO.Out8((ushort)(m_io_base + REG_CMD), (byte)CMD_RST);
 
@@ -127,7 +127,7 @@ namespace Sharpen.Drivers.Net
 
             inAdr = Util.ObjectToVoidPtr(m_transmit3);
             adr = (uint)Paging.GetPhysicalFromVirtual(inAdr);
-
+            
             PortIO.Out32((ushort)(m_io_base + REG_TSAD3), adr);
 
             readMac();

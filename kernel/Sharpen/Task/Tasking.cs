@@ -226,7 +226,7 @@ namespace Sharpen.Task
             // FPU context
             newTask.FPUContext = Heap.AlignedAlloc(16, 512);
             Memory.Memcpy(newTask.FPUContext, task.FPUContext, 512);
-
+            
             // Paging
             newTask.PageDir = Paging.CloneDirectory(task.PageDir);
 

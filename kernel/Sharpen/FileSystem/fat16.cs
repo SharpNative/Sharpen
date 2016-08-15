@@ -5,19 +5,19 @@ namespace Sharpen.FileSystem
     unsafe class Fat16
     {
 
-        private static readonly int FirstPartitonEntry = 0x1BE;
+        private const int FirstPartitonEntry = 0x1BE;
 
-        private static readonly int ENTRYACTIVE = 0;
-        private static readonly int ENTRYBEGINHEAD = 0x01;
-        private static readonly int ENTRYBEGINCYLSEC = 0x02;
-        private static readonly int ENTRYTYPE = 0x04;
-        private static readonly int ENTRYENDHEAD = 0x05;
-        private static readonly int ENTRYENDCYLSEC = 0x06;
-        private static readonly int ENTRYNUMSECTORSBETWEEN = 0x08;
-        private static readonly int ENTRYNUMSECTORS = 0x0C;
+        private const int ENTRYACTIVE = 0;
+        private const int ENTRYBEGINHEAD = 0x01;
+        private const int ENTRYBEGINCYLSEC = 0x02;
+        private const int ENTRYTYPE = 0x04;
+        private const int ENTRYENDHEAD = 0x05;
+        private const int ENTRYENDCYLSEC = 0x06;
+        private const int ENTRYNUMSECTORSBETWEEN = 0x08;
+        private const int ENTRYNUMSECTORS = 0x0C;
 
-        private static readonly int FAT_FREE = 0x00;
-        private static readonly int FAT_EOF = 0xFFF8;
+        private const int FAT_FREE = 0x00;
+        private const int FAT_EOF = 0xFFF8;
 
         private static Node m_dev;
         private static int m_bytespersector;
@@ -32,7 +32,7 @@ namespace Sharpen.FileSystem
 
         private static uint m_sectorOffset;
 
-        private static readonly byte LFN = 0x0F;
+        private const byte LFN = 0x0F;
 
 
         private static unsafe void initFAT(Node dev)
