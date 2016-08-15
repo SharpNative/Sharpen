@@ -98,9 +98,11 @@ namespace Sharpen
             PCI.Init();
             //AC97.Init();
             VboxDev.Init();
-            //rtl8139.Init();
+            rtl8139.Init();
             ATA.Init();
             Tasking.Init();
+
+            NetworkTools.WakeOnLan(new byte[6]);
 
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");

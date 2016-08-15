@@ -2217,8 +2217,6 @@ void Sharpen_Arch_PCI_PrintDevices_0(void);
 typedef void (*fp_Sharpen_Arch_PCI_PrintDevices_0)(void);
 void Sharpen_Arch_PCI_Probe_0(void);
 typedef void (*fp_Sharpen_Arch_PCI_Probe_0)(void);
-struct struct_Sharpen_FileSystem_DirEntry* Sharpen_Arch_PCI_readDirImpl_2struct_class_Sharpen_FileSystem_Node__uint32_t_(struct class_Sharpen_FileSystem_Node* node, uint32_t index);
-typedef struct struct_Sharpen_FileSystem_DirEntry* (*fp_Sharpen_Arch_PCI_readDirImpl_2struct_class_Sharpen_FileSystem_Node__uint32_t_)(struct class_Sharpen_FileSystem_Node* node, uint32_t index);
 struct class_Sharpen_FileSystem_Node* Sharpen_Arch_PCI_findDirImpl_2struct_class_Sharpen_FileSystem_Node__char__(struct class_Sharpen_FileSystem_Node* node, char* name);
 typedef struct class_Sharpen_FileSystem_Node* (*fp_Sharpen_Arch_PCI_findDirImpl_2struct_class_Sharpen_FileSystem_Node__char__)(struct class_Sharpen_FileSystem_Node* node, char* name);
 void Sharpen_Arch_PCI_Init_0(void);
@@ -2681,6 +2679,10 @@ void Sharpen_Lib_Audio_SetDevice_1struct_struct_Sharpen_Lib_Audio_SoundDevice_(s
 typedef void (*fp_Sharpen_Lib_Audio_SetDevice_1struct_struct_Sharpen_Lib_Audio_SoundDevice_)(struct struct_Sharpen_Lib_Audio_SoundDevice device);
 void Sharpen_Lib_Audio_RequestBuffer_2uint32_t_uint16_t__(uint32_t size, uint16_t* buffer);
 typedef void (*fp_Sharpen_Lib_Audio_RequestBuffer_2uint32_t_uint16_t__)(uint32_t size, uint16_t* buffer);
+void Sharpen_Lib_Audio_Init_0(void);
+typedef void (*fp_Sharpen_Lib_Audio_Init_0)(void);
+uint32_t Sharpen_Lib_Audio_writeImpl_4struct_class_Sharpen_FileSystem_Node__uint32_t_uint32_t_uint8_t__(struct class_Sharpen_FileSystem_Node* node, uint32_t offset, uint32_t size, uint8_t* buffer);
+typedef uint32_t (*fp_Sharpen_Lib_Audio_writeImpl_4struct_class_Sharpen_FileSystem_Node__uint32_t_uint32_t_uint8_t__)(struct class_Sharpen_FileSystem_Node* node, uint32_t offset, uint32_t size, uint8_t* buffer);
 struct class_Sharpen_Memory* classInit_Sharpen_Memory(void);
 void Sharpen_Memory_Memcpy_3void__void__int32_t_(void* destination, void* source, int32_t num);
 typedef void (*fp_Sharpen_Memory_Memcpy_3void__void__int32_t_)(void* destination, void* source, int32_t num);
@@ -2763,6 +2765,8 @@ int32_t Sharpen_Utilities_String_Count_2char__char_(char* str, char occurence);
 typedef int32_t (*fp_Sharpen_Utilities_String_Count_2char__char_)(char* str, char occurence);
 char* Sharpen_Utilities_String_SubString_3char__int32_t_int32_t_(char* str, int32_t start, int32_t count);
 typedef char* (*fp_Sharpen_Utilities_String_SubString_3char__int32_t_int32_t_)(char* str, int32_t start, int32_t count);
+int64_t Sharpen_Utilities_String_toLong_2class_char__(struct class_Sharpen_Utilities_String* obj, char* str);
+typedef int64_t (*fp_Sharpen_Utilities_String_toLong_2class_char__)(void* obj, char* str);
 char* Sharpen_Utilities_String_Merge_2char__char__(char* first, char* second);
 typedef char* (*fp_Sharpen_Utilities_String_Merge_2char__char__)(char* first, char* second);
 int32_t Sharpen_Utilities_String_Equals_2char__char__(char* one, char* two);
@@ -3132,15 +3136,15 @@ inline void classCctor_Sharpen_Drivers_Net_rtl8139(void)
 void Sharpen_Drivers_Net_rtl8139_initHandler_1struct_struct_Sharpen_Arch_PCI_PciDevice_(struct struct_Sharpen_Arch_PCI_PciDevice dev)
 {
 	classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base = dev.field_Port1;
-	classStatics_Sharpen_Drivers_Net_rtl8139.m_mac = calloc((6), sizeof(uint8_t));
 	classStatics_Sharpen_Drivers_Net_rtl8139.m_buffer = calloc((8192 + 16), sizeof(uint8_t));
 	classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit0 = calloc((8192 + 16), sizeof(uint8_t));
 	classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit1 = calloc((8192 + 16), sizeof(uint8_t));
 	classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit2 = calloc((8192 + 16), sizeof(uint8_t));
 	classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit3 = calloc((8192 + 16), sizeof(uint8_t));
+	classStatics_Sharpen_Drivers_Net_rtl8139.m_mac = calloc((6), sizeof(uint8_t));
 	uint32_t outVal = Sharpen_Arch_PCI_PCIReadWord_2struct_struct_Sharpen_Arch_PCI_PciDevice_uint16_t_(dev, 0x3C);
 	outVal &= 0x00;
-	outVal |= 11;
+	outVal |= 10;
 	Sharpen_Arch_PCI_PCIWrite_5uint16_t_uint16_t_uint16_t_uint16_t_uint32_t_(dev.field_Bus, dev.field_Slot, dev.field_Function, 0x3C, outVal);
 	classStatics_Sharpen_Drivers_Net_rtl8139.m_irqNum = Sharpen_Arch_PCI_PCIReadWord_2struct_struct_Sharpen_Arch_PCI_PciDevice_uint16_t_(dev, 0x3C) & 0xFF;
 	Sharpen_Arch_PCI_PCIWrite_5uint16_t_uint16_t_uint16_t_uint16_t_uint32_t_(dev.field_Bus, dev.field_Slot, dev.field_Function, classStatics_Sharpen_Arch_PCI.COMMAND, 0x05);
@@ -3154,12 +3158,13 @@ void Sharpen_Drivers_Net_rtl8139_initHandler_1struct_struct_Sharpen_Arch_PCI_Pci
 	;
 	void* inAdr = Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(classStatics_Sharpen_Drivers_Net_rtl8139.m_buffer);
 	uint32_t adr = (uint32_t)Sharpen_Arch_Paging_GetPhysicalFromVirtual_1void__(inAdr);
-	Sharpen_Arch_PortIO_Out32_2uint16_t_uint32_t_((uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_BUF ) , adr);
-	Sharpen_Drivers_Net_rtl8139_setInterruptMask_1uint16_t_(0x0005);
+	Sharpen_Arch_PortIO_Out32_2uint16_t_uint32_t_((uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_BUF ) , 0xFFFF);
+	Sharpen_Drivers_Net_rtl8139_setInterruptMask_1uint16_t_(0x0000);
 	Sharpen_Arch_PortIO_Out32_2uint16_t_uint32_t_((uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_RC ) , 0xf |  ( 1 << 7 ) );
+	Sharpen_Arch_PortIO_Out32_2uint16_t_uint32_t_((uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_TC ) , 0x700);
 	Sharpen_Arch_PortIO_Out8_2uint16_t_uint8_t_((uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_CMD ) , (uint8_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.CMD_TXE | classStatics_Sharpen_Drivers_Net_rtl8139.CMD_RXE ) );
 	Sharpen_Drivers_Net_rtl8139_updateLinkStatus_0();
-	Sharpen_Arch_IRQ_SetHandler_2int32_t_delegate_Sharpen_Arch_IRQ_IRQHandler_(11, Sharpen_Drivers_Net_rtl8139_handler_1struct_struct_Sharpen_Arch_Regs__);
+	Sharpen_Arch_IRQ_SetHandler_2int32_t_delegate_Sharpen_Arch_IRQ_IRQHandler_(classStatics_Sharpen_Drivers_Net_rtl8139.m_irqNum, Sharpen_Drivers_Net_rtl8139_handler_1struct_struct_Sharpen_Arch_Regs__);
 	inAdr = Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit0);
 	adr = (uint32_t)Sharpen_Arch_Paging_GetPhysicalFromVirtual_1void__(inAdr);
 	Sharpen_Arch_PortIO_Out32_2uint16_t_uint32_t_((uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_TSAD0 ) , adr);
@@ -3190,32 +3195,32 @@ void Sharpen_Drivers_Net_rtl8139_GetMac_1uint8_t__(uint8_t* mac)
 }
 void Sharpen_Drivers_Net_rtl8139_Transmit_2uint8_t__uint32_t_(uint8_t* bytes, uint32_t size)
 {
-	uint8_t* dataAddr = (uint8_t*)Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit0);
-	uint16_t portAddress = (uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_TSD0 ) ;
+	uint8_t* inAdr = (uint8_t*)Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit0);
+	uint16_t adr = (uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_TSD0 ) ;
 	if(classStatics_Sharpen_Drivers_Net_rtl8139.m_curBuffer == 0){
 		classStatics_Sharpen_Drivers_Net_rtl8139.m_curBuffer = classStatics_Sharpen_Drivers_Net_rtl8139.m_curBuffer + 1
 		;
 	}
 	else if(classStatics_Sharpen_Drivers_Net_rtl8139.m_curBuffer == 1){
-		dataAddr = (uint8_t*)Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit1);
-		portAddress = (uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_TSD1 ) ;
+		inAdr = (uint8_t*)Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit1);
+		adr = (uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_TSD1 ) ;
 		classStatics_Sharpen_Drivers_Net_rtl8139.m_curBuffer = classStatics_Sharpen_Drivers_Net_rtl8139.m_curBuffer + 1
 		;
 	}
 	else if(classStatics_Sharpen_Drivers_Net_rtl8139.m_curBuffer == 2){
-		dataAddr = (uint8_t*)Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit2);
-		portAddress = (uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_TSD2 ) ;
+		inAdr = (uint8_t*)Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit2);
+		adr = (uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_TSD2 ) ;
 		classStatics_Sharpen_Drivers_Net_rtl8139.m_curBuffer = classStatics_Sharpen_Drivers_Net_rtl8139.m_curBuffer + 1
 		;
 	}
 	else if(classStatics_Sharpen_Drivers_Net_rtl8139.m_curBuffer == 3){
-		dataAddr = (uint8_t*)Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit3);
-		portAddress = (uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_TSD3 ) ;
+		inAdr = (uint8_t*)Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(classStatics_Sharpen_Drivers_Net_rtl8139.m_transmit3);
+		adr = (uint16_t) ( classStatics_Sharpen_Drivers_Net_rtl8139.m_io_base + classStatics_Sharpen_Drivers_Net_rtl8139.REG_TSD3 ) ;
 		classStatics_Sharpen_Drivers_Net_rtl8139.m_curBuffer = 0;
 	}
-	Sharpen_Memory_Memset_3void__int32_t_int32_t_(dataAddr, 0x00, 8192 + 16);
-	Sharpen_Memory_Memcpy_3void__void__int32_t_(dataAddr, bytes, (int32_t)size);
-	Sharpen_Arch_PortIO_Out32_2uint16_t_uint32_t_(portAddress, size);
+	Sharpen_Memory_Memset_3void__int32_t_int32_t_(inAdr, 0x00, 8192 + 16);
+	Sharpen_Memory_Memcpy_3void__void__int32_t_(inAdr, bytes, (int32_t)size);
+	Sharpen_Arch_PortIO_Out32_2uint16_t_uint32_t_(adr, size);
 }
 void Sharpen_Drivers_Net_rtl8139_PrintRes_0(void)
 {
@@ -3613,7 +3618,7 @@ void Sharpen_Net_NetworkTools_WakeOnLan_1uint8_t__(uint8_t* mac)
 	}
 	;
 	Sharpen_Console_WriteLine_1char__("");
-	uint8_t* buffer = (uint8_t*)Sharpen_Heap_Alloc_1int32_t_(102);
+	uint8_t* buffer = (uint8_t*)Sharpen_Heap_Alloc_1int32_t_(108);
 	for(int32_t i = 0;i < 6;i = i + 1
 	)
 	{
@@ -3631,7 +3636,7 @@ void Sharpen_Net_NetworkTools_WakeOnLan_1uint8_t__(uint8_t* mac)
 		;
 	}
 	;
-	Sharpen_Net_Network_Transmit_2uint8_t__uint32_t_(buffer, 102);
+	Sharpen_Net_Network_Transmit_2uint8_t__uint32_t_(buffer, 108);
 	Sharpen_Heap_Free_1void__(buffer);
 }
 inline struct struct_Sharpen_Task_FileDescriptors structInit_Sharpen_Task_FileDescriptors(void)
@@ -4020,16 +4025,6 @@ void Sharpen_Arch_PCI_Probe_0(void)
 	Sharpen_Console_Write_1char__("[PCI] ");
 	Sharpen_Console_WriteNum_1int32_t_((int32_t)classStatics_Sharpen_Arch_PCI.m_currentdevice - 1);
 	Sharpen_Console_WriteLine_1char__(" devices detected");
-	struct class_Sharpen_FileSystem_Device* dev = classInit_Sharpen_FileSystem_Device();
-	dev->field_Name = "PCI";
-	dev->field_node = classInit_Sharpen_FileSystem_Node();
-	dev->field_node->field_ReadDir = Sharpen_Arch_PCI_readDirImpl_2struct_class_Sharpen_FileSystem_Node__uint32_t_;
-	dev->field_node->field_FindDir = Sharpen_Arch_PCI_findDirImpl_2struct_class_Sharpen_FileSystem_Node__char__;
-	Sharpen_FileSystem_DevFS_RegisterDevice_1struct_class_Sharpen_FileSystem_Device__(dev);
-}
-struct struct_Sharpen_FileSystem_DirEntry* Sharpen_Arch_PCI_readDirImpl_2struct_class_Sharpen_FileSystem_Node__uint32_t_(struct class_Sharpen_FileSystem_Node* node, uint32_t index)
-{
-	return null;
 }
 struct class_Sharpen_FileSystem_Node* Sharpen_Arch_PCI_findDirImpl_2struct_class_Sharpen_FileSystem_Node__char__(struct class_Sharpen_FileSystem_Node* node, char* name)
 {
@@ -7046,6 +7041,18 @@ void Sharpen_Lib_Audio_SetDevice_1struct_struct_Sharpen_Lib_Audio_SoundDevice_(s
 void Sharpen_Lib_Audio_RequestBuffer_2uint32_t_uint16_t__(uint32_t size, uint16_t* buffer)
 {
 }
+void Sharpen_Lib_Audio_Init_0(void)
+{
+	struct class_Sharpen_FileSystem_Device* dev = classInit_Sharpen_FileSystem_Device();
+	dev->field_Name = "Audio";
+	dev->field_node = classInit_Sharpen_FileSystem_Node();
+	dev->field_node->field_Write = Sharpen_Lib_Audio_writeImpl_4struct_class_Sharpen_FileSystem_Node__uint32_t_uint32_t_uint8_t__;
+	Sharpen_FileSystem_DevFS_RegisterDevice_1struct_class_Sharpen_FileSystem_Device__(dev);
+}
+uint32_t Sharpen_Lib_Audio_writeImpl_4struct_class_Sharpen_FileSystem_Node__uint32_t_uint32_t_uint8_t__(struct class_Sharpen_FileSystem_Node* node, uint32_t offset, uint32_t size, uint8_t* buffer)
+{
+	return 0;
+}
 struct class_Sharpen_Memory* classInit_Sharpen_Memory(void)
 {
 	struct class_Sharpen_Memory* object = calloc(1, sizeof(struct class_Sharpen_Memory));
@@ -7376,29 +7383,12 @@ void Sharpen_Program_KernelMain_3struct_struct_Sharpen_Multiboot_Header__uint32_
 	Sharpen_FileSystem_VFS_Init_0();
 	Sharpen_FileSystem_STDOUT_Init_0();
 	Sharpen_Drivers_Char_SerialPort_Init_0();
-	char* str = "ABC456";
-	int32_t len = Sharpen_Utilities_String_Length_1char__(str);
-	int32_t num = 0;
-	for(int32_t i = 0;i < len;i = i + 1
-	)
-	{
-		{
-			num *= 16;
-			if(str[i] > '9')
-						num += str[i] - 'A' + 10;
-			else
-			{
-				num += str[i] - '0';
-			}
-		}
-	}
-	;
-	Sharpen_Console_WriteHex_1int64_t_(num);
-	Sharpen_Console_WriteLine_1char__("");
 	Sharpen_Arch_PCI_Init_0();
 	Sharpen_Drivers_Other_VboxDev_Init_0();
+	Sharpen_Drivers_Net_rtl8139_Init_0();
 	Sharpen_Drivers_Block_ATA_Init_0();
 	Sharpen_Task_Tasking_Init_0();
+	Sharpen_Net_NetworkTools_WakeOnLan_1uint8_t__(calloc((6), sizeof(uint8_t)));
 	struct class_Sharpen_FileSystem_Node* hddNode = Sharpen_FileSystem_VFS_GetByPath_1char__("devices://HDD0");
 	Sharpen_FileSystem_Fat16_Init_2struct_class_Sharpen_FileSystem_Node__char__(hddNode, "C");
 	int32_t error = Sharpen_Exec_Loader_StartProcess_2char__char___("C://shell", null);
@@ -7501,6 +7491,26 @@ char* Sharpen_Utilities_String_SubString_3char__int32_t_int32_t_(char* str, int3
 	;
 	ch[j] = '\0';
 	return Sharpen_Utilities_Util_CharPtrToString_1char__(ch);
+}
+int64_t Sharpen_Utilities_String_toLong_2class_char__(struct class_Sharpen_Utilities_String* obj, char* str)
+{
+	int32_t len = Sharpen_Utilities_String_Length_1char__(str);
+	int32_t num = 0;
+	for(int32_t i = 0;i < len;i = i + 1
+	)
+	{
+		{
+			num *= 16;
+			if(str[i] > '9')
+						num += str[i] - 'A' + 10;
+			else
+			{
+				num += str[i] - '0';
+			}
+		}
+	}
+	;
+	return num;
 }
 char* Sharpen_Utilities_String_Merge_2char__char__(char* first, char* second)
 {
@@ -7630,7 +7640,7 @@ static void* methods_Sharpen_Net_Network[] = {Sharpen_Net_Network_Set_1struct_st
 static void* methods_Sharpen_Net_NetworkTools[] = {Sharpen_Net_NetworkTools_WakeOnLan_1uint8_t__,};
 static void* methods_Sharpen_Task_Task[] = {};
 static void* methods_Sharpen_Task_Tasking[] = {Sharpen_Task_Tasking_Init_0,Sharpen_Task_Tasking_GetTaskByPID_1int32_t_,Sharpen_Task_Tasking_RemoveTaskByPID_1int32_t_,Sharpen_Task_Tasking_ScheduleTask_1struct_class_Sharpen_Task_Task__,Sharpen_Task_Tasking_AddTask_2void__int32_t_,Sharpen_Task_Tasking_FindNextTask_0,Sharpen_Task_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__,Sharpen_Task_Tasking_writeSchedulerStack_4int32_t__int32_t_int32_t_void__,Sharpen_Task_Tasking_GetNodeFromDescriptor_1int32_t_,Sharpen_Task_Tasking_GetOffsetFromDescriptor_1int32_t_,Sharpen_Task_Tasking_AddNodeToDescriptor_1struct_class_Sharpen_FileSystem_Node__,Sharpen_Task_Tasking_ManualSchedule_0,};
-static void* methods_Sharpen_Arch_PCI[] = {Sharpen_Arch_PCI_generateAddress_4uint32_t_uint32_t_uint32_t_uint32_t_,Sharpen_Arch_PCI_readWord_4uint16_t_uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_PCIRead_5uint16_t_uint16_t_uint16_t_uint16_t_uint32_t_,Sharpen_Arch_PCI_PCIWrite_5uint16_t_uint16_t_uint16_t_uint16_t_uint32_t_,Sharpen_Arch_PCI_PCIWrite_3struct_struct_Sharpen_Arch_PCI_PciDevice_uint16_t_uint32_t_,Sharpen_Arch_PCI_PCIReadWord_2struct_struct_Sharpen_Arch_PCI_PciDevice_uint16_t_,Sharpen_Arch_PCI_getDeviceID_3uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_getHeaderType_3uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_GetVendorID_3uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_GetClassID_3uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_GetSubClassID_3uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_checkBus_1uint8_t_,Sharpen_Arch_PCI_checkDevice_2uint8_t_uint8_t_,Sharpen_Arch_PCI_RegisterDriver_3uint16_t_uint16_t_struct_struct_Sharpen_Arch_PCI_PciDriver_,Sharpen_Arch_PCI_PrintDevices_0,Sharpen_Arch_PCI_Probe_0,Sharpen_Arch_PCI_readDirImpl_2struct_class_Sharpen_FileSystem_Node__uint32_t_,Sharpen_Arch_PCI_findDirImpl_2struct_class_Sharpen_FileSystem_Node__char__,Sharpen_Arch_PCI_Init_0,};
+static void* methods_Sharpen_Arch_PCI[] = {Sharpen_Arch_PCI_generateAddress_4uint32_t_uint32_t_uint32_t_uint32_t_,Sharpen_Arch_PCI_readWord_4uint16_t_uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_PCIRead_5uint16_t_uint16_t_uint16_t_uint16_t_uint32_t_,Sharpen_Arch_PCI_PCIWrite_5uint16_t_uint16_t_uint16_t_uint16_t_uint32_t_,Sharpen_Arch_PCI_PCIWrite_3struct_struct_Sharpen_Arch_PCI_PciDevice_uint16_t_uint32_t_,Sharpen_Arch_PCI_PCIReadWord_2struct_struct_Sharpen_Arch_PCI_PciDevice_uint16_t_,Sharpen_Arch_PCI_getDeviceID_3uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_getHeaderType_3uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_GetVendorID_3uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_GetClassID_3uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_GetSubClassID_3uint16_t_uint16_t_uint16_t_,Sharpen_Arch_PCI_checkBus_1uint8_t_,Sharpen_Arch_PCI_checkDevice_2uint8_t_uint8_t_,Sharpen_Arch_PCI_RegisterDriver_3uint16_t_uint16_t_struct_struct_Sharpen_Arch_PCI_PciDriver_,Sharpen_Arch_PCI_PrintDevices_0,Sharpen_Arch_PCI_Probe_0,Sharpen_Arch_PCI_findDirImpl_2struct_class_Sharpen_FileSystem_Node__char__,Sharpen_Arch_PCI_Init_0,};
 static void* methods_Sharpen_Arch_PIC[] = {Sharpen_Arch_PIC_SendEOI_1uint8_t_,Sharpen_Arch_PIC_Remap_0,};
 static void* methods_Sharpen_Arch_PIT[] = {Sharpen_Arch_PIT_Channel_1int32_t_,Sharpen_Arch_PIT_Access_1int32_t_,Sharpen_Arch_PIT_Operating_1int32_t_,Sharpen_Arch_PIT_Mode_1int32_t_,Sharpen_Arch_PIT_Init_0,Sharpen_Arch_PIT_Handler_1struct_struct_Sharpen_Arch_Regs__,};
 static void* methods_Sharpen_Arch_Syscall[] = {Sharpen_Arch_Syscall_Handler_1struct_struct_Sharpen_Arch_Regs__,};
@@ -7658,14 +7668,14 @@ static void* methods_Sharpen_Heap[] = {Sharpen_Heap_Init_1void__,Sharpen_Heap_ge
 static void* methods_Sharpen_Collections_Fifo[] = {Sharpen_Collections_Fifo_ReadWait_3class_uint8_t__uint32_t_,Sharpen_Collections_Fifo_Read_3class_uint8_t__uint32_t_,Sharpen_Collections_Fifo_Read_4class_uint8_t__uint32_t_uint32_t_,Sharpen_Collections_Fifo_Write_3class_uint8_t__uint32_t_,Sharpen_Collections_Fifo_WriteByte_2class_uint8_t_,};
 static void* methods_Sharpen_Collections_List[] = {Sharpen_Collections_List_EnsureCapacity_2class_int32_t_,Sharpen_Collections_List_Add_2class_void__,Sharpen_Collections_List_RemoveAt_2class_int32_t_,Sharpen_Collections_List_Clear_1class_,Sharpen_Collections_List_Contains_2class_void__,Sharpen_Collections_List_CopyTo_2class_void___,Sharpen_Collections_List_CopyTo_3class_void___int32_t_,Sharpen_Collections_List_CopyTo_5class_int32_t_void___int32_t_int32_t_,Sharpen_Collections_List_IndexOf_2class_void__,Sharpen_Collections_List_IndexOf_3class_void__int32_t_,Sharpen_Collections_List_IndexOf_4class_void__int32_t_int32_t_,Sharpen_Collections_List_LastIndexOf_2class_void__,Sharpen_Collections_List_LastIndexOf_3class_void__int32_t_,Sharpen_Collections_List_LastIndexOf_4class_void__int32_t_int32_t_,};
 static void* methods_Sharpen_Collections_BitArray[] = {Sharpen_Collections_BitArray_SetBit_2class_int32_t_,Sharpen_Collections_BitArray_ClearBit_2class_int32_t_,Sharpen_Collections_BitArray_TestBit_2class_int32_t_,Sharpen_Collections_BitArray_FindFirstFree_1class_,};
-static void* methods_Sharpen_Lib_Audio[] = {Sharpen_Lib_Audio_SetDevice_1struct_struct_Sharpen_Lib_Audio_SoundDevice_,Sharpen_Lib_Audio_RequestBuffer_2uint32_t_uint16_t__,};
+static void* methods_Sharpen_Lib_Audio[] = {Sharpen_Lib_Audio_SetDevice_1struct_struct_Sharpen_Lib_Audio_SoundDevice_,Sharpen_Lib_Audio_RequestBuffer_2uint32_t_uint16_t__,Sharpen_Lib_Audio_Init_0,Sharpen_Lib_Audio_writeImpl_4struct_class_Sharpen_FileSystem_Node__uint32_t_uint32_t_uint8_t__,};
 static void* methods_Sharpen_Memory[] = {Sharpen_Memory_Memcpy_3void__void__int32_t_,Sharpen_Memory_Compare_3char__char__int32_t_,Sharpen_Memory_Memset_3void__int32_t_int32_t_,};
 static void* methods_Sharpen_Multiboot[] = {};
 static void* methods_Sharpen_Panic[] = {Sharpen_Panic_DoPanic_1char__,};
 static void* methods_Sharpen_Arch_PortIO[] = {Sharpen_Arch_PortIO_Out8_2uint16_t_uint8_t_,Sharpen_Arch_PortIO_In8_1uint16_t_,Sharpen_Arch_PortIO_Out16_2uint16_t_uint16_t_,Sharpen_Arch_PortIO_In16_1uint16_t_,Sharpen_Arch_PortIO_Out32_2uint16_t_uint32_t_,Sharpen_Arch_PortIO_In32_1uint16_t_,};
 static void* methods_Sharpen_Arch_Paging[] = {Sharpen_Arch_Paging_FrameAddress_1int32_t_,Sharpen_Arch_Paging_GetFrameAddress_1int32_t_,Sharpen_Arch_Paging_Init_1uint32_t_,Sharpen_Arch_Paging_MapPage_4struct_struct_Sharpen_Arch_Paging_PageDirectory__int32_t_int32_t_int32_t_,Sharpen_Arch_Paging_GetPhysicalFromVirtual_1void__,Sharpen_Arch_Paging_GetPage_2struct_struct_Sharpen_Arch_Paging_PageDirectory__int32_t_,Sharpen_Arch_Paging_SetFrame_1int32_t_,Sharpen_Arch_Paging_ClearFrame_1int32_t_,Sharpen_Arch_Paging_AllocateFrame_0,Sharpen_Arch_Paging_FreeFrame_1int32_t_,Sharpen_Arch_Paging_AllocatePhysical_1int32_t_,Sharpen_Arch_Paging_CloneDirectory_1struct_struct_Sharpen_Arch_Paging_PageDirectory__,Sharpen_Arch_Paging_FreeDirectory_1struct_struct_Sharpen_Arch_Paging_PageDirectory__,Sharpen_Arch_Paging_Enable_0,Sharpen_Arch_Paging_Disable_0,Sharpen_Arch_Paging_setDirectoryInternal_1struct_struct_Sharpen_Arch_Paging_PageDirectory__,Sharpen_Arch_Paging_ReadCR2_0,};
 static void* methods_Sharpen_Program[] = {Sharpen_Program_KernelMain_3struct_struct_Sharpen_Multiboot_Header__uint32_t_uint32_t_,};
-static void* methods_Sharpen_Utilities_String[] = {Sharpen_Utilities_String_Length_1char__,Sharpen_Utilities_String_IndexOf_2char__char__,Sharpen_Utilities_String_Count_2char__char_,Sharpen_Utilities_String_SubString_3char__int32_t_int32_t_,Sharpen_Utilities_String_Merge_2char__char__,Sharpen_Utilities_String_Equals_2char__char__,Sharpen_Utilities_String_ToUpper_1char_,Sharpen_Utilities_String_ToLower_1char_,};
+static void* methods_Sharpen_Utilities_String[] = {Sharpen_Utilities_String_Length_1char__,Sharpen_Utilities_String_IndexOf_2char__char__,Sharpen_Utilities_String_Count_2char__char_,Sharpen_Utilities_String_SubString_3char__int32_t_int32_t_,Sharpen_Utilities_String_toLong_2class_char__,Sharpen_Utilities_String_Merge_2char__char__,Sharpen_Utilities_String_Equals_2char__char__,Sharpen_Utilities_String_ToUpper_1char_,Sharpen_Utilities_String_ToLower_1char_,};
 static void* methods_Sharpen_Time[] = {};
 static void* methods_Sharpen_Utilities_Util[] = {Sharpen_Utilities_Util_CharPtrToString_1char__,Sharpen_Utilities_Util_BytePtrToByteArray_1uint8_t__,Sharpen_Utilities_Util_ObjectToVoidPtr_1void__,Sharpen_Utilities_Util_MethodToPtr_1void__,};
 

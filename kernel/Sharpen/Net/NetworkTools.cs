@@ -23,7 +23,7 @@ namespace Sharpen.Net
                     Console.Write(":");
             }
             Console.WriteLine("");
-            byte* buffer = (byte*)Heap.Alloc(102);
+            byte* buffer = (byte*)Heap.Alloc(108);
 
             for (int i = 0; i < 6; i++)
                 buffer[i] = 0xFF;
@@ -33,7 +33,7 @@ namespace Sharpen.Net
                 for (int j = 0; j < 6; j++)
                     buffer[6 + (i * 6) + j] = mac[j];
 
-            Network.Transmit(buffer, 102);
+            Network.Transmit(buffer, 108);
 
             Heap.Free(buffer);
         }
