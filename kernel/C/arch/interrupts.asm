@@ -108,6 +108,9 @@ ISR_NO_ERROR 31
 ; Syscall handler
 global Sharpen_Arch_IDT_Syscall_0
 Sharpen_Arch_IDT_Syscall_0:
+    ; No errorcode or INT number
+    sub esp, 8
+
     ; Store data
     pusha
 
@@ -137,6 +140,7 @@ Sharpen_Arch_IDT_Syscall_0:
 
     ; Pop data
     popa
+    add esp, 8
     iret
 
 ; Special IRQ routine for IRQ 0 (PIT)

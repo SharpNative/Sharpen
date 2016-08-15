@@ -118,7 +118,6 @@ namespace Sharpen.Arch
         /// <param name="flags">The flags</param>
         public static unsafe void MapPage(PageDirectory* directory, int phys, int virt, int flags)
         {
-            flags |= (int)PageFlags.UserMode;
             // Get indices
             int pageIndex = virt / 0x1000;
             int tableIndex = pageIndex / 1024;
@@ -214,7 +213,7 @@ namespace Sharpen.Arch
         {
             ClearFrame(GetFrameAddress(page));
         }
-
+        
         /// <summary>
         /// Allocates a block of physical memory
         /// </summary>
@@ -240,9 +239,6 @@ namespace Sharpen.Arch
                 int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
                 
                 MapPage(CurrentDirectory, address, address, flags);
-                // if (CurrentDirectory != KernelDirectory)
-                    // MapPage(KernelDirectory, address, address, flags);
-                
                 SetFrame(address);
                 
                 address += 0x1000;
@@ -271,7 +267,7 @@ namespace Sharpen.Arch
                 int sourceTable = source->tables[table];
                 if (sourceTable == 0)
                     continue;
-
+                
                 PageTable* sourceTablePtr = (PageTable*)(sourceTable & 0xFFFFF000);
 
                 // Grab flags and allocate new table
@@ -280,7 +276,7 @@ namespace Sharpen.Arch
                 Memory.Memcpy(newTable, sourceTablePtr, sizeof(PageTable));
                 destination->tables[table] = (int)newTable | flags;
             }
-
+            
             return destination;
         }
 
@@ -320,6 +316,10 @@ namespace Sharpen.Arch
         /// <param name="directory">The page directory</param>
         private static unsafe extern void setDirectoryInternal(PageDirectory* directory);
 
+        /// <summary>
+        /// Reads the CR2 (pagefault address)
+        /// </summary>
+        /// <returns>The CR2 (faulting address)</returns>
         public static unsafe extern int ReadCR2();
     }
 }

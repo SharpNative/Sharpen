@@ -105,7 +105,7 @@ namespace Sharpen
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
 
-            ErrorCode error = Loader.StartProcess("C://shell", null);
+            ErrorCode error = Loader.StartProcess("C://test", null);
             if (error != ErrorCode.SUCCESS)
             {
                 Console.Write("Failed to start initial process: 0x");

@@ -1,6 +1,7 @@
 ﻿using Sharpen.Exec;
 using Sharpen.Utilities;
 using Sharpen.FileSystem;
+using Sharpen.Task;
 
 namespace Sharpen.Arch
 {
@@ -15,6 +16,8 @@ namespace Sharpen.Arch
             int function = regsPtr->EAX;
             if (function > 8)
                 return;
+
+            Tasking.CurrentTask.SysRegs = regsPtr;
             
             int ret = 0;
             switch (function)
@@ -62,7 +65,7 @@ namespace Sharpen.Arch
                     break;
             }
             
-            regsPtr->EAX = ret;
+            Tasking.CurrentTask.SysRegs->EAX = ret;
         }
     }
 }

@@ -9,6 +9,8 @@ namespace Sharpen.Task
         private static int m_lastPid = 0;
         private static bool m_taskingEnabled = false;
 
+        private static Task m_taskToClone = null;
+
         public static Task KernelTask { get; private set; }
         public static Task CurrentTask { get; private set; }
 
@@ -28,6 +30,7 @@ namespace Sharpen.Task
             kernel.PageDir = Paging.KernelDirectory;
             kernel.Next = null;
             kernel.FPUContext = Heap.AlignedAlloc(16, 512);
+            kernel.Flags = TaskFlags.NOFLAGS;
 
             KernelTask = kernel;
             CurrentTask = kernel;
@@ -81,22 +84,20 @@ namespace Sharpen.Task
                 if (current == null)
                     return;
             }
-
-            // Wait for task switch if this current task will be removed
-            if (current == CurrentTask)
-                CPU.HLT();
-
+            
             // Critical section, a task switch may not occur now
             CPU.CLI();
 
-            // Set pointer and free task data
+            // Set pointer and set remove flag
             previous.Next = current.Next;
-            Heap.Free(current.FPUContext);
-            Heap.Free(current.Stack);
-            Paging.FreeDirectory(current.PageDir);
+            current.Flags |= TaskFlags.DESCHEDULED;
 
             // End of critical section
             CPU.STI();
+
+            // Wait for task switch if this current task is descheduled
+            while(true)
+                ManualSchedule();
         }
 
         /// <summary>
@@ -107,14 +108,11 @@ namespace Sharpen.Task
         {
             // Find the last task
             Task current = CurrentTask;
-            while (true)
+            while (current.Next != null)
             {
-                if (current.Next == null)
-                    break;
-
                 current = current.Next;
             }
-            
+
             // Critical section, a task switch may not occur now
             CPU.CLI();
 
@@ -124,7 +122,7 @@ namespace Sharpen.Task
             // End of critical section
             CPU.STI();
         }
-        
+
         /// <summary>
         /// Adds a task
         /// </summary>
@@ -137,13 +135,17 @@ namespace Sharpen.Task
             newTask.PID = m_lastPid++;
             newTask.GID = 0;
             newTask.UID = 0;
-            newTask.PageDir = /*Paging.CloneDirectory*/(Paging.CurrentDirectory);
             newTask.TimeFull = (int)priority;
+            newTask.TimeLeft = (int)priority;
+            newTask.Flags = TaskFlags.NOFLAGS;
 
             // Stack
-            newTask.Stack = (int*)((int)Heap.AlignedAlloc(16, 8192) + 8192);
+            int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
+            newTask.StackStart = (int*)((int)stacks + 4096);
+            newTask.Stack = (int*)((int)newTask.StackStart + 8192);
             newTask.Stack = writeSchedulerStack(newTask.Stack, 0x1B, 0x23, eip);
-            newTask.KernelStack = (int*)((int)Heap.AlignedAlloc(16, 4096) + 4096);
+            newTask.KernelStackStart = stacks;
+            newTask.KernelStack = (int*)((int)newTask.KernelStackStart + 4096);
 
             // Program data space end
             newTask.DataEnd = null;
@@ -158,8 +160,90 @@ namespace Sharpen.Task
             newTask.FPUContext = Heap.AlignedAlloc(16, 512);
             FPU.StoreContext(newTask.FPUContext);
 
+            // Paging
+            newTask.PageDir = Paging.CloneDirectory(Paging.CurrentDirectory);
+
             // Schedule
             ScheduleTask(newTask);
+        }
+
+        /// <summary>
+        /// Forks the current task
+        /// </summary>
+        /// <returns>0 if child, PID if parent</returns>
+        public static int Fork()
+        {
+            int pid = CurrentTask.PID;
+            m_taskToClone = CurrentTask;
+            ManualSchedule();
+            return (pid == CurrentTask.PID ? pid + 1 : 0);
+        }
+
+        /// <summary>
+        /// Clones a task and schedules it
+        /// </summary>
+        /// <param name="task">The task to clone</param>
+        private static unsafe void cloneTask(Task task)
+        {
+            // Fill in data
+            Task newTask = new Task();
+            newTask.PID = m_lastPid++;
+            newTask.GID = task.GID;
+            newTask.UID = task.UID;
+            newTask.TimeFull = task.TimeFull;
+            newTask.TimeLeft = task.TimeFull;
+            newTask.Flags = TaskFlags.NOFLAGS;
+
+            // Stack
+            int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
+            newTask.StackStart = (int*)((int)stacks + 4096);
+            newTask.KernelStackStart = stacks;
+
+            Memory.Memcpy(newTask.KernelStackStart, task.KernelStackStart, 4096 + 8192);
+            
+            int diffStack = (int)task.Stack - (int)task.StackStart;
+            int diffKernelStack = (int)task.KernelStack - (int)task.KernelStackStart;
+            
+            newTask.Stack = (int*)((int)newTask.StackStart + diffStack);
+            newTask.KernelStack = (int*)((int)newTask.KernelStackStart + diffKernelStack);
+            
+            // Program data space end
+            newTask.DataEnd = task.DataEnd;
+
+            // File descriptor
+            newTask.FileDescriptors.Capacity = task.FileDescriptors.Capacity;
+            newTask.FileDescriptors.Used = task.FileDescriptors.Used;
+            newTask.FileDescriptors.Nodes = new Node[newTask.FileDescriptors.Capacity];
+            newTask.FileDescriptors.Offsets = new uint[newTask.FileDescriptors.Capacity];
+
+            // Copy file descriptors
+            for (int i = 0; i < task.FileDescriptors.Capacity; i++)
+            {
+                newTask.FileDescriptors.Nodes[i] = task.FileDescriptors.Nodes[i];
+                newTask.FileDescriptors.Offsets[i] = task.FileDescriptors.Offsets[i];
+            }
+
+            // FPU context
+            newTask.FPUContext = Heap.AlignedAlloc(16, 512);
+            Memory.Memcpy(newTask.FPUContext, task.FPUContext, 512);
+
+            // Paging
+            newTask.PageDir = Paging.CloneDirectory(task.PageDir);
+
+            // Schedule
+            ScheduleTask(newTask);
+        }
+
+        /// <summary>
+        /// Cleans up the given task
+        /// </summary>
+        /// <param name="task">The task</param>
+        private static unsafe void cleanupTask(Task task)
+        {
+            // TODO: more cleaning required
+            Heap.Free(task.FPUContext);
+            Heap.Free(task.KernelStackStart);
+            Paging.FreeDirectory(task.PageDir);
         }
 
         /// <summary>
@@ -173,7 +257,7 @@ namespace Sharpen.Task
             current.TimeLeft--;
             if (current.TimeLeft > 0)
                 return current;
-            
+
             current.TimeLeft = current.TimeFull;
 
             Task next = CurrentTask.Next;
@@ -193,12 +277,20 @@ namespace Sharpen.Task
             // Only do this if tasking is enabled
             if (!m_taskingEnabled)
                 return regsPtr;
-
+            
             // Store old context
             Task oldTask = CurrentTask;
             oldTask.Stack = (int*)regsPtr;
             oldTask.KernelStack = (int*)GDT.TSS_Entry->ESP0;
             FPU.StoreContext(oldTask.FPUContext);
+
+            // Context is stored, now we can manipulate it
+            // such as forking etc
+            if (m_taskToClone != null)
+            {
+                cloneTask(m_taskToClone);
+                m_taskToClone = null;
+            }
 
             // Switch to next task
             Task current = FindNextTask();
@@ -206,6 +298,12 @@ namespace Sharpen.Task
             FPU.RestoreContext(current.FPUContext);
             GDT.TSS_Entry->ESP0 = (uint)current.KernelStack;
             CurrentTask = current;
+            
+            // Cleanup old task
+            if ((oldTask.Flags & TaskFlags.DESCHEDULED) == TaskFlags.DESCHEDULED)
+            {
+                cleanupTask(oldTask);
+            }
 
             // Return the next task context
             return (Regs*)current.Stack;
@@ -301,19 +399,19 @@ namespace Sharpen.Task
                 current.FileDescriptors.Nodes = newNodeArray;
                 current.FileDescriptors.Offsets = newOffsetArray;
             }
-            
+
             // Find a free descriptor
             int i = 0;
             for (; i < current.FileDescriptors.Capacity; i++)
             {
-                if(current.FileDescriptors.Nodes[i] == null)
+                if (current.FileDescriptors.Nodes[i] == null)
                 {
                     current.FileDescriptors.Nodes[i] = node;
                     current.FileDescriptors.Offsets[i] = 0;
                     break;
                 }
             }
-            
+
             current.FileDescriptors.Used++;
             return i;
         }

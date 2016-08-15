@@ -212,9 +212,9 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 
-C/build
-C/output.c
-C/kernel
+kernel/C/build
+kernel/C/output.c
+kernel/C/kernel
 
 tools
 bochsrc.bxrc
@@ -222,6 +222,5 @@ bochsrc.bxrc
 *.a
 *.o
 
-user/build
 user/newlib/include
 *.wcap

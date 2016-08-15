@@ -70,6 +70,7 @@ namespace Sharpen
             // Allocate descriptor
             size = getRequiredPageCount(size) * 0x1000;
             BlockDescriptor* descriptor = (BlockDescriptor*)Paging.AllocatePhysical(size);
+
             if (descriptor == null)
                 return null;
             
@@ -152,17 +153,20 @@ namespace Sharpen
                 size += sizeof(Block);
                 
                 // Safe size
-                int alignedSize = size * 2;
-                if (alignedSize % alignment != 0)
+                int safeSize = size;
+                if (safeSize % alignment != 0)
                 {
-                    alignedSize = size - (size % alignment);
-                    alignedSize += alignment;
+                    safeSize = size - (size % alignment);
+                    safeSize += alignment;
                 }
 
-                BlockDescriptor* descriptor = getSufficientDescriptor(alignedSize);
+                if (safeSize < 0x4000)
+                    safeSize = 0x4000;
+                
+                BlockDescriptor* descriptor = getSufficientDescriptor(safeSize);
                 Block* currentBlock = descriptor->First;
                 Block* previousBlock = null;
-
+                
                 // Search in the descriptor
                 while (true)
                 {

@@ -47,7 +47,6 @@ namespace Sharpen.Exec
         /// <returns>The previous data space end</returns>
         public static unsafe int Sbrk(int increase)
         {
-            // TODO: on task end, free this again
             return (int)Paging.AllocatePhysical(increase);
         }
 
@@ -55,9 +54,21 @@ namespace Sharpen.Exec
         /// Fork syscall
         /// </summary>
         /// <returns>0 if we're child, PID of child if we're parent</returns>
-        public static int Fork()
+        public static unsafe int Fork()
         {
-            return -(int)ErrorCode.EAGAIN;
+            // Note that kernel stack and user stack are different
+            Task.Task current = Tasking.CurrentTask;
+            int diffRegs = (int)current.SysRegs - (int)current.StackStart;
+            int diffESP = current.SysRegs->ESP - (int)current.StackStart;
+            
+            int pid = Tasking.Fork();
+            
+            // Update stack references within the stack itself
+            current = Tasking.CurrentTask;
+            current.SysRegs = (Regs*)((int)current.StackStart + diffRegs);
+            current.SysRegs->ESP = (int)current.StackStart + diffESP;
+
+            return pid;
         }
 
         /// <summary>
@@ -109,9 +120,8 @@ namespace Sharpen.Exec
             Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
-
-            // TODO: get filemode from flags etc
-            VFS.Open(node, FileMode.O_RDWR);
+            
+            VFS.Open(node, (FileMode)flags);
             return Tasking.AddNodeToDescriptor(node);
         }
 

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 int main(int argc, char* argv[])
 {
@@ -17,5 +18,17 @@ int main(int argc, char* argv[])
     puts(data);
     fflush(stdout);
 
+    register int sp __asm__ ("sp");
+    printf("SP=%x\n", sp);
+
+    puts("Forking...");
+    pid_t pid = fork();
+
+register int sp2 __asm__ ("sp");
+    printf("SP=%x\n", sp2);
+
+    printf("PID=%d\n", pid);
+
+    fflush(stdout);
     return 0;
 }

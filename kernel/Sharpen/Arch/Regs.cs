@@ -1,8 +1,5 @@
-﻿using System.Runtime.InteropServices;
-
-namespace Sharpen.Arch
+﻿namespace Sharpen.Arch
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct Regs
     {
         public int GS, FD, ES, DS;
