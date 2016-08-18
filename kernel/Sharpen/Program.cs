@@ -110,7 +110,7 @@ namespace Sharpen
             string[] argv = new string[2];
             argv[0] = "hai";
             argv[1] = null;
-            ErrorCode error = Loader.StartProcess("C://test", argv);
+            ErrorCode error = Loader.StartProcess("C://shell", argv);
             if (error != ErrorCode.SUCCESS)
             {
                 Console.Write("Failed to start initial process: 0x");

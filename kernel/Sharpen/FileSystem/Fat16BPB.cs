@@ -51,8 +51,7 @@ namespace Sharpen.FileSystem
         public ushort LastModTime;
         public ushort LastModDate;
         public ushort ClusterNumberLo;
-        public ushort Size;
-        public fixed char Bullshit[2];
+        public uint Size;
     }
 
     unsafe class SubDirectory

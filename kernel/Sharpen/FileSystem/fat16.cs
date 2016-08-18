@@ -99,12 +99,13 @@ namespace Sharpen.FileSystem
                     offset = 0;
                 }
 
+                
+
                 // TODO: I think this can be overriden 
                 m_dirEntries[i] = curBufPtr[offset];    
 
                 offset++;
             }
-            
             
             m_numDirEntries = m_bpb->NumDirEntries;
             m_beginDataLBA = m_clusterBeginLBA + ((m_bpb->NumDirEntries * 32) / m_bpb->BytesPerSector);
@@ -153,6 +154,7 @@ namespace Sharpen.FileSystem
             int dot = String.IndexOf(name, ".");
             if (dot > 8)
                 return null;
+
 
             char* testFor = (char*)Heap.Alloc(11);
             Memory.Memset(testFor, ' ', 11);
@@ -236,7 +238,6 @@ namespace Sharpen.FileSystem
 
             SubDirectory dir = readDirectory(cluster);
 
-
             for (int i = 0; i < dir.Length; i++)
             {
                 FatDirEntry entry = dir.DirEntries[i];
@@ -247,26 +248,40 @@ namespace Sharpen.FileSystem
                 if (j >= index)
                 {
                     DirEntry* outDir = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
-                    //Memory.Memcpy(outDir->Name, entry.Name, 11);
-                    //outDir->Name[11] = '\0';
 
                     int fnLength = String.IndexOf(Util.CharPtrToString(entry.Name), " ");
 
                     if (fnLength > 8 || fnLength == -1)
                         fnLength = 8;
 
-                    int extLength = String.IndexOf(Util.CharPtrToString(entry.Name + 8), " ");
-                    if (extLength == -1)
-                        extLength = 3;
-
                     int offset = 0;
                     for (int z = 0; z < fnLength; z++)
                         outDir->Name[offset++] = entry.Name[z];
+                    
+                    if ((dir.DirEntries[i].Attribs & 0x10) == 0)
+                    {
 
-                    outDir->Name[offset++] = '.';
+                        int extLength = String.IndexOf(Util.CharPtrToString(entry.Name + 8), " ");
+                        if (extLength == -1)
+                            extLength = 3;
 
-                    for (int z = 0; z < extLength; z++)
-                        outDir->Name[offset++] = entry.Name[z + 8];
+                        if(extLength != 0)
+                        {
+                            outDir->Name[offset++] = '.';
+
+
+                            for (int z = 0; z < extLength; z++)
+                                outDir->Name[offset++] = entry.Name[z + 8];
+                        }
+
+                        outDir->Flags = 0x01;
+                    }
+                    else
+                    {
+                        outDir->Flags = 0x02;
+                    }
+
+
 
                     outDir->Name[offset] = '\0';
 

@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace Shell
 {
     class Program
     {
         static string m_folder = "C://";
 
-        static void Main(string[] args)
+        unsafe static void Main(string[] args)
         {
             while (true)
             {
@@ -26,11 +21,31 @@ namespace Shell
                     offsetToSpace = String.Length(read);
 
                 string command = String.SubString(read, 0, offsetToSpace);
+                if (command == null)
+                    continue;
                 
-
-                if(String.Equals(command, "udm"))
+                if(String.Equals(command, "cd"))
                 {
-                    Console.WriteLine("udm mode activated");
+
+                }
+                else if(String.Equals(command, "dir"))
+                {
+                    Directory dir = Directory.Open(m_folder);
+
+                    uint i = 0;
+                    while (true)
+                    {
+                        Directory.DirEntry entry = dir.Readdir(i);
+                        if (entry.Name[0] == (char)0x00)
+                            break;
+
+                        string str = Util.CharPtrToString(entry.Name);
+                        
+                        Console.WriteLine(str);
+
+                        i++;
+                    }
+                    dir.Close();
                 }
                 else
                 {
