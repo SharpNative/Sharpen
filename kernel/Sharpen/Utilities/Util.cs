@@ -14,10 +14,24 @@ namespace Sharpen.Utilities
         /// <summary>
         /// Converts a byte pointer to a byte array
         /// </summary>
-        /// <param name="ptr">The byte pointer</param>
-        /// <returns>The byte array</returns>
-        public static unsafe extern byte[] BytePtrToByteArray(byte* ptr);
-        
+        /// <param name="ptr">The pointer</param>
+        /// <returns>The array</returns>
+        public static unsafe extern byte[] PtrToArray(byte* ptr);
+
+        /// <summary>
+        /// Converts a pointer to an array
+        /// </summary>
+        /// <param name="ptr">The pointer</param>
+        /// <returns>The array</returns>
+        public static unsafe extern object[] PtrToArray(void* ptr);
+
+        /// <summary>
+        /// Converts a string array pointer to a string array
+        /// </summary>
+        /// <param name="ptr">The pointer</param>
+        /// <returns>The array</returns>
+        public static unsafe extern string[] PtrToArray(char** ptr);
+
         /// <summary>
         /// Converts an object to a void pointer
         /// </summary>

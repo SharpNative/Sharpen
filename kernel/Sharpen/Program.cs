@@ -102,12 +102,15 @@ namespace Sharpen
             ATA.Init();
             Tasking.Init();
 
-            //DHCP.Sample();
+            //NetworkTools.WakeOnLan(new byte[6]);
 
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
 
-            ErrorCode error = Loader.StartProcess("C://shell", null);
+            string[] argv = new string[2];
+            argv[0] = "hai";
+            argv[1] = null;
+            ErrorCode error = Loader.StartProcess("C://test", argv);
             if (error != ErrorCode.SUCCESS)
             {
                 Console.Write("Failed to start initial process: 0x");

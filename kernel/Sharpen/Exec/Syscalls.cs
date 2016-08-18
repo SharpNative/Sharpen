@@ -17,6 +17,11 @@ namespace Sharpen.Exec
         public const int SYS_OPEN = 6;
         public const int SYS_CLOSE = 7;
         public const int SYS_SEEK = 8;
+        public const int SYS_EXECVE = 9;
+        public const int SYS_READDIR = 10;
+
+        // Highest syscall number
+        public const int SYSCALL_MAX = 10;
 
         #endregion
 
@@ -165,6 +170,49 @@ namespace Sharpen.Exec
                 Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] = node.Size - offset;
 
             return (int)Tasking.CurrentTask.FileDescriptors.Offsets[descriptor];
+        }
+
+        /// <summary>
+        /// Replaces the current process with another executable
+        /// </summary>
+        /// <param name="path">The path to the executable</param>
+        /// <param name="argv">The arguments</param>
+        /// <param name="envp">The environment path</param>
+        /// <returns>Errorcode</returns>
+        public static int Execve(string path, string[] argv, string[] envp)
+        {
+            // TODO: envp
+            ErrorCode error = Loader.StartProcess(path, argv);
+            if (error != ErrorCode.SUCCESS)
+                return -(int)error;
+            
+            // We spawned a task but the current process should actually be replaced
+            // So we must kill the current process
+            Tasking.RemoveTaskByPID(Tasking.CurrentTask.PID);
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Reads a directory entry
+        /// </summary>
+        /// <param name="descriptor">The descriptor</param>
+        /// <param name="entry">The directory entry</param>
+        /// <param name="index">The index</param>
+        /// <returns>Errorcode</returns>
+        public static unsafe int Readdir(int descriptor, DirEntry* entry, uint index)
+        {
+            Node node = Tasking.GetNodeFromDescriptor(descriptor);
+            if (node == null)
+                return -(int)ErrorCode.EBADF;
+
+            DirEntry* gotEntry = VFS.ReadDir(node, index);
+            if (gotEntry == null)
+                return -(int)ErrorCode.ENOENT;
+
+            Memory.Memcpy(entry, gotEntry, sizeof(DirEntry));
+            Heap.Free(gotEntry);
+            return 0;
         }
     }
 }

@@ -4,8 +4,8 @@
     {
         public uint Ino;
         public int Offset;
-        public ushort Reclen;
         public byte Type;
+        public ushort Reclen;
 
         public unsafe fixed char Name[256];
     }

@@ -14,7 +14,7 @@ namespace Sharpen.Arch
         public static unsafe void Handler(Regs* regsPtr)
         {
             int function = regsPtr->EAX;
-            if (function > 8)
+            if (function < 0 || function > Syscalls.SYSCALL_MAX)
                 return;
 
             Tasking.CurrentTask.SysRegs = regsPtr;
@@ -39,11 +39,11 @@ namespace Sharpen.Arch
                     break;
 
                 case Syscalls.SYS_WRITE:
-                    ret = Syscalls.Write(regsPtr->EBX, Util.BytePtrToByteArray((byte*)regsPtr->ECX), (uint)regsPtr->EDX);
+                    ret = Syscalls.Write(regsPtr->EBX, Util.PtrToArray((byte*)regsPtr->ECX), (uint)regsPtr->EDX);
                     break;
 
                 case Syscalls.SYS_READ:
-                    ret = Syscalls.Read(regsPtr->EBX, Util.BytePtrToByteArray((byte*)regsPtr->ECX), (uint)regsPtr->EDX);
+                    ret = Syscalls.Read(regsPtr->EBX, Util.PtrToArray((byte*)regsPtr->ECX), (uint)regsPtr->EDX);
                     break;
 
                 case Syscalls.SYS_OPEN:
@@ -56,6 +56,14 @@ namespace Sharpen.Arch
 
                 case Syscalls.SYS_SEEK:
                     ret = Syscalls.Seek(regsPtr->EBX, (uint)regsPtr->ECX, (FileWhence)regsPtr->EDX);
+                    break;
+
+                case Syscalls.SYS_EXECVE:
+                    ret = Syscalls.Execve(Util.CharPtrToString((char*)regsPtr->EBX), Util.PtrToArray((char**)regsPtr->ECX), Util.PtrToArray((char**)regsPtr->EDX));
+                    break;
+
+                case Syscalls.SYS_READDIR:
+                    ret = Syscalls.Readdir(regsPtr->EBX, (DirEntry*)regsPtr->ECX, (uint)regsPtr->EDX);
                     break;
 
                 default:

@@ -166,7 +166,7 @@ namespace Sharpen.Exec
 
             if (!isValidELF(elf))
                 return ErrorCode.EINVAL;
-            
+
             // Get program header
             ProgramHeader* programHeader = (ProgramHeader*)((int)elf + elf->PhOff);
             uint virtAddress = programHeader->VirtAddress;
@@ -176,13 +176,13 @@ namespace Sharpen.Exec
             for (uint i = 0; i < elf->ShNum; i++)
             {
                 SectionHeader* section = getSection(elf, i);
-                
+
                 // Only loadable sections
                 if (section->Address == 0)
                     continue;
-                
+
                 uint offset = section->Address - virtAddress;
-                
+
                 // BSS
                 if (section->Type == (uint)SectionHeaderType.SHT_NOBITS)
                 {
@@ -191,7 +191,7 @@ namespace Sharpen.Exec
                 // Copy
                 else
                 {
-                    
+
                     Memory.Memcpy((void*)((uint)allocated + offset), (void*)((uint)elf + section->Offset), (int)section->Size);
                 }
             }
@@ -201,8 +201,20 @@ namespace Sharpen.Exec
             {
                 Paging.MapPage(Paging.CurrentDirectory, (int)((uint)allocated + j), (int)(virtAddress + j), (int)Paging.PageFlags.Present | (int)Paging.PageFlags.Writable | (int)Paging.PageFlags.UserMode);
             }
+
+            // Count arguments
+            int argc = 0;
+            if (argv != null)
+            {
+                while (argv[argc] != null)
+                    argc++;
+            }
             
-            Tasking.AddTask((void*)elf->Entry, TaskPriority.NORMAL);
+            // Add task
+            int[] initialStack = new int[2];
+            initialStack[0] = (int)Util.ObjectToVoidPtr(argv);
+            initialStack[1] = argc;
+            Tasking.AddTask((void*)elf->Entry, TaskPriority.NORMAL, initialStack, 2);
             
             return ErrorCode.SUCCESS;
         }

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <unistd.h>
 
 int main(int argc, char* argv[])
@@ -12,23 +13,27 @@ int main(int argc, char* argv[])
     (void) open("devices://stdout",   O_WRONLY);
 
     printf("Hello world!\n");
+    printf("I got %d arguments, argv[0]=%p=%s\n", argc, argv[0], argv[0]);
 
-    char data[64];
-    fgets(data, sizeof data, stdin);
-    puts(data);
-    fflush(stdout);
+    DIR* dir = opendir("devices://");
+    if(dir == NULL)
+    {
+        puts("Cannot read directory");
+        return 1;
+    }
 
-    register int sp __asm__ ("sp");
-    printf("SP=%x\n", sp);
+    struct dirent* entry;
+    while((entry = readdir(dir)) != NULL)
+    {
+        printf("%s\n", entry->d_name);
+    }
 
-    puts("Forking...");
-    pid_t pid = fork();
+    closedir(dir);
 
-register int sp2 __asm__ ("sp");
-    printf("SP=%x\n", sp2);
+    puts("---\ntesting execve");
 
-    printf("PID=%d\n", pid);
+    char* args[] = { "yow", NULL };
+    execve("C://shell", args, NULL);
 
-    fflush(stdout);
     return 0;
 }

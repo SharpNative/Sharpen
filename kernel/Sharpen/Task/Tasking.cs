@@ -84,7 +84,7 @@ namespace Sharpen.Task
                 if (current == null)
                     return;
             }
-            
+
             // Critical section, a task switch may not occur now
             CPU.CLI();
 
@@ -96,7 +96,7 @@ namespace Sharpen.Task
             CPU.STI();
 
             // Wait for task switch if this current task is descheduled
-            while(true)
+            while (true)
                 ManualSchedule();
         }
 
@@ -128,7 +128,9 @@ namespace Sharpen.Task
         /// </summary>
         /// <param name="eip">The initial EIP</param>
         /// <param name="priority">The task priority</param>
-        public static unsafe void AddTask(void* eip, TaskPriority priority)
+        /// <param name="initialStack">Initial stack</param>
+        /// <param name="initialStackSize">Initial stack size</param>
+        public static unsafe void AddTask(void* eip, TaskPriority priority, int[] initialStack, int initialStackSize)
         {
             // Fill in data
             Task newTask = new Task();
@@ -143,6 +145,20 @@ namespace Sharpen.Task
             int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
             newTask.StackStart = (int*)((int)stacks + 4096);
             newTask.Stack = (int*)((int)newTask.StackStart + 8192);
+
+            // Copy initial stack
+            if (initialStackSize > 0)
+            {
+                // TODO: workaround for compiler bug
+                int* stack = newTask.Stack;
+                for (int i = 0; i < initialStackSize; i++)
+                {
+                    *--stack = initialStack[i];
+                }
+                newTask.Stack = stack;
+            }
+
+            // Continue with stacks
             newTask.Stack = writeSchedulerStack(newTask.Stack, 0x1B, 0x23, eip);
             newTask.KernelStackStart = stacks;
             newTask.KernelStack = (int*)((int)newTask.KernelStackStart + 4096);
@@ -161,7 +177,7 @@ namespace Sharpen.Task
             FPU.StoreContext(newTask.FPUContext);
 
             // Paging
-            newTask.PageDir = Paging.CloneDirectory(Paging.CurrentDirectory);
+            newTask.PageDir = /*Paging.CloneDirectory*/(Paging.CurrentDirectory);
 
             // Schedule
             ScheduleTask(newTask);
@@ -200,13 +216,13 @@ namespace Sharpen.Task
             newTask.KernelStackStart = stacks;
 
             Memory.Memcpy(newTask.KernelStackStart, task.KernelStackStart, 4096 + 8192);
-            
+
             int diffStack = (int)task.Stack - (int)task.StackStart;
             int diffKernelStack = (int)task.KernelStack - (int)task.KernelStackStart;
-            
+
             newTask.Stack = (int*)((int)newTask.StackStart + diffStack);
             newTask.KernelStack = (int*)((int)newTask.KernelStackStart + diffKernelStack);
-            
+
             // Program data space end
             newTask.DataEnd = task.DataEnd;
 
@@ -226,9 +242,9 @@ namespace Sharpen.Task
             // FPU context
             newTask.FPUContext = Heap.AlignedAlloc(16, 512);
             Memory.Memcpy(newTask.FPUContext, task.FPUContext, 512);
-            
+
             // Paging
-            newTask.PageDir = Paging.CloneDirectory(task.PageDir);
+            newTask.PageDir = /*Paging.CloneDirectory*/(task.PageDir);
 
             // Schedule
             ScheduleTask(newTask);
@@ -243,7 +259,7 @@ namespace Sharpen.Task
             // TODO: more cleaning required
             Heap.Free(task.FPUContext);
             Heap.Free(task.KernelStackStart);
-            Paging.FreeDirectory(task.PageDir);
+            //Paging.FreeDirectory(task.PageDir);
         }
 
         /// <summary>
@@ -277,7 +293,7 @@ namespace Sharpen.Task
             // Only do this if tasking is enabled
             if (!m_taskingEnabled)
                 return regsPtr;
-            
+
             // Store old context
             Task oldTask = CurrentTask;
             oldTask.Stack = (int*)regsPtr;
@@ -298,7 +314,7 @@ namespace Sharpen.Task
             FPU.RestoreContext(current.FPUContext);
             GDT.TSS_Entry->ESP0 = (uint)current.KernelStack;
             CurrentTask = current;
-            
+
             // Cleanup old task
             if ((oldTask.Flags & TaskFlags.DESCHEDULED) == TaskFlags.DESCHEDULED)
             {
@@ -333,7 +349,7 @@ namespace Sharpen.Task
             *--ptr = 0;         // ECX
             *--ptr = 0;         // EDX
             *--ptr = 0;         // EBX
-             --ptr;
+            --ptr;
             *--ptr = 0;         // EBP
             *--ptr = 0;         // ESI
             *--ptr = 0;         // EDI
