@@ -31,7 +31,17 @@ inline char* Sharpen_Utilities_Util_CharPtrToString_1char__(char* ptr)
 	return ptr;
 }
 
-inline uint8_t* Sharpen_Utilities_Util_BytePtrToByteArray_1uint8_t__(uint8_t* ptr)
+inline uint8_t* Sharpen_Utilities_Util_PtrToArray_1uint8_t__(uint8_t* ptr)
+{
+	return ptr;
+}
+
+inline void** Sharpen_Utilities_Util_PtrToArray_1void__(void* ptr)
+{
+	return ptr;
+}
+
+inline char** Sharpen_Utilities_Util_PtrToArray_1char___(char** ptr)
 {
 	return ptr;
 }
