@@ -69,17 +69,23 @@ namespace Sharpen.Drivers.Net
             m_mac = new byte[6];
             
             // Write irq "10"
-            uint outVal = PCI.PCIReadWord(dev, 0x3C);
-            outVal &= 0x00;
-            outVal |= 10;
+            //uint outVal = PCI.PCIReadWord(dev, 0x3C);
+            //Console.WriteNum((int)outVal);
+            //Console.WriteLine("");
+            //outVal &= 0x00;
+            //outVal |= 11;
 
-            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, 0x3C, outVal);
+            //PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, 0x3C, outVal);
 
-            m_irqNum = PCI.PCIReadWord(dev, 0x3C) & 0xFF;
+            ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
+
+            cmd |= 0x04;    
 
             // Enable bus mastering
-            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, 0x05);
+            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, cmd);
 
+            m_irqNum = PCI.PCIReadWord(dev, 0x3C) & 0xFF;
+            
             // Turn device on
             turnOn();
             
@@ -93,10 +99,10 @@ namespace Sharpen.Drivers.Net
             void* inAdr = Util.ObjectToVoidPtr(m_buffer);
             uint adr = (uint)Paging.GetPhysicalFromVirtual(inAdr);
 
-            PortIO.Out32((ushort)(m_io_base + REG_BUF), 0xFFFF);
+            PortIO.Out32((ushort)(m_io_base + REG_BUF), adr);
 
             // SET IMR + ISR
-            setInterruptMask(0x0000);
+            setInterruptMask(0x0005);
 
             // RCR
             PortIO.Out32((ushort)(m_io_base + REG_RC), 0xf | (1 << 7));
@@ -106,7 +112,7 @@ namespace Sharpen.Drivers.Net
             PortIO.Out8((ushort)(m_io_base + REG_CMD), (byte)(CMD_TXE | CMD_RXE));
 
             updateLinkStatus();
-
+            
             IRQ.SetHandler(m_irqNum, handler);
 
             inAdr = Util.ObjectToVoidPtr(m_transmit0);
@@ -209,9 +215,24 @@ namespace Sharpen.Drivers.Net
 
         private static unsafe void handler(Regs* regsPtr)
         {
-            Console.WriteLine("-------------------------");
-            Console.WriteLine("RTL8139 ");
-            Console.WriteLine("-------------------------");
+            // SET IMR + ISR
+            setInterruptMask(0);
+
+            ushort status = PortIO.In16((ushort)(m_io_base + REG_IS));
+
+            if((status & 0x01) > 0)
+            {
+                Console.WriteLine("JA RX");
+            }
+            else if((status & 0x04) > 0)
+            {
+                Console.WriteLine("JA TX");
+            }
+
+            PrintRes();
+            
+            PortIO.Out16((ushort)(m_io_base + REG_IS), status);
+            setInterruptMask(0x0005);
         }
 
         /// <summary>

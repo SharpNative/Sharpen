@@ -5,6 +5,10 @@
 #include <sys/errno.h>
 #include <sys/time.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <dirent.h>
+#include <string.h>
+#include <malloc.h>
 
 #undef errno
 extern int errno;
@@ -72,6 +76,8 @@ SYS3(read,     5, int, char*, int);
 SYS2(open,     6, const char*, int);
 SYS1(close,    7, int);
 SYS3(seek,     8, int, int, int);
+SYS3(execve,   9, const char*, const char**, const char**);
+SYS3(readdir, 10, int, struct dirent*, uint32_t);
 
 // =================================== //
 // --- Implementations of methods  --- //
@@ -85,9 +91,9 @@ void _exit()
     sys_exit(0);
 }
 
-int lseek(int file, int offset, int dir)
+int lseek(int file, int ptr, int dir)
 {
-    int ret = sys_seek(file, offset, dir);
+    int ret = sys_seek(file, ptr, dir);
     if(ret < 0)
     {
         errno = -ret;
@@ -168,10 +174,21 @@ int wait(int* status)
     return -1;
 }
 
-int execve(char* name, char** argv, char** env)
+int execve(const char* path, const char** argv, const char** envp)
 {
-    errno = ENOMEM;
-    return -1;
+    int ret = sys_execve(path, argv, envp);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return 0;
+}
+
+int execv(const char* path, const char** argv)
+{
+    return execve(path, argv, (const char**) environ);
 }
 
 caddr_t sbrk(int incr)
@@ -186,8 +203,14 @@ int getpid(void)
 
 int fork(void)
 {
-    errno = EAGAIN;
-    return -1;
+    int ret = sys_fork();
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return ret;
 }
 
 int fstat(int file, struct stat* st)
@@ -211,4 +234,54 @@ int link(char* old, char* new)
 {
     errno = EMLINK;
     return -1;
+}
+
+DIR *opendir(const char *name)
+{
+    /* Open the file, if it doesn't exist: stop! */
+    int descriptor = open(name, O_RDONLY);
+    if(descriptor < 0)
+    {
+        errno = ENOENT;
+        return NULL;
+    }
+
+    /* Create directory structure */
+    DIR *dir = (DIR *) calloc(1, sizeof(DIR));
+    dir->descriptor = descriptor;
+
+    return dir;
+}
+
+struct dirent *readdir(DIR *dir)
+{
+    if(dir == NULL)
+    {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    int ret = sys_readdir(dir->descriptor, &dir->__current, dir->last);
+    if(ret < 0)
+    {
+        memset(&dir->__current, 0, sizeof(struct dirent));
+        errno = -ret;
+        return NULL;
+    }
+
+    dir->last++;
+    return &dir->__current;
+}
+
+int closedir(DIR *dir)
+{
+    if(dir == NULL)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    int descriptor = dir->descriptor;
+    free(dir);
+    return close(descriptor);
 }
