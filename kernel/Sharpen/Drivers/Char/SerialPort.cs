@@ -18,7 +18,6 @@ namespace Sharpen.Drivers.Char
                 return;
 
             ushort port = comports[num].Address;
-
             PortIO.Out8((ushort)(port + 1), 0x00);
             PortIO.Out8((ushort)(port + 3), 0x80);
             PortIO.Out8((ushort)(port + 0), 0x01);
@@ -120,7 +119,7 @@ namespace Sharpen.Drivers.Char
         /// </summary>
         /// <param name="d">The data</param>
         /// <param name="port">The port</param>
-        private static void write(byte d, ushort port)
+        public static void write(byte d, ushort port)
         {
             while (isTransmitEmpty(port))
                 CPU.HLT();

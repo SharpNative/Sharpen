@@ -10,7 +10,7 @@ namespace Sharpen.Net
 {
     enum ProtocolTypes
     {
-        IPV4 = 0x0800
+        IPV4 = 0x08
     }
 
     class DHCP
@@ -32,15 +32,12 @@ namespace Sharpen.Net
             public byte ServicesField;
             public UInt16 totalLength;
             public UInt16 ID;
-            public byte Flags;
             public UInt16 FragmentOffset;
             public byte TTL;
             public byte Protocol;
             public UInt16 HeaderChecksum;
             public fixed byte Source[4];
             public fixed byte Destination[4];
-            public fixed byte SourceGeoIP[4];
-            public fixed byte DestinationGeoIP[4];
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -72,6 +69,7 @@ namespace Sharpen.Net
             public fixed byte Server[63];
             public fixed byte File[127];
             public fixed byte DHCPMessageType[3];
+            public fixed byte DHCPMessageTypes[35];
 
         }
         
@@ -107,9 +105,8 @@ namespace Sharpen.Net
 
             header.Version = 0x45;
             header.ServicesField = 0;
-            header.totalLength = 0x12C;
-            header.ID = 0xA836;
-            header.Flags = 0;
+            header.totalLength = 0x2C01;
+            header.ID = 0x36A8;
             header.FragmentOffset = 0;
             header.TTL = 250;
             header.Protocol = 0x11;
@@ -136,12 +133,20 @@ namespace Sharpen.Net
             DHCPDiscoverHeader* headerrr = (DHCPDiscoverHeader*)Heap.Alloc(sizeof(DHCPDiscoverHeader));
             headerrr->packet = header;
             headerrr->IPV4 = headerr;
-            headerrr->Protocol.SourcePort = 68;
-            headerrr->Protocol.DestinationPort = 67;
-            headerrr->Protocol.Length = 280;
+            headerrr->Protocol.SourcePort = 0x4400;
+            headerrr->Protocol.DestinationPort = 0x4300;
+            headerrr->Protocol.Length = 0x1801;
             headerrr->Protocol.Checksum = 0x591F;
 
+            for (int i = 0; i < 4; i++)
+                headerrr->IPV4.Destination[i] = 0xFF;
+
             headerrr->Bootstrap.MessageType = 0x01;
+            headerrr->Bootstrap.HardwareType = 0x01;
+            headerrr->Bootstrap.HardwareAddressLength = 0x06;
+
+            for (int i = 0; i < 6; i++)
+                headerrr->Bootstrap.ClientMac[i] = m_mac[i];
 
             Network.Transmit((byte *)headerrr, (uint)sizeof(DHCPDiscoverHeader));
         }

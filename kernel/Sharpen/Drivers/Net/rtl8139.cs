@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Drivers.Char;
 using Sharpen.Net;
 using Sharpen.Utilities;
 using System;
@@ -15,6 +16,7 @@ namespace Sharpen.Drivers.Net
 
         private const ushort REG_MAC = 0x00;
         private const ushort REG_BUF = 0x30;
+        private const ushort REG_CBR = 0x3A;
         private const ushort REG_CMD = 0x37;
         private const ushort REG_IM = 0x3C;
         private const ushort REG_IS = 0x3E;
@@ -222,14 +224,23 @@ namespace Sharpen.Drivers.Net
 
             if((status & 0x01) > 0)
             {
-                Console.WriteLine("JA RX");
+                // RX
+
+                Console.WriteLine("RECEIVE!");
+
+                ushort size = PortIO.In16((ushort)(m_io_base + REG_CBR));
+
+                Console.Clear();
+                for(int i = 0; i < size; i++)
+                    SerialPort.write(m_buffer[i], 0x3F8);
+
+
+                for (;;) ;
             }
             else if((status & 0x04) > 0)
             {
-                Console.WriteLine("JA TX");
+                // TX
             }
-
-            PrintRes();
             
             PortIO.Out16((ushort)(m_io_base + REG_IS), status);
             setInterruptMask(0x0005);
