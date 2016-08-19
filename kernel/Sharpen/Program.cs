@@ -109,7 +109,7 @@ namespace Sharpen
             Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
 
             //NetworkTools.WakeOnLan(bac);
-            DHCP.Sample();
+            DHCP.Discover();
 
 
             string[] argv = new string[2];

@@ -18,6 +18,7 @@ namespace Sharpen.Drivers.Net
         private const ushort REG_BUF = 0x30;
         private const ushort REG_CBR = 0x3A;
         private const ushort REG_CMD = 0x37;
+        private const ushort REG_CAPR = 0x38;
         private const ushort REG_IM = 0x3C;
         private const ushort REG_IS = 0x3E;
         private const ushort REG_TC = 0x40;
@@ -55,6 +56,8 @@ namespace Sharpen.Drivers.Net
         private static byte[] m_transmit2;
         private static byte[] m_transmit3;
 
+        private static int rx_pos = 0;
+
         /// <summary>
         /// Initialization handler
         /// </summary>
@@ -63,7 +66,7 @@ namespace Sharpen.Drivers.Net
         {
             m_io_base = dev.Port1;
             
-            m_buffer = new byte[8192 + 16];
+            m_buffer = new byte[8 * 1024];
             m_transmit0 = new byte[8192 + 16];
             m_transmit1 = new byte[8192 + 16];
             m_transmit2 = new byte[8192 + 16];
@@ -93,8 +96,6 @@ namespace Sharpen.Drivers.Net
             
             // Reset
             PortIO.Out8((ushort)(m_io_base + REG_CMD), (byte)CMD_RST);
-
-            // Wait till done resettings :D
             while ((PortIO.In8((ushort)(m_io_base + REG_CMD)) & CMD_RST) != 0) { }
 
             // Set receive buffer
@@ -154,6 +155,11 @@ namespace Sharpen.Drivers.Net
                 Console.WriteHex(m_mac[i]);
                 Console.Write(":");
             }
+            Console.WriteLine("");
+
+
+            ushort size = PortIO.In16((ushort)(m_io_base + REG_CBR));
+            Console.WriteNum(size);
             Console.WriteLine("");
         }
 
@@ -225,6 +231,8 @@ namespace Sharpen.Drivers.Net
 
         }
 
+        private static int offset = 0;
+
         private static unsafe void handler(Regs* regsPtr)
         {
             // SET IMR + ISR
@@ -232,34 +240,81 @@ namespace Sharpen.Drivers.Net
 
             ushort status = PortIO.In16((ushort)(m_io_base + REG_IS));
 
-            if((status & 0x01) > 0)
+            if ((status & 0x01) > 0)
             {
-                // RX
-
-                Console.WriteLine("RECEIVE!");
-
-                ushort size = PortIO.In16((ushort)(m_io_base + REG_CBR));
-
-                EthernetHeader* hdr = Ethernet.ReadHeader((byte *)Util.ObjectToVoidPtr(m_buffer));
-
-                for(int i = 0; i < 6; i++)
-                {
-                    Console.WriteHex(m_mac[i]);
-                    Console.Write(":");
-                }
-                Console.WriteLine("");
-
-                Console.WriteHex(ByteUtil.ReverseBytes(hdr->Protocol));
-
-                for (;;) ;
+                ReadPackets();
             }
-            else if((status & 0x04) > 0)
+            else if ((status & 0x04) > 0)
             {
                 // TX
             }
             
             PortIO.Out16((ushort)(m_io_base + REG_IS), status);
             setInterruptMask(0x0005);
+        }
+
+        private static unsafe void ReadPackets()
+        {
+            while ((PortIO.In8((ushort)(m_io_base + REG_CMD)) & 0x01) == 0)
+            {
+                UInt16* ptrFirst = (UInt16*)((byte*)Util.ObjectToVoidPtr(m_buffer) + rx_pos);
+
+                UInt16* ptr = (UInt16*)((byte*)Util.ObjectToVoidPtr(m_buffer) + rx_pos + 2);
+                ushort rx_len = *ptr;
+
+                byte* data = (byte*)Util.ObjectToVoidPtr(m_buffer) + rx_pos + 4;
+                EthernetHeader* header = (EthernetHeader*)data;
+
+                if ((*ptrFirst & 0x01) > 0)
+                {
+                    int type = 0;
+
+                    // Only handle our packages
+                    bool fnd = true;
+                    for (int i = 0; i < 6; i++)
+                        if (header->Destination[i] != 0xFF)
+                            fnd = false;
+
+                    if (fnd)
+                        type = 1;
+
+
+                    if (!fnd)
+                    {
+                        fnd = true;
+                        for (int i = 0; i < 6; i++)
+                            if (header->Destination[i] != m_mac[i])
+                                fnd = false;
+
+                        if (fnd)
+                        {
+                            type = 2;
+                        }
+                    }
+
+                    if (type == 2)
+                    {
+
+                        if ((ushort)ByteUtil.ReverseBytes(header->Protocol) != 0x26)
+                        {
+
+                            Console.WriteLine("");
+                            Console.WriteHex((ushort)ByteUtil.ReverseBytes(header->Protocol));
+
+                            for (;;) ;
+                        }
+                    }
+                }
+
+                rx_pos = (rx_pos + rx_len + 4 + 3) & ~3;
+                if(rx_pos > 8 * 1024)
+                {
+                    rx_pos -= 8 * 1024;
+                }
+
+                PortIO.Out16((ushort)(m_io_base + REG_CAPR), (ushort)(rx_pos - 0x10));
+                rx_pos %= 0x2000;
+            }
         }
 
         /// <summary>

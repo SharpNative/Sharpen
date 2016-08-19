@@ -78,7 +78,7 @@ namespace Sharpen.Net
                 dest[i] = 0xFF;
 
             int size = sizeof(DHCPBootstrapHeader) + sizeof(MessageTypeHeader) + sizeof(ClientID) + sizeof(RequestedIpAddress) + 14;
-            UDPHeader *headerr = UDP.createHeader(broadCast, dest, 67, 67, (ushort)(size));
+            UDPHeader *headerr = UDP.createHeader(broadCast, dest, 68, 67, (ushort)(size));
             void *ptr = Heap.Alloc(size + sizeof(UDPHeader));
             Memory.Memset(ptr, 0, size);
             Memory.Memcpy(ptr, headerr, sizeof(UDPHeader));

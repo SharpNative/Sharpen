@@ -37,7 +37,7 @@ namespace Sharpen.Net
             header->SourcePort = ByteUtil.ReverseBytes(sourcePort);
             header->DestinationPort = ByteUtil.ReverseBytes(DestinationPort);
             header->Length = ByteUtil.ReverseBytes(length);
-            header->Checksum = 0x0000; // Isn't required :)
+            header->Checksum = 0x1F59; // Isn't required :)
 
             return header;
         }

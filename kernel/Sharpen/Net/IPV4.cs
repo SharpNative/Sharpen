@@ -64,7 +64,7 @@ namespace Sharpen.Net
             header->FragmentOffset = 0;
             header->TTL = 250;
             header->Protocol = protocol;
-            header->HeaderChecksum = 0x178B;
+            header->HeaderChecksum = 0xB817;
             for (int i = 0; i < 4; i++)
                 header->Source[i] = sourceIP[i];
             for (int i = 0; i < 4; i++)
