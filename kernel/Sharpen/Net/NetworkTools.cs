@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sharpen.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,17 +24,31 @@ namespace Sharpen.Net
                     Console.Write(":");
             }
             Console.WriteLine("");
-            byte* buffer = (byte*)Heap.Alloc(108);
 
+            byte[] ownmac = new byte[6];
+            Network.GetMac((byte*)Util.ObjectToVoidPtr(ownmac));
+
+            byte[] broadcast = new byte[6]; 
             for (int i = 0; i < 6; i++)
-                buffer[i] = 0xFF;
+                broadcast[i] = 0xFF;
 
+            EthernetHeader* header = Ethernet.CreateHeaderPtr(broadcast, ownmac, EthernetTypes.WoL);
+
+            byte* buffer = (byte*)Heap.Alloc(116);
+            Memory.Memcpy(buffer, header, sizeof(EthernetHeader));
+            Heap.Free(header);
+
+            int offset = sizeof(EthernetHeader);
+            for (int i = 0; i < 6; i++)
+                buffer[offset + i] = 0xFF;
+
+            offset += 6;
 
             for (int i = 0; i < 16; i++)
                 for (int j = 0; j < 6; j++)
-                    buffer[6 + (i * 6) + j] = mac[j];
+                    buffer[offset + (i * 6) + j] = mac[j];
 
-            Network.Transmit(buffer, 108);
+            Network.Transmit(buffer, 116);
 
             Heap.Free(buffer);
         }

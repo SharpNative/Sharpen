@@ -147,6 +147,14 @@ namespace Sharpen.Drivers.Net
             netDev.GetMac = GetMac;
 
             Network.Set(netDev);
+
+
+            for (int i = 0; i < 6; i++)
+            {
+                Console.WriteHex(m_mac[i]);
+                Console.Write(":");
+            }
+            Console.WriteLine("");
         }
 
         private static unsafe void GetMac(byte* mac)
@@ -213,6 +221,8 @@ namespace Sharpen.Drivers.Net
             Console.Write("IRQ number: ");
             Console.WriteNum(m_irqNum);
             Console.WriteLine("");
+
+
         }
 
         private static unsafe void handler(Regs* regsPtr)
@@ -230,10 +240,16 @@ namespace Sharpen.Drivers.Net
 
                 ushort size = PortIO.In16((ushort)(m_io_base + REG_CBR));
 
-                Console.Clear();
-                for(int i = 0; i < size; i++)
-                    SerialPort.write(m_buffer[i], 0x3F8);
+                EthernetHeader* hdr = Ethernet.ReadHeader((byte *)Util.ObjectToVoidPtr(m_buffer));
 
+                for(int i = 0; i < 6; i++)
+                {
+                    Console.WriteHex(m_mac[i]);
+                    Console.Write(":");
+                }
+                Console.WriteLine("");
+
+                Console.WriteHex(ByteUtil.ReverseBytes(hdr->Protocol));
 
                 for (;;) ;
             }

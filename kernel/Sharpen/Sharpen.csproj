@@ -65,8 +65,11 @@
     <Compile Include="FileSystem\Fat16BPB.cs" />
     <Compile Include="FileSystem\STDOUT.cs" />
     <Compile Include="Net\DHCP.cs" />
+    <Compile Include="Net\Ethernet.cs" />
+    <Compile Include="Net\IPV4.cs" />
     <Compile Include="Net\Network.cs" />
     <Compile Include="Net\NetworkTools.cs" />
+    <Compile Include="Net\UDP.cs" />
     <Compile Include="Task\Task.cs" />
     <Compile Include="Task\Tasking.cs" />
     <Compile Include="Arch\PCI.cs" />

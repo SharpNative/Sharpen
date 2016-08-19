@@ -102,11 +102,15 @@ namespace Sharpen
             ATA.Init();
             Tasking.Init();
 
-            NetworkTools.WakeOnLan(new byte[6]);
-            //DHCP.Sample();
-
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
+
+            byte[] bac = new byte[6];
+            Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
+
+            //NetworkTools.WakeOnLan(bac);
+            DHCP.Sample();
+
 
             string[] argv = new string[2];
             argv[0] = "hai";

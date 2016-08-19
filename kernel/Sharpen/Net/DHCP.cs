@@ -8,46 +8,10 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
-    enum ProtocolTypes
-    {
-        IPV4 = 0x08
-    }
-
     class DHCP
     {
         private static byte[] m_mac;
-
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public unsafe struct PacketHeader
-        {
-            public fixed byte Destination[6];
-            public fixed byte Source[6];
-            public UInt16 Protocol;
-        }
-
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public unsafe struct IPV4Header
-        {
-            public byte Version;
-            public byte ServicesField;
-            public UInt16 totalLength;
-            public UInt16 ID;
-            public UInt16 FragmentOffset;
-            public byte TTL;
-            public byte Protocol;
-            public UInt16 HeaderChecksum;
-            public fixed byte Source[4];
-            public fixed byte Destination[4];
-        }
-
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public unsafe struct UserDiagramProtocol
-        {
-            public UInt16 SourcePort;
-            public UInt16 DestinationPort;
-            public UInt16 Length;
-            public UInt16 Checksum;
-        }
+        
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public unsafe struct DHCPBootstrapHeader
@@ -66,58 +30,40 @@ namespace Sharpen.Net
             public fixed byte RelayServerIP[4];
             public fixed byte ClientMac[6];
             public fixed byte AddressPadding[10];
-            public fixed byte Server[63];
-            public fixed byte File[127];
-            public fixed byte DHCPMessageType[3];
-            public fixed byte DHCPMessageTypes[35];
-
+            public fixed byte Server[64];
+            public fixed byte File[128];
+            public fixed byte MagicCookie[4];
         }
-        
-
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public unsafe struct DHCPDiscoverHeader
+        public unsafe struct MessageTypeHeader
         {
-            public PacketHeader packet;
-            public IPV4Header IPV4;
-            public UserDiagramProtocol Protocol;
-            public DHCPBootstrapHeader Bootstrap;
+            public byte Type;
+            public byte Length;
+            public byte DHCP;
         }
 
-        private static unsafe PacketHeader CreateHeader(ProtocolTypes type, byte[] destination)
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public unsafe struct ClientID
         {
-            PacketHeader header = new PacketHeader();
-
-            for (int i = 0; i < 6; i++)
-                header.Destination[i] = destination[i];
-
-            for (int i = 0; i < 6; i++)
-                header.Source[i] = m_mac[i];
-
-            header.Protocol = (UInt16)type;
-
-            return header;
-        }
-            
-        private static unsafe IPV4Header CreateIpv4Header()
-        {
-            IPV4Header header = new IPV4Header();
-
-            header.Version = 0x45;
-            header.ServicesField = 0;
-            header.totalLength = 0x2C01;
-            header.ID = 0x36A8;
-            header.FragmentOffset = 0;
-            header.TTL = 250;
-            header.Protocol = 0x11;
-            header.HeaderChecksum = 0x178B;
-
-
-            return header;
+            public byte Type;
+            public byte Length;
+            public byte HardwareType;
+            public fixed byte ClientMac[6];
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public unsafe struct RequestedIpAddress
+        {
+            public byte Type;
+            public byte Length;
+            public fixed byte ClientMac[4];
+        }
 
-        public static unsafe void Sample()
+        /// <summary>
+        /// DHCP discover (test version)
+        /// </summary>
+        public static unsafe void Discover()
         {
             m_mac = new byte[6];
 
@@ -127,28 +73,71 @@ namespace Sharpen.Net
             for (int i = 0; i < 6; i++)
                 broadCast[i] = 0xFF;
 
-            PacketHeader header = CreateHeader(ProtocolTypes.IPV4, broadCast);
-            IPV4Header headerr = CreateIpv4Header();
-
-            DHCPDiscoverHeader* headerrr = (DHCPDiscoverHeader*)Heap.Alloc(sizeof(DHCPDiscoverHeader));
-            headerrr->packet = header;
-            headerrr->IPV4 = headerr;
-            headerrr->Protocol.SourcePort = 0x4400;
-            headerrr->Protocol.DestinationPort = 0x4300;
-            headerrr->Protocol.Length = 0x1801;
-            headerrr->Protocol.Checksum = 0x591F;
-
+            byte[] dest = new byte[4];
             for (int i = 0; i < 4; i++)
-                headerrr->IPV4.Destination[i] = 0xFF;
+                dest[i] = 0xFF;
 
-            headerrr->Bootstrap.MessageType = 0x01;
-            headerrr->Bootstrap.HardwareType = 0x01;
-            headerrr->Bootstrap.HardwareAddressLength = 0x06;
+            int size = sizeof(DHCPBootstrapHeader) + sizeof(MessageTypeHeader) + sizeof(ClientID) + sizeof(RequestedIpAddress) + 14;
+            UDPHeader *headerr = UDP.createHeader(broadCast, dest, 67, 67, (ushort)(size));
+            void *ptr = Heap.Alloc(size + sizeof(UDPHeader));
+            Memory.Memset(ptr, 0, size);
+            Memory.Memcpy(ptr, headerr, sizeof(UDPHeader));
+
+            // DHCP Header
+
+            byte* offset = (byte*)ptr + sizeof(UDPHeader);
+            DHCPBootstrapHeader* headerDHCP = (DHCPBootstrapHeader*)offset;
+            headerDHCP->MessageType = 1;
+            headerDHCP->HardwareType = 1;
+            headerDHCP->HardwareAddressLength = 6;
+            headerDHCP->Hops = 0;
+            headerDHCP->TransationID = ByteUtil.ReverseBytes((uint)0x3D1D);
+            headerDHCP->SecondsElapsed = 0;
+            headerDHCP->BootpFlags = 0x00;
 
             for (int i = 0; i < 6; i++)
-                headerrr->Bootstrap.ClientMac[i] = m_mac[i];
+                headerDHCP->ClientMac[i] = m_mac[i];
+            for (int i = 0; i < 10; i++)
+                headerDHCP->AddressPadding[i] = 0;
 
-            Network.Transmit((byte *)headerrr, (uint)sizeof(DHCPDiscoverHeader));
+            headerDHCP->MagicCookie[0] = 0x63;
+            headerDHCP->MagicCookie[1] = 0x82;
+            headerDHCP->MagicCookie[2] = 0x53;
+            headerDHCP->MagicCookie[3] = 0x63;
+
+            // MessageType
+            offset = offset + sizeof(DHCPBootstrapHeader);
+            MessageTypeHeader* type = (MessageTypeHeader*)offset;
+            type->Type = 0x35;
+            type->DHCP = 1;
+            type->Length = 1;
+
+            // ClientID
+            offset = offset + sizeof(MessageTypeHeader);
+            ClientID* clientID = (ClientID*)offset;
+            clientID->Type = 0x3D;
+            clientID->HardwareType = 1;
+            clientID->Length = 7;
+            for (int i = 0; i < 6; i++)
+                clientID->ClientMac[i] = m_mac[i];
+
+            // Request IP
+            offset = offset + sizeof(ClientID);
+            RequestedIpAddress* reqIpAdr = (RequestedIpAddress*)offset;
+            reqIpAdr->Type = 0x32;
+            reqIpAdr->Length = 4;
+            offset = offset + sizeof(RequestedIpAddress);
+
+            // Request parameter list 
+            offset[0] = 0x37;
+            offset[1] = 4;
+            offset[2] = 1;
+            offset[3] = 3;
+            offset[4] = 6;
+            offset[5] = 42;
+            offset[6] = 0xFF;
+            
+            Network.Transmit((byte *)ptr, (uint)(size + sizeof(UDPHeader)));
         }
     }
 }

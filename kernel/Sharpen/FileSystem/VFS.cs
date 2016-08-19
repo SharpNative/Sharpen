@@ -108,11 +108,11 @@ namespace Sharpen.FileSystem
 
             if (path[String.Length(path) - 1] != '/')
                 path = String.Merge(path, "/");
-            
+
             string deviceName = String.SubString(path, 0, index);
             string AfterDeviceName = String.SubString(path, index + 3, String.Length(path) - (index + 3));
             int parts = String.Count(AfterDeviceName, '/');
-            
+
             // Find first mount
             MountPoint mp = FindMountByName(deviceName);
             if (mp == null)
