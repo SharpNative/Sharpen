@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Mem;
 using Sharpen.Utilities;
 
 namespace Sharpen.Drivers.Power

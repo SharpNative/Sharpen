@@ -1,4 +1,5 @@
-﻿using Sharpen.Utilities;
+﻿using Sharpen.Mem;
+using Sharpen.Utilities;
 
 namespace Sharpen.Collections
 {

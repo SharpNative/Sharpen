@@ -1,4 +1,5 @@
 ﻿using Sharpen.Collections;
+using Sharpen.Mem;
 
 namespace Sharpen.Arch
 {
@@ -64,9 +65,9 @@ namespace Sharpen.Arch
         /// </summary>
         /// <param name="a"></param>
         /// <returns></returns>
-        public static int FrameAddress(int a)
+        public static int ToFrameAddress(int a)
         {
-            return (a << 0xC);
+            return ((a / 0x1000) << 0xC);
         }
 
         /// <summary>
@@ -76,7 +77,7 @@ namespace Sharpen.Arch
         /// <returns></returns>
         public static int GetFrameAddress(int a)
         {
-            return (a >> 0xC);
+            return (a >> 0xC) * 0x1000;
         }
 
         #endregion
@@ -88,16 +89,16 @@ namespace Sharpen.Arch
         public static unsafe void Init(uint memSize)
         {
             // Create kernel directory
-            KernelDirectory = (PageDirectory*)Heap.AlignedAlloc(0x1000, sizeof(PageDirectory));
+            KernelDirectory = (PageDirectory*)PhysicalMemoryManager.Alloc();
             CurrentDirectory = KernelDirectory;
             Memory.Memset(KernelDirectory, 0, sizeof(PageDirectory));
-            
+
             // Bit array to store which frames are free
             m_bitmap = new BitArray((int)(memSize / 32));
 
             // Map kernelspace
             int address = 0;
-            while (address < (int)Heap.CurrentEnd + (sizeof(PageDirectory)))
+            while (address < (int)Heap.CurrentEnd)
             {
                 int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
                 MapPage(KernelDirectory, address, address, flags);
@@ -121,25 +122,31 @@ namespace Sharpen.Arch
             // Get indices
             int pageIndex = virt / 0x1000;
             int tableIndex = pageIndex / 1024;
-
+            
             // Create page table if it doesn't exist
             if (directory->tables[tableIndex] == 0)
             {
                 // Allocate table
-                PageTable* newTable = (PageTable*)Heap.AlignedAlloc(0x1000, sizeof(PageTable));
+                PageTable* newTable = (PageTable*)PhysicalMemoryManager.Alloc();
                 if (newTable == null)
+                {
+                    Panic.DoPanic("newTable == null");
                     return;
-
-                Memory.Memset(newTable, 0, sizeof(PageTable));
+                }
 
                 // Set flags
                 int flaggedTable = (int)newTable | flags;
                 directory->tables[tableIndex] = flaggedTable;
+
+                // Clear table
+                Memory.Memset(newTable, 0, sizeof(PageTable));
+                
+                MapPage(directory, (int)newTable, (int)newTable, flags);
             }
 
             // Set page
             PageTable* table = (PageTable*)(directory->tables[tableIndex] & 0xFFFFF000);
-            table->pages[pageIndex & (1024 - 1)] = FrameAddress(phys / 0x1000) | flags;
+            table->pages[pageIndex & (1024 - 1)] = ToFrameAddress(phys) | flags;
         }
 
         /// <summary>
@@ -157,11 +164,14 @@ namespace Sharpen.Arch
             // Find corresponding table to the virtual address
             PageTable* table = (PageTable*)(CurrentDirectory->tables[frame / 1024] & 0xFFFFF000);
             if (table == null)
+            {
+                Panic.DoPanic("table == null");
                 return null;
+            }
 
             // Calculate page
             int page = table->pages[frame & (1024 - 1)];
-            return (void*)(GetFrameAddress(page) * 0x1000 + remaining);
+            return (void*)(GetFrameAddress(page) + remaining);
         }
 
         /// <summary>
@@ -199,9 +209,8 @@ namespace Sharpen.Arch
         /// <returns>The free frame</returns>
         public static unsafe int AllocateFrame()
         {
-            int free = m_bitmap.FindFirstFree();
+            int free = m_bitmap.FindFirstFree(true);
             int address = free * 0x1000;
-            SetFrame(address);
             return address;
         }
 
@@ -213,22 +222,33 @@ namespace Sharpen.Arch
         {
             ClearFrame(GetFrameAddress(page));
         }
-        
+
         /// <summary>
-        /// Allocates a block of physical memory
+        /// Aligns the size or address to make it page aligned
+        /// </summary>
+        /// <param name="x">The size or address</param>
+        /// <returns>The aligned size or address</returns>
+        public static uint Align(uint x)
+        {
+            if ((x & 0x00000FFF) > 0)
+            {
+                x &= 0xFFFFF000;
+                x += 0x1000;
+            }
+
+            return x;
+        }
+
+        /// <summary>
+        /// Allocates a block of virtual memory
         /// </summary>
         /// <param name="size">The size</param>
-        /// <returns>The pointer to the physical memory</returns>
-        public static unsafe void* AllocatePhysical(int size)
+        /// <returns>The pointer to the block</returns>
+        public static unsafe void* AllocateVirtual(int size)
         {
             // Page align size
-            uint sizeAligned = (uint)size;
-            if (sizeAligned % 0x1000 != 0)
-            {
-                sizeAligned &= 0xFFFFF000;
-                sizeAligned += 0x1000;
-            }
-            
+            uint sizeAligned = Align((uint)size);
+
             // Allocate
             int free = m_bitmap.FindFirstFree();
             int start = free * 0x1000;
@@ -237,10 +257,10 @@ namespace Sharpen.Arch
             while (address < end)
             {
                 int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
-                
+
                 MapPage(CurrentDirectory, address, address, flags);
                 SetFrame(address);
-                
+
                 address += 0x1000;
             }
 
@@ -254,7 +274,8 @@ namespace Sharpen.Arch
         /// <returns>The cloned page directory</returns>
         public static unsafe PageDirectory* CloneDirectory(PageDirectory* source)
         {
-            PageDirectory* destination = (PageDirectory*)Heap.AlignedAlloc(0x1000, sizeof(PageDirectory));
+            PageDirectory* destination = (PageDirectory*)AllocateVirtual(sizeof(PageDirectory));
+            MapPage(destination, (int)destination, (int)destination, (int)PageFlags.Present | (int)PageFlags.UserMode | (int)PageFlags.Writable);
             if (destination == null)
             {
                 Panic.DoPanic("Couldn't clone directory: destination==null");
@@ -262,7 +283,7 @@ namespace Sharpen.Arch
             }
 
             Memory.Memset(destination, 0, sizeof(PageDirectory));
-            
+
             // Go through every page table
             for (int table = 0; table < 1024; table++)
             {
@@ -270,12 +291,17 @@ namespace Sharpen.Arch
                 int sourceTable = source->tables[table];
                 if (sourceTable == 0)
                     continue;
-                
-                PageTable* sourceTablePtr = (PageTable*)(sourceTable & 0xFFFFF000);
 
+                PageTable* sourceTablePtr = (PageTable*)(sourceTable & 0xFFFFF000);
+                
                 // Grab flags and allocate new table
                 int flags = sourceTable & 0xFFF;
-                PageTable* newTable = (PageTable*)Heap.AlignedAlloc(0x1000, sizeof(PageTable));
+                PageTable* newTable = (PageTable*)AllocateVirtual(sizeof(PageTable));
+                MapPage(destination, (int)newTable, (int)newTable, (int)PageFlags.Present | (int)PageFlags.UserMode | (int)PageFlags.Writable);
+
+                if (newTable == null)
+                    Panic.DoPanic("newTable == null");
+
                 Memory.Memcpy(newTable, sourceTablePtr, sizeof(PageTable));
                 destination->tables[table] = (int)newTable | flags;
             }
@@ -290,7 +316,7 @@ namespace Sharpen.Arch
         public static unsafe void FreeDirectory(PageDirectory* directory)
         {
             // Loop through every table of the directory
-            for(int table = 0; table < 1024; table++)
+            for (int table = 0; table < 1024; table++)
             {
                 // Get table
                 int pageTable = directory->tables[table];
@@ -299,8 +325,10 @@ namespace Sharpen.Arch
 
                 // Grab pointer and free
                 PageTable* pageTablePtr = (PageTable*)(pageTable & 0xFFFFF000);
-                Heap.Free(pageTablePtr);
+                PhysicalMemoryManager.Free(pageTablePtr);
             }
+
+            PhysicalMemoryManager.Free(directory);
         }
 
         /// <summary>

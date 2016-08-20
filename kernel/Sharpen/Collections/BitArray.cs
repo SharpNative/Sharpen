@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Sharpen.Collections
+﻿namespace Sharpen.Collections
 {
     public class BitArray
     {
         private int[] m_bitmap;
         private int m_N;
+        private int m_leastClear = 0;
 
         /// <summary>
         /// Initializes a bit array with N integers
@@ -18,10 +13,6 @@ namespace Sharpen.Collections
         public unsafe BitArray(int N)
         {
             m_bitmap = new int[N];
-            fixed(int* ptr = m_bitmap)
-            {
-                Memory.Memset(ptr, 0, N * sizeof(int));
-            }
             m_N = N;
         }
 
@@ -45,6 +36,9 @@ namespace Sharpen.Collections
             int bitmap = k >> 5;
             int index = k & (32 - 1);
             m_bitmap[bitmap] &= ~(1 << index);
+
+            if (bitmap < m_leastClear)
+                m_leastClear = bitmap;
         }
 
         /// <summary>
@@ -59,12 +53,13 @@ namespace Sharpen.Collections
         }
 
         /// <summary>
-        /// Finds the first free bit
+        /// Finds the first free bit and potentially set it
         /// </summary>
+        /// <param name="set">If it should also be set</param>
         /// <returns></returns>
-        public int FindFirstFree()
+        public int FindFirstFree(bool set)
         {
-            for (int i = 0; i < m_N; i++)
+            for (int i = m_leastClear; i < m_N; i++)
             {
                 int bitmap = m_bitmap[i];
 
@@ -77,12 +72,24 @@ namespace Sharpen.Collections
                 {
                     if ((bitmap & (1 << j)) == 0)
                     {
+                        if (set)
+                            m_bitmap[i] |= 1 << j;
+
                         return i * 32 + j;
                     }
                 }
             }
 
             return -1;
+        }
+
+        /// <summary>
+        /// Finds the first free bit
+        /// </summary>
+        /// <returns></returns>
+        public int FindFirstFree()
+        {
+            return FindFirstFree(false);
         }
     }
 }

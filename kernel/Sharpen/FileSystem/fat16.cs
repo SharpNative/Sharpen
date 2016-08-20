@@ -1,4 +1,5 @@
-﻿using Sharpen.Utilities;
+﻿using Sharpen.Mem;
+using Sharpen.Utilities;
 
 namespace Sharpen.FileSystem
 {
@@ -222,9 +223,11 @@ namespace Sharpen.FileSystem
 
         private static DirEntry* readDirImpl(Node node, uint index)
         {
-            if (index > m_numDirEntries)
+            /*if (index > m_numDirEntries)
                 return null;
+                */
 
+            
             int j = 0;
 
             uint cluster = 0xFFFFFFFF;
@@ -248,6 +251,7 @@ namespace Sharpen.FileSystem
                 if (j >= index)
                 {
                     DirEntry* outDir = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
+                    outDir->Reclen = (ushort)sizeof(DirEntry);
 
                     int fnLength = String.IndexOf(Util.CharPtrToString(entry.Name), " ");
 
@@ -274,11 +278,11 @@ namespace Sharpen.FileSystem
                                 outDir->Name[offset++] = entry.Name[z + 8];
                         }
 
-                        outDir->Flags = 0x01;
+                        outDir->Type = (byte)DT_Type.DT_REG;
                     }
                     else
                     {
-                        outDir->Flags = 0x02;
+                        outDir->Type = (byte)DT_Type.DT_DIR;
                     }
 
 

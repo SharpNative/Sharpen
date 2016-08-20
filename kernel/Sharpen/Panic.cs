@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Task;
 
 namespace Sharpen
 {
@@ -22,7 +23,7 @@ namespace Sharpen
         {
             // Clear interrupts
             CPU.CLI();
-
+            
             // Empty screen
             Console.Attribute = 0x4F;
             Console.Clear();
@@ -43,6 +44,12 @@ namespace Sharpen
             Console.Write("\tExtra Data: ");
             Console.WriteHex(extraData);
 
+            if (Tasking.CurrentTask != null)
+            {
+                Console.Write("\tPID: ");
+                Console.WriteHex(Tasking.CurrentTask.PID);
+            }
+            
             // HALT
             CPU.HLT();
         }

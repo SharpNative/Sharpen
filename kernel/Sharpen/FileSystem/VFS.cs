@@ -1,4 +1,5 @@
 ﻿using Sharpen.Collections;
+using Sharpen.Mem;
 using Sharpen.Utilities;
 
 namespace Sharpen.FileSystem
@@ -12,13 +13,15 @@ namespace Sharpen.FileSystem
 
     public class VFS
     {
-        private static Dictionary m_dictionary = new Dictionary();
+        private static Dictionary m_dictionary;
 
         /// <summary>
         /// Initializes the VFS
         /// </summary>
         public static unsafe void Init()
         {
+            m_dictionary = new Dictionary();
+
             MountPoint mountPoint = new MountPoint();
             mountPoint.Name = "mounts";
             mountPoint.Node = new Node();

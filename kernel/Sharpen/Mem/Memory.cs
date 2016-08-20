@@ -1,4 +1,4 @@
-﻿namespace Sharpen
+﻿namespace Sharpen.Mem
 {
     public sealed class Memory
     {

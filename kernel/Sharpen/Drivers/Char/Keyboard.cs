@@ -35,7 +35,7 @@ namespace Sharpen.Drivers.Char
 
         private static char readchar;
         private static volatile int readingchar;
-        private static Fifo m_fifo = new Fifo(250);
+        private static Fifo m_fifo;
 
         /// <summary>
         /// Set keyboard leds
@@ -99,6 +99,8 @@ namespace Sharpen.Drivers.Char
         /// </summary>
         public static unsafe void Init()
         {
+            m_fifo = new Fifo(250);
+
             // Install the IRQ handler
             IRQ.SetHandler(1, handler);
 

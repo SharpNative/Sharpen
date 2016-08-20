@@ -1,4 +1,5 @@
 ﻿using Sharpen.FileSystem;
+using Sharpen.Mem;
 using Sharpen.Utilities;
 
 namespace Sharpen.Drivers.Other

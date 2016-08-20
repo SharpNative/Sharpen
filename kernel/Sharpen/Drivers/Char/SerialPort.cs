@@ -6,7 +6,7 @@ namespace Sharpen.Drivers.Char
 {
     public sealed class SerialPort
     {
-        private static SerialPortComport[] comports = new SerialPortComport[4];
+        private static SerialPortComport[] comports;
 
         /// <summary>
         /// Init device
@@ -183,6 +183,8 @@ namespace Sharpen.Drivers.Char
         /// </summary>
         public static unsafe void Init()
         {
+            comports = new SerialPortComport[4];
+
             comports[0] = new SerialPortComport();
             comports[0].Name = "COM1";
             comports[1] = new SerialPortComport();

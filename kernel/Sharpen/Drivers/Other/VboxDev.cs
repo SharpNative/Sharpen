@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Mem;
 
 namespace Sharpen.Drivers.Other
 {

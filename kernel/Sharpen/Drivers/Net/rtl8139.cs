@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Drivers.Char;
+using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.Utilities;
 using System;

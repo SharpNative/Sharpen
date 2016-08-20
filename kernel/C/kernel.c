@@ -7,10 +7,10 @@
 #define null ((void*) 0)
 
 /* Memory */
-#define malloc  Sharpen_Heap_Alloc_1int32_t_
-#define free    Sharpen_Heap_Free_1void__
-#define memcpy  Sharpen_Memory_Memcpy_3void__void__int32_t_
-#define memset  Sharpen_Memory_Memset_3void__int32_t_int32_t_
+#define malloc  Sharpen_Mem_Heap_Alloc_1int32_t_
+#define free    Sharpen_Mem_Heap_Free_1void__
+#define memcpy  Sharpen_Mem_Memory_Memcpy_3void__void__int32_t_
+#define memset  Sharpen_Mem_Memory_Memset_3void__int32_t_int32_t_
 
 void* calloc(int nitems, int size);
 
