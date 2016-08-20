@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.FileSystem;
+using Sharpen.Mem;
 using Sharpen.Task;
 using Sharpen.Utilities;
 
@@ -92,7 +93,7 @@ namespace Sharpen.Exec
         private struct SectionHeader
         {
             public uint Name;
-            public uint Type;
+            public SectionHeaderType Type;
             public uint Flags;
             public uint Address;
             public uint Offset;
@@ -184,7 +185,7 @@ namespace Sharpen.Exec
                 uint offset = section->Address - virtAddress;
 
                 // BSS
-                if (section->Type == (uint)SectionHeaderType.SHT_NOBITS)
+                if (section->Type == SectionHeaderType.SHT_NOBITS)
                 {
                     Memory.Memset((void*)((uint)allocated + offset), 0, (int)section->Size);
                 }
@@ -197,7 +198,7 @@ namespace Sharpen.Exec
             }
 
             // Map memory
-            for (uint j = 0; j < size + 0x1000; j += 0x1000)
+            for (uint j = 0; j < size; j += 0x1000)
             {
                 Paging.MapPage(Paging.CurrentDirectory, (int)((uint)allocated + j), (int)(virtAddress + j), (int)Paging.PageFlags.Present | (int)Paging.PageFlags.Writable | (int)Paging.PageFlags.UserMode);
             }

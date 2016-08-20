@@ -45,7 +45,7 @@ namespace Sharpen.Drivers.Sound
         }
 
         private static ushort[][] m_bufs;
-        private static BDL_Entry[] m_bdls = new BDL_Entry[32];
+        private static BDL_Entry[] m_bdls;
 
         /// <summary>
         /// Driver initalization
@@ -73,6 +73,7 @@ namespace Sharpen.Drivers.Sound
             PortIO.Out16((ushort)(m_nambar + PCM_OUT_VOLUME), volume);
 
             // Buffers
+            m_bdls = new BDL_Entry[32];
             m_bufs = new ushort[32][];
             for (int i = 0; i < 32; i++)
             {

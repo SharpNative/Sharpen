@@ -1,5 +1,5 @@
-global Sharpen_Memory_Memcpy_3void__void__int32_t_
-Sharpen_Memory_Memcpy_3void__void__int32_t_:
+global Sharpen_Mem_Memory_Memcpy_3void__void__int32_t_
+Sharpen_Mem_Memory_Memcpy_3void__void__int32_t_:
     push edi
     push esi
 
@@ -34,8 +34,8 @@ Sharpen_Memory_Memcpy_3void__void__int32_t_:
     pop edi
     ret
 
-global Sharpen_Memory_Memset_3void__int32_t_int32_t_
-Sharpen_Memory_Memset_3void__int32_t_int32_t_:
+global Sharpen_Mem_Memory_Memset_3void__int32_t_int32_t_
+Sharpen_Mem_Memory_Memset_3void__int32_t_int32_t_:
     push edi
 
     ; First set per 4 bytes using stosd

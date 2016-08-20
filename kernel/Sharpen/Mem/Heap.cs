@@ -1,7 +1,9 @@
-﻿using Sharpen.Arch;
+﻿#define HEAP_DEBUG
+
+using Sharpen.Arch;
 using Sharpen.Drivers.Char;
 
-namespace Sharpen
+namespace Sharpen.Mem
 {
     public unsafe sealed class Heap
     {
@@ -13,6 +15,9 @@ namespace Sharpen
             public Block* Prev;
             public Block* Next;
             public BlockDescriptor* Descriptor;
+#if HEAP_DEBUG
+            public uint Magic;
+#endif
         }
 
         // Descriptor for space
@@ -34,6 +39,9 @@ namespace Sharpen
 
         // Minimal amount of pages in a descriptor
         private const int MINIMALPAGES = 32;
+
+        // Heap magic (DEBUG)
+        private const uint HEAPMAGIC = 0xDEADBEEF;
 
         /// <summary>
         /// Initializes the heap at the given start address
@@ -67,20 +75,30 @@ namespace Sharpen
         /// <returns>The block descriptor</returns>
         private static unsafe BlockDescriptor* createBlockDescriptor(int size)
         {
+#if HEAP_DEBUG
+            Console.WriteLine("CREATING NEW BLOCK DESCRIPTOR");
+#endif
+
             // Allocate descriptor
             size = getRequiredPageCount(size) * 0x1000;
-            BlockDescriptor* descriptor = (BlockDescriptor*)Paging.AllocatePhysical(size);
-
-            if (descriptor == null)
-                return null;
+            BlockDescriptor* descriptor = (BlockDescriptor*)Paging.AllocateVirtual(size);
             
+            if (descriptor == null)
+            {
+                Panic.DoPanic("descriptor == null");
+                return null;
+            }
+
             // Setup block
             Block* first = (Block*)((int)descriptor + sizeof(BlockDescriptor));
             first->Next = null;
             first->Size = size - sizeof(BlockDescriptor);
             first->Used = false;
             first->Descriptor = descriptor;
-
+#if HEAP_DEBUG
+            first->Magic = HEAPMAGIC;
+#endif
+            
             // Setup descriptor
             descriptor->FreeSpace = size;
             descriptor->First = first;
@@ -97,7 +115,7 @@ namespace Sharpen
         private static unsafe BlockDescriptor* getSufficientDescriptor(int size)
         {
             BlockDescriptor* descriptor = firstDescriptor;
-            
+
             // Search for a big enough descriptor
             while (true)
             {
@@ -111,7 +129,7 @@ namespace Sharpen
             }
 
             // Create next descriptor because there is no descriptor that is big enough
-            BlockDescriptor* newDescriptor = createBlockDescriptor(size);
+            BlockDescriptor* newDescriptor = createBlockDescriptor(size * 2);
             descriptor->Next = newDescriptor;
             return newDescriptor;
         }
@@ -122,14 +140,9 @@ namespace Sharpen
         public static void SetupRealHeap()
         {
             // Page align the heap
-            uint address = (uint)CurrentEnd;
-            if (address % 0x1000 != 0)
-            {
-                address &= 0xFFFFF000;
-                address += 0x1000;
-            }
+            uint address = Paging.Align((uint)CurrentEnd);
             CurrentEnd = (void*)address;
-
+            
             // First block descriptor and real heap on
             firstDescriptor = createBlockDescriptor(MINIMALPAGES * 0x1000);
             m_realHeap = true;
@@ -151,24 +164,24 @@ namespace Sharpen
                 // Find a descriptor that is big enough to hold the block header and its data
                 // We need to look for something that can hold an aligned size if alignment is requested
                 size += sizeof(Block);
-                
+
                 // Safe size
-                int safeSize = size;
-                if (safeSize % alignment != 0)
+                if (size % alignment != 0)
                 {
-                    safeSize = size - (size % alignment);
-                    safeSize += alignment;
+                    size = size - (size % alignment);
+                    size += alignment;
                 }
 
-                // Make sure there is always enough room for new page directory
-                // (64KB)
-                if (safeSize < 0x10000)
-                    safeSize = 0x10000;
-
+                Block* currentBlock;
+                Block* previousBlock;
+                int safeSize = size * 2;
                 BlockDescriptor* descriptor = getSufficientDescriptor(safeSize);
-                Block* currentBlock = descriptor->First;
-                Block* previousBlock = null;
-                
+
+            retry:
+
+                currentBlock = descriptor->First;
+                previousBlock = null;
+
                 // Search in the descriptor
                 while (true)
                 {
@@ -207,7 +220,7 @@ namespace Sharpen
                         currentBlock->Next = newNext;
                         currentBlock->Size = newSize;
                         currentBlock->Descriptor = descriptor;
-                        
+
                         // Increase size of previous block if needed
                         if (previousBlock != null)
                         {
@@ -231,6 +244,9 @@ namespace Sharpen
                             first->Next = currentBlock;
                             first->Size = gapSize;
                             first->Descriptor = descriptor;
+#if HEAP_DEBUG
+                            first->Magic = HEAPMAGIC;
+#endif
                             currentBlock->Prev = first;
                         }
                     }
@@ -242,6 +258,9 @@ namespace Sharpen
                     currentBlock->Used = true;
                     currentBlock->Descriptor = descriptor;
                     currentBlock->Prev = previousBlock;
+#if HEAP_DEBUG
+                    currentBlock->Magic = HEAPMAGIC;
+#endif
                     descriptor->FreeSpace -= size;
 
                     // If we have something left over, create a new block
@@ -255,6 +274,10 @@ namespace Sharpen
                         afterBlock->Prev = currentBlock;
                         afterBlock->Descriptor = descriptor;
 
+#if HEAP_DEBUG
+                        afterBlock->Magic = HEAPMAGIC;
+#endif
+
                         if (currentBlock->Next != null)
                             currentBlock->Next->Prev = afterBlock;
 
@@ -265,13 +288,16 @@ namespace Sharpen
                     // Return block (skip header)
                     return (void*)((int)currentBlock + sizeof(Block));
 
-                    // Next block
-                    nextBlock:
+                // Next block
+                nextBlock:
                     {
                         previousBlock = currentBlock;
                         currentBlock = currentBlock->Next;
                         if (currentBlock == null)
-                            return null;
+                        {
+                            descriptor = createBlockDescriptor(safeSize);
+                            goto retry;
+                        }
                     }
                 }
             }
@@ -292,7 +318,7 @@ namespace Sharpen
         {
             return AlignedAlloc(4, size);
         }
-        
+
         /// <summary>
         /// Gets the block from the pointer
         /// </summary>
@@ -330,6 +356,14 @@ namespace Sharpen
             // Grab block (header is just before the data)
             Block* block = getBlockFromPtr(ptr);
 
+#if HEAP_DEBUG
+            if (block->Magic != HEAPMAGIC)
+            {
+                Panic.DoPanic("block->Magic != HEAPMAGIC");
+                return;
+            }
+#endif
+
             // Not used anymore
             block->Used = false;
             block->Descriptor->FreeSpace += block->Size;
@@ -341,7 +375,7 @@ namespace Sharpen
                 block->Size += next->Size;
                 block->Next = next->Next;
 
-                if(next->Next != null)
+                if (next->Next != null)
                     next->Next->Prev = block;
             }
 
@@ -352,7 +386,7 @@ namespace Sharpen
                 prev->Size += block->Size;
                 prev->Next = block->Next;
 
-                if(block->Next != null)
+                if (block->Next != null)
                     block->Next->Prev = prev;
             }
         }
@@ -373,6 +407,11 @@ namespace Sharpen
             Console.WriteHex((int)currentBlock->Next);
             Console.Write(" i am=");
             Console.WriteHex((int)currentBlock);
+            
+#if HEAP_DEBUG
+            Console.Write(" magic=");
+            Console.WriteHex(currentBlock->Magic);
+#endif
             Console.WriteLine("");
         }
 
@@ -388,7 +427,7 @@ namespace Sharpen
             while (true)
             {
                 dumpBlock(currentBlock);
-                Keyboard.Getch();
+                // Keyboard.Getch();
 
                 currentBlock = currentBlock->Next;
                 if (currentBlock == null)
@@ -404,13 +443,23 @@ namespace Sharpen
         /// <returns>A block of memory</returns>
         public static unsafe void* KAlloc(int size, bool align)
         {
-            uint address = (uint)CurrentEnd;
-            if (align && (address & 0xFFFFF000) > 0)
+#if HEAP_DEBUG
+            if (m_realHeap)
             {
-                address &= 0xFFFFF000;
-                address += 0x1000;
+                Panic.DoPanic("KAlloc has been called after real heap started!");
+                return null;
             }
+#endif
+            
+            uint address = (uint)CurrentEnd;
+            if (align)
+                address = Paging.Align(address);
+            
+            // Update physical memory manager
+            PhysicalMemoryManager.Set((int)address, (uint)size);
+
             CurrentEnd = (void*)(address + size);
+
             return (void*)address;
         }
     }

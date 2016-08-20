@@ -1,4 +1,6 @@
-﻿namespace Sharpen.Utilities
+﻿using Sharpen.Mem;
+
+namespace Sharpen.Utilities
 {
     public sealed class String
     {

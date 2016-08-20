@@ -1,10 +1,11 @@
 ﻿using Sharpen.Collections;
+using Sharpen.Mem;
 
 namespace Sharpen.FileSystem
 {
     public class DevFS
     {
-        private static Dictionary m_devices = new Dictionary();
+        private static Dictionary m_devices;
         private static Node m_currentNode;
 
         public static int Count
@@ -17,6 +18,8 @@ namespace Sharpen.FileSystem
         /// </summary>
         public unsafe static void Init()
         {
+            m_devices = new Dictionary();
+
             MountPoint mp = new MountPoint();
             mp.Name = "devices";
             m_currentNode = new Node();

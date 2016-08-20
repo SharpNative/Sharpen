@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.FileSystem;
+using Sharpen.Mem;
 using Sharpen.Utilities;
 
 namespace Sharpen.Drivers.Block
@@ -66,7 +67,7 @@ namespace Sharpen.Drivers.Block
 
         #endregion
 
-        public static IDE_Device[] Devices { get; private set; } = new IDE_Device[4];
+        public static IDE_Device[] Devices { get; private set; }
 
         /// <summary>
         /// Waits 400 ns on an ATA device
@@ -387,16 +388,24 @@ namespace Sharpen.Drivers.Block
         /// <summary>
         /// Initializes ATA
         /// </summary>
-        public static void Init()
+        public static unsafe void Init()
         {
+            Devices = new IDE_Device[4];
             probe();
 
-            if(Devices[0].Exists)
+            for(uint i = 0; i < 4; i++)
             {
-
+                if (!Devices[i].Exists)
+                    continue;
+                
                 Device dev = new Device();
-                dev.Name = "HDD0";
-                dev.node.Cookie = 0; // Disk 0!
+                char* name = (char*)Heap.Alloc(5);
+                name[0] = 'H';
+                name[1] = 'D';
+                name[2] = 'D';
+                name[3] = (char)('0' + i);
+                dev.Name = Util.CharPtrToString(name);
+                dev.node.Cookie = i; // Disk ID
                 dev.node = new Node();
                 dev.node.Read = readImpl;
                 dev.node.Write = writeImpl;

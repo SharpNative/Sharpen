@@ -7,6 +7,7 @@ using Sharpen.Drivers.Power;
 using Sharpen.Drivers.Sound;
 using Sharpen.Exec;
 using Sharpen.FileSystem;
+using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.Task;
 using Sharpen.Utilities;
@@ -29,8 +30,9 @@ namespace Sharpen
         {
             Console.Clear();
 
+            // If no multiboot header, assume 256 MB of RAM
             void* heapStart = (void*)end;
-            uint memSize = 32;
+            uint memSize = 256;
             #region Multiboot
 
             // Booted by a multiboot bootloader
@@ -77,45 +79,46 @@ namespace Sharpen
             #endregion
             
             Heap.Init(heapStart);
+            PhysicalMemoryManager.Init(memSize);
             GDT.Init();
             PIC.Remap();
             IDT.Init();
             Acpi.Init();
             FPU.Init();
-            
+
+            PhysicalMemoryManager.Set(0, (uint)Heap.CurrentEnd);
             Paging.Init(memSize);
             Heap.SetupRealHeap();
             
             PIT.Init();
             CMOS.UpdateTime();
-            Keyboard.Init();
-            
-            DevFS.Init();
             VFS.Init();
+            DevFS.Init();
+            Keyboard.Init();
             STDOUT.Init();
             SerialPort.Init();
 
             PCI.Init();
-            //AC97.Init();
+            // AC97.Init();
             VboxDev.Init();
-            rtl8139.Init();
+            //rtl8139.Init();
             ATA.Init();
             Tasking.Init();
 
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
 
-            byte[] bac = new byte[6];
-            Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
+            //byte[] bac = new byte[6];
+            //Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
 
             //NetworkTools.WakeOnLan(bac);
-            DHCP.Discover();
+            //DHCP.Discover();
 
 
             string[] argv = new string[2];
             argv[0] = "hai";
             argv[1] = null;
-            ErrorCode error = Loader.StartProcess("C://shell", argv);
+            ErrorCode error = Loader.StartProcess("C://test", argv);
             if (error != ErrorCode.SUCCESS)
             {
                 Console.Write("Failed to start initial process: 0x");

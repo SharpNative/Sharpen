@@ -1,5 +1,4 @@
 ﻿using Sharpen.FileSystem;
-using Sharpen.Utilities;
 
 namespace Sharpen.Arch
 {
@@ -284,7 +283,7 @@ namespace Sharpen.Arch
 
         private static Node findDirImpl(Node node, string name)
         {
-            return new FileSystem.Node();
+            return null;
         }
 
         /// <summary>

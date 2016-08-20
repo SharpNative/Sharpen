@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.FileSystem;
+using Sharpen.Mem;
 using Sharpen.Task;
 
 namespace Sharpen.Exec
@@ -52,7 +53,7 @@ namespace Sharpen.Exec
         /// <returns>The previous data space end</returns>
         public static unsafe int Sbrk(int increase)
         {
-            return (int)Paging.AllocatePhysical(increase);
+            return (int)Paging.AllocateVirtual(increase);
         }
 
         /// <summary>
@@ -209,7 +210,7 @@ namespace Sharpen.Exec
             DirEntry* gotEntry = VFS.ReadDir(node, index);
             if (gotEntry == null)
                 return -(int)ErrorCode.ENOENT;
-
+            
             Memory.Memcpy(entry, gotEntry, sizeof(DirEntry));
             Heap.Free(gotEntry);
             return 0;

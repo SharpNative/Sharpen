@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.FileSystem;
+using Sharpen.Mem;
 using Sharpen.Utilities;
 
 namespace Sharpen.Task
@@ -145,7 +146,7 @@ namespace Sharpen.Task
             int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
             newTask.StackStart = (int*)((int)stacks + 4096);
             newTask.Stack = (int*)((int)newTask.StackStart + 8192);
-
+            
             // Copy initial stack
             if (initialStackSize > 0)
             {
@@ -177,7 +178,7 @@ namespace Sharpen.Task
             FPU.StoreContext(newTask.FPUContext);
 
             // Paging
-            newTask.PageDir = /*Paging.CloneDirectory*/(Paging.CurrentDirectory);
+            newTask.PageDir = Paging.CloneDirectory(Paging.CurrentDirectory);
 
             // Schedule
             ScheduleTask(newTask);
@@ -244,7 +245,7 @@ namespace Sharpen.Task
             Memory.Memcpy(newTask.FPUContext, task.FPUContext, 512);
 
             // Paging
-            newTask.PageDir = /*Paging.CloneDirectory*/(task.PageDir);
+            newTask.PageDir = Paging.CloneDirectory(task.PageDir);
 
             // Schedule
             ScheduleTask(newTask);
@@ -259,7 +260,7 @@ namespace Sharpen.Task
             // TODO: more cleaning required
             Heap.Free(task.FPUContext);
             Heap.Free(task.KernelStackStart);
-            //Paging.FreeDirectory(task.PageDir);
+            Paging.FreeDirectory(task.PageDir);
         }
 
         /// <summary>

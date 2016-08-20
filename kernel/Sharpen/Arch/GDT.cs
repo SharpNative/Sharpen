@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using Sharpen.Mem;
+using System.Runtime.InteropServices;
 
 namespace Sharpen.Arch
 {

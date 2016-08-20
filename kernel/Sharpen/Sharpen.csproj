@@ -102,12 +102,13 @@
     <Compile Include="FileSystem\MountPoint.cs" />
     <Compile Include="FileSystem\Node.cs" />
     <Compile Include="FileSystem\VFS.cs" />
-    <Compile Include="Heap.cs" />
+    <Compile Include="Mem\Heap.cs" />
+    <Compile Include="Mem\PhysicalMemoryManager.cs" />
     <Compile Include="Collections\Fifo.cs" />
     <Compile Include="Collections\List.cs" />
     <Compile Include="Collections\BitArray.cs" />
     <Compile Include="Lib\Audio.cs" />
-    <Compile Include="Memory.cs" />
+    <Compile Include="Mem\Memory.cs" />
     <Compile Include="Multiboot.cs" />
     <Compile Include="Panic.cs" />
     <Compile Include="Arch\PortIO.cs" />
