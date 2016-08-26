@@ -224,3 +224,5 @@ bochsrc.bxrc
 
 user/newlib/include
 *.wcap
+*.db
+*.opendb

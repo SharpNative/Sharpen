@@ -56,6 +56,32 @@
         }
 
         /// <summary>
+        /// Merge 2 strings
+        /// </summary>
+        /// <param name="first">The first string</param>
+        /// <param name="second">The second string</param>
+        /// <returns>The merged string</returns>
+        public static unsafe string Merge(string first, string second)
+        {
+            int firstLength = Length(first);
+            int secondLength = Length(second);
+
+            int totalLength = firstLength + secondLength;
+            char* outVal = (char*)Heap.Alloc(totalLength + 1);
+
+
+            for (int i = 0; i < firstLength; i++)
+                outVal[i] = first[i];
+
+            for (int i =0; i < secondLength; i++ )
+                outVal[firstLength + i] = second[i];
+
+            outVal[totalLength] = '\0';
+
+            return Util.CharPtrToString(outVal);
+        }
+
+        /// <summary>
         /// Count number of occurences
         /// </summary>
         /// <param name="str"></param>
