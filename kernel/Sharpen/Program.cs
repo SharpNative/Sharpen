@@ -101,7 +101,7 @@ namespace Sharpen
             PCI.Init();
             // AC97.Init();
             VboxDev.Init();
-            //rtl8139.Init();
+            // rtl8139.Init();
             ATA.Init();
             Tasking.Init();
 

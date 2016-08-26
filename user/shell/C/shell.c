@@ -72,8 +72,8 @@ void Shell_Directory_ReaddirInternal_3void__struct_struct_Shell_Directory_DirEnt
 {
 	DIR* dir = (DIR*)instance;
 	dir->last = index;
-	struct dirent* orgEntry = readdir(dir);
-	memcpy(entry, orgEntry, sizeof(struct dirent));
+	(void)readdir(dir);
+	memcpy(entry, &dir->__current, sizeof(struct dirent));
 }
 
 void Shell_Directory_CloseInternal_1void__(void* instance)

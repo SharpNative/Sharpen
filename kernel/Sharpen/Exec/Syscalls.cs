@@ -23,7 +23,7 @@ namespace Sharpen.Exec
 
         // Highest syscall number
         public const int SYSCALL_MAX = 10;
-
+        
         #endregion
 
         /// <summary>
