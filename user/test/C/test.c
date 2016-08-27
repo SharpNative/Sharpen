@@ -12,27 +12,9 @@ int main(int argc, char* argv[])
     (void) open("devices://stdout",   O_WRONLY);
     (void) open("devices://stdout",   O_WRONLY);
 
-    printf("Hello world!\n");
-    printf("I got %d arguments, argv[0]=%p=%s\n", argc, argv[0], argv[0]);
+    puts("ik ben hier");
 
-    DIR* dir = opendir("devices://");
-    if(dir == NULL)
-    {
-        puts("Cannot read directory");
-        return 1;
-    }
-
-    struct dirent* entry;
-    while((entry = readdir(dir)) != NULL)
-    {
-        printf("%s\n", entry->d_name);
-    }
-
-    closedir(dir);
-
-    puts("---\ntesting execve");
-
-    char* args[] = { "yow", NULL };
+    char* args[] = { NULL };
     execve("C://shell", args, NULL);
 
     return 0;

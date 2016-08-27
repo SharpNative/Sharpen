@@ -16,7 +16,7 @@ namespace Sharpen.Arch
             int function = regsPtr->EAX;
             if (function < 0 || function > Syscalls.SYSCALL_MAX)
                 return;
-
+            
             Tasking.CurrentTask.SysRegs = regsPtr;
             
             int ret = 0;

@@ -77,19 +77,19 @@ namespace Sharpen
             }
 
             #endregion
-            
+
             Heap.Init(heapStart);
-            PhysicalMemoryManager.Init(memSize);
+            PhysicalMemoryManager.Init(heapStart, memSize);
+
             GDT.Init();
             PIC.Remap();
             IDT.Init();
             Acpi.Init();
             FPU.Init();
 
-            PhysicalMemoryManager.Set(0, (uint)Heap.CurrentEnd);
             Paging.Init(memSize);
             Heap.SetupRealHeap();
-            
+
             PIT.Init();
             CMOS.UpdateTime();
             VFS.Init();
@@ -112,13 +112,12 @@ namespace Sharpen
             //Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
 
             //NetworkTools.WakeOnLan(bac);
-            DHCP.Discover();
-
+            //DHCP.Discover();
 
             string[] argv = new string[2];
             argv[0] = "hai";
             argv[1] = null;
-            ErrorCode error = Loader.StartProcess("C://shell", argv);
+            ErrorCode error = Loader.StartProcess("C://test", argv);
             if (error != ErrorCode.SUCCESS)
             {
                 Console.Write("Failed to start initial process: 0x");

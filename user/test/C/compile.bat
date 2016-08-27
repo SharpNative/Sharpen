@@ -17,7 +17,7 @@ echo Copying...
 imdisk -a -m G: -o hd -t file -f ..\..\..\kernel\C\os.img -v 1
 copy test G:\test
 imdisk -D -m G:
-del test
+rem del test
 
 echo Starting QEMU...
 "C:\Program Files\qemu\qemu-system-i386.exe" ..\..\..\kernel\C\os.img -soundhw ac97 -net nic,model=rtl8139 -net dump,file=netdump.wcap -net user -m 256 -D qemu.log

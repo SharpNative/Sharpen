@@ -5,17 +5,21 @@ namespace Sharpen.Mem
 {
     class PhysicalMemoryManager
     {
+        public static bool isInitialized = false;
         private static BitArray m_bitmap;
 
         /// <summary>
         /// Initializes the physical memory manager
         /// </summary>
         /// <param name="memSize">Memory size</param>
-        public static unsafe void Init(uint memSize)
+        public static unsafe void Init(void* start, uint memSize)
         {
             // Bit array to store which addresses are free
             // The memory size is given in MB, everything is 4KB in this memory manager
             m_bitmap = new BitArray((int)(memSize / 32));
+            
+            Set(0, (uint)start+0x8000);
+            isInitialized = true;
         }
 
         /// <summary>

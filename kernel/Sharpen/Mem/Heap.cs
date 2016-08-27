@@ -30,15 +30,15 @@ namespace Sharpen.Mem
 
         // Current end address of the heap
         public static void* CurrentEnd { get; private set; }
-        
+
         // If we use the real heap or not
-        private static bool m_realHeap = false;
+        public static bool m_realHeap = false;
 
         // First block descriptor
         private static unsafe BlockDescriptor* firstDescriptor;
 
         // Minimal amount of pages in a descriptor
-        private const int MINIMALPAGES = 32;
+        private const int MINIMALPAGES = 64;
 
         // Heap magic (DEBUG)
         private const uint HEAPMAGIC = 0xDEADBEEF;
@@ -82,7 +82,7 @@ namespace Sharpen.Mem
             // Allocate descriptor
             size = getRequiredPageCount(size) * 0x1000;
             BlockDescriptor* descriptor = (BlockDescriptor*)Paging.AllocateVirtual(size);
-            
+
             if (descriptor == null)
             {
                 Panic.DoPanic("descriptor == null");
@@ -98,12 +98,12 @@ namespace Sharpen.Mem
 #if HEAP_DEBUG
             first->Magic = HEAPMAGIC;
 #endif
-            
+
             // Setup descriptor
             descriptor->FreeSpace = size;
             descriptor->First = first;
             descriptor->Next = null;
-            
+
             return descriptor;
         }
 
@@ -139,17 +139,9 @@ namespace Sharpen.Mem
         /// </summary>
         public static void SetupRealHeap()
         {
-            // Page align the heap
-            uint address = Paging.Align((uint)CurrentEnd);
-            CurrentEnd = (void*)address;
-            
-            // First block descriptor and real heap on
             firstDescriptor = createBlockDescriptor(MINIMALPAGES * 0x1000);
             m_realHeap = true;
-
-            Console.Write("[HEAP] Currently at ");
-            Console.WriteHex(address);
-            Console.PutChar('\n');
+            Console.WriteLine("[HEAP] Initialized ");
         }
 
         /// <summary>
@@ -174,7 +166,7 @@ namespace Sharpen.Mem
 
                 Block* currentBlock;
                 Block* previousBlock;
-                int safeSize = size * 2;
+                int safeSize = size;
                 BlockDescriptor* descriptor = getSufficientDescriptor(safeSize);
 
             retry:
@@ -188,7 +180,7 @@ namespace Sharpen.Mem
                     // Can fit in here
                     if (currentBlock->Used || currentBlock->Size < size)
                         goto nextBlock;
-                    
+
                     // Check if this block data would be aligned
                     int currentData = (int)currentBlock + sizeof(Block);
                     int remainder = currentData % alignment;
@@ -407,7 +399,7 @@ namespace Sharpen.Mem
             Console.WriteHex((int)currentBlock->Next);
             Console.Write(" i am=");
             Console.WriteHex((int)currentBlock);
-            
+
 #if HEAP_DEBUG
             Console.Write(" magic=");
             Console.WriteHex(currentBlock->Magic);
@@ -431,7 +423,12 @@ namespace Sharpen.Mem
 
                 currentBlock = currentBlock->Next;
                 if (currentBlock == null)
+                {
+                    descriptor = descriptor->Next;
+                    if (descriptor == null)
+                        return;
                     return;
+                }
             }
         }
 
@@ -450,17 +447,31 @@ namespace Sharpen.Mem
                 return null;
             }
 #endif
-            
-            uint address = (uint)CurrentEnd;
-            if (align)
-                address = Paging.Align(address);
-            
-            // Update physical memory manager
-            PhysicalMemoryManager.Set((int)address, (uint)size);
 
-            CurrentEnd = (void*)(address + size);
+            if (PhysicalMemoryManager.isInitialized)
+            {
+                uint count = Paging.Align((uint)size) / 0x1000 - 1;
 
-            return (void*)address;
+                void* a = PhysicalMemoryManager.Alloc();
+                for (int i = 0; i < count; i++)
+                    PhysicalMemoryManager.Alloc();
+
+                return a;
+            }
+            else
+            {
+
+                uint address = (uint)CurrentEnd;
+                if (align)
+                    address = Paging.Align(address);
+
+                // Update physical memory manager
+                PhysicalMemoryManager.Set((int)address, (uint)size);
+
+                CurrentEnd = (void*)(address + size);
+
+                return (void*)address;
+            }
         }
     }
 }

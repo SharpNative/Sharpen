@@ -131,7 +131,7 @@ namespace Sharpen.Task
         /// <param name="priority">The task priority</param>
         /// <param name="initialStack">Initial stack</param>
         /// <param name="initialStackSize">Initial stack size</param>
-        public static unsafe void AddTask(void* eip, TaskPriority priority, int[] initialStack, int initialStackSize)
+        public static unsafe Task AddTask(void* eip, TaskPriority priority, int[] initialStack, int initialStackSize/*, Paging.PageDirectory* dir*/)
         {
             // Fill in data
             Task newTask = new Task();
@@ -163,7 +163,7 @@ namespace Sharpen.Task
             newTask.Stack = writeSchedulerStack(newTask.Stack, 0x1B, 0x23, eip);
             newTask.KernelStackStart = stacks;
             newTask.KernelStack = (int*)((int)newTask.KernelStackStart + 4096);
-
+            
             // Program data space end
             newTask.DataEnd = null;
 
@@ -172,16 +172,16 @@ namespace Sharpen.Task
             newTask.FileDescriptors.Used = 0;
             newTask.FileDescriptors.Nodes = new Node[newTask.FileDescriptors.Capacity];
             newTask.FileDescriptors.Offsets = new uint[newTask.FileDescriptors.Capacity];
-
+            
             // FPU context
             newTask.FPUContext = Heap.AlignedAlloc(16, 512);
             FPU.StoreContext(newTask.FPUContext);
-
             // Paging
-            newTask.PageDir = Paging.CloneDirectory(Paging.CurrentDirectory);
+            /*newTask.PageDir = dir;
 
             // Schedule
-            ScheduleTask(newTask);
+            ScheduleTask(newTask);*/
+            return newTask;
         }
 
         /// <summary>

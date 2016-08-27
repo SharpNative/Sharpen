@@ -197,12 +197,6 @@ namespace Sharpen.Exec
                 }
             }
 
-            // Map memory
-            for (uint j = 0; j < size; j += 0x1000)
-            {
-                Paging.MapPage(Paging.CurrentDirectory, (int)((uint)allocated + j), (int)(virtAddress + j), (int)Paging.PageFlags.Present | (int)Paging.PageFlags.Writable | (int)Paging.PageFlags.UserMode);
-            }
-
             // Count arguments
             int argc = 0;
             if (argv != null)
@@ -210,13 +204,29 @@ namespace Sharpen.Exec
                 while (argv[argc] != null)
                     argc++;
             }
-            
-            // Add task
+
             int[] initialStack = new int[2];
             initialStack[0] = (int)Util.ObjectToVoidPtr(argv);
             initialStack[1] = argc;
-            Tasking.AddTask((void*)elf->Entry, TaskPriority.NORMAL, initialStack, 2);
+
+            Task.Task newTask = Tasking.AddTask((void*)elf->Entry, TaskPriority.NORMAL, initialStack, 2/*, newDirectory*/);
+
+            Paging.PageDirectory* newDirectory = Paging.CloneDirectory(Paging.CurrentDirectory);
+
+            // Map memory
+            for (uint j = 0; j < size; j += 0x1000)
+            {
+                Paging.MapPage(newDirectory, (int)Paging.GetPhysicalFromVirtual((void*)((uint)allocated + j)), (int)(virtAddress + j), (int)Paging.PageFlags.Present | (int)Paging.PageFlags.Writable | (int)Paging.PageFlags.UserMode);
+            }
             
+            
+            
+            // Add task
+            
+            
+            
+            newTask.PageDir = newDirectory;
+            Tasking.ScheduleTask(newTask);
             return ErrorCode.SUCCESS;
         }
     }

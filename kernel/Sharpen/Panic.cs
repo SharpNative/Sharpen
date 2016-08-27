@@ -26,17 +26,17 @@ namespace Sharpen
             
             // Empty screen
             Console.Attribute = 0x4F;
-            Console.Clear();
+            //Console.Clear();
 
             // Logo
-            Console.WriteLine("");
+            /*Console.WriteLine("");
             Console.WriteLine("  ____  _                                 ");
             Console.WriteLine(" / ___|| |__   __ _ _ __ _ __   ___ _ __  ");
             Console.WriteLine(" \\___ \\| '_ \\ / _` | '__| '_ \\ / _ \\ '_ \\ ");
             Console.WriteLine("  ___) | | | | (_| | |  | |_) |  __/ | | |");
             Console.WriteLine(" |____/|_| |_|\\__,_|_|  | .__/ \\___|_| |_|");
             Console.WriteLine("                        |_|               ");
-            Console.WriteLine("");
+            Console.WriteLine("");*/
 
             // Message
             Console.Write("\tMessage: ");

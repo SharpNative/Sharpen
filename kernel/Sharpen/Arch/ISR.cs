@@ -1,4 +1,7 @@
-﻿namespace Sharpen.Arch
+﻿using Sharpen.Mem;
+using Sharpen.Task;
+
+namespace Sharpen.Arch
 {
     public sealed class ISR
     {
@@ -33,7 +36,17 @@
         public static unsafe void Handler(Regs* regsPtr)
         {
             int isrNum = (*regsPtr).IntNum;
-            Panic.DoPanic(m_errorCodes[isrNum], Paging.ReadCR2());
+            Console.WriteLine(m_errorCodes[isrNum]);
+            Console.WriteHex(Paging.ReadCR2());
+            if(Tasking.CurrentTask!= null)
+            {
+                Console.Write(" PID: ");
+                Console.WriteHex(Tasking.CurrentTask.PID);
+            }
+            
+            CPU.CLI();
+            CPU.HLT();
+            //Panic.DoPanic(m_errorCodes[isrNum], Paging.ReadCR2());
         }
     }
 }

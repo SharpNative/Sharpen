@@ -96,9 +96,9 @@ namespace Sharpen.Arch
             // Bit array to store which frames are free
             m_bitmap = new BitArray((int)(memSize / 32));
 
-            // Map kernelspace
+            // Identity map first 4 MB
             int address = 0;
-            while (address < (int)Heap.CurrentEnd)
+            while (address < (1024 * 1024 * 4))
             {
                 int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
                 MapPage(KernelDirectory, address, address, flags);
@@ -122,7 +122,7 @@ namespace Sharpen.Arch
             // Get indices
             int pageIndex = virt / 0x1000;
             int tableIndex = pageIndex / 1024;
-            
+
             // Create page table if it doesn't exist
             if (directory->tables[tableIndex] == 0)
             {
@@ -140,8 +140,6 @@ namespace Sharpen.Arch
 
                 // Clear table
                 Memory.Memset(newTable, 0, sizeof(PageTable));
-                
-                MapPage(directory, (int)newTable, (int)newTable, flags);
             }
 
             // Set page
@@ -258,9 +256,10 @@ namespace Sharpen.Arch
             {
                 int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
 
-                MapPage(CurrentDirectory, address, address, flags);
-                SetFrame(address);
+                int phys = (int)PhysicalMemoryManager.Alloc();
+                MapPage(CurrentDirectory, phys, address, flags);
 
+                SetFrame(address);
                 address += 0x1000;
             }
 
@@ -274,15 +273,16 @@ namespace Sharpen.Arch
         /// <returns>The cloned page directory</returns>
         public static unsafe PageDirectory* CloneDirectory(PageDirectory* source)
         {
-            PageDirectory* destination = (PageDirectory*)AllocateVirtual(sizeof(PageDirectory));
+            PageDirectory* destination = (PageDirectory*)PhysicalMemoryManager.Alloc();
+            MapPage(CurrentDirectory, (int)destination, (int)destination, (int)PageFlags.Present | (int)PageFlags.UserMode | (int)PageFlags.Writable);
+            Memory.Memset(destination, 0, sizeof(PageDirectory));
             MapPage(destination, (int)destination, (int)destination, (int)PageFlags.Present | (int)PageFlags.UserMode | (int)PageFlags.Writable);
+
             if (destination == null)
             {
                 Panic.DoPanic("Couldn't clone directory: destination==null");
                 return null;
             }
-
-            Memory.Memset(destination, 0, sizeof(PageDirectory));
 
             // Go through every page table
             for (int table = 0; table < 1024; table++)
@@ -293,11 +293,13 @@ namespace Sharpen.Arch
                     continue;
 
                 PageTable* sourceTablePtr = (PageTable*)(sourceTable & 0xFFFFF000);
-                
+
                 // Grab flags and allocate new table
                 int flags = sourceTable & 0xFFF;
-                PageTable* newTable = (PageTable*)AllocateVirtual(sizeof(PageTable));
-                MapPage(destination, (int)newTable, (int)newTable, (int)PageFlags.Present | (int)PageFlags.UserMode | (int)PageFlags.Writable);
+                PageTable* newTable = (PageTable*)PhysicalMemoryManager.Alloc();
+
+                MapPage(destination, (int)GetPhysicalFromVirtual(newTable), (int)GetPhysicalFromVirtual(newTable), (int)PageFlags.Present | (int)PageFlags.UserMode | (int)PageFlags.Writable);
+                //MapPage(CurrentDirectory, (int)GetPhysicalFromVirtual(newTable), (int)GetPhysicalFromVirtual(newTable), (int)PageFlags.Present | (int)PageFlags.UserMode | (int)PageFlags.Writable);
 
                 if (newTable == null)
                     Panic.DoPanic("newTable == null");
@@ -305,7 +307,7 @@ namespace Sharpen.Arch
                 Memory.Memcpy(newTable, sourceTablePtr, sizeof(PageTable));
                 destination->tables[table] = (int)newTable | flags;
             }
-            
+
             return destination;
         }
 
