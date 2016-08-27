@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <string.h>
+#include <unistd.h>
 
 #define true (1)
 #define false (0)
@@ -18,6 +19,8 @@ inline char* Shell_Util_CharPtrToString_1char__(char* ptr)
 {
 	return ptr;
 }
+
+
 
 #include "output.c"
 
@@ -49,7 +52,20 @@ char Shell_Console_ReadChar_0(void)
 	return fgetc(stdin);
 }
 
+void Shell_Process_internalRun_2char__char___(char *path, char **args)
+{
+    pid_t pid = fork();
+    if(pid == 0) // child
+    {
+    	execve(path, args, NULL);
+    	for(;;);
+    }
+}
 
+inline void *Shell_Util_ObjectToVoidPtr_1void__(void *ptr)
+{
+	return ptr;
+}
 
 
 void* Shell_Heap_Alloc_1int32_t_(int32_t size)

@@ -3,6 +3,7 @@ struct class_Shell_Console;
 struct class_Shell_Directory;
 struct struct_Shell_Directory_DirEntry;
 struct class_Shell_Heap;
+struct class_Shell_Process;
 struct class_Shell_Program;
 struct class_Shell_String;
 struct class_Shell_Util;
@@ -14,7 +15,6 @@ struct struct_Shell_Directory_DirEntry
 	int32_t field_Offset;
 	uint8_t field_Type;
 	uint16_t field_Reclen;
-	uint8_t field_Flags;
 	char field_Name[256];
 };
 
@@ -48,6 +48,16 @@ struct class_Shell_Heap
 struct
 {
 } classStatics_Shell_Heap = {
+};
+struct class_Shell_Process
+{
+	int32_t usage_count;
+	void** lookup_table;
+};
+
+struct
+{
+} classStatics_Shell_Process = {
 };
 struct class_Shell_Program
 {
@@ -99,6 +109,8 @@ char Shell_Console_ReadChar_0(void);
 typedef char (*fp_Shell_Console_ReadChar_0)(void);
 char* Shell_Console_ReadLine_0(void);
 typedef char* (*fp_Shell_Console_ReadLine_0)(void);
+void Shell_Console_WriteHex_1int64_t_(int64_t num);
+typedef void (*fp_Shell_Console_WriteHex_1int64_t_)(int64_t num);
 struct class_Shell_Directory* classInit_Shell_Directory(void);
 inline struct struct_Shell_Directory_DirEntry structInit_Shell_Directory_DirEntry(void);
 void* Shell_Directory_OpenInternal_1char__(char* path);
@@ -118,6 +130,11 @@ void* Shell_Heap_Alloc_1int32_t_(int32_t size);
 typedef void* (*fp_Shell_Heap_Alloc_1int32_t_)(int32_t size);
 void Shell_Heap_Free_1void__(void* ptr);
 typedef void (*fp_Shell_Heap_Free_1void__)(void* ptr);
+struct class_Shell_Process* classInit_Shell_Process(void);
+void Shell_Process_internalRun_2char__char___(char* path, char** args);
+typedef void (*fp_Shell_Process_internalRun_2char__char___)(char* path, char** args);
+void Shell_Process_Run_3char__char___int32_t_(char* path, char** argv, int32_t argc);
+typedef void (*fp_Shell_Process_Run_3char__char___int32_t_)(char* path, char** argv, int32_t argc);
 struct class_Shell_Program* classInit_Shell_Program(void);
 inline void classCctor_Shell_Program(void);
 void Shell_Program_Main_1char___(char** args);
@@ -127,6 +144,8 @@ int32_t Shell_String_Length_1char__(char* text);
 typedef int32_t (*fp_Shell_String_Length_1char__)(char* text);
 int32_t Shell_String_IndexOf_2char__char__(char* text, char* occurence);
 typedef int32_t (*fp_Shell_String_IndexOf_2char__char__)(char* text, char* occurence);
+char* Shell_String_Merge_2char__char__(char* first, char* second);
+typedef char* (*fp_Shell_String_Merge_2char__char__)(char* first, char* second);
 int32_t Shell_String_Count_2char__char_(char* str, char occurence);
 typedef int32_t (*fp_Shell_String_Count_2char__char_)(char* str, char occurence);
 char* Shell_String_SubString_3char__int32_t_int32_t_(char* str, int32_t start, int32_t count);
@@ -142,10 +161,13 @@ char* Shell_Util_CharArrayToString_1char__(char* array);
 typedef char* (*fp_Shell_Util_CharArrayToString_1char__)(char* array);
 char* Shell_Util_CharPtrToString_1char__(char* ptr);
 typedef char* (*fp_Shell_Util_CharPtrToString_1char__)(char* ptr);
+void* Shell_Util_ObjectToVoidPtr_1void__(void* obj);
+typedef void* (*fp_Shell_Util_ObjectToVoidPtr_1void__)(void* obj);
 
 static void* methods_Shell_Console[];
 static void* methods_Shell_Directory[];
 static void* methods_Shell_Heap[];
+static void* methods_Shell_Process[];
 static void* methods_Shell_Program[];
 static void* methods_Shell_String[];
 static void* methods_Shell_Util[];
@@ -183,6 +205,31 @@ char* Shell_Console_ReadLine_0(void)
 	;
 	buffer[i] = '\0';
 	return Shell_Util_CharArrayToString_1char__(buffer);
+}
+void Shell_Console_WriteHex_1int64_t_(int64_t num)
+{
+	if(num == 0){
+		Shell_Console_Write_1char_('0');
+		return;
+	}
+	int32_t noZeroes = true;
+	for(int32_t j = 60;j >= 0;j -= 4)
+	{
+		{
+			int64_t tmp =  ( num >> j )  & 0x0F;
+			if(tmp == 0 && noZeroes)
+						continue;
+			noZeroes = false;
+			if(tmp >= 0x0A){
+				Shell_Console_Write_1char_((char) ( tmp - 0x0A + 'A' ) );
+			}
+			else
+			{
+				Shell_Console_Write_1char_((char) ( tmp + '0' ) );
+			}
+		}
+	}
+	;
 }
 struct class_Shell_Directory* classInit_Shell_Directory(void)
 {
@@ -225,6 +272,29 @@ struct class_Shell_Heap* classInit_Shell_Heap(void)
 	return object;
 }
 
+struct class_Shell_Process* classInit_Shell_Process(void)
+{
+	struct class_Shell_Process* object = calloc(1, sizeof(struct class_Shell_Process));
+	if(!object)
+		return NULL;
+	object->usage_count = 1;
+	object->lookup_table = methods_Shell_Process;
+	return object;
+}
+
+void Shell_Process_Run_3char__char___int32_t_(char* path, char** argv, int32_t argc)
+{
+	char** args = calloc((argc + 1), sizeof(char*));
+	if(argc > 0)
+		for(int32_t i = 0;i < argc;i = i + 1
+	)
+	{
+		args[i] = argv[i];
+	}
+	;
+	args[argc] = null;
+	Shell_Process_internalRun_2char__char___(path, args);
+}
 struct class_Shell_Program* classInit_Shell_Program(void)
 {
 	struct class_Shell_Program* object = calloc(1, sizeof(struct class_Shell_Program));
@@ -275,9 +345,8 @@ void Shell_Program_Main_1char___(char** args)
 			}
 			else
 			{
-				Shell_Console_Write_1char__("Unknown command '");
-				Shell_Console_Write_1char__(command);
-				Shell_Console_WriteLine_1char__("'");
+				char* path = Shell_String_Merge_2char__char__(classStatics_Shell_Program.m_folder, command);
+				Shell_Process_Run_3char__char___int32_t_(path);
 			}
 		}
 	}
@@ -334,6 +403,27 @@ int32_t Shell_String_IndexOf_2char__char__(char* text, char* occurence)
 	}
 	;
 	return  - 1;
+}
+char* Shell_String_Merge_2char__char__(char* first, char* second)
+{
+	int32_t firstLength = Shell_String_Length_1char__(first);
+	int32_t secondLength = Shell_String_Length_1char__(second);
+	int32_t totalLength = firstLength + secondLength;
+	char* outVal = (char*)Shell_Heap_Alloc_1int32_t_(totalLength + 1);
+	for(int32_t i = 0;i < firstLength;i = i + 1
+	)
+	{
+		outVal[i] = first[i];
+	}
+	;
+	for(int32_t i = 0;i < secondLength;i = i + 1
+	)
+	{
+		outVal[firstLength + i] = second[i];
+	}
+	;
+	outVal[totalLength] = '\0';
+	return Shell_Util_CharPtrToString_1char__(outVal);
 }
 int32_t Shell_String_Count_2char__char_(char* str, char occurence)
 {
@@ -408,12 +498,13 @@ struct class_Shell_Util* classInit_Shell_Util(void)
 }
 
 
-static void* methods_Shell_Console[] = {Shell_Console_Write_1char__,Shell_Console_Write_1char_,Shell_Console_WriteLine_1char__,Shell_Console_ReadChar_0,Shell_Console_ReadLine_0,};
+static void* methods_Shell_Console[] = {Shell_Console_Write_1char__,Shell_Console_Write_1char_,Shell_Console_WriteLine_1char__,Shell_Console_ReadChar_0,Shell_Console_ReadLine_0,Shell_Console_WriteHex_1int64_t_,};
 static void* methods_Shell_Directory[] = {Shell_Directory_OpenInternal_1char__,Shell_Directory_ReaddirInternal_3void__struct_struct_Shell_Directory_DirEntry__uint32_t_,Shell_Directory_CloseInternal_1void__,Shell_Directory_Open_1char__,Shell_Directory_Readdir_2class_uint32_t_,Shell_Directory_Close_1class_,};
 static void* methods_Shell_Heap[] = {Shell_Heap_Alloc_1int32_t_,Shell_Heap_Free_1void__,};
+static void* methods_Shell_Process[] = {Shell_Process_internalRun_2char__char___,Shell_Process_Run_3char__char___int32_t_,};
 static void* methods_Shell_Program[] = {Shell_Program_Main_1char___,};
-static void* methods_Shell_String[] = {Shell_String_Length_1char__,Shell_String_IndexOf_2char__char__,Shell_String_Count_2char__char_,Shell_String_SubString_3char__int32_t_int32_t_,Shell_String_Equals_2char__char__,Shell_String_ToUpper_1char_,Shell_String_ToLower_1char_,};
-static void* methods_Shell_Util[] = {Shell_Util_CharArrayToString_1char__,Shell_Util_CharPtrToString_1char__,};
+static void* methods_Shell_String[] = {Shell_String_Length_1char__,Shell_String_IndexOf_2char__char__,Shell_String_Merge_2char__char__,Shell_String_Count_2char__char_,Shell_String_SubString_3char__int32_t_int32_t_,Shell_String_Equals_2char__char__,Shell_String_ToUpper_1char_,Shell_String_ToLower_1char_,};
+static void* methods_Shell_Util[] = {Shell_Util_CharArrayToString_1char__,Shell_Util_CharPtrToString_1char__,Shell_Util_ObjectToVoidPtr_1void__,};
 
 void init(void)
 {

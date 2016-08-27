@@ -37,5 +37,38 @@ namespace Shell
 
             return Util.CharArrayToString(buffer);
         }
+
+
+        /// <summary>
+        /// Writes a hexadecimal integer to the screen
+        /// </summary>
+        /// <param name="num">The number</param>
+        public static void WriteHex(long num)
+        {
+            if (num == 0)
+            {
+                Write('0');
+                return;
+            }
+
+            // Don't print zeroes at beginning of number
+            bool noZeroes = true;
+            for (int j = 60; j >= 0; j -= 4)
+            {
+                long tmp = (num >> j) & 0x0F;
+                if (tmp == 0 && noZeroes)
+                    continue;
+
+                noZeroes = false;
+                if (tmp >= 0x0A)
+                {
+                    Write((char)(tmp - 0x0A + 'A'));
+                }
+                else
+                {
+                    Write((char)(tmp + '0'));
+                }
+            }
+        }
     }
 }

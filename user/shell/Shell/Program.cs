@@ -23,7 +23,8 @@ namespace Shell
                 string command = String.SubString(read, 0, offsetToSpace);
                 if (command == null)
                     continue;
-                
+
+
                 if(String.Equals(command, "cd"))
                 {
 
@@ -49,9 +50,9 @@ namespace Shell
                 }
                 else
                 {
-                    Console.Write("Unknown command '");
-                    Console.Write(command);
-                    Console.WriteLine("'");
+                    string path = String.Merge(m_folder, command);
+
+                    Process.Run(path);
                 }
             }
         }
