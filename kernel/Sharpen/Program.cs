@@ -99,25 +99,23 @@ namespace Sharpen
             SerialPort.Init();
 
             PCI.Init();
-            // AC97.Init();
+            //AC97.Init();
             VboxDev.Init();
-            // rtl8139.Init();
+            //rtl8139.Init();
+            //E1000.Init();
             ATA.Init();
             Tasking.Init();
 
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
+            
+            byte[] bac = new byte[6];
+            Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
 
-            //byte[] bac = new byte[6];
-            //Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
-
-            //NetworkTools.WakeOnLan(bac);
-            //DHCP.Discover();
-
-            string[] argv = new string[2];
-            argv[0] = "hai";
-            argv[1] = null;
-            ErrorCode error = Loader.StartProcess("C://test", argv);
+            NetworkTools.WakeOnLan(bac);
+            DHCP.Discover();
+            
+            ErrorCode error = Loader.StartProcess("C://shell", null);
             if (error != ErrorCode.SUCCESS)
             {
                 Console.Write("Failed to start initial process: 0x");

@@ -25,6 +25,8 @@ namespace Sharpen.Arch
             public PciDriver Driver;
             public ushort Port1;
             public ushort Port2;
+
+            public byte Type;
         }
         
         public unsafe delegate void PciDriverInit(PciDevice dev);
@@ -54,7 +56,7 @@ namespace Sharpen.Arch
         /// <param name="function">Function</param>
         /// <param name="offset">Offset</param>
         /// <returns>Word value</returns>
-        private static ushort readWord(ushort bus, ushort slot, ushort function, ushort offset)
+        public static ushort ReadWord(ushort bus, ushort slot, ushort function, ushort offset)
         {
             return (ushort)PCIRead(bus, slot, function, offset, 2);
         }
@@ -119,7 +121,7 @@ namespace Sharpen.Arch
         /// <returns>The read data</returns>
         public static ushort PCIReadWord(PciDevice dev, ushort offset)
         {
-            return readWord(dev.Bus, dev.Slot, dev.Function, offset);
+            return ReadWord(dev.Bus, dev.Slot, dev.Function, offset);
         }
 
         /// <summary>
@@ -131,7 +133,7 @@ namespace Sharpen.Arch
         /// <returns>Device ID</returns>
         public static ushort getDeviceID(ushort bus, ushort device, ushort function)
         {
-            return readWord(bus, device, function, 0x2);
+            return ReadWord(bus, device, function, 0x2);
         }
 
         /// <summary>
@@ -143,7 +145,7 @@ namespace Sharpen.Arch
         /// <returns>Header type</returns>
         private static ushort getHeaderType(ushort bus, ushort device, ushort function)
         {
-            return (ushort)(readWord(bus, device, function, 0xE) & 0xFF);
+            return (ushort)(ReadWord(bus, device, function, 0xE) & 0xFF);
         }
 
         /// <summary>
@@ -155,7 +157,7 @@ namespace Sharpen.Arch
         /// <returns>Vendor ID</returns>
         private static ushort GetVendorID(ushort bus, ushort device, ushort function)
         {
-             return readWord(bus, device, function, 0);
+             return ReadWord(bus, device, function, 0);
         }
 
         /// <summary>
@@ -167,7 +169,7 @@ namespace Sharpen.Arch
         /// <returns>Class ID</returns>
         private static ushort GetClassID(ushort bus, ushort device, ushort function)
         {
-            return (byte)(readWord(bus, device, function, 0XA) & 0xFF);
+            return (byte)(ReadWord(bus, device, function, 0XA) & 0xFF);
         }
         
         /// <summary>
@@ -179,7 +181,7 @@ namespace Sharpen.Arch
         /// <returns>Class ID</returns>
         private static byte GetSubClassID(ushort bus, ushort device, ushort function)
         {
-            return (byte)((readWord(bus, device, function, 0XA) >> 8) & 0xFF);
+            return (byte)((ReadWord(bus, device, function, 0XA) >> 8) & 0xFF);
         }
 
         /// <summary>
@@ -214,9 +216,10 @@ namespace Sharpen.Arch
             dev.Slot = device;
 
             dev.Vendor = vendorID;
-            dev.Port1 = (ushort)(readWord(bus, device, 0, 0x10) & -1 << 1);
-            dev.Port2 = (ushort)(readWord(bus, device, 0, 0x14) & -1 << 1);
-
+            dev.Port1 = (ushort)(ReadWord(bus, device, 0, 0x10) & ~1);
+            dev.Port2 = (ushort)(ReadWord(bus, device, 0, 0x14) & ~1);
+            dev.Type = (byte)(ReadWord(bus, device, 0, 0x0D) & 0xFF);
+            
             m_devices[m_currentdevice++] = dev;
         }
 
@@ -241,6 +244,7 @@ namespace Sharpen.Arch
 
             if (foundIndex == -1)
                 return;
+            
 
             Console.Write("[PCI] Registered driver for ");
             Console.WriteHex(vendorID);
