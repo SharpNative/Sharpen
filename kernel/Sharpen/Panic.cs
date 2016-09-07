@@ -89,6 +89,8 @@ namespace Sharpen
                 Console.WriteHex(regsPtr->ESP & 0xFFFFFFFF);
                 Console.Write("  EIP ");
                 Console.WriteHex(regsPtr->EIP);
+                Console.Write("  CR2 ");
+                Console.WriteHex(Paging.ReadCR2());
                 Console.PutChar('\n');
             }
 
