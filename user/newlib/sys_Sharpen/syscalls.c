@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/fcntl.h>
 #include <sys/times.h>
+#include <sys/time.h>
 #include <sys/errno.h>
 #include <sys/time.h>
 #include <stdio.h>
@@ -75,21 +76,24 @@ inline static int sys_##name(A a, B b, C c, D d, E e) \
 // =================================== //
 // ---     Syscall definitions     --- //
 // =================================== //
-SYS1(exit,       0, int);
-SYS0(getpid,     1);
-SYS1(sbrk,       2, int);
-SYS0(fork,       3);
-SYS3(write,      4, int, void*, int);
-SYS3(read,       5, int, void*, int);
-SYS2(open,       6, const char*, int);
-SYS1(close,      7, int);
-SYS3(seek,       8, int, int, int);
-SYS3(execve,     9, const char*, const char**, const char**);
-SYS3(readdir,   10, int, struct dirent*, uint32_t);
-SYS3(run,       11, const char*, const char**, const char**);
-SYS3(waitpid,   12, int, int*, int);
-SYS0(shutdown,  13);
-SYS0(reboot,    14);
+SYS1(exit,           0, int);
+SYS0(getpid,         1);
+SYS1(sbrk,           2, int);
+SYS0(fork,           3);
+SYS3(write,          4, int, void*, int);
+SYS3(read,           5, int, void*, int);
+SYS2(open,           6, const char*, int);
+SYS1(close,          7, int);
+SYS3(seek,           8, int, int, int);
+SYS2(fstat,          9, int, struct stat*);
+SYS2(stat,          10, const char*, struct stat*);
+SYS3(execve,        11, const char*, const char**, const char**);
+SYS3(run,           12, const char*, const char**, const char**);
+SYS3(waitpid,       13, int, int*, int);
+SYS3(readdir,       14, int, struct dirent*, uint32_t);
+SYS0(shutdown,      15);
+SYS0(reboot,        16);
+SYS1(gettimeofday,  17, struct timeval*);
 
 
 // =================================== //
@@ -99,7 +103,7 @@ SYS0(reboot,    14);
 char *__env[1] = { 0 };
 char **environ = __env;
 
-int getpid(void)
+pid_t getpid(void)
 {
     return sys_getpid();
 }
@@ -107,6 +111,19 @@ int getpid(void)
 void _exit(int status)
 {
     sys_exit(status);
+}
+
+int gettimeofday(struct timeval* tv, void* tz)
+{
+    // The use of the timezone structure (tz) is obsolete
+    int ret = sys_gettimeofday(tv);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return 0;
 }
 
 int lseek(int file, off_t offset, int whence)
@@ -171,8 +188,27 @@ int close(int file)
 
 int stat(const char* file, struct stat* st)
 {
-    UNIMPLEMENTED;
-    st->st_mode = S_IFCHR;
+    int ret = sys_stat(file, st);
+    if(ret < 0)
+    {
+        memset(st, 0, sizeof(struct stat));
+        errno = -ret;
+        return -1;
+    }
+
+    return 0;
+}
+
+int fstat(int file, struct stat* st)
+{
+    int ret = sys_fstat(file, st);
+    if(ret < 0)
+    {
+        memset(st, 0, sizeof(struct stat));
+        errno = -ret;
+        return -1;
+    }
+
     return 0;
 }
 
@@ -276,13 +312,6 @@ int reboot(void)
     return 0;
 }
 
-int fstat(int file, struct stat* st)
-{
-    UNIMPLEMENTED;
-    st->st_mode = S_IFCHR;
-    return 0;
-}
-
 int isatty(int file)
 {
     return (file < 3);
@@ -380,12 +409,6 @@ void _longjmp(jmp_buf environment, int value)
 int _setjmp(jmp_buf environment)
 {
     return __builtin_setjmp(environment);
-}
-
-int gettimeofday(struct timeval* tv, void* tz)
-{
-    UNIMPLEMENTED;
-    return -1;
 }
 
 void flockfile(FILE* filehandle)

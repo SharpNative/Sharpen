@@ -19,15 +19,18 @@ namespace Sharpen.Exec
         public const int SYS_OPEN = 6;
         public const int SYS_CLOSE = 7;
         public const int SYS_SEEK = 8;
-        public const int SYS_EXECVE = 9;
-        public const int SYS_READDIR = 10;
-        public const int SYS_RUN = 11;
-        public const int SYS_WAITPID = 12;
-        public const int SYS_SHUTDOWN = 13;
-        public const int SYS_REBOOT = 14;
+        public const int SYS_FSTAT = 9;
+        public const int SYS_STAT = 10;
+        public const int SYS_EXECVE = 11;
+        public const int SYS_RUN = 12;
+        public const int SYS_WAITPID = 13;
+        public const int SYS_READDIR = 14;
+        public const int SYS_SHUTDOWN = 15;
+        public const int SYS_REBOOT = 16;
+        public const int SYS_GETTIMEOFDAY = 17;
 
         // Highest syscall number
-        public const int SYSCALL_MAX = 14;
+        public const int SYSCALL_MAX = 17;
         
         #endregion
 
@@ -180,6 +183,38 @@ namespace Sharpen.Exec
         }
 
         /// <summary>
+        /// Gets the file status of a descriptor
+        /// </summary>
+        /// <param name="descriptor">The descriptor ID</param>
+        /// <param name="st">The stat structure</param>
+        /// <returns>The errorcode</returns>
+        public static unsafe int FStat(int descriptor, Stat* st)
+        {
+            Node node = Tasking.GetNodeFromDescriptor(descriptor);
+            if (node == null)
+                return -(int)ErrorCode.EBADF;
+
+            node.Stat(st);
+            return 0;
+        }
+
+        /// <summary>
+        /// Gets the file status of a path
+        /// </summary>
+        /// <param name="path">The path</param>
+        /// <param name="st">The stat structure</param>
+        /// <returns>The errorcode</returns>
+        public static unsafe int Stat(string path, Stat* st)
+        {
+            Node node = VFS.GetByPath(path);
+            if (node == null)
+                return -(int)ErrorCode.ENOENT;
+
+            node.Stat(st);
+            return 0;
+        }
+
+        /// <summary>
         /// Replaces the current process with another executable
         /// </summary>
         /// <param name="path">The path to the executable</param>
@@ -197,28 +232,6 @@ namespace Sharpen.Exec
             // So we must kill the current process
             Tasking.RemoveTaskByPID(Tasking.CurrentTask.PID);
 
-            return 0;
-        }
-
-        /// <summary>
-        /// Reads a directory entry
-        /// </summary>
-        /// <param name="descriptor">The descriptor</param>
-        /// <param name="entry">The directory entry</param>
-        /// <param name="index">The index</param>
-        /// <returns>Errorcode</returns>
-        public static unsafe int Readdir(int descriptor, DirEntry* entry, uint index)
-        {
-            Node node = Tasking.GetNodeFromDescriptor(descriptor);
-            if (node == null)
-                return -(int)ErrorCode.EBADF;
-
-            DirEntry* gotEntry = VFS.ReadDir(node, index);
-            if (gotEntry == null)
-                return -(int)ErrorCode.ENOENT;
-            
-            Memory.Memcpy(entry, gotEntry, sizeof(DirEntry));
-            Heap.Free(gotEntry);
             return 0;
         }
 
@@ -242,7 +255,7 @@ namespace Sharpen.Exec
         /// <param name="pid">The PID or other identification</param>
         /// <param name="status">Pointer to status</param>
         /// <param name="options">Options</param>
-        /// <returns></returns>
+        /// <returns>The error code</returns>
         public static unsafe int WaitPID(int pid, int* status, int options)
         {
             // Wait for specific PID
@@ -272,8 +285,31 @@ namespace Sharpen.Exec
         }
 
         /// <summary>
+        /// Reads a directory entry
+        /// </summary>
+        /// <param name="descriptor">The descriptor</param>
+        /// <param name="entry">The directory entry</param>
+        /// <param name="index">The index</param>
+        /// <returns>Errorcode</returns>
+        public static unsafe int Readdir(int descriptor, DirEntry* entry, uint index)
+        {
+            Node node = Tasking.GetNodeFromDescriptor(descriptor);
+            if (node == null)
+                return -(int)ErrorCode.EBADF;
+
+            DirEntry* gotEntry = VFS.ReadDir(node, index);
+            if (gotEntry == null)
+                return -(int)ErrorCode.ENOENT;
+
+            Memory.Memcpy(entry, gotEntry, sizeof(DirEntry));
+            Heap.Free(gotEntry);
+            return 0;
+        }
+
+        /// <summary>
         /// Shuts down the computer
         /// </summary>
+        /// <returns>The error code</returns>
         public static int Shutdown()
         {
             if (Tasking.CurrentTask.UID > 0)
@@ -286,12 +322,25 @@ namespace Sharpen.Exec
         /// <summary>
         /// Reboots the computer
         /// </summary>
+        /// <returns>The error code</returns>
         public static int Reboot()
         {
             if (Tasking.CurrentTask.UID > 0)
                 return -(int)ErrorCode.EPERM;
 
             Acpi.Reset();
+            return 0;
+        }
+
+        /// <summary>
+        /// Gets the current time of day
+        /// </summary>
+        /// <param name="tv">The time structure</param>
+        /// <returns>The errorcode</returns>
+        public static unsafe int GetTimeOfDay(Time.Timeval* tv)
+        {
+            tv->tv_sec = (ulong)PIT.FullTicks;
+            tv->tv_usec = (ulong)(PIT.SubTicks * 1000000 / PIT.Frequency);
             return 0;
         }
     }

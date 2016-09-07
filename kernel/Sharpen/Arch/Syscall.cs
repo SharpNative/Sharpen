@@ -69,20 +69,28 @@ namespace Sharpen.Arch
                     ret = Syscalls.Seek(regsPtr->EBX, (uint)regsPtr->ECX, (FileWhence)regsPtr->EDX);
                     break;
 
+                case Syscalls.SYS_FSTAT:
+                    ret = Syscalls.FStat(regsPtr->EBX, (Stat*)regsPtr->ECX);
+                    break;
+
+                case Syscalls.SYS_STAT:
+                    ret = Syscalls.Stat(Util.CharPtrToString((char*)regsPtr->EBX), (Stat*)regsPtr->ECX);
+                    break;
+
                 case Syscalls.SYS_EXECVE:
                     ret = Syscalls.Execve(Util.CharPtrToString((char*)regsPtr->EBX), Util.PtrToArray((char**)regsPtr->ECX), Util.PtrToArray((char**)regsPtr->EDX));
                     break;
-
-                case Syscalls.SYS_READDIR:
-                    ret = Syscalls.Readdir(regsPtr->EBX, (DirEntry*)regsPtr->ECX, (uint)regsPtr->EDX);
-                    break;
-
+                    
                 case Syscalls.SYS_RUN:
                     ret = Syscalls.Run(Util.CharPtrToString((char*)regsPtr->EBX), Util.PtrToArray((char**)regsPtr->ECX), Util.PtrToArray((char**)regsPtr->EDX));
                     break;
 
                 case Syscalls.SYS_WAITPID:
                     ret = Syscalls.WaitPID(regsPtr->EBX, (int*)regsPtr->ECX, regsPtr->EDX);
+                    break;
+
+                case Syscalls.SYS_READDIR:
+                    ret = Syscalls.Readdir(regsPtr->EBX, (DirEntry*)regsPtr->ECX, (uint)regsPtr->EDX);
                     break;
 
                 case Syscalls.SYS_SHUTDOWN:
@@ -93,6 +101,10 @@ namespace Sharpen.Arch
                     ret = Syscalls.Reboot();
                     break;
 
+                case Syscalls.SYS_GETTIMEOFDAY:
+                    ret = Syscalls.GetTimeOfDay((Time.Timeval*)regsPtr->EBX);
+                    break;
+                    
                 default:
                     Console.Write("Unhandled syscall ");
                     Console.WriteHex(function);
