@@ -10,11 +10,11 @@ namespace Sharpen.Exec
         /// <param name="path">The path</param>
         /// <param name="argv">The arguments</param>
         /// <returns>Errorcode</returns>
-        public static ErrorCode StartProcess(string path, string[] argv)
+        public static int StartProcess(string path, string[] argv)
         {
             Node node = VFS.GetByPath(path);
             if (node == null)
-                return ErrorCode.ENOENT;
+                return -(int)ErrorCode.ENOENT;
 
             // Open and create buffer
             VFS.Open(node, FileMode.O_RDONLY);
@@ -22,13 +22,13 @@ namespace Sharpen.Exec
             if (buffer == null)
             {
                 VFS.Close(node);
-                return ErrorCode.ENOMEM;
+                return -(int)ErrorCode.ENOMEM;
             }
 
             // Fill buffer contents
             VFS.Read(node, 0, node.Size, buffer);
             VFS.Close(node);
-
+            
             // Pass execution to ELF loader
             return ELFLoader.Execute(buffer, node.Size, argv);
         }

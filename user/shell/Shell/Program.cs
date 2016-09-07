@@ -7,6 +7,8 @@ namespace Shell
 
         unsafe static void Main(string[] args)
         {
+            Console.WriteLine("Welcome");
+
             while (true)
             {
                 Console.Write(m_folder);
@@ -25,11 +27,11 @@ namespace Shell
                     continue;
 
 
-                if(String.Equals(command, "cd"))
+                if (String.Equals(command, "cd"))
                 {
 
                 }
-                else if(String.Equals(command, "dir"))
+                else if (String.Equals(command, "dir"))
                 {
                     Directory dir = Directory.Open(m_folder);
 
@@ -41,18 +43,34 @@ namespace Shell
                             break;
 
                         string str = Util.CharPtrToString(entry.Name);
-                        
+
                         Console.WriteLine(str);
 
                         i++;
                     }
                     dir.Close();
                 }
+                else if (String.Equals(command, "exit"))
+                {
+                    Process.Exit(0);
+                }
                 else
                 {
                     string path = String.Merge(m_folder, command);
 
-                    Process.Run(path);
+                    int argc = 1;
+                    string[] argv = new string[argc + 1];
+                    argv[0] = command;
+                    argv[1] = null;
+
+                    int ret = Process.Run(path, argv, argc);
+                    if (ret < 0)
+                    {
+                        Console.Write(command);
+                        Console.WriteLine(": Bad command or filename");
+                    }
+
+                    Process.WaitForExit(ret);
                 }
             }
         }

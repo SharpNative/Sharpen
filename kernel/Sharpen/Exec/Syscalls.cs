@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Drivers.Power;
 using Sharpen.FileSystem;
 using Sharpen.Mem;
 using Sharpen.Task;
@@ -20,9 +21,13 @@ namespace Sharpen.Exec
         public const int SYS_SEEK = 8;
         public const int SYS_EXECVE = 9;
         public const int SYS_READDIR = 10;
+        public const int SYS_RUN = 11;
+        public const int SYS_WAITPID = 12;
+        public const int SYS_SHUTDOWN = 13;
+        public const int SYS_REBOOT = 14;
 
         // Highest syscall number
-        public const int SYSCALL_MAX = 10;
+        public const int SYSCALL_MAX = 14;
         
         #endregion
 
@@ -51,9 +56,10 @@ namespace Sharpen.Exec
         /// </summary>
         /// <param name="increase">The amount to increase the memory with</param>
         /// <returns>The previous data space end</returns>
-        public static unsafe int Sbrk(int increase)
+        public static unsafe void* Sbrk(int increase)
         {
-            return (int)Paging.AllocateVirtual(increase);
+            void* c = Paging.AllocateVirtual(increase);
+            return c;
         }
 
         /// <summary>
@@ -183,10 +189,10 @@ namespace Sharpen.Exec
         public static int Execve(string path, string[] argv, string[] envp)
         {
             // TODO: envp
-            ErrorCode error = Loader.StartProcess(path, argv);
-            if (error != ErrorCode.SUCCESS)
-                return -(int)error;
-            
+            int error = Loader.StartProcess(path, argv);
+            if (error < 0)
+                return error;
+
             // We spawned a task but the current process should actually be replaced
             // So we must kill the current process
             Tasking.RemoveTaskByPID(Tasking.CurrentTask.PID);
@@ -213,6 +219,79 @@ namespace Sharpen.Exec
             
             Memory.Memcpy(entry, gotEntry, sizeof(DirEntry));
             Heap.Free(gotEntry);
+            return 0;
+        }
+
+        /// <summary>
+        /// Creates another process from an executable
+        /// </summary>
+        /// <param name="path">The path to the executable</param>
+        /// <param name="argv">The arguments</param>
+        /// <param name="envp">The environment path</param>
+        /// <returns>Errorcode</returns>
+        public static int Run(string path, string[] argv, string[] envp)
+        {
+            // TODO: envp
+            int pid = Loader.StartProcess(path, argv);
+            return pid;
+        }
+
+        /// <summary>
+        /// Waits for (a) process(es) to exit
+        /// </summary>
+        /// <param name="pid">The PID or other identification</param>
+        /// <param name="status">Pointer to status</param>
+        /// <param name="options">Options</param>
+        /// <returns></returns>
+        public static unsafe int WaitPID(int pid, int* status, int options)
+        {
+            // Wait for specific PID
+            if (pid > 0)
+            {
+                // If the task is still found, it means it's still there
+                while (Tasking.GetTaskByPID(pid) != null)
+                    Tasking.ManualSchedule();
+            }
+            // Wait for any child process whose group ID == calling process group ID
+            else if (pid == 0)
+            {
+
+            }
+            // Wait for any child process
+            else if (pid == -1)
+            {
+
+            }
+            // Wait for any child process whose group ID == calling process group ID
+            else if (pid < -1)
+            {
+
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Shuts down the computer
+        /// </summary>
+        public static int Shutdown()
+        {
+            if (Tasking.CurrentTask.UID > 0)
+                return -(int)ErrorCode.EPERM;
+            
+            Acpi.Shutdown();
+            return 0;
+        }
+
+        /// <summary>
+        /// Reboots the computer
+        /// </summary>
+        public static int Reboot()
+        {
+            if (Tasking.CurrentTask.UID > 0)
+                return -(int)ErrorCode.EPERM;
+
+            Acpi.Reset();
             return 0;
         }
     }

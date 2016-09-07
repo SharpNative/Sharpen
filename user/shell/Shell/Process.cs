@@ -8,9 +8,11 @@ namespace Shell
 {
     class Process
     {
-        extern static void internalRun(string path, string[] args); 
+        extern static int internalRun(string path, string[] args);
+        public extern static void WaitForExit(int pid);
+        public extern static void Exit(int status);
 
-        public static void Run(string path, string[] argv = null, int argc = 0)
+        public static int Run(string path, string[] argv, int argc)
         {
             string[] args = new string[argc + 1];
 
@@ -20,7 +22,7 @@ namespace Shell
 
             args[argc] = null;
 
-            internalRun(path, args);
+            return internalRun(path, args);
         }
     }
 }

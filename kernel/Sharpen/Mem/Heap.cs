@@ -1,4 +1,4 @@
-﻿//#define HEAP_DEBUG
+﻿// #define HEAP_DEBUG
 
 using Sharpen.Arch;
 using Sharpen.Drivers.Char;
@@ -38,16 +38,16 @@ namespace Sharpen.Mem
         private static unsafe BlockDescriptor* firstDescriptor;
 
         // Minimal amount of pages in a descriptor
-        private const int MINIMALPAGES = 64;
+        private const int MINIMALPAGES = 256;
 
         // Heap magic (DEBUG)
         private const uint HEAPMAGIC = 0xDEADBEEF;
 
         /// <summary>
-        /// Initializes the heap at the given start address
+        /// Initializes the temporary heap at the given start address
         /// </summary>
         /// <param name="start">The start address</param>
-        public static unsafe void Init(void* start)
+        public static unsafe void TempInit(void* start)
         {
             Console.Write("[HEAP] Temporary start at ");
             Console.WriteHex((int)start);
@@ -82,6 +82,7 @@ namespace Sharpen.Mem
             // Allocate descriptor
             size = getRequiredPageCount(size) * 0x1000;
             BlockDescriptor* descriptor = (BlockDescriptor*)Paging.AllocateVirtual(size);
+            Memory.Memset(descriptor, 0, size);
 
             if (descriptor == null)
             {
@@ -100,7 +101,7 @@ namespace Sharpen.Mem
 #endif
 
             // Setup descriptor
-            descriptor->FreeSpace = size;
+            descriptor->FreeSpace = size - sizeof(BlockDescriptor);
             descriptor->First = first;
             descriptor->Next = null;
 
@@ -139,9 +140,9 @@ namespace Sharpen.Mem
         /// </summary>
         public static void SetupRealHeap()
         {
-            firstDescriptor = createBlockDescriptor(MINIMALPAGES * 0x1000);
+            firstDescriptor = createBlockDescriptor(MINIMALPAGES * 0x1000 * 4);
             m_realHeap = true;
-            Console.WriteLine("[HEAP] Initialized ");
+            Console.WriteLine("[HEAP] Initialized");
         }
 
         /// <summary>
@@ -168,6 +169,8 @@ namespace Sharpen.Mem
                 Block* previousBlock;
                 int safeSize = size;
                 BlockDescriptor* descriptor = getSufficientDescriptor(safeSize);
+                if (descriptor == null)
+                    Panic.DoPanic("descriptor == null");
 
             retry:
 
@@ -427,6 +430,7 @@ namespace Sharpen.Mem
                     descriptor = descriptor->Next;
                     if (descriptor == null)
                         return;
+
                     return;
                 }
             }
@@ -450,6 +454,7 @@ namespace Sharpen.Mem
 
             if (PhysicalMemoryManager.isInitialized)
             {
+                // Remaining count
                 uint count = Paging.Align((uint)size) / 0x1000 - 1;
 
                 void* a = PhysicalMemoryManager.Alloc();
@@ -465,8 +470,12 @@ namespace Sharpen.Mem
                 if (align)
                     address = Paging.Align(address);
 
-                // Update physical memory manager
-                PhysicalMemoryManager.Set((int)address, (uint)size);
+                // At least 4byte align
+                if ((address & 3) != 0)
+                {
+                    address &= 3;
+                    address += 4;
+                }
 
                 CurrentEnd = (void*)(address + size);
 

@@ -15,8 +15,19 @@ namespace Sharpen.Arch
         {
             int function = regsPtr->EAX;
             if (function < 0 || function > Syscalls.SYSCALL_MAX)
+            {
+                Console.Write("[SYSCALL] ");
+                Console.WriteHex(function);
+                Console.Write(" > ");
+                Console.WriteHex(Syscalls.SYSCALL_MAX);
+                Console.PutChar('\n');
                 return;
+            }
             
+            // Console.Write("syscall func: ");
+            // Console.WriteHex(function);
+            // Console.WriteLine("");
+
             Tasking.CurrentTask.SysRegs = regsPtr;
             
             int ret = 0;
@@ -31,7 +42,7 @@ namespace Sharpen.Arch
                     break;
 
                 case Syscalls.SYS_SBRK:
-                    ret = Syscalls.Sbrk(regsPtr->EBX);
+                    ret = (int)Syscalls.Sbrk(regsPtr->EBX);
                     break;
 
                 case Syscalls.SYS_FORK:
@@ -64,6 +75,22 @@ namespace Sharpen.Arch
 
                 case Syscalls.SYS_READDIR:
                     ret = Syscalls.Readdir(regsPtr->EBX, (DirEntry*)regsPtr->ECX, (uint)regsPtr->EDX);
+                    break;
+
+                case Syscalls.SYS_RUN:
+                    ret = Syscalls.Run(Util.CharPtrToString((char*)regsPtr->EBX), Util.PtrToArray((char**)regsPtr->ECX), Util.PtrToArray((char**)regsPtr->EDX));
+                    break;
+
+                case Syscalls.SYS_WAITPID:
+                    ret = Syscalls.WaitPID(regsPtr->EBX, (int*)regsPtr->ECX, regsPtr->EDX);
+                    break;
+
+                case Syscalls.SYS_SHUTDOWN:
+                    ret = Syscalls.Shutdown();
+                    break;
+
+                case Syscalls.SYS_REBOOT:
+                    ret = Syscalls.Reboot();
                     break;
 
                 default:

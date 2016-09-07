@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     puts("ik ben hier");
 
     char* args[] = { NULL };
-    execve("C://shell", args, NULL);
+    execve("C://lua", args, NULL);
 
     return 0;
 }

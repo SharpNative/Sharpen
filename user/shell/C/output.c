@@ -131,10 +131,14 @@ typedef void* (*fp_Shell_Heap_Alloc_1int32_t_)(int32_t size);
 void Shell_Heap_Free_1void__(void* ptr);
 typedef void (*fp_Shell_Heap_Free_1void__)(void* ptr);
 struct class_Shell_Process* classInit_Shell_Process(void);
-void Shell_Process_internalRun_2char__char___(char* path, char** args);
-typedef void (*fp_Shell_Process_internalRun_2char__char___)(char* path, char** args);
-void Shell_Process_Run_3char__char___int32_t_(char* path, char** argv, int32_t argc);
-typedef void (*fp_Shell_Process_Run_3char__char___int32_t_)(char* path, char** argv, int32_t argc);
+int32_t Shell_Process_internalRun_2char__char___(char* path, char** args);
+typedef int32_t (*fp_Shell_Process_internalRun_2char__char___)(char* path, char** args);
+void Shell_Process_WaitForExit_1int32_t_(int32_t pid);
+typedef void (*fp_Shell_Process_WaitForExit_1int32_t_)(int32_t pid);
+void Shell_Process_Exit_1int32_t_(int32_t status);
+typedef void (*fp_Shell_Process_Exit_1int32_t_)(int32_t status);
+int32_t Shell_Process_Run_3char__char___int32_t_(char* path, char** argv, int32_t argc);
+typedef int32_t (*fp_Shell_Process_Run_3char__char___int32_t_)(char* path, char** argv, int32_t argc);
 struct class_Shell_Program* classInit_Shell_Program(void);
 inline void classCctor_Shell_Program(void);
 void Shell_Program_Main_1char___(char** args);
@@ -282,7 +286,7 @@ struct class_Shell_Process* classInit_Shell_Process(void)
 	return object;
 }
 
-void Shell_Process_Run_3char__char___int32_t_(char* path, char** argv, int32_t argc)
+int32_t Shell_Process_Run_3char__char___int32_t_(char* path, char** argv, int32_t argc)
 {
 	char** args = calloc((argc + 1), sizeof(char*));
 	if(argc > 0)
@@ -293,7 +297,7 @@ void Shell_Process_Run_3char__char___int32_t_(char* path, char** argv, int32_t a
 	}
 	;
 	args[argc] = null;
-	Shell_Process_internalRun_2char__char___(path, args);
+	return Shell_Process_internalRun_2char__char___(path, args);
 }
 struct class_Shell_Program* classInit_Shell_Program(void)
 {
@@ -310,6 +314,7 @@ inline void classCctor_Shell_Program(void)
 }
 void Shell_Program_Main_1char___(char** args)
 {
+	Shell_Console_WriteLine_1char__("Welcome");
 	while(true)
 	{
 		{
@@ -343,10 +348,22 @@ void Shell_Program_Main_1char___(char** args)
 				;
 				Shell_Directory_Close_1class_(dir);
 			}
+			else if(Shell_String_Equals_2char__char__(command, "exit")){
+				Shell_Process_Exit_1int32_t_(0);
+			}
 			else
 			{
 				char* path = Shell_String_Merge_2char__char__(classStatics_Shell_Program.m_folder, command);
-				Shell_Process_Run_3char__char___int32_t_(path);
+				int32_t argc = 1;
+				char** argv = calloc((argc + 1), sizeof(char*));
+				argv[0] = command;
+				argv[1] = null;
+				int32_t ret = Shell_Process_Run_3char__char___int32_t_(path, argv, argc);
+				if(ret < 0){
+					Shell_Console_Write_1char__(command);
+					Shell_Console_WriteLine_1char__(": Bad command or filename");
+				}
+				Shell_Process_WaitForExit_1int32_t_(ret);
 			}
 		}
 	}
@@ -501,7 +518,7 @@ struct class_Shell_Util* classInit_Shell_Util(void)
 static void* methods_Shell_Console[] = {Shell_Console_Write_1char__,Shell_Console_Write_1char_,Shell_Console_WriteLine_1char__,Shell_Console_ReadChar_0,Shell_Console_ReadLine_0,Shell_Console_WriteHex_1int64_t_,};
 static void* methods_Shell_Directory[] = {Shell_Directory_OpenInternal_1char__,Shell_Directory_ReaddirInternal_3void__struct_struct_Shell_Directory_DirEntry__uint32_t_,Shell_Directory_CloseInternal_1void__,Shell_Directory_Open_1char__,Shell_Directory_Readdir_2class_uint32_t_,Shell_Directory_Close_1class_,};
 static void* methods_Shell_Heap[] = {Shell_Heap_Alloc_1int32_t_,Shell_Heap_Free_1void__,};
-static void* methods_Shell_Process[] = {Shell_Process_internalRun_2char__char___,Shell_Process_Run_3char__char___int32_t_,};
+static void* methods_Shell_Process[] = {Shell_Process_internalRun_2char__char___,Shell_Process_WaitForExit_1int32_t_,Shell_Process_Exit_1int32_t_,Shell_Process_Run_3char__char___int32_t_,};
 static void* methods_Shell_Program[] = {Shell_Program_Main_1char___,};
 static void* methods_Shell_String[] = {Shell_String_Length_1char__,Shell_String_IndexOf_2char__char__,Shell_String_Merge_2char__char__,Shell_String_Count_2char__char_,Shell_String_SubString_3char__int32_t_int32_t_,Shell_String_Equals_2char__char__,Shell_String_ToUpper_1char_,Shell_String_ToLower_1char_,};
 static void* methods_Shell_Util[] = {Shell_Util_CharArrayToString_1char__,Shell_Util_CharPtrToString_1char__,Shell_Util_ObjectToVoidPtr_1void__,};

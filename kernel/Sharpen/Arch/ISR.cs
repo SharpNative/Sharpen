@@ -1,7 +1,4 @@
-﻿using Sharpen.Mem;
-using Sharpen.Task;
-
-namespace Sharpen.Arch
+﻿namespace Sharpen.Arch
 {
     public sealed class ISR
     {
@@ -28,25 +25,15 @@ namespace Sharpen.Arch
             "Alignment check",
             "Machine check"
         };
-        
+
         /// <summary>
         /// ISR handler
         /// </summary>
         /// <param name="regsPtr">Pointer to registers</param>
         public static unsafe void Handler(Regs* regsPtr)
         {
-            int isrNum = (*regsPtr).IntNum;
-            Console.WriteLine(m_errorCodes[isrNum]);
-            Console.WriteHex(Paging.ReadCR2());
-            if(Tasking.CurrentTask!= null)
-            {
-                Console.Write(" PID: ");
-                Console.WriteHex(Tasking.CurrentTask.PID);
-            }
-            
-            CPU.CLI();
-            CPU.HLT();
-            //Panic.DoPanic(m_errorCodes[isrNum], Paging.ReadCR2());
+            int isrNum = regsPtr->IntNum;
+            Panic.DoPanic(m_errorCodes[isrNum], regsPtr);
         }
     }
 }

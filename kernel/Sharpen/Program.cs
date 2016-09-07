@@ -78,8 +78,7 @@ namespace Sharpen
 
             #endregion
 
-            Heap.Init(heapStart);
-            PhysicalMemoryManager.Init(heapStart, memSize);
+            Heap.TempInit(heapStart);
 
             GDT.Init();
             PIC.Remap();
@@ -87,6 +86,7 @@ namespace Sharpen
             Acpi.Init();
             FPU.Init();
 
+            PhysicalMemoryManager.Init(memSize);
             Paging.Init(memSize);
             Heap.SetupRealHeap();
 
@@ -101,27 +101,30 @@ namespace Sharpen
             PCI.Init();
             // AC97.Init();
             VboxDev.Init();
-            // rtl8139.Init();
+            rtl8139.Init();
             ATA.Init();
             Tasking.Init();
-
+            
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
 
-            //byte[] bac = new byte[6];
-            //Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
+            byte[] bac = new byte[6];
+            Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
 
-            //NetworkTools.WakeOnLan(bac);
-            //DHCP.Discover();
+            NetworkTools.WakeOnLan(bac);
+            DHCP.Discover();
 
-            string[] argv = new string[2];
-            argv[0] = "hai";
-            argv[1] = null;
-            ErrorCode error = Loader.StartProcess("C://test", argv);
-            if (error != ErrorCode.SUCCESS)
+            // Initial process, usage: init [program]
+            string[] argv = new string[3];
+            argv[0] = "C://init";
+            argv[1] = "C://shell";
+            argv[2] = null;
+            
+            int error = Loader.StartProcess(argv[0], argv);
+            if (error < 0)
             {
-                Console.Write("Failed to start initial process: 0x");
-                Console.WriteHex((int)error);
+                Console.Write("Failed to start init process: 0x");
+                Console.WriteHex(-error);
                 Console.PutChar('\n');
             }
 

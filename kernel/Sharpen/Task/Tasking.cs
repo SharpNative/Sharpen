@@ -32,6 +32,7 @@ namespace Sharpen.Task
             kernel.Next = null;
             kernel.FPUContext = Heap.AlignedAlloc(16, 512);
             kernel.Flags = TaskFlags.NOFLAGS;
+            kernel.FileDescriptors.Capacity = 0;
 
             KernelTask = kernel;
             CurrentTask = kernel;
@@ -85,7 +86,7 @@ namespace Sharpen.Task
                 if (current == null)
                     return;
             }
-
+            
             // Critical section, a task switch may not occur now
             CPU.CLI();
 
@@ -131,7 +132,7 @@ namespace Sharpen.Task
         /// <param name="priority">The task priority</param>
         /// <param name="initialStack">Initial stack</param>
         /// <param name="initialStackSize">Initial stack size</param>
-        public static unsafe Task AddTask(void* eip, TaskPriority priority, int[] initialStack, int initialStackSize/*, Paging.PageDirectory* dir*/)
+        public static unsafe Task AddTask(void* eip, TaskPriority priority, int[] initialStack, int initialStackSize)
         {
             // Fill in data
             Task newTask = new Task();
@@ -167,20 +168,12 @@ namespace Sharpen.Task
             // Program data space end
             newTask.DataEnd = null;
 
-            // File descriptor
-            newTask.FileDescriptors.Capacity = 16;
-            newTask.FileDescriptors.Used = 0;
-            newTask.FileDescriptors.Nodes = new Node[newTask.FileDescriptors.Capacity];
-            newTask.FileDescriptors.Offsets = new uint[newTask.FileDescriptors.Capacity];
+            cloneDescriptors(newTask, CurrentTask);
             
             // FPU context
             newTask.FPUContext = Heap.AlignedAlloc(16, 512);
             FPU.StoreContext(newTask.FPUContext);
-            // Paging
-            /*newTask.PageDir = dir;
 
-            // Schedule
-            ScheduleTask(newTask);*/
             return newTask;
         }
 
@@ -199,16 +192,16 @@ namespace Sharpen.Task
         /// <summary>
         /// Clones a task and schedules it
         /// </summary>
-        /// <param name="task">The task to clone</param>
-        private static unsafe void cloneTask(Task task)
+        /// <param name="sourceTask">The task to clone</param>
+        private static unsafe void cloneTask(Task sourceTask)
         {
             // Fill in data
             Task newTask = new Task();
             newTask.PID = m_lastPid++;
-            newTask.GID = task.GID;
-            newTask.UID = task.UID;
-            newTask.TimeFull = task.TimeFull;
-            newTask.TimeLeft = task.TimeFull;
+            newTask.GID = sourceTask.GID;
+            newTask.UID = sourceTask.UID;
+            newTask.TimeFull = sourceTask.TimeFull;
+            newTask.TimeLeft = sourceTask.TimeFull;
             newTask.Flags = TaskFlags.NOFLAGS;
 
             // Stack
@@ -216,39 +209,60 @@ namespace Sharpen.Task
             newTask.StackStart = (int*)((int)stacks + 4096);
             newTask.KernelStackStart = stacks;
 
-            Memory.Memcpy(newTask.KernelStackStart, task.KernelStackStart, 4096 + 8192);
+            Memory.Memcpy(newTask.KernelStackStart, sourceTask.KernelStackStart, 4096 + 8192);
 
-            int diffStack = (int)task.Stack - (int)task.StackStart;
-            int diffKernelStack = (int)task.KernelStack - (int)task.KernelStackStart;
+            int diffStack = (int)sourceTask.Stack - (int)sourceTask.StackStart;
+            int diffKernelStack = (int)sourceTask.KernelStack - (int)sourceTask.KernelStackStart;
 
             newTask.Stack = (int*)((int)newTask.StackStart + diffStack);
             newTask.KernelStack = (int*)((int)newTask.KernelStackStart + diffKernelStack);
 
             // Program data space end
-            newTask.DataEnd = task.DataEnd;
+            newTask.DataEnd = sourceTask.DataEnd;
 
-            // File descriptor
-            newTask.FileDescriptors.Capacity = task.FileDescriptors.Capacity;
-            newTask.FileDescriptors.Used = task.FileDescriptors.Used;
-            newTask.FileDescriptors.Nodes = new Node[newTask.FileDescriptors.Capacity];
-            newTask.FileDescriptors.Offsets = new uint[newTask.FileDescriptors.Capacity];
-
-            // Copy file descriptors
-            for (int i = 0; i < task.FileDescriptors.Capacity; i++)
-            {
-                newTask.FileDescriptors.Nodes[i] = task.FileDescriptors.Nodes[i];
-                newTask.FileDescriptors.Offsets[i] = task.FileDescriptors.Offsets[i];
-            }
+            cloneDescriptors(newTask, sourceTask);
 
             // FPU context
             newTask.FPUContext = Heap.AlignedAlloc(16, 512);
-            Memory.Memcpy(newTask.FPUContext, task.FPUContext, 512);
+            Memory.Memcpy(newTask.FPUContext, sourceTask.FPUContext, 512);
 
             // Paging
-            newTask.PageDir = Paging.CloneDirectory(task.PageDir);
+            newTask.PageDir = Paging.CloneDirectory(sourceTask.PageDir);
 
             // Schedule
             ScheduleTask(newTask);
+        }
+
+        /// <summary>
+        /// Clones descriptors
+        /// </summary>
+        /// <param name="destination">The destination</param>
+        /// <param name="source">The source</param>
+        private static void cloneDescriptors(Task destination, Task source)
+        {
+            // Fresh file descriptors
+            if (source.FileDescriptors.Capacity == 0)
+            {
+                destination.FileDescriptors.Capacity = 16;
+                destination.FileDescriptors.Used = 0;
+                destination.FileDescriptors.Nodes = new Node[destination.FileDescriptors.Capacity];
+                destination.FileDescriptors.Offsets = new uint[destination.FileDescriptors.Capacity];
+                return;
+            }
+            
+            // File descriptors
+            destination.FileDescriptors.Capacity = source.FileDescriptors.Capacity;
+            destination.FileDescriptors.Used = source.FileDescriptors.Used;
+            destination.FileDescriptors.Nodes = new Node[destination.FileDescriptors.Capacity];
+            destination.FileDescriptors.Offsets = new uint[destination.FileDescriptors.Capacity];
+
+            // Copy file descriptors
+            int cap = source.FileDescriptors.Capacity;
+            for (int i = 0; i < cap; i++)
+            {
+                destination.FileDescriptors.Nodes[i] = source.FileDescriptors.Nodes[i];
+                destination.FileDescriptors.Offsets[i] = source.FileDescriptors.Offsets[i];
+            }
         }
 
         /// <summary>
@@ -341,7 +355,7 @@ namespace Sharpen.Task
             // Data pushed by CPU
             *--ptr = ds;        // Data Segment
             *--ptr = esp;       // Old stack
-            *--ptr = 0x200;     // EFLAGS
+            *--ptr = 0x202;     // EFLAGS
             *--ptr = cs;        // Code Segment
             *--ptr = (int)eip;  // Initial EIP
 
