@@ -216,6 +216,8 @@ kernel/C/build
 kernel/C/output.c
 kernel/C/kernel
 
+user/shell/C/output.c
+
 tools
 bochsrc.bxrc
 *.img
