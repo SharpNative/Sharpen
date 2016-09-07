@@ -22,5 +22,6 @@ copy kernel G:\kernel
 imdisk -D -m G:
 
 echo Starting QEMU...
-"C:\Program Files\qemu\qemu-system-i386.exe" os.img -soundhw ac97  -net nic,model=rtl8139 -serial file:test.txt -net tap,ifname=TAP -m 256 -D qemu.log 
+rem "C:\Program Files\qemu\qemu-system-i386.exe" os.img -soundhw ac97  -net nic,model=rtl8139 -serial file:test.txt -net tap,ifname=TAP -m 256 -D qemu.log 
+"C:\Program Files\qemu\qemu-system-i386.exe" os.img -soundhw ac97  -net nic,model=pcnet -serial file:test.txt -net tap,ifname=TAP -m 256 -D qemu.log 
 #net dump,file=netdump.wcap 

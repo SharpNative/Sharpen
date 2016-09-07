@@ -299,7 +299,7 @@ namespace Sharpen.Drivers.Net
                         if ((ushort)ByteUtil.ReverseBytes(header->Protocol) != 0x26)
                         {
 
-                            Console.WriteLine("");
+                            Console.WriteLine("YES!");
                             Console.WriteHex((ushort)ByteUtil.ReverseBytes(header->Protocol));
 
                             for (;;) ;
