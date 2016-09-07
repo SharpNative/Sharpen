@@ -322,7 +322,6 @@ namespace Sharpen.Arch
         /// <param name="directory">The directory</param>
         public static unsafe void FreeDirectory(PageDirectory* directory)
         {
-            return;
             // Loop through every table of the directory
             for (int table = 0; table < 1024; table++)
             {

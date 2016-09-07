@@ -59,7 +59,7 @@
         /// <returns></returns>
         public int FindFirstFree(bool set)
         {
-            for (int i = /*m_leastClear*/0; i < m_N; i++)
+            for (int i = m_leastClear; i < m_N; i++)
             {
                 int bitmap = m_bitmap[i];
 
