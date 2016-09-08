@@ -6,9 +6,9 @@ namespace Sharpen.Drivers.Power
 {
     public sealed unsafe class Acpi
     {
-        private static RDSP* rdsp;
-        private static RSDT* rsdt;
-        private static FADT* fadt;
+        private static RDSP* m_rdsp;
+        private static RSDT* m_rsdt;
+        private static FADT* m_fadt;
 
         private static ushort SLP_TYPa;
         private static ushort SLP_TYPb;
@@ -18,8 +18,15 @@ namespace Sharpen.Drivers.Power
         /// <summary>
         /// Find the RSDT and other entries
         /// </summary>
-        private static void Find()
+        private static unsafe void Find()
         {
+            RDSP* rdsp = null;
+            RSDT* rsdt = null;
+            FADT* fadt = null;
+            m_rdsp = (RDSP*)Heap.Alloc(sizeof(RDSP));
+            m_rsdt = (RSDT*)Heap.Alloc(sizeof(RSDT));
+            m_fadt = (FADT*)Heap.Alloc(sizeof(FADT));
+
             // First attempt in bios data
             byte* biosp = (byte*)0x000E0000;
 
@@ -55,13 +62,19 @@ namespace Sharpen.Drivers.Power
                     Panic.DoPanic("RDSP not found!");
             }
 
+            Memory.Memcpy(m_rdsp, rdsp, sizeof(RDSP));
+
             rsdt = (RSDT*)rdsp->RsdtAddress;
             if (rsdt == null)
                 Panic.DoPanic("RDST not found!");
 
+            Memory.Memcpy(m_rsdt, rsdt, sizeof(RSDT));
+
             fadt = (FADT*)getEntry("FACP");
             if (fadt == null)
                 Panic.DoPanic("FACP not found!");
+            
+            Memory.Memcpy(m_fadt, fadt, sizeof(FADT));
         }
 
         /// <summary>
@@ -94,8 +107,8 @@ namespace Sharpen.Drivers.Power
         {
             bool s5Found = false;
 
-            uint dsdtLength = (fadt->Dsdt + 1) - 36;
-            byte* s5Address = (byte*)fadt->Dsdt + 36;
+            uint dsdtLength = (m_fadt->Dsdt + 1) - 36;
+            byte* s5Address = (byte*)m_fadt->Dsdt + 36;
 
             if (dsdtLength > 0)
             {
@@ -145,14 +158,14 @@ namespace Sharpen.Drivers.Power
         /// <returns>The entry</returns>
         private static void* getEntry(string signature)
         {
-            if (rsdt == null)
+            if (m_rsdt == null)
                 return null;
 
-            uint n = (uint)(rsdt->header.Length - sizeof(RDSTH)) / 4;
+            uint n = (uint)(m_rsdt->header.Length - sizeof(RDSTH)) / 4;
 
             for (uint i = 0; i < n; i++)
             {
-                RDSTH* header = (RDSTH*)(rsdt->firstSDT + i);
+                RDSTH* header = (RDSTH*)(m_rsdt->firstSDT + i);
 
                 if (Memory.Compare((char*)header, (char*)Util.ObjectToVoidPtr(signature), 4))
                     if (CheckSum(header, header->Length))
@@ -178,7 +191,7 @@ namespace Sharpen.Drivers.Power
         /// </summary>
         public static void Enable()
         {
-            PortIO.Out8((ushort)fadt->SMI_CommandPort, fadt->AcpiEnable);
+            PortIO.Out8((ushort)m_fadt->SMI_CommandPort, m_fadt->AcpiEnable);
         }
 
         /// <summary>
@@ -186,7 +199,7 @@ namespace Sharpen.Drivers.Power
         /// </summary>
         public static void Disable()
         {
-            PortIO.Out8((ushort)fadt->SMI_CommandPort, fadt->AcpiDisable);
+            PortIO.Out8((ushort)m_fadt->SMI_CommandPort, m_fadt->AcpiDisable);
         }
 
         /// <summary>
@@ -209,9 +222,9 @@ namespace Sharpen.Drivers.Power
         public static void Shutdown()
         {
             // Try 1 through the pm1a control block
-            PortIO.Out16((ushort)fadt->PM1aControlBlock, (ushort)(SLP_TYPa | SLP_EN));
+            PortIO.Out16((ushort)m_fadt->PM1aControlBlock, (ushort)(SLP_TYPa | SLP_EN));
             // Try 2 through the pm1b control block
-            PortIO.Out16((ushort)fadt->PM1aControlBlock, (ushort)(SLP_TYPb | SLP_EN));
+            PortIO.Out16((ushort)m_fadt->PM1aControlBlock, (ushort)(SLP_TYPb | SLP_EN));
         }
     }
 }

@@ -12,13 +12,22 @@ namespace Sharpen.Mem
         /// Initializes the physical memory manager
         /// </summary>
         /// <param name="memSize">Memory size</param>
-        public static unsafe void Init(void* start, uint memSize)
+        public static unsafe void Init(uint memSize)
         {
             // Bit array to store which addresses are free
-            // The memory size is given in MB, everything is 4KB in this memory manager
-            m_bitmap = new BitArray((int)(memSize / 32));
-            
-            Set(0, (uint)start+0x8000);
+            // One entry holds 0x1000 * 32 bytes
+            m_bitmap = new BitArray((int)(memSize * 1024 / 0x1000 / 32));
+            uint aligned = Paging.Align((uint)Heap.CurrentEnd);
+
+            Console.Write("[PMM] Bitmap at ");
+            Console.WriteHex((int)Utilities.Util.ObjectToVoidPtr(m_bitmap));
+            Console.Write(", heap at ");
+            Console.WriteHex((int)Heap.CurrentEnd);
+            Console.Write(", marking 0 - ");
+            Console.WriteHex(aligned);
+            Console.WriteLine("");
+
+            Set(0, aligned);
             isInitialized = true;
         }
 
@@ -39,7 +48,8 @@ namespace Sharpen.Mem
         public static unsafe void* Alloc()
         {
             int firstFree = m_bitmap.FindFirstFree(true);
-            return (void*)(firstFree * 0x1000);
+            void* address = (void*)(firstFree * 0x1000);
+            return address;
         }
 
         /// <summary>

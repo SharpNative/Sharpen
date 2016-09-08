@@ -1,4 +1,4 @@
-﻿using Sharpen.Arch;
+﻿using Sharpen.Task;
 
 namespace Sharpen.Collections
 {
@@ -10,14 +10,17 @@ namespace Sharpen.Collections
         private int m_tail = 0;
         private int m_size;
 
+        public uint AvailableBytes { get; private set; } = 0;
+
         /// <summary>
         /// Creates a fifo buffer
         /// </summary>
         /// <param name="size">The size of the buffer</param>
-        public Fifo(int size)
+        public Fifo(int size, bool wait)
         {
             m_buffer = new byte[size];
             m_size = size;
+            m_wait = wait;
         }
 
         /// <summary>
@@ -68,8 +71,7 @@ namespace Sharpen.Collections
             {
                 while (m_head == m_tail)
                 {
-                    CPU.STI();
-                    CPU.HLT();
+                    Tasking.ManualSchedule();
                 }
             }
 
@@ -78,6 +80,8 @@ namespace Sharpen.Collections
                 // Is there data?
                 if (m_tail != m_head)
                 {
+                    AvailableBytes--;
+
                     buffer[j] = m_buffer[m_tail];
                     j++;
                     m_tail++;
@@ -92,7 +96,7 @@ namespace Sharpen.Collections
                     return i;
                 }
             }
-
+            
             return size;
         }
 
@@ -111,7 +115,7 @@ namespace Sharpen.Collections
                 if (!WriteByte(*current++))
                     return i;
             }
-
+            
             return size;
         }
 
@@ -136,6 +140,8 @@ namespace Sharpen.Collections
                 if (m_head >= m_size)
                     m_head = 0;
             }
+
+            AvailableBytes++;
 
             return true;
         }

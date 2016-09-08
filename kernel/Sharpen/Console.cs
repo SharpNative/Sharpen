@@ -1,5 +1,4 @@
-﻿using System;
-using Sharpen.Arch;
+﻿using Sharpen.Arch;
 using Sharpen.Mem;
 
 namespace Sharpen
@@ -39,6 +38,12 @@ namespace Sharpen
             else if (ch == '\r')
             {
                 X = 0;
+            }
+            // Backspace
+            else if (ch == '\b')
+            {
+                if (X > 0)
+                    X--;
             }
             // Tab
             else if (ch == '\t')

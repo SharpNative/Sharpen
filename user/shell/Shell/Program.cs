@@ -7,16 +7,16 @@ namespace Shell
 
         unsafe static void Main(string[] args)
         {
+            Console.WriteLine("Welcome");
+
             while (true)
             {
                 Console.Write(m_folder);
                 Console.Write("> ");
 
                 string read = Console.ReadLine();
-                Console.WriteLine("");
 
                 int offsetToSpace = String.IndexOf(read, " ");
-
                 if (offsetToSpace == -1)
                     offsetToSpace = String.Length(read);
 
@@ -24,12 +24,11 @@ namespace Shell
                 if (command == null)
                     continue;
 
-
-                if(String.Equals(command, "cd"))
+                if (String.Equals(command, "cd"))
                 {
 
                 }
-                else if(String.Equals(command, "dir"))
+                else if (String.Equals(command, "dir"))
                 {
                     Directory dir = Directory.Open(m_folder);
 
@@ -41,18 +40,70 @@ namespace Shell
                             break;
 
                         string str = Util.CharPtrToString(entry.Name);
-                        
+
                         Console.WriteLine(str);
 
                         i++;
                     }
+
                     dir.Close();
+                }
+                else if (String.Equals(command, "exit"))
+                {
+                    Process.Exit(0);
                 }
                 else
                 {
                     string path = String.Merge(m_folder, command);
+                    
+                    string[] argv = null;
+                    int argc = 1;
 
-                    Process.Run(path);
+                    // It has no arguments
+                    if (read[offsetToSpace] == '\0')
+                    {
+                        argv = new string[2];
+                        argv[0] = command;
+                        argv[1] = null;
+                    }
+                    // It has arguments
+                    else
+                    {
+                        // Fetch arguments
+                        string argumentStart = String.SubString(read, offsetToSpace + 1, String.Length(read) - offsetToSpace - 1);
+                        argc = 1 + (String.Count(argumentStart, ' ') + 1);
+                        argv = new string[argc + 1];
+                        argv[0] = command;
+
+                        // Add arguments
+                        int i = 0;
+                        int offset = 0;
+                        for (; i < argc; i++)
+                        {
+                            // Find argument end
+                            int nextOffset = offset;
+                            for (; argumentStart[nextOffset] != ' ' && argumentStart[nextOffset] != '\0'; nextOffset++) ;
+
+                            // Grab argument
+                            string arg = String.SubString(argumentStart, offset, nextOffset - offset);
+                            offset = nextOffset + 1;
+                            argv[i + 1] = arg;
+                        }
+
+                        // Add null to end arguments
+                        argv[i] = null; 
+                    }
+                    
+                    // Try to start a process
+                    int ret = Process.Run(path, argv, argc);
+                    if (ret < 0)
+                    {
+                        Console.Write(command);
+                        Console.WriteLine(": Bad command or filename");
+                    }
+
+                    // Wait until exit to return to prompt
+                    Process.WaitForExit(ret);
                 }
             }
         }

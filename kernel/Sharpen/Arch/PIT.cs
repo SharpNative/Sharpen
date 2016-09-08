@@ -40,8 +40,8 @@
         private static int m_frequency;
 
         // Timer ticks
-        public static int SubTicks { get; private set; }
-        public static int FullTicks { get; private set; }
+        public static int SubTicks { get; private set; } = 0;
+        public static int FullTicks { get; private set; } = 0;
 
         #region Helpers
 
@@ -112,6 +112,8 @@
         {
             // Set frequency in one second
             Frequency = 200;
+            CMOS.UpdateTime();
+            FullTicks = Time.CalculateEpochTime();
 
             // Install the IRQ handler
             IRQ.SetHandler(0, Handler);
@@ -142,7 +144,10 @@
 
                     // Resync with CMOS
                     if (Time.Minutes == 60)
+                    {
                         CMOS.UpdateTime();
+                        FullTicks = Time.CalculateEpochTime();
+                    }
                 }
             }
         }

@@ -29,7 +29,6 @@ namespace Shell
             while((c = ReadChar()) != '\n')
             {
                 buffer[i++] = c;
-                Write(c);
                 if (i > 1022)
                     break;
             }

@@ -14,7 +14,6 @@ using Sharpen.Utilities;
 
 namespace Sharpen
 {
-
     public sealed class Program
     {
         private static Multiboot.Header m_mbootHeader;
@@ -29,57 +28,57 @@ namespace Sharpen
         public static unsafe void KernelMain(Multiboot.Header* header, uint magic, uint end)
         {
             Console.Clear();
-
-            // If no multiboot header, assume 256 MB of RAM
+            
             void* heapStart = (void*)end;
-            uint memSize = 256;
+            uint memSize;
             #region Multiboot
 
-            // Booted by a multiboot bootloader
-            if (magic == Multiboot.Magic)
+            // We require to be booted by a multiboot compliant bootloader
+            if (magic != Multiboot.Magic)
             {
-                // Bring the header to a safe location
-                m_isMultiboot = true;
-                fixed (Multiboot.Header* destination = &m_mbootHeader)
+                Panic.DoPanic("Not booted by a multiboot compliant bootloader");
+            }
+
+            // Bring the header to a safe location
+            m_isMultiboot = true;
+            fixed (Multiboot.Header* destination = &m_mbootHeader)
+            {
+                Memory.Memcpy(destination, header, sizeof(Multiboot.Header));
+            }
+
+            // Memory size
+            memSize = m_mbootHeader.MemHi;
+
+            // Check if any modules are loaded
+            if ((m_mbootHeader.Flags & Multiboot.FlagMods) > 0)
+            {
+                uint modsCount = m_mbootHeader.ModsCount;
+
+                Console.Write("[Multiboot] Detected - Modules: ");
+                Console.WriteNum((int)modsCount);
+                Console.PutChar('\n');
+
+                for (int i = 0; i < modsCount; i++)
                 {
-                    Memory.Memcpy(destination, header, sizeof(Multiboot.Header));
-                }
+                    Multiboot.Module** mods = (Multiboot.Module**)m_mbootHeader.ModsAddr;
+                    Multiboot.Module module = *mods[i];
 
-                // Memory size
-                memSize = m_mbootHeader.MemHi;
-
-                // Check if any modules are loaded
-                if ((m_mbootHeader.Flags & Multiboot.FlagMods) > 0)
-                {
-                    uint modsCount = m_mbootHeader.ModsCount;
-
-                    Console.Write("[Multiboot] Detected - Modules: ");
-                    Console.WriteNum((int)modsCount);
-                    Console.PutChar('\n');
-
-                    for (int i = 0; i < modsCount; i++)
+                    // Check if the end is bigger
+                    // If it's bigger, set the new end
+                    if ((int)module.End > (int)heapStart)
                     {
-                        Multiboot.Module** mods = (Multiboot.Module**)m_mbootHeader.ModsAddr;
-                        Multiboot.Module module = *mods[i];
-
-                        // Check if the end is bigger
-                        // If it's bigger, set the new end
-                        if ((int)module.End > (int)heapStart)
-                        {
-                            heapStart = module.End;
-                        }
+                        heapStart = module.End;
                     }
                 }
-                else
-                {
-                    Console.WriteLine("[Multiboot] Detected - No modules");
-                }
+            }
+            else
+            {
+                Console.WriteLine("[Multiboot] Detected - No modules");
             }
 
             #endregion
 
-            Heap.Init(heapStart);
-            PhysicalMemoryManager.Init(heapStart, memSize);
+            Heap.TempInit(heapStart);
 
             GDT.Init();
             PIC.Remap();
@@ -87,26 +86,28 @@ namespace Sharpen
             Acpi.Init();
             FPU.Init();
 
+            PhysicalMemoryManager.Init(memSize);
             Paging.Init(memSize);
             Heap.SetupRealHeap();
 
             PIT.Init();
-            CMOS.UpdateTime();
             VFS.Init();
             DevFS.Init();
             Keyboard.Init();
             STDOUT.Init();
             SerialPort.Init();
+            PipeFS.Init();
 
             PCI.Init();
             //AC97.Init();
             VboxDev.Init();
             //rtl8139.Init();
             //E1000.Init();
-            PCNet2.Init();
+            //PCNet2.Init();
+
             ATA.Init();
             Tasking.Init();
-
+            
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
             
@@ -115,12 +116,18 @@ namespace Sharpen
 
             NetworkTools.WakeOnLan(bac);
             DHCP.Discover();
+
+            // Initial process, usage: init [program]
+            string[] argv = new string[3];
+            argv[0] = "C://init";
+            argv[1] = "C://shell";
+            argv[2] = null;
             
-            ErrorCode error = Loader.StartProcess("C://shell", null);
-            if (error != ErrorCode.SUCCESS)
+            int error = Loader.StartProcess(argv[0], argv, Tasking.SpawnFlags.NONE);
+            if (error < 0)
             {
-                Console.Write("Failed to start initial process: 0x");
-                Console.WriteHex((int)error);
+                Console.Write("Failed to start init process: 0x");
+                Console.WriteHex(-error);
                 Console.PutChar('\n');
             }
 

@@ -94,13 +94,15 @@ namespace Sharpen.Arch
             Memory.Memset(KernelDirectory, 0, sizeof(PageDirectory));
 
             // Bit array to store which frames are free
-            m_bitmap = new BitArray((int)(memSize / 32));
+            // One entry holds 0x1000 * 32 bytes
+            m_bitmap = new BitArray((int)(memSize * 1024 / 0x1000 / 32));
 
-            // Identity map first 4 MB
+            // Identity map
             int address = 0;
-            while (address < (1024 * 1024 * 4))
+            int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
+            uint end = /*(memSize - 10 * 1024) * 1024*/0x1600000;
+            while (address < end)
             {
-                int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
                 MapPage(KernelDirectory, address, address, flags);
                 SetFrame(address);
                 address += 0x1000;
@@ -137,6 +139,9 @@ namespace Sharpen.Arch
                 // Set flags
                 int flaggedTable = (int)newTable | flags;
                 directory->tables[tableIndex] = flaggedTable;
+
+                MapPage(directory, (int)newTable, (int)newTable, flags);
+                MapPage(CurrentDirectory, (int)newTable, (int)newTable, flags);
 
                 // Clear table
                 Memory.Memset(newTable, 0, sizeof(PageTable));
@@ -252,10 +257,9 @@ namespace Sharpen.Arch
             int start = free * 0x1000;
             int address = start;
             int end = (int)(address + sizeAligned);
+            int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
             while (address < end)
             {
-                int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
-
                 int phys = (int)PhysicalMemoryManager.Alloc();
                 MapPage(CurrentDirectory, phys, address, flags);
 
@@ -274,9 +278,8 @@ namespace Sharpen.Arch
         public static unsafe PageDirectory* CloneDirectory(PageDirectory* source)
         {
             PageDirectory* destination = (PageDirectory*)PhysicalMemoryManager.Alloc();
-            MapPage(CurrentDirectory, (int)destination, (int)destination, (int)PageFlags.Present | (int)PageFlags.UserMode | (int)PageFlags.Writable);
+            MapPage(CurrentDirectory, (int)destination, (int)destination, (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode);
             Memory.Memset(destination, 0, sizeof(PageDirectory));
-            MapPage(destination, (int)destination, (int)destination, (int)PageFlags.Present | (int)PageFlags.UserMode | (int)PageFlags.Writable);
 
             if (destination == null)
             {
@@ -298,15 +301,19 @@ namespace Sharpen.Arch
                 int flags = sourceTable & 0xFFF;
                 PageTable* newTable = (PageTable*)PhysicalMemoryManager.Alloc();
 
-                MapPage(destination, (int)GetPhysicalFromVirtual(newTable), (int)GetPhysicalFromVirtual(newTable), (int)PageFlags.Present | (int)PageFlags.UserMode | (int)PageFlags.Writable);
-                //MapPage(CurrentDirectory, (int)GetPhysicalFromVirtual(newTable), (int)GetPhysicalFromVirtual(newTable), (int)PageFlags.Present | (int)PageFlags.UserMode | (int)PageFlags.Writable);
-
                 if (newTable == null)
                     Panic.DoPanic("newTable == null");
 
+                MapPage(CurrentDirectory, (int)newTable, (int)newTable, flags);
+
                 Memory.Memcpy(newTable, sourceTablePtr, sizeof(PageTable));
+
                 destination->tables[table] = (int)newTable | flags;
+
+                MapPage(destination, (int)newTable, (int)newTable, flags);
             }
+
+            MapPage(destination, (int)destination, (int)destination, (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode);
 
             return destination;
         }

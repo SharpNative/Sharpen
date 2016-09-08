@@ -1,21 +1,43 @@
 #include <stdio.h>
-#include <fcntl.h>
-#include <dirent.h>
+#include <string.h>
+#include <time.h>
 #include <unistd.h>
+#include <setjmp.h>
 
 int main(int argc, char* argv[])
 {
-    // Initializing STDIO is actually part of the inital userspace process
-    // and not a regular program...
-    // Forking results in copying file descriptors, so initial process should fork
-    (void) open("devices://keyboard", O_RDONLY);
-    (void) open("devices://stdout",   O_WRONLY);
-    (void) open("devices://stdout",   O_WRONLY);
+    // Time test
+    time_t rawtime;
+    time(&rawtime);
+    struct tm* timeInfo = localtime(&rawtime);
 
-    puts("ik ben hier");
+    char buffer[256];
+    memset(buffer, 0, sizeof(buffer));
+    strftime(buffer, sizeof(buffer), "%c", timeInfo);
+    buffer[sizeof(buffer) - 1] = '\0';
+    printf("%s\n", buffer);
 
-    char* args[] = { NULL };
-    execve("C://shell", args, NULL);
+    // Argument test
+    for(int i = 0; i < argc; i++)
+        printf("-> %s\n", argv[i]);
+
+    // Pipe test
+    int fd[2];
+    char* str = "This is a pipe test";
+    char readbuffer[100];
+
+    pipe(fd);
+
+    pid_t pid = fork();
+    if(pid == 0)
+    {
+        write(fd[1], str, strlen(str) + 1);
+    }
+    else
+    {
+        size_t a = read(fd[0], readbuffer, sizeof(readbuffer));
+        printf("received: (%d) %s\n", (int)a, readbuffer);
+    }
 
     return 0;
 }

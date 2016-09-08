@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #define true (1)
 #define false (0)
@@ -26,10 +27,6 @@ inline char* Shell_Util_CharPtrToString_1char__(char* ptr)
 
 int main(int argc, char* argv[])
 {
-	(void) open("devices://keyboard", O_RDONLY);
-    (void) open("devices://stdout",   O_WRONLY);
-    (void) open("devices://stdout",   O_WRONLY);
-
 	init();
 	Shell_Program_Main_1char___((void*)argv);
 	return 0;
@@ -52,17 +49,24 @@ char Shell_Console_ReadChar_0(void)
 	return fgetc(stdin);
 }
 
-void Shell_Process_internalRun_2char__char___(char *path, char **args)
+int run(char*, char**, char**);
+
+int32_t Shell_Process_internalRun_2char__char___(char* path, char** args)
 {
-    pid_t pid = fork();
-    if(pid == 0) // child
-    {
-    	execve(path, args, NULL);
-    	for(;;);
-    }
+	return run(path, args, NULL);
 }
 
-inline void *Shell_Util_ObjectToVoidPtr_1void__(void *ptr)
+void Shell_Process_WaitForExit_1int32_t_(int32_t pid)
+{
+	waitpid((pid_t)pid, NULL, 0);
+}
+
+void Shell_Process_Exit_1int32_t_(int32_t status)
+{
+	_exit(status);
+}
+
+inline void *Shell_Util_ObjectToVoidPtr_1void__(void* ptr)
 {
 	return ptr;
 }

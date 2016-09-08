@@ -136,8 +136,7 @@ namespace Sharpen.FileSystem
                     afterNodeName = String.SubString(afterNodeName, index + 1, String.Length(path) - 1);
                 
                 lastNode = lastNode.FindDir(lastNode, nodeName);
-
-
+                
                 if (lastNode == null)
                     return null;
 
@@ -241,6 +240,19 @@ namespace Sharpen.FileSystem
                 return null;
 
             return node.ReadDir(node, index);
+        }
+
+        /// <summary>
+        /// Gets the size of a node
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <returns>Its size</returns>
+        public static unsafe uint GetSize(Node node)
+        {
+            if (node.GetSize == null)
+                return node.Size;
+
+            return node.GetSize(node);
         }
     }
 }

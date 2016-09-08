@@ -27,7 +27,7 @@ namespace Sharpen.Drivers.Char
             PortIO.Out8((ushort)(port + 4), 0x0B);
             PortIO.Out8((ushort)(port + 1), 0x01);
 
-            comports[num].Buffer = new Fifo(256);
+            comports[num].Buffer = new Fifo(256, true);
             
             Device dev = new Device();
             dev.Name = comports[num].Name;

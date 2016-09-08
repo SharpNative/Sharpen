@@ -156,8 +156,9 @@ namespace Sharpen.Exec
         /// <param name="buffer">The buffer</param>
         /// <param name="size">The size of the ELF</param>
         /// <param name="argv">The arguments</param>
+        /// <param name="flags">Spawn flags</param>
         /// <returns>The error code</returns>
-        public static unsafe ErrorCode Execute(byte[] buffer, uint size, string[] argv)
+        public static unsafe int Execute(byte[] buffer, uint size, string[] argv, Tasking.SpawnFlags flags)
         {
             ELF32* elf;
             fixed (byte* ptr = buffer)
@@ -166,7 +167,7 @@ namespace Sharpen.Exec
             }
 
             if (!isValidELF(elf))
-                return ErrorCode.EINVAL;
+                return -(int)ErrorCode.EINVAL;
 
             // Get program header
             ProgramHeader* programHeader = (ProgramHeader*)((int)elf + elf->PhOff);
@@ -205,29 +206,24 @@ namespace Sharpen.Exec
                     argc++;
             }
 
+            // Stack
             int[] initialStack = new int[2];
             initialStack[0] = (int)Util.ObjectToVoidPtr(argv);
             initialStack[1] = argc;
-
-            Task.Task newTask = Tasking.AddTask((void*)elf->Entry, TaskPriority.NORMAL, initialStack, 2/*, newDirectory*/);
-
-            Paging.PageDirectory* newDirectory = Paging.CloneDirectory(Paging.CurrentDirectory);
-
+            
+            Task.Task newTask = Tasking.CreateTask((void*)elf->Entry, TaskPriority.NORMAL, initialStack, 2, flags);
+            
             // Map memory
+            Paging.PageDirectory* newDirectory = Paging.CloneDirectory(Paging.CurrentDirectory);
             for (uint j = 0; j < size; j += 0x1000)
             {
                 Paging.MapPage(newDirectory, (int)Paging.GetPhysicalFromVirtual((void*)((uint)allocated + j)), (int)(virtAddress + j), (int)Paging.PageFlags.Present | (int)Paging.PageFlags.Writable | (int)Paging.PageFlags.UserMode);
             }
             
-            
-            
-            // Add task
-            
-            
-            
+            // Schedule task
             newTask.PageDir = newDirectory;
             Tasking.ScheduleTask(newTask);
-            return ErrorCode.SUCCESS;
+            return newTask.PID;
         }
     }
 }

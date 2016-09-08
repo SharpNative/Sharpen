@@ -315,7 +315,7 @@ namespace Sharpen.FileSystem
 
 
             byte[] fatBuffer = new byte[512];
-            m_dev.Read(m_dev, (uint)(adr), 512, fatBuffer);
+            m_dev.Read(m_dev, adr, 512, fatBuffer);
 
             byte* ptr = (byte *)Util.ObjectToVoidPtr(fatBuffer);
             ushort* pointer = (ushort*)(ptr + offset);
@@ -384,7 +384,6 @@ namespace Sharpen.FileSystem
             uint currentOffset = 0;
             int sizeLeft = (int)size;
 
-
             for (int i = 0; i < sizeInSectors; i++)
             {
                 if (offsetInCluster == m_bpb->SectorsPerCluster)
@@ -396,11 +395,10 @@ namespace Sharpen.FileSystem
                     
                     offsetInCluster = 0;
                 }
-
+                
                 m_dev.Read(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
 
                 int sizeTemp = (sizeLeft > 512) ? 512 : sizeLeft;
-
                 int sizeLeftinSector = 512;
                 sizeLeftinSector -= (int)offsetInSector;
                 if (sizeLeft > sizeLeftinSector)
@@ -408,16 +406,15 @@ namespace Sharpen.FileSystem
                     sizeTemp = sizeLeftinSector;
                     sizeInSectors++;
                 }
-
+                
                 Memory.Memcpy((void*)((int)Util.ObjectToVoidPtr(buffer) + currentOffset), (void*)((int)Util.ObjectToVoidPtr(buf) + offsetInSector), sizeTemp);
-
+                
                 currentOffset += (uint)sizeTemp;
                 sizeLeft -= sizeTemp;
                 offsetInCluster++;
                 offsetInSector = 0;
             }
-
-
+            
             return size;
         }
 
@@ -463,11 +460,15 @@ namespace Sharpen.FileSystem
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             FatDirEntry* entry = (FatDirEntry*)node.Cookie;
-            
+
+            // If the offset is behind the size, stop here
+            if (offset > entry->Size)
+                return 0;
+
             // If bytes to read is bigger than the file size, set the size to the file size minus offset
             if (offset + size > entry->Size)
                 size = entry->Size - offset;
-            
+
             return readFile(entry->ClusterNumberLo, offset, size, buffer);
         }
 

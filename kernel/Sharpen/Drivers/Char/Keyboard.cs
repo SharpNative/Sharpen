@@ -99,7 +99,7 @@ namespace Sharpen.Drivers.Char
         /// </summary>
         public static unsafe void Init()
         {
-            m_fifo = new Fifo(250);
+            m_fifo = new Fifo(250, true);
 
             // Install the IRQ handler
             IRQ.SetHandler(1, handler);
@@ -108,10 +108,21 @@ namespace Sharpen.Drivers.Char
             device.Name = "keyboard";
             device.node = new Node();
             device.node.Read = readImpl;
+            device.node.GetSize = getSizeImpl;
 
             DevFS.RegisterDevice(device);
         }
-        
+
+        /// <summary>
+        /// Gets the size of the available data
+        /// </summary>
+        /// <param name="node">The pipe node</param>
+        /// <returns>The size</returns>
+        private static uint getSizeImpl(Node node)
+        {
+            return m_fifo.AvailableBytes;
+        }
+
         /// <summary>
         /// Read from keyboard
         /// </summary>
@@ -122,7 +133,7 @@ namespace Sharpen.Drivers.Char
         /// <returns>The amount of bytes read</returns>
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            return m_fifo.Read(buffer, (ushort)size);
+            return m_fifo.Read(buffer, size);
         }
 
         /// <summary>
