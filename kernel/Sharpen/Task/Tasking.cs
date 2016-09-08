@@ -7,13 +7,19 @@ namespace Sharpen.Task
 {
     public class Tasking
     {
-        private static int m_lastPid = 0;
+        private static int m_nextPid = 0;
         private static bool m_taskingEnabled = false;
 
         private static Task m_taskToClone = null;
 
         public static Task KernelTask { get; private set; }
         public static Task CurrentTask { get; private set; }
+
+        public enum SpawnFlags
+        {
+            NONE = 0,
+            SWAP_PID = 1
+        }
 
         /// <summary>
         /// Initializes tasking
@@ -25,7 +31,7 @@ namespace Sharpen.Task
 
             // Kernel task, the data will be filled in when the first schedule happens
             Task kernel = new Task();
-            kernel.PID = m_lastPid++;
+            kernel.PID = m_nextPid++;
             kernel.GID = 0;
             kernel.UID = 0;
             kernel.PageDir = Paging.KernelDirectory;
@@ -86,7 +92,7 @@ namespace Sharpen.Task
                 if (current == null)
                     return;
             }
-            
+
             // Critical section, a task switch may not occur now
             CPU.CLI();
 
@@ -100,6 +106,25 @@ namespace Sharpen.Task
             // Wait for task switch if this current task is descheduled
             while (true)
                 ManualSchedule();
+        }
+
+        /// <summary>
+        /// Dump info about tasks
+        /// </summary>
+        private static unsafe void dump()
+        {
+            Task current = KernelTask;
+            while (true)
+            {
+                Console.WriteHex((int)Util.ObjectToVoidPtr(current));
+                Console.Write(" ");
+                Console.WriteHex(current.PID);
+                Console.WriteLine("");
+
+                current = current.Next;
+                if (current == null)
+                    return;
+            }
         }
 
         /// <summary>
@@ -132,11 +157,23 @@ namespace Sharpen.Task
         /// <param name="priority">The task priority</param>
         /// <param name="initialStack">Initial stack</param>
         /// <param name="initialStackSize">Initial stack size</param>
-        public static unsafe Task AddTask(void* eip, TaskPriority priority, int[] initialStack, int initialStackSize)
+        /// <param name="flags">Spawn flags</param>
+        public static unsafe Task CreateTask(void* eip, TaskPriority priority, int[] initialStack, int initialStackSize, SpawnFlags flags)
         {
             // Fill in data
             Task newTask = new Task();
-            newTask.PID = m_lastPid++;
+            
+            newTask.PID = m_nextPid++;
+
+            if ((flags & SpawnFlags.SWAP_PID) == SpawnFlags.SWAP_PID)
+            {
+                CPU.CLI();
+                int old = newTask.PID;
+                newTask.PID = CurrentTask.PID;
+                CurrentTask.PID = old;
+                CPU.STI();
+            }
+
             newTask.GID = 0;
             newTask.UID = 0;
             newTask.TimeFull = (int)priority;
@@ -147,7 +184,7 @@ namespace Sharpen.Task
             int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
             newTask.StackStart = (int*)((int)stacks + 4096);
             newTask.Stack = (int*)((int)newTask.StackStart + 8192);
-            
+
             // Copy initial stack
             if (initialStackSize > 0)
             {
@@ -164,12 +201,12 @@ namespace Sharpen.Task
             newTask.Stack = writeSchedulerStack(newTask.Stack, 0x1B, 0x23, eip);
             newTask.KernelStackStart = stacks;
             newTask.KernelStack = (int*)((int)newTask.KernelStackStart + 4096);
-            
+
             // Program data space end
             newTask.DataEnd = null;
 
             cloneDescriptors(newTask, CurrentTask);
-            
+
             // FPU context
             newTask.FPUContext = Heap.AlignedAlloc(16, 512);
             FPU.StoreContext(newTask.FPUContext);
@@ -186,7 +223,7 @@ namespace Sharpen.Task
             int pid = CurrentTask.PID;
             m_taskToClone = CurrentTask;
             ManualSchedule();
-            return (pid == CurrentTask.PID ? pid + 1 : 0);
+            return (pid == CurrentTask.PID ? m_nextPid - 1 : 0);
         }
 
         /// <summary>
@@ -197,7 +234,7 @@ namespace Sharpen.Task
         {
             // Fill in data
             Task newTask = new Task();
-            newTask.PID = m_lastPid++;
+            newTask.PID = m_nextPid++;
             newTask.GID = sourceTask.GID;
             newTask.UID = sourceTask.UID;
             newTask.TimeFull = sourceTask.TimeFull;
@@ -245,11 +282,11 @@ namespace Sharpen.Task
             {
                 destination.FileDescriptors.Capacity = 16;
                 destination.FileDescriptors.Used = 0;
-                destination.FileDescriptors.Nodes = new Node[destination.FileDescriptors.Capacity];
-                destination.FileDescriptors.Offsets = new uint[destination.FileDescriptors.Capacity];
+                destination.FileDescriptors.Nodes = new Node[16];
+                destination.FileDescriptors.Offsets = new uint[16];
                 return;
             }
-            
+
             // File descriptors
             destination.FileDescriptors.Capacity = source.FileDescriptors.Capacity;
             destination.FileDescriptors.Used = source.FileDescriptors.Used;
@@ -260,7 +297,11 @@ namespace Sharpen.Task
             int cap = source.FileDescriptors.Capacity;
             for (int i = 0; i < cap; i++)
             {
-                destination.FileDescriptors.Nodes[i] = source.FileDescriptors.Nodes[i];
+                Node sourceNode = source.FileDescriptors.Nodes[i];
+                if (sourceNode != null)
+                {
+                    destination.FileDescriptors.Nodes[i] = sourceNode.Clone();
+                }
                 destination.FileDescriptors.Offsets[i] = source.FileDescriptors.Offsets[i];
             }
         }
@@ -274,6 +315,7 @@ namespace Sharpen.Task
             // TODO: more cleaning required
             Heap.Free(task.FPUContext);
             Heap.Free(task.KernelStackStart);
+            return;
             Paging.FreeDirectory(task.PageDir);
         }
 
@@ -415,7 +457,8 @@ namespace Sharpen.Task
         public static unsafe int AddNodeToDescriptor(Node node)
         {
             Task current = CurrentTask;
-            if (current.FileDescriptors.Used == current.FileDescriptors.Capacity)
+
+            if (current.FileDescriptors.Used == current.FileDescriptors.Capacity - 1)
             {
                 // Expand if needed
                 int oldCap = current.FileDescriptors.Capacity;

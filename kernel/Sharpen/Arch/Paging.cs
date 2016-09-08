@@ -94,12 +94,14 @@ namespace Sharpen.Arch
             Memory.Memset(KernelDirectory, 0, sizeof(PageDirectory));
 
             // Bit array to store which frames are free
-            m_bitmap = new BitArray((int)(memSize / 32));
+            // One entry holds 0x1000 * 32 bytes
+            m_bitmap = new BitArray((int)(memSize * 1024 / 0x1000 / 32));
 
             // Identity map
             int address = 0;
             int flags = (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode;
-            while (address < /*(int)PhysicalMemoryManager.First()*/0x1600000)
+            uint end = /*(memSize - 10 * 1024) * 1024*/0x1600000;
+            while (address < end)
             {
                 MapPage(KernelDirectory, address, address, flags);
                 SetFrame(address);
@@ -122,7 +124,7 @@ namespace Sharpen.Arch
             // Get indices
             int pageIndex = virt / 0x1000;
             int tableIndex = pageIndex / 1024;
-            
+
             // Create page table if it doesn't exist
             if (directory->tables[tableIndex] == 0)
             {
@@ -276,9 +278,9 @@ namespace Sharpen.Arch
         public static unsafe PageDirectory* CloneDirectory(PageDirectory* source)
         {
             PageDirectory* destination = (PageDirectory*)PhysicalMemoryManager.Alloc();
-            MapPage(CurrentDirectory, (int)destination, (int)destination, (int)PageFlags.Present|(int)PageFlags.Writable|(int)PageFlags.UserMode);
+            MapPage(CurrentDirectory, (int)destination, (int)destination, (int)PageFlags.Present | (int)PageFlags.Writable | (int)PageFlags.UserMode);
             Memory.Memset(destination, 0, sizeof(PageDirectory));
-            
+
             if (destination == null)
             {
                 Panic.DoPanic("Couldn't clone directory: destination==null");
@@ -298,10 +300,10 @@ namespace Sharpen.Arch
                 // Grab flags and allocate new table
                 int flags = sourceTable & 0xFFF;
                 PageTable* newTable = (PageTable*)PhysicalMemoryManager.Alloc();
-                
+
                 if (newTable == null)
                     Panic.DoPanic("newTable == null");
-                
+
                 MapPage(CurrentDirectory, (int)newTable, (int)newTable, flags);
 
                 Memory.Memcpy(newTable, sourceTablePtr, sizeof(PageTable));

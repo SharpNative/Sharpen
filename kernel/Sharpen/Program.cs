@@ -14,7 +14,6 @@ using Sharpen.Utilities;
 
 namespace Sharpen
 {
-
     public sealed class Program
     {
         private static Multiboot.Header m_mbootHeader;
@@ -97,11 +96,11 @@ namespace Sharpen
             Keyboard.Init();
             STDOUT.Init();
             SerialPort.Init();
+            PipeFS.Init();
 
             PCI.Init();
             //AC97.Init();
             VboxDev.Init();
-            rtl8139.Init();
             //rtl8139.Init();
             //E1000.Init();
             //PCNet2.Init();
@@ -124,7 +123,7 @@ namespace Sharpen
             argv[1] = "C://shell";
             argv[2] = null;
             
-            int error = Loader.StartProcess(argv[0], argv);
+            int error = Loader.StartProcess(argv[0], argv, Tasking.SpawnFlags.NONE);
             if (error < 0)
             {
                 Console.Write("Failed to start init process: 0x");

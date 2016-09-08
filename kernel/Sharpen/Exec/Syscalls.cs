@@ -28,11 +28,18 @@ namespace Sharpen.Exec
         public const int SYS_SHUTDOWN = 15;
         public const int SYS_REBOOT = 16;
         public const int SYS_GETTIMEOFDAY = 17;
+        public const int SYS_PIPE = 18;
+        public const int SYS_DUP2 = 19;
+        public const int SYS_SIG_SEND = 20;
+        public const int SYS_SIG_HANDLER = 21;
+        public const int SYS_YIELD = 22;
 
         // Highest syscall number
-        public const int SYSCALL_MAX = 17;
-        
+        public const int SYSCALL_MAX = 22;
+
         #endregion
+
+        private const int WNOHANG = 1;
 
         /// <summary>
         /// Exit syscall
@@ -75,9 +82,9 @@ namespace Sharpen.Exec
             Task.Task current = Tasking.CurrentTask;
             int diffRegs = (int)current.SysRegs - (int)current.StackStart;
             int diffESP = current.SysRegs->ESP - (int)current.StackStart;
-            
+
             int pid = Tasking.Fork();
-            
+
             // Update stack references within the stack itself
             current = Tasking.CurrentTask;
             current.SysRegs = (Regs*)((int)current.StackStart + diffRegs);
@@ -98,10 +105,10 @@ namespace Sharpen.Exec
             Node node = Tasking.GetNodeFromDescriptor(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
-            
+
             uint offset = Tasking.GetOffsetFromDescriptor(descriptor);
             Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] += size;
-            
+
             return (int)VFS.Write(node, offset, size, buffer);
         }
 
@@ -117,7 +124,7 @@ namespace Sharpen.Exec
             Node node = Tasking.GetNodeFromDescriptor(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
-
+            
             uint offset = Tasking.GetOffsetFromDescriptor(descriptor);
             Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] += size;
 
@@ -135,7 +142,7 @@ namespace Sharpen.Exec
             Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
-            
+
             VFS.Open(node, (FileMode)flags);
             return Tasking.AddNodeToDescriptor(node);
         }
@@ -224,7 +231,7 @@ namespace Sharpen.Exec
         public static int Execve(string path, string[] argv, string[] envp)
         {
             // TODO: envp
-            int error = Loader.StartProcess(path, argv);
+            int error = Loader.StartProcess(path, argv, Tasking.SpawnFlags.SWAP_PID);
             if (error < 0)
                 return error;
 
@@ -245,7 +252,7 @@ namespace Sharpen.Exec
         public static int Run(string path, string[] argv, string[] envp)
         {
             // TODO: envp
-            int pid = Loader.StartProcess(path, argv);
+            int pid = Loader.StartProcess(path, argv, Tasking.SpawnFlags.NONE);
             return pid;
         }
 
@@ -261,6 +268,15 @@ namespace Sharpen.Exec
             // Wait for specific PID
             if (pid > 0)
             {
+                // Don't wait, just check
+                if ((options & WNOHANG) == WNOHANG)
+                {
+                    if (Tasking.GetTaskByPID(pid) != null)
+                        return 0;
+                    else
+                        return -(int)ErrorCode.ECHILD;
+                }
+
                 // If the task is still found, it means it's still there
                 while (Tasking.GetTaskByPID(pid) != null)
                     Tasking.ManualSchedule();
@@ -314,7 +330,7 @@ namespace Sharpen.Exec
         {
             if (Tasking.CurrentTask.UID > 0)
                 return -(int)ErrorCode.EPERM;
-            
+
             Acpi.Shutdown();
             return 0;
         }
@@ -341,6 +357,59 @@ namespace Sharpen.Exec
         {
             tv->tv_sec = (ulong)PIT.FullTicks;
             tv->tv_usec = (ulong)(PIT.SubTicks * 1000000 / PIT.Frequency);
+            return 0;
+        }
+
+        /// <summary>
+        /// Creates a UNIX pipe
+        /// </summary>
+        /// <param name="pipefd">The pipe file descriptors (output)</param>
+        /// <returns>The errorcode</returns>
+        public static unsafe int Pipe(int* pipefd)
+        {
+            Node[] nodes = new Node[2];
+            ErrorCode error = PipeFS.Create(nodes, 4096);
+            if (error != ErrorCode.SUCCESS)
+                return -(int)error;
+
+            pipefd[0] = Tasking.AddNodeToDescriptor(nodes[0]);
+            pipefd[1] = Tasking.AddNodeToDescriptor(nodes[1]);
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Replaces an old file descriptor with a new one
+        /// </summary>
+        /// <param name="oldfd">The old file descriptor</param>
+        /// <param name="newfd">The new file descriptor</param>
+        /// <returns>The new file descriptor or errorcode</returns>
+        public static unsafe int Dup2(int oldfd, int newfd)
+        {
+            Task.Task current = Tasking.CurrentTask;
+            if (oldfd < 0 || newfd < 0 || oldfd >= current.FileDescriptors.Capacity || newfd >= current.FileDescriptors.Capacity)
+                return -(int)ErrorCode.EBADF;
+
+            // If there is an old file descriptor node, close it
+            Node old = current.FileDescriptors.Nodes[oldfd];
+            if (old != null)
+            {
+                VFS.Close(old);
+            }
+
+            Node newNode = current.FileDescriptors.Nodes[newfd];
+            current.FileDescriptors.Nodes[oldfd] = newNode.Clone();
+
+            return newfd;
+        }
+
+        /// <summary>
+        /// Switches to another task
+        /// </summary>
+        /// <returns>Zero</returns>
+        public static int Yield()
+        {
+            Tasking.ManualSchedule();
             return 0;
         }
     }

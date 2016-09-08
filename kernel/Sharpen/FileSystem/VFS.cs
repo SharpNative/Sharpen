@@ -241,5 +241,18 @@ namespace Sharpen.FileSystem
 
             return node.ReadDir(node, index);
         }
+
+        /// <summary>
+        /// Gets the size of a node
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <returns>Its size</returns>
+        public static unsafe uint GetSize(Node node)
+        {
+            if (node.GetSize == null)
+                return node.Size;
+
+            return node.GetSize(node);
+        }
     }
 }

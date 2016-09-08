@@ -156,8 +156,9 @@ namespace Sharpen.Exec
         /// <param name="buffer">The buffer</param>
         /// <param name="size">The size of the ELF</param>
         /// <param name="argv">The arguments</param>
+        /// <param name="flags">Spawn flags</param>
         /// <returns>The error code</returns>
-        public static unsafe int Execute(byte[] buffer, uint size, string[] argv)
+        public static unsafe int Execute(byte[] buffer, uint size, string[] argv, Tasking.SpawnFlags flags)
         {
             ELF32* elf;
             fixed (byte* ptr = buffer)
@@ -210,7 +211,7 @@ namespace Sharpen.Exec
             initialStack[0] = (int)Util.ObjectToVoidPtr(argv);
             initialStack[1] = argc;
             
-            Task.Task newTask = Tasking.AddTask((void*)elf->Entry, TaskPriority.NORMAL, initialStack, 2);
+            Task.Task newTask = Tasking.CreateTask((void*)elf->Entry, TaskPriority.NORMAL, initialStack, 2, flags);
             
             // Map memory
             Paging.PageDirectory* newDirectory = Paging.CloneDirectory(Paging.CurrentDirectory);

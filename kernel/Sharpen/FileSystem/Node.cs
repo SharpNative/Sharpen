@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Sharpen.FileSystem
+﻿namespace Sharpen.FileSystem
 {
     public class Node
     {
@@ -19,6 +13,7 @@ namespace Sharpen.FileSystem
         public FSClose Close;
         public FSFindDir FindDir;
         public FSReaddir ReadDir;
+        public FSGetSize GetSize;
         
         public unsafe delegate uint FSRead(Node node, uint offset, uint size, byte[] buffer);
         public unsafe delegate uint FSWrite(Node node, uint offset, uint size, byte[] buffer);
@@ -26,6 +21,7 @@ namespace Sharpen.FileSystem
         public unsafe delegate void FSClose(Node node);
         public unsafe delegate Node FSFindDir(Node node, string name);
         public unsafe delegate DirEntry* FSReaddir(Node node, uint index);
+        public unsafe delegate uint FSGetSize(Node node);
 
         /// <summary>
         /// Creates the stat structure
@@ -36,7 +32,7 @@ namespace Sharpen.FileSystem
             st->st_dev = 0;
             st->st_rdev = 0;
             st->st_ino = 0;
-            st->st_size = Size;
+            st->st_size = VFS.GetSize(this);
 
             st->st_mode = 0;
             st->st_uid = 0;
@@ -50,17 +46,38 @@ namespace Sharpen.FileSystem
             st->st_blksize = 0;
             st->st_blkcnt = 0;
         }
+
+        /// <summary>
+        /// Clones a filesystem node
+        /// </summary>
+        /// <returns>The clone</returns>
+        public Node Clone()
+        {
+            Node clone = new Node();
+            clone.Size = Size;
+            clone.Cookie = Cookie;
+            clone.FileMode = FileMode;
+            clone.Flags = Flags;
+            clone.Read = Read;
+            clone.Write = Write;
+            clone.Open = Open;
+            clone.Close = Close;
+            clone.FindDir = FindDir;
+            clone.ReadDir = ReadDir;
+            clone.GetSize = GetSize;
+            return clone;
+        }
     }
 
-    public struct Stat
+    public unsafe struct Stat
     {
-        public ushort st_dev;
+        public short st_dev;
         public ushort st_ino;
         public uint st_mode;
         public ushort st_nlink;
         public ushort st_uid;
         public ushort st_gid;
-        public ushort st_rdev;
+        public short st_rdev;
         public uint st_size;
         public ulong st_atime;
         public ulong st_mtime;

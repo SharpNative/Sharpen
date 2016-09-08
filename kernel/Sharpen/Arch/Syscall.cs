@@ -17,19 +17,22 @@ namespace Sharpen.Arch
             if (function < 0 || function > Syscalls.SYSCALL_MAX)
             {
                 Console.Write("[SYSCALL] ");
-                Console.WriteHex(function);
+                Console.WriteNum(function);
                 Console.Write(" > ");
-                Console.WriteHex(Syscalls.SYSCALL_MAX);
+                Console.WriteNum(Syscalls.SYSCALL_MAX);
                 Console.PutChar('\n');
                 return;
             }
-            
-            // Console.Write("syscall func: ");
-            // Console.WriteHex(function);
-            // Console.WriteLine("");
+
+            /*if (function != 0xD && function != 9 && function != 0x16)
+            {
+                Console.Write("syscall func: ");
+                Console.WriteNum(function);
+                Console.WriteLine("");
+            }*/
 
             Tasking.CurrentTask.SysRegs = regsPtr;
-            
+
             int ret = 0;
             switch (function)
             {
@@ -80,7 +83,7 @@ namespace Sharpen.Arch
                 case Syscalls.SYS_EXECVE:
                     ret = Syscalls.Execve(Util.CharPtrToString((char*)regsPtr->EBX), Util.PtrToArray((char**)regsPtr->ECX), Util.PtrToArray((char**)regsPtr->EDX));
                     break;
-                    
+
                 case Syscalls.SYS_RUN:
                     ret = Syscalls.Run(Util.CharPtrToString((char*)regsPtr->EBX), Util.PtrToArray((char**)regsPtr->ECX), Util.PtrToArray((char**)regsPtr->EDX));
                     break;
@@ -104,14 +107,34 @@ namespace Sharpen.Arch
                 case Syscalls.SYS_GETTIMEOFDAY:
                     ret = Syscalls.GetTimeOfDay((Time.Timeval*)regsPtr->EBX);
                     break;
-                    
+
+                case Syscalls.SYS_PIPE:
+                    ret = Syscalls.Pipe((int*)regsPtr->EBX);
+                    break;
+
+                case Syscalls.SYS_DUP2:
+                    ret = Syscalls.Dup2(regsPtr->EBX, regsPtr->ECX);
+                    break;
+
+                case Syscalls.SYS_SIG_SEND:
+                    // TODO
+                    break;
+
+                case Syscalls.SYS_SIG_HANDLER:
+                    // TODO
+                    break;
+
+                case Syscalls.SYS_YIELD:
+                    ret = Syscalls.Yield();
+                    break;
+
                 default:
                     Console.Write("Unhandled syscall ");
-                    Console.WriteHex(function);
+                    Console.WriteNum(function);
                     Console.WriteLine("");
                     break;
             }
-            
+
             Tasking.CurrentTask.SysRegs->EAX = ret;
         }
     }

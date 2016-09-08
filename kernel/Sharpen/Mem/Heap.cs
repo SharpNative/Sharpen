@@ -26,6 +26,7 @@ namespace Sharpen.Mem
             public int FreeSpace;
             public BlockDescriptor* Next;
             public Block* First;
+            public Block* FirstFree;
         }
 
         // Current end address of the heap
@@ -38,7 +39,7 @@ namespace Sharpen.Mem
         private static unsafe BlockDescriptor* firstDescriptor;
 
         // Minimal amount of pages in a descriptor
-        private const int MINIMALPAGES = 256;
+        private const int MINIMALPAGES = 1024;
 
         // Heap magic (DEBUG)
         private const uint HEAPMAGIC = 0xDEADBEEF;
@@ -103,6 +104,7 @@ namespace Sharpen.Mem
             // Setup descriptor
             descriptor->FreeSpace = size - sizeof(BlockDescriptor);
             descriptor->First = first;
+            descriptor->FirstFree = first;
             descriptor->Next = null;
 
             return descriptor;
@@ -172,9 +174,9 @@ namespace Sharpen.Mem
                 if (descriptor == null)
                     Panic.DoPanic("descriptor == null");
 
-            retry:
+                retry:
 
-                currentBlock = descriptor->First;
+                currentBlock = descriptor->FirstFree;
                 previousBlock = null;
 
                 // Search in the descriptor
@@ -362,6 +364,8 @@ namespace Sharpen.Mem
             // Not used anymore
             block->Used = false;
             block->Descriptor->FreeSpace += block->Size;
+            if ((int)block->Descriptor->FirstFree > (int)block)
+                block->Descriptor->FirstFree = block;
 
             // Merge forward
             if (block->Next != null && !block->Next->Used)
@@ -369,6 +373,9 @@ namespace Sharpen.Mem
                 Block* next = block->Next;
                 block->Size += next->Size;
                 block->Next = next->Next;
+
+                if ((int)block->Descriptor->FirstFree > (int)next)
+                    block->Descriptor->FirstFree = next;
 
                 if (next->Next != null)
                     next->Next->Prev = block;
@@ -380,6 +387,9 @@ namespace Sharpen.Mem
                 Block* prev = block->Prev;
                 prev->Size += block->Size;
                 prev->Next = block->Next;
+
+                if ((int)block->Descriptor->FirstFree > (int)prev)
+                    block->Descriptor->FirstFree = prev;
 
                 if (block->Next != null)
                     block->Next->Prev = prev;

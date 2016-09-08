@@ -201,7 +201,6 @@ char* Shell_Console_ReadLine_0(void)
 		{
 			buffer[i] = c;
 			i = i + 1;
-			Shell_Console_Write_1char_(c);
 			if(i > 1022)
 						break;
 		}
@@ -321,7 +320,6 @@ void Shell_Program_Main_1char___(char** args)
 			Shell_Console_Write_1char__(classStatics_Shell_Program.m_folder);
 			Shell_Console_Write_1char__("> ");
 			char* read = Shell_Console_ReadLine_0();
-			Shell_Console_WriteLine_1char__("");
 			int32_t offsetToSpace = Shell_String_IndexOf_2char__char__(read, " ");
 			if(offsetToSpace ==  - 1)
 						offsetToSpace = Shell_String_Length_1char__(read);
@@ -354,10 +352,39 @@ void Shell_Program_Main_1char___(char** args)
 			else
 			{
 				char* path = Shell_String_Merge_2char__char__(classStatics_Shell_Program.m_folder, command);
+				char** argv = null;
 				int32_t argc = 1;
-				char** argv = calloc((argc + 1), sizeof(char*));
-				argv[0] = command;
-				argv[1] = null;
+				if(read[offsetToSpace] == '\0'){
+					argv = calloc((2), sizeof(char*));
+					argv[0] = command;
+					argv[1] = null;
+				}
+				else
+				{
+					char* argumentStart = Shell_String_SubString_3char__int32_t_int32_t_(read, offsetToSpace + 1, Shell_String_Length_1char__(read) - offsetToSpace - 1);
+					argc = 1 +  ( Shell_String_Count_2char__char_(argumentStart, ' ') + 1 ) ;
+					argv = calloc((argc + 1), sizeof(char*));
+					argv[0] = command;
+					int32_t i = 0;
+					int32_t offset = 0;
+					for(;i < argc;i = i + 1
+					)
+					{
+						{
+							int32_t nextOffset = offset;
+							for(;argumentStart[nextOffset] != ' ' && argumentStart[nextOffset] != '\0';nextOffset = nextOffset + 1
+							)
+							{
+							}
+							;
+							char* arg = Shell_String_SubString_3char__int32_t_int32_t_(argumentStart, offset, nextOffset - offset);
+							offset = nextOffset + 1;
+							argv[i + 1] = arg;
+						}
+					}
+					;
+					argv[i] = null;
+				}
 				int32_t ret = Shell_Process_Run_3char__char___int32_t_(path, argv, argc);
 				if(ret < 0){
 					Shell_Console_Write_1char__(command);

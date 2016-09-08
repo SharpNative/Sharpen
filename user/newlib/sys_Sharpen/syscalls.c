@@ -73,6 +73,8 @@ inline static int sys_##name(A a, B b, C c, D d, E e) \
     return ret; \
 }
 
+typedef void (*sighandler_t)(int);
+
 // =================================== //
 // ---     Syscall definitions     --- //
 // =================================== //
@@ -94,6 +96,11 @@ SYS3(readdir,       14, int, struct dirent*, uint32_t);
 SYS0(shutdown,      15);
 SYS0(reboot,        16);
 SYS1(gettimeofday,  17, struct timeval*);
+SYS1(pipe,          18, int*);
+SYS2(dup2,          19, int, int);
+SYS2(sig_send,      20, int, int);
+SYS2(sig_handler,   21, int, sighandler_t);
+SYS0(yield,         22);
 
 
 // =================================== //
@@ -319,9 +326,19 @@ int isatty(int file)
 
 int kill(int pid, int sig)
 {
-    UNIMPLEMENTED;
-    errno = EINVAL;
-    return -1;
+    int ret = sys_sig_send(pid, sig);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return 0;
+}
+
+sighandler_t signal(int sig, sighandler_t handler)
+{
+    return (sighandler_t)sys_sig_handler(sig, handler);
 }
 
 int link(char* old, char* new)
@@ -395,22 +412,6 @@ int pclose(FILE* stream)
     return -1;
 }
 
-void (*signal(int sig, void (*func)(int)))(int)
-{
-    UNIMPLEMENTED;
-    return NULL;
-}
-
-void _longjmp(jmp_buf environment, int value)
-{
-    __builtin_longjmp(environment, 1);
-}
-
-int _setjmp(jmp_buf environment)
-{
-    return __builtin_setjmp(environment);
-}
-
 void flockfile(FILE* filehandle)
 {
     UNIMPLEMENTED;
@@ -421,4 +422,33 @@ void funlockfile(FILE* filehandle)
 {
     UNIMPLEMENTED;
     return;
+}
+
+int pipe(int pipefd[])
+{
+    int ret = sys_pipe(pipefd);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return 0;
+}
+
+int dup2(int oldfd, int newfd)
+{
+    int ret = sys_dup2(oldfd, newfd);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return ret;
+}
+
+int sched_yield(void)
+{
+    return sys_yield();
 }
