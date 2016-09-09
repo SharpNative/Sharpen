@@ -176,8 +176,11 @@ namespace Sharpen.Drivers.Net
             if (!m_init)
                 return;
 
+            
+            Console.WriteHex(m_rx_descriptors[m_currentRescDesc].status);
+            Console.WriteLine("");
 
-            if((csr0 & CSR0_ERR) != 0)
+            if ((csr0 & CSR0_ERR) != 0)
             {
                 if ((csr0 & CSR0_MISS) != 0)
                     Console.WriteLine("[PCNET] Error: MISS");
@@ -193,26 +196,23 @@ namespace Sharpen.Drivers.Net
 
             if((csr0 & CSR0_RINT) > 0)
             {
-                while((m_rx_descriptors[m_currentRescDesc].status & 0x8000) == 0)
+                while((m_rx_descriptors[1].status & 0x8000) == 0)
                 {
-                    if((m_rx_descriptors[m_currentRescDesc].status & 0x4000) == 0 &&
-                         (m_rx_descriptors[m_currentRescDesc].status & 0x3000) == 0
+                    if((m_rx_descriptors[1].status & 0x4000) == 0 &&
+                         (m_rx_descriptors[1].status & 0x3000) == 0x0300
                         )
                     {
-                        byte* ptr = (byte *)Util.ObjectToVoidPtr(m_rx_descriptors);
-                        byte plen = ptr[9];
-
-                        Console.WriteNum(plen & 0xFF);
-                        Console.WriteLine("");
+                        // Receive :)
                     }
 
                     m_rx_descriptors[m_currentRescDesc].status = 0x8000;
                     m_rx_descriptors[m_currentRescDesc].buf_len = 0xF000 | (-2048 & 0xFFF);
+                    m_rx_descriptors[m_currentRescDesc].flags2 = 0;
+                    
+                    m_currentRescDesc++;
+                    if (m_currentRescDesc == 8)
+                        m_currentRescDesc = 0;
                 }
-
-                m_currentRescDesc++;
-                if (m_currentRescDesc == 8)
-                    m_currentRescDesc = 0;
             }
         }
 
