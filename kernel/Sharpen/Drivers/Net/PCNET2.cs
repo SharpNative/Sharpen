@@ -15,9 +15,9 @@ namespace Sharpen.Drivers.Net
     {
         private const ushort REG_APROM = 0x00;
         private const ushort REG_RDP = 0x10;
-        private const ushort REG_RAP = 0x12;
-        private const ushort REG_RESET = 0x14;
-        private const ushort REG_BDP = 0x16;
+        private const ushort REG_RAP = 0x14;
+        private const ushort REG_RESET = 0x18;
+        private const ushort REG_BDP = 0x1C;
 
         private const ushort EPROM = 0x00;
         private const ushort EPROM2 = 0x02;
@@ -53,12 +53,11 @@ namespace Sharpen.Drivers.Net
             public byte RLEN;
             public byte TLEN;
             public fixed byte MAC[6];
-            public fixed byte RES1[2];
-            public ushort reserved3;
-            public ulong logical_address;
+            public ushort _res;
+            public fixed ushort RES1[4];
             public uint first_rec_entry;
             public uint first_transmit_entry;
-            public fixed byte JUNK[4];
+            public fixed ushort RES2[1];
         }
 
         // RX_DESC
@@ -66,43 +65,44 @@ namespace Sharpen.Drivers.Net
         private unsafe struct DESCRIPTOR
         {
             public uint address;
-            public uint flags;
+            public ushort buf_len;
+            public ushort status;
             public uint flags2;
-            public uint avail;
+            public uint reserved;
         }
 
 
         private static void writeBCR(ushort bcr, ushort val)
         {
             writeRap(bcr);
-            PortIO.Out16((ushort)(m_io_base + REG_BDP), val);
+            PortIO.Out32((ushort)(m_io_base + REG_BDP), val);
         }
 
 
-        private static void writeCSR(byte csr_no, ushort val)
+        private static void writeCSR(byte csr_no, uint val)
         {
             writeRap(csr_no);
-            PortIO.Out16((ushort)(m_io_base + REG_RDP), val);
+            PortIO.Out32((ushort)(m_io_base + REG_RDP), val);
         }
 
-        private static ushort readCSR(byte csr_no)
+        private static uint readCSR(byte csr_no)
         {
             writeRap(csr_no);
-            return PortIO.In16((ushort)(m_io_base + REG_RDP));
+            return PortIO.In32((ushort)(m_io_base + REG_RDP));
         }
 
         private static unsafe void initHandler(PCI.PciDevice dev)
         {
             m_dev = dev;
             m_io_base = dev.Port1;
-
             FixCommand();
+
+            ReadMac();
 
             // Do a software reset because we want 32bitjes :)
             SoftwareReset();
 
             // Read the current MAC
-            ReadMac();
             writeCSR(0, 0x04); // STOP
 
             // Initialize buffers
@@ -113,11 +113,15 @@ namespace Sharpen.Drivers.Net
             int interrupt = (PCI.PCIReadWord(dev, 0x3C) & 0xFF);
 
             IRQ.SetHandler(interrupt, handler);
+
+
             // Enable card
             writeCSR(0, 0x41);
 
-            writeCSR(4, (ushort)(0x4C00 | readCSR(4)));
+
+            writeCSR(4, 0x4C00 | readCSR(4));
             writeCSR(0, 0x0042);
+
 
 
             // Register device as the main network device
@@ -140,11 +144,7 @@ namespace Sharpen.Drivers.Net
         {
             if (!m_init)
                 return;
-
-            Memory.Memcpy((void*)m_tx_descriptors[m_currentTransDesc].avail, bytes, (int)size);
-
-            m_tx_descriptors[m_currentTransDesc].flags2 = 0;
-            m_tx_descriptors[m_currentTransDesc].flags2 = (uint)(0xA300F000 | ((-size) & 0xFFF));
+            
 
             m_currentTransDesc++;
             if (m_currentTransDesc == 8)
@@ -153,8 +153,11 @@ namespace Sharpen.Drivers.Net
 
         private static unsafe void handler(Regs* regsPtr)
         {
+            Console.WriteLine("[PCNET] IRQ!");
+            Console.WriteHex(m_rx_descriptors[0].status);
+
             // acknowledge IRQ
-            ushort csr0 = readCSR(0);
+            uint csr0 = readCSR(0);
 
             if ((csr0 & CSR0_INTR) == 0)
                 return;
@@ -180,13 +183,37 @@ namespace Sharpen.Drivers.Net
                     Console.WriteLine("[PCNET] Error: MISS");
                 else if ((csr0 & CSR0_MERR) != 0)
                     Console.WriteLine("[PCNET] Error: MERR");
-                if ((csr0 & CSR0_CERR) != 0)
+                else if ((csr0 & CSR0_CERR) != 0)
                     Console.WriteLine("[PCNET] Error: CERR");
+                else
+                    Console.WriteLine("[PCNET] Error: HELP :(");
+
                 return;
             }
 
-            Console.WriteHex(csr0 & CSR0_RINT);
-            Console.WriteLine("");
+            if((csr0 & CSR0_RINT) > 0)
+            {
+                while((m_rx_descriptors[m_currentRescDesc].status & 0x8000) == 0)
+                {
+                    if((m_rx_descriptors[m_currentRescDesc].status & 0x4000) == 0 &&
+                         (m_rx_descriptors[m_currentRescDesc].status & 0x3000) == 0
+                        )
+                    {
+                        byte* ptr = (byte *)Util.ObjectToVoidPtr(m_rx_descriptors);
+                        byte plen = ptr[9];
+
+                        Console.WriteNum(plen & 0xFF);
+                        Console.WriteLine("");
+                    }
+
+                    m_rx_descriptors[m_currentRescDesc].status = 0x8000;
+                    m_rx_descriptors[m_currentRescDesc].buf_len = 0xF000 | (-2048 & 0xFFF);
+                }
+
+                m_currentRescDesc++;
+                if (m_currentRescDesc == 8)
+                    m_currentRescDesc = 0;
+            }
         }
 
         private static void exitHandler(PCI.PciDevice dev)
@@ -196,13 +223,23 @@ namespace Sharpen.Drivers.Net
 
         private static void SoftwareReset()
         {
-            PortIO.In16((ushort)(m_io_base + REG_RESET));
-            PortIO.Out16((ushort)(m_io_base + REG_RESET), 0);
+            /// RESET
+            PortIO.In32((ushort)(m_io_base + 0x18));
+            PortIO.In16((ushort)(m_io_base + 0x14));
 
             Sleep(5);
 
-            // 16 bit mode please :)
-            writeBCR(20, 0x0102);
+            // SET BCR
+            PortIO.Out32((ushort)(m_io_base + REG_RDP), 0);
+
+            // Enable 32bit :)
+            writeBCR(20, 1);
+
+            // sws style 2 please
+            uint csr58 = readCSR(58);
+            csr58 &= 0xfff0;
+            csr58 |= 2;
+            writeCSR(58, csr58);
         }
 
         private static void Sleep(int cnt)
@@ -223,16 +260,18 @@ namespace Sharpen.Drivers.Net
 
             for (int i = 0; i < 8; i++)
             {
-                m_rx_descriptors[i].address = ((uint)Paging.GetPhysicalFromVirtual((void *)(rx_buf_adr + (i * 2048))));
-                m_rx_descriptors[i].flags = ByteUtil.ReverseBytes(0x80000000 | 0x0000F000 | (-2048 & 0xFFF)); // Descriptor OWN | Buffer length | Reserved 
+                m_rx_descriptors[i].address = (ushort)Paging.GetPhysicalFromVirtual((void *)(rx_buf_adr + i * 2048));
+                m_rx_descriptors[i].buf_len = 0xF000 | (-2048 & 0xFFF);
+                m_rx_descriptors[i].status = 0x8000;
                 m_rx_descriptors[i].flags2 = 0;
-                m_rx_descriptors[i].avail = (uint)(rx_buf_adr + i * 2048);
-
-                m_tx_descriptors[i].address = ((uint)Paging.GetPhysicalFromVirtual((void*)(tx_buf_adr + (i * 2048))));
-                m_tx_descriptors[i].flags = 0x0000F000; // THIS IS OURS!
+                m_rx_descriptors[i].reserved = (uint)(rx_buf_adr + i * 2048);
+                
+                m_tx_descriptors[i].address = (ushort)Paging.GetPhysicalFromVirtual((void*)(tx_buf_adr + i * 2048));
+                m_tx_descriptors[i].status = 0xF000;
                 m_tx_descriptors[i].flags2 = 0;
-                m_tx_descriptors[i].avail = (uint)(tx_buf_adr + i * 2048);
+                m_tx_descriptors[i].reserved = (uint)(tx_buf_adr + i * 2048);
             }
+
         }
 
         private static void FixCommand()
@@ -261,25 +300,31 @@ namespace Sharpen.Drivers.Net
         
         private static void writeRap(ushort val)
         {
-            PortIO.Out16((ushort)(m_io_base + REG_RAP), val);
+            PortIO.Out32((ushort)(m_io_base + REG_RAP), val);
         }
 
-
+        private static unsafe uint switchShorts(uint address)
+        {
+            ushort top = (ushort)((address >> 16) & 0xFFFF);
+            ushort bottom = (ushort)((address) & 0xFFFF);
+            return (uint)(bottom << 16 | top);
+        }
 
         private static unsafe void InitCard()
         {
-            CARD_REG* reg = (CARD_REG*)Heap.Alloc(sizeof(CARD_REG));
+            CARD_REG* reg = (CARD_REG*)Heap.AlignedAlloc(0x1000,sizeof(CARD_REG));
             reg->MODE = 0x0180;
-            reg->TLEN = (byte)(3 << 4) & 0xf0;
-            reg->RLEN = (byte)(3 << 4) & 0xf0;
+            reg->TLEN = 3;
+            reg->RLEN = 3;
             for (int i = 0; i < 6; i++)
                 reg->MAC[i] = m_mac[i];
             reg->first_rec_entry = (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_rx_descriptors));
             reg->first_transmit_entry = (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_tx_descriptors));
 
+
             uint reg_adr = (uint)Paging.GetPhysicalFromVirtual(reg);
             writeCSR(0x01, (ushort)(reg_adr & 0xFFFF));
-            writeCSR(0x02, (ushort)(reg_adr >> 16 & 0xFFFF));
+            writeCSR(0x02, (ushort)((reg_adr >> 16) & 0xFFFF));
         }
 
         /// <summary>

@@ -97,7 +97,7 @@ namespace Sharpen
             STDOUT.Init();
             SerialPort.Init();
             PipeFS.Init();
-
+            
             PCI.Init();
             //AC97.Init();
             VboxDev.Init();
