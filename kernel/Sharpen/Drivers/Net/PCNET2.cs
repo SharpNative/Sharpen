@@ -67,7 +67,9 @@ namespace Sharpen.Drivers.Net
             public uint address;
             public ushort buf_len;
             public ushort status;
-            public uint flags2;
+            public ushort mcnt;
+            public byte rpc;
+            public byte rcc;
             public uint reserved;
         }
 
@@ -153,8 +155,6 @@ namespace Sharpen.Drivers.Net
 
         private static unsafe void handler(Regs* regsPtr)
         {
-            Console.WriteLine("[PCNET] IRQ!");
-            Console.WriteHex(m_rx_descriptors[0].status);
 
             // acknowledge IRQ
             uint csr0 = readCSR(0);
@@ -176,10 +176,6 @@ namespace Sharpen.Drivers.Net
             if (!m_init)
                 return;
 
-            
-            Console.WriteHex(m_rx_descriptors[m_currentRescDesc].status);
-            Console.WriteLine("");
-
             if ((csr0 & CSR0_ERR) != 0)
             {
                 if ((csr0 & CSR0_MISS) != 0)
@@ -194,21 +190,34 @@ namespace Sharpen.Drivers.Net
                 return;
             }
 
-            if((csr0 & CSR0_RINT) > 0)
+            if ((csr0 & CSR0_RINT) > 0)
             {
-                while((m_rx_descriptors[1].status & 0x8000) == 0)
+                while((m_rx_descriptors[m_currentRescDesc].status & 0x8000) == 0)
                 {
-                    if((m_rx_descriptors[1].status & 0x4000) == 0 &&
-                         (m_rx_descriptors[1].status & 0x3000) == 0x0300
+                    Console.WriteHex(m_rx_descriptors[m_currentRescDesc].status);
+
+                    if ((m_rx_descriptors[m_currentRescDesc].status & 0x200) != 0 &&
+                         (m_rx_descriptors[m_currentRescDesc].status & 0x100) == 0x100
                         )
                     {
-                        // Receive :)
-                    }
+                        int size = m_rx_descriptors[m_currentRescDesc].mcnt & 0x0FFF;
 
-                    m_rx_descriptors[m_currentRescDesc].status = 0x8000;
-                    m_rx_descriptors[m_currentRescDesc].buf_len = 0xF000 | (-2048 & 0xFFF);
-                    m_rx_descriptors[m_currentRescDesc].flags2 = 0;
+                        Console.Write("Size received:");
+                        Console.WriteNum(size);
+                        Console.Write(" BUF ");
+                        Console.WriteNum(m_currentRescDesc);
+                        Console.WriteLine("");
+                    }
                     
+                    uint adr = m_rx_descriptors[m_currentRescDesc].reserved;
+
+                    m_rx_descriptors[m_currentRescDesc].address = (ushort)Paging.GetPhysicalFromVirtual((void*)(adr));
+                    m_rx_descriptors[m_currentRescDesc].status = 0xF000 | (-2048 & 0xFFF);
+                    m_rx_descriptors[m_currentRescDesc].mcnt = 0;
+                    m_rx_descriptors[m_currentRescDesc].rcc = 0;
+                    m_rx_descriptors[m_currentRescDesc].rpc = 0;
+                    m_rx_descriptors[m_currentRescDesc].reserved = adr;
+
                     m_currentRescDesc++;
                     if (m_currentRescDesc == 8)
                         m_currentRescDesc = 0;
@@ -263,12 +272,16 @@ namespace Sharpen.Drivers.Net
                 m_rx_descriptors[i].address = (ushort)Paging.GetPhysicalFromVirtual((void *)(rx_buf_adr + i * 2048));
                 m_rx_descriptors[i].buf_len = 0xF000 | (-2048 & 0xFFF);
                 m_rx_descriptors[i].status = 0x8000;
-                m_rx_descriptors[i].flags2 = 0;
+                m_rx_descriptors[i].mcnt = 0;
+                m_rx_descriptors[i].rcc = 0;
+                m_rx_descriptors[i].rpc = 0;
                 m_rx_descriptors[i].reserved = (uint)(rx_buf_adr + i * 2048);
                 
                 m_tx_descriptors[i].address = (ushort)Paging.GetPhysicalFromVirtual((void*)(tx_buf_adr + i * 2048));
                 m_tx_descriptors[i].status = 0xF000;
-                m_tx_descriptors[i].flags2 = 0;
+                m_tx_descriptors[i].mcnt = 0;
+                m_tx_descriptors[i].rcc = 0;
+                m_tx_descriptors[i].rpc = 0;
                 m_tx_descriptors[i].reserved = (uint)(tx_buf_adr + i * 2048);
             }
 
