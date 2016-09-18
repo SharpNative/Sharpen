@@ -32,6 +32,14 @@ namespace Sharpen.Drivers.Net
         private const ushort CSR0_TINT = 0x200;
         private const ushort CSR0_RINT = 0x400;
 
+        private const ushort RMD1_OWN = 0x8000;
+        private const ushort RMD1_STP = 0x200;
+        private const ushort RMD1_ENP = 0x100;
+
+
+        private const ushort STATUS_MASK = 0x0FFF;
+
+
         private static PCI.PciDevice m_dev;
         private static ushort m_io_base;
         private static byte[] m_mac;
@@ -192,15 +200,15 @@ namespace Sharpen.Drivers.Net
 
             if ((csr0 & CSR0_RINT) > 0)
             {
-                while((m_rx_descriptors[m_currentRescDesc].status & 0x8000) == 0)
+                while((m_rx_descriptors[m_currentRescDesc].status & RMD1_OWN) == 0)
                 {
                     Console.WriteHex(m_rx_descriptors[m_currentRescDesc].status);
 
-                    if ((m_rx_descriptors[m_currentRescDesc].status & 0x200) != 0 &&
-                         (m_rx_descriptors[m_currentRescDesc].status & 0x100) == 0x100
+                    if ((m_rx_descriptors[m_currentRescDesc].status & RMD1_STP) == RMD1_STP &&
+                         (m_rx_descriptors[m_currentRescDesc].status & RMD1_ENP) == RMD1_ENP
                         )
                     {
-                        int size = m_rx_descriptors[m_currentRescDesc].mcnt & 0x0FFF;
+                        int size = m_rx_descriptors[m_currentRescDesc].mcnt & STATUS_MASK;
 
                         Console.Write("Size received:");
                         Console.WriteNum(size);
@@ -212,14 +220,14 @@ namespace Sharpen.Drivers.Net
                     uint adr = m_rx_descriptors[m_currentRescDesc].reserved;
 
                     m_rx_descriptors[m_currentRescDesc].address = (ushort)Paging.GetPhysicalFromVirtual((void*)(adr));
-                    m_rx_descriptors[m_currentRescDesc].status = 0xF000 | (-2048 & 0xFFF);
+                    m_rx_descriptors[m_currentRescDesc].status = 0xF000 | (-2048 & STATUS_MASK);
                     m_rx_descriptors[m_currentRescDesc].mcnt = 0;
                     m_rx_descriptors[m_currentRescDesc].rcc = 0;
                     m_rx_descriptors[m_currentRescDesc].rpc = 0;
                     m_rx_descriptors[m_currentRescDesc].reserved = adr;
 
                     m_currentRescDesc++;
-                    if (m_currentRescDesc == 8)
+                    if (m_currentRescDesc >= 8)
                         m_currentRescDesc = 0;
                 }
             }
