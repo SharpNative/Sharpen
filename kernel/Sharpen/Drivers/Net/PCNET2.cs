@@ -219,7 +219,7 @@ namespace Sharpen.Drivers.Net
                     {
                         int size = m_rx_descriptors[m_currentRescDesc].mcnt & STATUS_MASK;
 
-                        Console.WriteLine("RECEIVE");
+                        char* ptr = (char *)m_rx_descriptors[m_currentRescDesc].reserved;
                     }
                     
                     uint adr = m_rx_descriptors[m_currentRescDesc].reserved;
