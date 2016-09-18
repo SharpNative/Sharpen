@@ -103,7 +103,7 @@ namespace Sharpen
             VboxDev.Init();
             //rtl8139.Init();
             //E1000.Init();
-            PCNet2.Init();
+            //PCNet2.Init();
 
             ATA.Init();
             Tasking.Init();

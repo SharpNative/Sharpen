@@ -107,12 +107,12 @@ namespace Sharpen.Drivers.Net
             m_io_base = dev.Port1;
             FixCommand();
 
+            // Read the current MAC
             ReadMac();
 
             // Do a software reset because we want 32bitjes :)
             SoftwareReset();
 
-            // Read the current MAC
             writeCSR(0, 0x04); // STOP
 
             // Initialize buffers
@@ -126,11 +126,10 @@ namespace Sharpen.Drivers.Net
 
 
             // Enable card
-            writeCSR(0, 0x41);
+            writeCSR(0, 0x41 | 0x08);
 
 
             writeCSR(4, 0x4C00 | readCSR(4));
-            writeCSR(0, 0x0042);
 
 
 
@@ -154,7 +153,14 @@ namespace Sharpen.Drivers.Net
         {
             if (!m_init)
                 return;
-            
+
+            if (size > 2048)
+                return;
+
+            Memory.Memcpy((void*)m_tx_descriptors[m_currentTransDesc].reserved, bytes, (int)size);
+
+            m_tx_descriptors[m_currentTransDesc].buf_len = (ushort)((-size) & 0xFFF);
+            m_tx_descriptors[m_currentTransDesc].status = 0xA300;
 
             m_currentTransDesc++;
             if (m_currentTransDesc == 8)
@@ -198,23 +204,22 @@ namespace Sharpen.Drivers.Net
                 return;
             }
 
+            if((csr0 & CSR0_TINT) > 0)
+            {
+                Console.WriteLine("TRANSMIT!");
+            }
+
             if ((csr0 & CSR0_RINT) > 0)
             {
                 while((m_rx_descriptors[m_currentRescDesc].status & RMD1_OWN) == 0)
                 {
-                    Console.WriteHex(m_rx_descriptors[m_currentRescDesc].status);
-
                     if ((m_rx_descriptors[m_currentRescDesc].status & RMD1_STP) == RMD1_STP &&
                          (m_rx_descriptors[m_currentRescDesc].status & RMD1_ENP) == RMD1_ENP
                         )
                     {
                         int size = m_rx_descriptors[m_currentRescDesc].mcnt & STATUS_MASK;
 
-                        Console.Write("Size received:");
-                        Console.WriteNum(size);
-                        Console.Write(" BUF ");
-                        Console.WriteNum(m_currentRescDesc);
-                        Console.WriteLine("");
+                        Console.WriteLine("RECEIVE");
                     }
                     
                     uint adr = m_rx_descriptors[m_currentRescDesc].reserved;
@@ -335,8 +340,8 @@ namespace Sharpen.Drivers.Net
         {
             CARD_REG* reg = (CARD_REG*)Heap.AlignedAlloc(0x1000,sizeof(CARD_REG));
             reg->MODE = 0x0180;
-            reg->TLEN = 3;
-            reg->RLEN = 3;
+            reg->TLEN = 255;
+            reg->RLEN = 255;
             for (int i = 0; i < 6; i++)
                 reg->MAC[i] = m_mac[i];
             reg->first_rec_entry = (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_rx_descriptors));
