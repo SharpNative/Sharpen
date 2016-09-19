@@ -153,14 +153,12 @@ namespace Sharpen.FileSystem
                 node.Read = readImpl;
                 node.Write = writeImpl;
                 node.Flags = NodeFlags.FILE;
-                Console.WriteLine("file");
             }
             else
             {
                 node.ReadDir = readDirImpl;
                 node.FindDir = findDirImpl;
                 node.Flags = NodeFlags.DIRECTORY;
-                Console.WriteLine("directory");
             }
             
             return node;
