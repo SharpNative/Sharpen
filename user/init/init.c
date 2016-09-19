@@ -4,9 +4,10 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <sched.h>
+#include <time.h>
 
 int shutdown(void);
-int reboot(void);
+int sched_yield(void);
 
 /* This init process is the base of everything */
 /* This is meant to initialize userspace and to let the user log in */
@@ -19,7 +20,7 @@ int main(int argc, char* argv[])
     (void) open("devices://keyboard", O_RDONLY); // STDIN
     (void) open("devices://stdout",   O_WRONLY); // STDOUT
     (void) open("devices://stdout",   O_WRONLY); // STDERR
-    
+
     // Check
     if(argc != 2)
     {
@@ -27,17 +28,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    #if defined(__rtems__)
-    for(;;);
-        #endif
-
-        #if defined(__svr4__) && !defined(__PPC__) && !defined(__sun__)
-        for(;;);
-        #endif
-
     // TODO: launch login, set userid, groupid, ...
-    // But we're not there yet
-    // ...
 
     printf("init: Launching %s\n", argv[1]);
 

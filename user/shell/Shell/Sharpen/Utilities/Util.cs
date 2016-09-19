@@ -1,14 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Shell
+﻿namespace Sharpen.Utilities
 {
     unsafe class Util
     {
+        /// <summary>
+        /// Converts a char array to a string
+        /// </summary>
+        /// <param name="array">The char array</param>
+        /// <returns>The string</returns>
         internal static extern string CharArrayToString(char[] array);
+
+        /// <summary>
+        /// Converts a char pointer to a string
+        /// </summary>
+        /// <param name="ptr">The char pointer</param>
+        /// <returns>The string</returns>
         internal static extern string CharPtrToString(char* ptr);
 
         /// <summary>

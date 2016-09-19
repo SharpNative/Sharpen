@@ -1,5 +1,4 @@
 ﻿using Sharpen.Arch;
-using Sharpen.FileSystem;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -37,7 +36,7 @@ namespace Sharpen.Task
             kernel.PageDir = Paging.KernelDirectory;
             kernel.Next = null;
             kernel.FPUContext = Heap.AlignedAlloc(16, 512);
-            kernel.Flags = TaskFlags.NOFLAGS;
+            kernel.Flags = Task.TaskFlags.NOFLAGS;
             kernel.FileDescriptors.Capacity = 0;
 
             KernelTask = kernel;
@@ -98,7 +97,7 @@ namespace Sharpen.Task
 
             // Set pointer and set remove flag
             previous.Next = current.Next;
-            current.Flags |= TaskFlags.DESCHEDULED;
+            current.Flags |= Task.TaskFlags.DESCHEDULED;
 
             // End of critical section
             CPU.STI();
@@ -178,7 +177,7 @@ namespace Sharpen.Task
             newTask.UID = 0;
             newTask.TimeFull = (int)priority;
             newTask.TimeLeft = (int)priority;
-            newTask.Flags = TaskFlags.NOFLAGS;
+            newTask.Flags = Task.TaskFlags.NOFLAGS;
 
             // Stack
             int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
@@ -188,7 +187,6 @@ namespace Sharpen.Task
             // Copy initial stack
             if (initialStackSize > 0)
             {
-                // TODO: workaround for compiler bug
                 int* stack = newTask.Stack;
                 for (int i = 0; i < initialStackSize; i++)
                 {
@@ -205,7 +203,9 @@ namespace Sharpen.Task
             // Program data space end
             newTask.DataEnd = null;
 
-            cloneDescriptors(newTask, CurrentTask);
+            // FS related stuff
+            CurrentTask.CloneDescriptorsTo(newTask);
+            newTask.CurrentDirectory = String.Clone(CurrentTask.CurrentDirectory);
 
             // FPU context
             newTask.FPUContext = Heap.AlignedAlloc(16, 512);
@@ -239,7 +239,7 @@ namespace Sharpen.Task
             newTask.UID = sourceTask.UID;
             newTask.TimeFull = sourceTask.TimeFull;
             newTask.TimeLeft = sourceTask.TimeFull;
-            newTask.Flags = TaskFlags.NOFLAGS;
+            newTask.Flags = Task.TaskFlags.NOFLAGS;
 
             // Stack
             int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
@@ -257,7 +257,9 @@ namespace Sharpen.Task
             // Program data space end
             newTask.DataEnd = sourceTask.DataEnd;
 
-            cloneDescriptors(newTask, sourceTask);
+            // FS related stuff
+            sourceTask.CloneDescriptorsTo(newTask);
+            newTask.CurrentDirectory = String.Clone(sourceTask.CurrentDirectory);
 
             // FPU context
             newTask.FPUContext = Heap.AlignedAlloc(16, 512);
@@ -269,56 +271,7 @@ namespace Sharpen.Task
             // Schedule
             ScheduleTask(newTask);
         }
-
-        /// <summary>
-        /// Clones descriptors
-        /// </summary>
-        /// <param name="destination">The destination</param>
-        /// <param name="source">The source</param>
-        private static void cloneDescriptors(Task destination, Task source)
-        {
-            // Fresh file descriptors
-            if (source.FileDescriptors.Capacity == 0)
-            {
-                destination.FileDescriptors.Capacity = 16;
-                destination.FileDescriptors.Used = 0;
-                destination.FileDescriptors.Nodes = new Node[16];
-                destination.FileDescriptors.Offsets = new uint[16];
-                return;
-            }
-
-            // File descriptors
-            destination.FileDescriptors.Capacity = source.FileDescriptors.Capacity;
-            destination.FileDescriptors.Used = source.FileDescriptors.Used;
-            destination.FileDescriptors.Nodes = new Node[destination.FileDescriptors.Capacity];
-            destination.FileDescriptors.Offsets = new uint[destination.FileDescriptors.Capacity];
-
-            // Copy file descriptors
-            int cap = source.FileDescriptors.Capacity;
-            for (int i = 0; i < cap; i++)
-            {
-                Node sourceNode = source.FileDescriptors.Nodes[i];
-                if (sourceNode != null)
-                {
-                    destination.FileDescriptors.Nodes[i] = sourceNode.Clone();
-                }
-                destination.FileDescriptors.Offsets[i] = source.FileDescriptors.Offsets[i];
-            }
-        }
-
-        /// <summary>
-        /// Cleans up the given task
-        /// </summary>
-        /// <param name="task">The task</param>
-        private static unsafe void cleanupTask(Task task)
-        {
-            // TODO: more cleaning required
-            Heap.Free(task.FPUContext);
-            Heap.Free(task.KernelStackStart);
-            return;
-            Paging.FreeDirectory(task.PageDir);
-        }
-
+        
         /// <summary>
         /// Finds the next task for the scheduler
         /// </summary>
@@ -373,9 +326,9 @@ namespace Sharpen.Task
             CurrentTask = current;
 
             // Cleanup old task
-            if ((oldTask.Flags & TaskFlags.DESCHEDULED) == TaskFlags.DESCHEDULED)
+            if ((oldTask.Flags & Task.TaskFlags.DESCHEDULED) == Task.TaskFlags.DESCHEDULED)
             {
-                cleanupTask(oldTask);
+                oldTask.Cleanup();
             }
 
             // Return the next task context
@@ -419,75 +372,6 @@ namespace Sharpen.Task
 
             // New location of stack
             return ptr;
-        }
-
-        /// <summary>
-        /// Gets a node from the descriptor
-        /// </summary>
-        /// <param name="descriptor">The descriptor</param>
-        /// <returns>The node</returns>
-        public static Node GetNodeFromDescriptor(int descriptor)
-        {
-            Task current = CurrentTask;
-            if (descriptor >= current.FileDescriptors.Capacity)
-                return null;
-
-            return current.FileDescriptors.Nodes[descriptor];
-        }
-
-        /// <summary>
-        /// Gets an offset of a node from the descriptor
-        /// </summary>
-        /// <param name="descriptor">The descriptor</param>
-        /// <returns>The offset</returns>
-        public static uint GetOffsetFromDescriptor(int descriptor)
-        {
-            Task current = CurrentTask;
-            if (descriptor >= current.FileDescriptors.Capacity)
-                return 0;
-
-            return current.FileDescriptors.Offsets[descriptor];
-        }
-
-        /// <summary>
-        /// Adds a node to the file descriptor
-        /// </summary>
-        /// <param name="node">The node to add</param>
-        /// <returns>The file descriptor ID</returns>
-        public static unsafe int AddNodeToDescriptor(Node node)
-        {
-            Task current = CurrentTask;
-
-            if (current.FileDescriptors.Used == current.FileDescriptors.Capacity - 1)
-            {
-                // Expand if needed
-                int oldCap = current.FileDescriptors.Capacity;
-                current.FileDescriptors.Capacity += 8;
-
-                Node[] newNodeArray = new Node[current.FileDescriptors.Capacity];
-                uint[] newOffsetArray = new uint[current.FileDescriptors.Capacity];
-
-                Memory.Memcpy(Util.ObjectToVoidPtr(newNodeArray), Util.ObjectToVoidPtr(current.FileDescriptors.Nodes), oldCap * sizeof(void*));
-                Memory.Memcpy(Util.ObjectToVoidPtr(newOffsetArray), Util.ObjectToVoidPtr(current.FileDescriptors.Offsets), oldCap * sizeof(uint));
-
-                current.FileDescriptors.Nodes = newNodeArray;
-                current.FileDescriptors.Offsets = newOffsetArray;
-            }
-
-            // Find a free descriptor
-            int i = 0;
-            for (; i < current.FileDescriptors.Capacity; i++)
-            {
-                if (current.FileDescriptors.Nodes[i] == null)
-                {
-                    current.FileDescriptors.Nodes[i] = node;
-                    current.FileDescriptors.Offsets[i] = 0;
-                    break;
-                }
-            }
-
-            current.FileDescriptors.Used++;
-            return i;
         }
 
         /// <summary>

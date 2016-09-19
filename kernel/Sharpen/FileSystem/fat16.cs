@@ -35,6 +35,13 @@ namespace Sharpen.FileSystem
 
         private const byte LFN = 0x0F;
 
+        private const int ATTRIB_READONLY = 0x1;
+        private const int ATTRIB_HIDDEN = 0x2;
+        private const int ATTRIB_SYSFILE = 0x4;
+        private const int ATTRIB_VOLUMELABEL = 0x8;
+        private const int ATTRIB_SUBDIR = 0x10;
+        private const int ATTRIB_ARCHIVE = 0x20;
+
 
         private static unsafe void initFAT(Node dev)
         {
@@ -130,6 +137,7 @@ namespace Sharpen.FileSystem
             p.Node.ReadDir = readDirImpl;
             p.Node.FindDir = findDirImpl;
             p.Node.Cookie = 0xFFFFFFFF;
+            p.Node.Flags = NodeFlags.DIRECTORY;
 
             VFS.AddMountPoint(p);
         }
@@ -139,11 +147,22 @@ namespace Sharpen.FileSystem
             Node node = new Node();
             node.Size = dirEntry->Size;
             node.Cookie = (uint)dirEntry;
-            node.Read = readImpl;
-            node.Write = writeImpl;
-            node.ReadDir = readDirImpl;
-            node.FindDir = findDirImpl;
-
+            
+            if ((dirEntry->Attribs & ATTRIB_SUBDIR) == 0)
+            {
+                node.Read = readImpl;
+                node.Write = writeImpl;
+                node.Flags = NodeFlags.FILE;
+                Console.WriteLine("file");
+            }
+            else
+            {
+                node.ReadDir = readDirImpl;
+                node.FindDir = findDirImpl;
+                node.Flags = NodeFlags.DIRECTORY;
+                Console.WriteLine("directory");
+            }
+            
             return node;
         }
 
@@ -262,7 +281,7 @@ namespace Sharpen.FileSystem
                     for (int z = 0; z < fnLength; z++)
                         outDir->Name[offset++] = entry.Name[z];
                     
-                    if ((dir.DirEntries[i].Attribs & 0x10) == 0)
+                    if ((dir.DirEntries[i].Attribs & ATTRIB_SUBDIR) == 0)
                     {
 
                         int extLength = String.IndexOf(Util.CharPtrToString(entry.Name + 8), " ");

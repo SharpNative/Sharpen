@@ -101,7 +101,9 @@ SYS2(dup2,          19, int, int);
 SYS2(sig_send,      20, int, int);
 SYS2(sig_handler,   21, int, sighandler_t);
 SYS0(yield,         22);
-
+SYS2(getcwd,        23, char*, size_t);
+SYS1(chdir,         24, const char*);
+SYS1(times,         25, struct tms*);
 
 // =================================== //
 // --- Implementations of methods  --- //
@@ -228,8 +230,14 @@ int unlink(const char* name)
 
 clock_t times(struct tms* buf)
 {
-    UNIMPLEMENTED;
-    return (clock_t)-1;
+    int ret = sys_times(buf);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return (clock_t)ret;
 }
 
 int execve(const char* path, const char** argv, const char** envp)
@@ -448,7 +456,37 @@ int dup2(int oldfd, int newfd)
     return ret;
 }
 
+int chdir(const char* path)
+{
+    int ret = sys_chdir(path);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return 0;
+}
+
 int sched_yield(void)
 {
     return sys_yield();
+}
+
+char* getcwd(char* buf, size_t size)
+{
+    /* If size is zero, default to PATH_MAX (4096) */
+    size = (size <= 0) ? 4096 : size;
+
+    /* Create buffer of size size if buf is not set */
+    if(buf == NULL)
+        buf = malloc(size + 1);
+
+    sys_getcwd(buf, size);
+    return buf;
+}
+
+char* get_current_dir_name(void)
+{
+    return getcwd(NULL, 0);
 }

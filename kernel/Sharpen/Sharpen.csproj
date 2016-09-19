@@ -73,6 +73,7 @@
     <Compile Include="Net\Network.cs" />
     <Compile Include="Net\NetworkTools.cs" />
     <Compile Include="Net\UDP.cs" />
+    <Compile Include="Task\FileDescriptors.cs" />
     <Compile Include="Task\Task.cs" />
     <Compile Include="Task\Tasking.cs" />
     <Compile Include="Arch\PCI.cs" />

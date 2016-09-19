@@ -1,26 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Sharpen.Utilities;
 
-namespace Shell
+namespace Sharpen.IO
 {
     class Console
     {
+        /// <summary>
+        /// Writes a string to the console without a newline
+        /// </summary>
+        /// <param name="str">The string</param>
         public static extern void Write(string str);
 
+        /// <summary>
+        /// Writes a character to the console
+        /// </summary>
+        /// <param name="c">The character</param>
         public static extern void Write(char c);
 
+        /// <summary>
+        /// Writes a line to the console
+        /// </summary>
+        /// <param name="str">The line</param>
         public static void WriteLine(string str)
         {
             Write(str);
             Write("\n");
         }
 
+        /// <summary>
+        /// Reads a character from the console
+        /// </summary>
+        /// <returns>The character</returns>
         public static extern char ReadChar();
 
-        internal static string ReadLine()
+        /// <summary>
+        /// Reads a line from the console
+        /// </summary>
+        /// <returns>The line</returns>
+        public static string ReadLine()
         {
             char[] buffer = new char[1024];
 
@@ -36,8 +52,7 @@ namespace Shell
 
             return Util.CharArrayToString(buffer);
         }
-
-
+        
         /// <summary>
         /// Writes a hexadecimal integer to the screen
         /// </summary>

@@ -47,14 +47,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Console.cs" />
-    <Compile Include="Directory.cs" />
-    <Compile Include="Heap.cs" />
-    <Compile Include="Process.cs" />
+    <Compile Include="Sharpen\IO\Console.cs" />
+    <Compile Include="Sharpen\IO\Directory.cs" />
+    <Compile Include="Sharpen\Memory\Heap.cs" />
+    <Compile Include="Sharpen\Process.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="String.cs" />
-    <Compile Include="Util.cs" />
+    <Compile Include="Sharpen\Utilities\String.cs" />
+    <Compile Include="Sharpen\Utilities\Util.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -68,6 +68,6 @@
   </Target>
   -->
   <Target Name="Build">
-    <CompileProjectTask Path="$(MSBuildProjectFullPath)" Outpath="../C/output.c" AfterBuildWorkingDir="$(SolutionDir)C" AfterBuildCommand="$(SolutionDir)C/compile.bat" />
+    <CompileProjectTask Path="$(MSBuildProjectFullPath)" Outpath="C/output.c" AfterBuildWorkingDir="$(SolutionDir)" AfterBuildCommand="$(SolutionDir)compile.bat" />
   </Target>
 </Project>

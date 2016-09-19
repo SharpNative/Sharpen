@@ -1,6 +1,6 @@
 OUTPUT_FORMAT(elf32-i386)
 ENTRY(_start)
-STARTUP(../../newlib/crt0.o)
+STARTUP(../newlib/crt0.o)
 phys = 0x8048000;
 
 SECTIONS

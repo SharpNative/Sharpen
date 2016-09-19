@@ -21,6 +21,13 @@ int main(int argc, char* argv[])
     for(int i = 0; i < argc; i++)
         printf("-> %s\n", argv[i]);
 
+    char cwd[512];
+    getcwd(cwd, sizeof(cwd));
+    printf("cwd=%s\n", cwd);
+    printf("chdir=%d\n", chdir("a"));
+    getcwd(cwd, sizeof(cwd));
+    printf("cwd=%s\n", cwd);
+
     // Pipe test
     int fd[2];
     char* str = "This is a pipe test";

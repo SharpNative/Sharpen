@@ -3,6 +3,7 @@ using Sharpen.Drivers.Power;
 using Sharpen.FileSystem;
 using Sharpen.Mem;
 using Sharpen.Task;
+using Sharpen.Utilities;
 
 namespace Sharpen.Exec
 {
@@ -33,13 +34,17 @@ namespace Sharpen.Exec
         public const int SYS_SIG_SEND = 20;
         public const int SYS_SIG_HANDLER = 21;
         public const int SYS_YIELD = 22;
+        public const int SYS_GETCWD = 23;
+        public const int SYS_CHDIR = 24;
+        public const int SYS_TIMES = 25;
 
         // Highest syscall number
-        public const int SYSCALL_MAX = 22;
+        public const int SYSCALL_MAX = 25;
 
         #endregion
 
         private const int WNOHANG = 1;
+        private const int CLOCKS_PER_SEC = 1000;
 
         /// <summary>
         /// Exit syscall
@@ -102,11 +107,11 @@ namespace Sharpen.Exec
         /// <returns>The amount of bytes written</returns>
         public static int Write(int descriptor, byte[] buffer, uint size)
         {
-            Node node = Tasking.GetNodeFromDescriptor(descriptor);
+            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
 
-            uint offset = Tasking.GetOffsetFromDescriptor(descriptor);
+            uint offset = Tasking.CurrentTask.GetOffsetFromDescriptor(descriptor);
             Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] += size;
 
             return (int)VFS.Write(node, offset, size, buffer);
@@ -121,11 +126,11 @@ namespace Sharpen.Exec
         /// <returns>The amount of bytes read</returns>
         public static int Read(int descriptor, byte[] buffer, uint size)
         {
-            Node node = Tasking.GetNodeFromDescriptor(descriptor);
+            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
-            
-            uint offset = Tasking.GetOffsetFromDescriptor(descriptor);
+
+            uint offset = Tasking.CurrentTask.GetOffsetFromDescriptor(descriptor);
             Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] += size;
 
             return (int)VFS.Read(node, offset, size, buffer);
@@ -139,12 +144,16 @@ namespace Sharpen.Exec
         /// <returns>The file descriptor ID</returns>
         public static int Open(string path, int flags)
         {
+            if (Tasking.CurrentTask.CurrentDirectory != null && !VFS.IsAbsolutePath(path))
+                path = String.Merge(Tasking.CurrentTask.CurrentDirectory, path);
+
+            path = VFS.ResolvePath(path);
             Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
 
             VFS.Open(node, (FileMode)flags);
-            return Tasking.AddNodeToDescriptor(node);
+            return Tasking.CurrentTask.AddNodeToDescriptor(node);
         }
 
         /// <summary>
@@ -154,7 +163,7 @@ namespace Sharpen.Exec
         /// <returns>The errorcode</returns>
         public static int Close(int descriptor)
         {
-            Node node = Tasking.GetNodeFromDescriptor(descriptor);
+            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
 
@@ -175,7 +184,7 @@ namespace Sharpen.Exec
         /// <returns>The new offset from the beginning of the file in bytes</returns>
         public static int Seek(int descriptor, uint offset, FileWhence whence)
         {
-            Node node = Tasking.GetNodeFromDescriptor(descriptor);
+            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
 
@@ -197,7 +206,7 @@ namespace Sharpen.Exec
         /// <returns>The errorcode</returns>
         public static unsafe int FStat(int descriptor, Stat* st)
         {
-            Node node = Tasking.GetNodeFromDescriptor(descriptor);
+            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
 
@@ -231,6 +240,7 @@ namespace Sharpen.Exec
         public static int Execve(string path, string[] argv, string[] envp)
         {
             // TODO: envp
+            path = VFS.GetAbsolutePath(path);
             int error = Loader.StartProcess(path, argv, Tasking.SpawnFlags.SWAP_PID);
             if (error < 0)
                 return error;
@@ -252,6 +262,7 @@ namespace Sharpen.Exec
         public static int Run(string path, string[] argv, string[] envp)
         {
             // TODO: envp
+            path = VFS.GetAbsolutePath(path);
             int pid = Loader.StartProcess(path, argv, Tasking.SpawnFlags.NONE);
             return pid;
         }
@@ -309,7 +320,7 @@ namespace Sharpen.Exec
         /// <returns>Errorcode</returns>
         public static unsafe int Readdir(int descriptor, DirEntry* entry, uint index)
         {
-            Node node = Tasking.GetNodeFromDescriptor(descriptor);
+            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
 
@@ -372,8 +383,8 @@ namespace Sharpen.Exec
             if (error != ErrorCode.SUCCESS)
                 return -(int)error;
 
-            pipefd[0] = Tasking.AddNodeToDescriptor(nodes[0]);
-            pipefd[1] = Tasking.AddNodeToDescriptor(nodes[1]);
+            pipefd[0] = Tasking.CurrentTask.AddNodeToDescriptor(nodes[0]);
+            pipefd[1] = Tasking.CurrentTask.AddNodeToDescriptor(nodes[1]);
 
             return 0;
         }
@@ -410,6 +421,45 @@ namespace Sharpen.Exec
         public static int Yield()
         {
             Tasking.ManualSchedule();
+            return 0;
+        }
+
+        /// <summary>
+        /// Changes the current directory to newDir
+        /// </summary>
+        /// <param name="newDir">The new working directory</param>
+        /// <returns>Errorcode</returns>
+        public static int ChDir(string newDir)
+        {
+            newDir = VFS.GetAbsolutePath(newDir);
+
+            // Check if it's a directory and if it exists
+            Node node = VFS.GetByPath(newDir);
+            
+            if (node == null)
+                return -(int)ErrorCode.ENOENT;
+            
+            if (node.Flags != NodeFlags.DIRECTORY)
+                return -(int)ErrorCode.ENOTDIR;
+            
+            Tasking.CurrentTask.CurrentDirectory = newDir;
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Gets the current working directory
+        /// </summary>
+        /// <param name="destination">The destination buffer</param>
+        /// <param name="size">The size of the destination buffer</param>
+        /// <returns>Errorcode</returns>
+        public static unsafe int GetCWD(char* destination, int size)
+        {
+            fixed (char* ptr = Tasking.CurrentTask.CurrentDirectory)
+            {
+                Memory.Memcpy(destination, ptr, size);
+                destination[size] = '\0';
+            }
             return 0;
         }
     }

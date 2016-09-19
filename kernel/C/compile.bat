@@ -1,27 +1,18 @@
 @echo off
-set PATH=%PATH%;..\..\tools\gcc\bin;..\..\tools\nasm
-
-IF EXIST build GOTO nocreatedir
-mkdir build
-
-:nocreatedir
-del build\*.o
+call ..\..\scripts\pre
 
 echo Assembling..
-nasm -f elf32 arch\arch.asm -o build\arch.o
+nasm %KERNEL_ASM_FLAGS% arch\arch.asm -o build\arch.o
 
 echo Compiling..
-i686-elf-gcc -I./include -Wall -O2 -std=c99 kernel.c -c -o build\kernel.o
+i686-elf-gcc %KERNEL_C_FLAGS% kernel.c -c -o build\kernel.o
 
 echo Linking kernel...
-i686-elf-ld -Tlinker.ld -s build\*.o -o kernel
+i686-elf-ld %KERNEL_LD_FLAGS% build\*.o -o kernel
 
 echo Copying kernel...
-imdisk -a -m G: -o hd -t file -f os.img -v 1
+call ..\..\scripts\mount
 copy kernel G:\kernel
-imdisk -D -m G:
+call ..\..\scripts\unmount
 
-echo Starting QEMU...
-rem "C:\Program Files\qemu\qemu-system-i386.exe" os.img -soundhw ac97  -net nic,model=rtl8139 -serial file:test.txt -net tap,ifname=TAP -m 256 -D qemu.log 
-"C:\Program Files\qemu\qemu-system-i386.exe" os.img -soundhw ac97  -net nic,model=pcnet -serial file:test.txt -net tap,ifname=TAP -m 256 -D qemu.log 
-#net dump,file=netdump.wcap 
+call ..\..\scripts\qemu

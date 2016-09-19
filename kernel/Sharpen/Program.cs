@@ -110,6 +110,7 @@ namespace Sharpen
             
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
+            Tasking.KernelTask.CurrentDirectory = "C://";
             
             byte[] bac = new byte[6];
             Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));

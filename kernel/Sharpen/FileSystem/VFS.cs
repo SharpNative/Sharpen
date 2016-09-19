@@ -1,5 +1,6 @@
 ﻿using Sharpen.Collections;
 using Sharpen.Mem;
+using Sharpen.Task;
 using Sharpen.Utilities;
 
 namespace Sharpen.FileSystem
@@ -40,12 +41,12 @@ namespace Sharpen.FileSystem
         {
             if (index >= m_dictionary.Count())
                 return null;
-            
+
             MountPoint dev = (MountPoint)m_dictionary.GetAt((int)index);
             if (dev == null)
                 return null;
 
-            DirEntry *entry = (DirEntry *)Heap.Alloc(sizeof(DirEntry));
+            DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
             int i = 0;
             for (; dev.Name[i] != '\0'; i++)
                 entry->Name[i] = dev.Name[i];
@@ -113,38 +114,152 @@ namespace Sharpen.FileSystem
                 path = String.Merge(path, "/");
 
             string deviceName = String.SubString(path, 0, index);
-            string AfterDeviceName = String.SubString(path, index + 3, String.Length(path) - (index + 3));
-            int parts = String.Count(AfterDeviceName, '/');
+            string afterDeviceName = String.SubString(path, index + 3, String.Length(path) - (index + 3));
+            int parts = String.Count(afterDeviceName, '/');
 
             // Find first mount
             MountPoint mp = FindMountByName(deviceName);
             if (mp == null)
                 return null;
-            
+
             Node lastNode = mp.Node;
 
             // TODO: Optimize this process!
-            string nodeName = AfterDeviceName;
-            string afterNodeName = AfterDeviceName;
-            int i = 0;
+            string afterNodeName = afterDeviceName;
+            int pathLength = String.Length(path);
             while (parts > 0)
             {
                 index = String.IndexOf(afterNodeName, "/");
-                nodeName = String.SubString(afterNodeName, 0, index);
+                string nodeName = String.SubString(afterNodeName, 0, index);
 
                 if (parts > 1)
-                    afterNodeName = String.SubString(afterNodeName, index + 1, String.Length(path) - 1);
-                
+                    afterNodeName = String.SubString(afterNodeName, index + 1, pathLength - 1);
+
                 lastNode = lastNode.FindDir(lastNode, nodeName);
-                
+
                 if (lastNode == null)
                     return null;
 
                 parts--;
-                i++;
             }
-            
+
             return lastNode;
+        }
+
+        /// <summary>
+        /// Resolves a path
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static unsafe string ResolvePath(string path)
+        {
+            int index = String.IndexOf(path, "://");
+            if (index == -1)
+                return null;
+            
+            if (path[String.Length(path) - 1] != '/')
+                path = String.Merge(path, "/");
+
+            string deviceName = String.SubString(path, 0, index + 3);
+            string afterDeviceName = String.SubString(path, index + 3, String.Length(path) - (index + 3));
+            string afterNodeName = afterDeviceName;
+
+            int pathLength = String.Length(afterDeviceName);
+            int parts = String.Count(afterDeviceName, '/');
+
+            // At most <parts>
+            string[] partArray = new string[parts];
+            int arrayIndex = 0;
+
+            // Get the parts all in the array so we can just merge it with a slash
+            while (parts > 0)
+            {
+                index = String.IndexOf(afterNodeName, "/");
+                string nodeName = String.SubString(afterNodeName, 0, index);
+                
+                if (parts > 1)
+                    afterNodeName = String.SubString(afterNodeName, index + 1, pathLength - 1);
+
+                // Special character
+                if (nodeName[0] == '.')
+                {
+                    // Nothing happens if this is only a dot, just the current directory entry
+                    // Except if another dot follows
+                    if (nodeName[1] == '.' && nodeName[2] == '\0')
+                    {
+                        if (arrayIndex > 0)
+                        {
+                            partArray[arrayIndex] = partArray[arrayIndex + 1];
+                            arrayIndex--;
+                        }
+                    }
+                }
+                // Nothing special
+                else
+                {
+                    partArray[arrayIndex++] = nodeName;
+                }
+
+                parts--;
+            }
+
+            return String.MergeArray(partArray, arrayIndex, "/", deviceName);
+        }
+        
+        /// <summary>
+        /// Checks if a path is an absolute path
+        /// </summary>
+        /// <param name="path">The given path</param>
+        /// <returns>If it's an absolute path</returns>
+        public static bool IsAbsolutePath(string path)
+        {
+            int index = String.IndexOf(path, "://");
+            if (index == -1)
+                return false;
+
+            int firstSlashIndex = String.IndexOf(path, "/");
+            if (firstSlashIndex > -1 && firstSlashIndex < index - 1)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the absolute path from the relative path
+        /// </summary>
+        /// <param name="path">The relative path</param>
+        /// <returns>The absolute path</returns>
+        public static string GetAbsolutePath(string path)
+        {
+            // Check if it's a relative path
+            int deviceNameIndex = String.IndexOf(path, "://");
+            if (deviceNameIndex == -1)
+            {
+                // Current directory
+                string currentDir = Tasking.CurrentTask.CurrentDirectory;
+                int currentDirLength = String.Length(currentDir);
+
+                // Check if the directory name ends with a slash
+                // If not, make sure we put a slash between the current directory and the new directory
+                string merged = null;
+                if (currentDir[currentDirLength - 1] != '/')
+                {
+                    merged = String.Merge(currentDir, "/", path);
+                }
+                else
+                {
+                    merged = String.Merge(currentDir, path);
+                }
+
+                path = ResolvePath(merged);
+            }
+            // Absolute path
+            else
+            {
+                path = VFS.ResolvePath(path);
+            }
+
+            return path;
         }
 
         /// <summary>
@@ -158,7 +273,7 @@ namespace Sharpen.FileSystem
 
             if (node.Open == null)
                 return;
-            
+
             node.Open(node);
         }
 
@@ -172,7 +287,7 @@ namespace Sharpen.FileSystem
 
             if (node.Close == null)
                 return;
-            
+
             node.Close(node);
         }
 

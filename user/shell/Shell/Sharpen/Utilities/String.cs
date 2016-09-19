@@ -1,4 +1,6 @@
-﻿namespace Shell
+﻿using Sharpen.Memory;
+
+namespace Sharpen.Utilities
 {
     public sealed class String
     {
@@ -13,7 +15,7 @@
             for (; text[i] != '\0'; i++) ;
             return i;
         }
-
+        
         /// <summary>
         /// IndexOf implementation
         /// </summary>
@@ -53,32 +55,6 @@
             }
 
             return -1;
-        }
-
-        /// <summary>
-        /// Merge 2 strings
-        /// </summary>
-        /// <param name="first">The first string</param>
-        /// <param name="second">The second string</param>
-        /// <returns>The merged string</returns>
-        public static unsafe string Merge(string first, string second)
-        {
-            int firstLength = Length(first);
-            int secondLength = Length(second);
-
-            int totalLength = firstLength + secondLength;
-            char* outVal = (char*)Heap.Alloc(totalLength + 1);
-
-
-            for (int i = 0; i < firstLength; i++)
-                outVal[i] = first[i];
-
-            for (int i =0; i < secondLength; i++ )
-                outVal[firstLength + i] = second[i];
-
-            outVal[totalLength] = '\0';
-
-            return Util.CharPtrToString(outVal);
         }
 
         /// <summary>
@@ -163,7 +139,6 @@
             return (c >= 'a' && c <= 'z') ? (char)(c + ('A' - 'a')) : c;
         }
 
-
         /// <summary>
         /// Converts a char to lowercase
         /// </summary>
@@ -171,10 +146,7 @@
         /// <returns>The lowercase character</returns>
         public static char ToLower(char c)
         {
-            if ((c >= 65) && (c <= 90))
-                c = (char)(c + (int)32);
-
-            return c;
+            return (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
         }
     }
 }

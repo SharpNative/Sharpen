@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Shell
+﻿namespace Sharpen.IO
 {
     class Directory
     {
@@ -42,5 +36,8 @@ namespace Shell
         {
             CloseInternal(m_instance);
         }
+
+        public static extern bool SetCurrentDirectory(string path);
+        public static extern string GetCurrentDirectory();
     }
 }
