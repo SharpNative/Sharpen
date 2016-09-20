@@ -383,8 +383,8 @@ namespace Sharpen.FileSystem
                 }
             }
 
-            sectorsOffset = sectorsOffset - (clusterOffset * m_bpb->SectorsPerCluster);
             uint StartOffset = offset - (sectorsOffset * 512);
+            sectorsOffset = sectorsOffset - (clusterOffset * m_bpb->SectorsPerCluster);
 
             // Read starting cluster
             byte[] buf = new byte[512];
@@ -400,7 +400,7 @@ namespace Sharpen.FileSystem
             uint currentCluster = startCluster;
             uint currentOffset = 0;
             int sizeLeft = (int)size;
-
+            
             for (int i = 0; i < sizeInSectors; i++)
             {
                 if (offsetInCluster == m_bpb->SectorsPerCluster)
@@ -425,7 +425,6 @@ namespace Sharpen.FileSystem
                 }
                 
                 Memory.Memcpy((void*)((int)Util.ObjectToVoidPtr(buffer) + currentOffset), (void*)((int)Util.ObjectToVoidPtr(buf) + offsetInSector), sizeTemp);
-                
                 currentOffset += (uint)sizeTemp;
                 sizeLeft -= sizeTemp;
                 offsetInCluster++;
@@ -477,7 +476,7 @@ namespace Sharpen.FileSystem
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             FatDirEntry* entry = (FatDirEntry*)node.Cookie;
-
+            
             // If the offset is behind the size, stop here
             if (offset > entry->Size)
                 return 0;
