@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sharpen.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -78,6 +79,40 @@ namespace Sharpen.Net
                 m_dev.GetMac(mac);
         }
 
+        public static unsafe void HandlePacket(byte[] buffer, int size)
+        {
+            Console.WriteLine("Incoming packet!");
+
+            byte* bufPtr = (byte*)Util.ObjectToVoidPtr(buffer);
+
+            EthernetHeader* header = (EthernetHeader*)bufPtr;
+            
+            ushort proto = ByteUtil.ReverseBytes(header->Protocol);
+
+            // We only handle IPV4 for now :)
+            if (proto != 0x800)
+                return;
+            
+            IPV4Header* headerr = (IPV4Header*)bufPtr;
+
+            Console.WriteLine("\nID:");
+            Console.WriteHex(ByteUtil.ReverseBytes(headerr->ID));
+
+            // WE NEED A UDP PACKET :)
+            if (headerr->Protocol != 0x11)
+                return;
+
+
+            // we now have an udp packet :)
+            UDPHeader* udp = (UDPHeader*)bufPtr;
+
+            int sizePacket = ByteUtil.ReverseBytes(udp->Length) - 8;
+
+            Console.Write("\nSize:");
+            Console.WriteNum(sizePacket);
+
+            for (;;) ;
+        }
 
     }
 }
