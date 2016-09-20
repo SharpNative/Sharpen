@@ -20,6 +20,9 @@ namespace Sharpen.Arch
             public ushort Slot;
             public ushort Function;
 
+            public byte classCode;
+            public byte SubClass 
+
             public ushort Vendor;
             public ushort Device;
             public PciDriver Driver;
@@ -219,8 +222,15 @@ namespace Sharpen.Arch
             dev.Port1 = (ushort)(ReadWord(bus, device, 0, 0x10) & ~1);
             dev.Port2 = (ushort)(ReadWord(bus, device, 0, 0x14) & ~1);
             dev.Type = (byte)(ReadWord(bus, device, 0, 0x0D) & 0xFF);
+            dev.classCode = (byte)(ReadWord(bus, device, 0, 0x0A) & 0xFF);
+            dev.SubClass = (byte)((ReadWord(bus, device, 0, 0x0A) & 0x00FF) >> 8);
             
             m_devices[m_currentdevice++] = dev;
+        }
+
+        public static PciDevice[] GetDevices()
+        {
+            return m_devices;
         }
 
         /// <summary>
