@@ -1,4 +1,5 @@
-﻿using Sharpen.Utilities;
+﻿using Sharpen.Mem;
+using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +21,10 @@ namespace Sharpen.Net
             public TransmitAction Transmit;
             public GetMACAction GetMac;
         }
-        
+
+        // Network packet type handler
+        public unsafe delegate void PackerHandler(byte *buffer, uint size);
+
         /// <summary>
         /// Transmit packet
         /// </summary>
@@ -37,9 +41,21 @@ namespace Sharpen.Net
 
         public static NetDevice m_dev;
 
+        private static PackerHandler[] m_handlers;
+
         public static NetDevice Device
         {
             get { return m_dev; }
+        }
+
+        public static void Init()
+        {
+            m_handlers = new PackerHandler[65536];
+        }
+
+        public static void RegisterHandler(ushort protocol, PackerHandler handler)
+        {
+            m_handlers[protocol] = handler;
         }
 
         /// <summary>
@@ -59,14 +75,23 @@ namespace Sharpen.Net
         /// </summary>
         /// <param name="bytes">byte buffer</param>
         /// <param name="size">packet size</param>
-        public static unsafe void Transmit (byte* bytes, uint size)
+        public static unsafe void Transmit (NetBufferDescriptor* packet)
         {
+            int size = packet->end - packet->start;
+            
+            byte* buffer = (byte *)Heap.Alloc(size);
+            Memory.Memcpy(buffer, packet->buffer + packet->start, size);
+
+            // LOGIC
+
             Console.Write("[NET] Transmit packet with ");
             Console.WriteNum((int)size);
             Console.WriteLine(" bytes");
 
             if (m_dev.ID != 0)
-                m_dev.Transmit(bytes, size);
+                m_dev.Transmit(buffer, (uint)size);
+
+            Heap.Free(buffer);
         }
 
         /// <summary>
@@ -81,37 +106,13 @@ namespace Sharpen.Net
 
         public static unsafe void HandlePacket(byte[] buffer, int size)
         {
-            Console.WriteLine("Incoming packet!");
-
             byte* bufPtr = (byte*)Util.ObjectToVoidPtr(buffer);
 
             EthernetHeader* header = (EthernetHeader*)bufPtr;
             
             ushort proto = ByteUtil.ReverseBytes(header->Protocol);
-
-            // We only handle IPV4 for now :)
-            if (proto != 0x800)
-                return;
             
-            IPV4Header* headerr = (IPV4Header*)bufPtr;
-
-            Console.WriteLine("\nID:");
-            Console.WriteHex(ByteUtil.ReverseBytes(headerr->ID));
-
-            // WE NEED A UDP PACKET :)
-            if (headerr->Protocol != 0x11)
-                return;
-
-
-            // we now have an udp packet :)
-            UDPHeader* udp = (UDPHeader*)bufPtr;
-
-            int sizePacket = ByteUtil.ReverseBytes(udp->Length) - 8;
-
-            Console.Write("\nSize:");
-            Console.WriteNum(sizePacket);
-
-            for (;;) ;
+            m_handlers[proto]?.Invoke(bufPtr + sizeof(EthernetHeader), (uint)size);
         }
 
     }

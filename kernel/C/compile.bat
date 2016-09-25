@@ -15,4 +15,4 @@ call ..\..\scripts\mount
 copy kernel G:\kernel
 call ..\..\scripts\unmount
 
-call ..\..\scripts\qemu
+call ..\..\scripts\qemu.bat

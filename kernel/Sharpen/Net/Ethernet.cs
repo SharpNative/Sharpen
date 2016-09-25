@@ -26,11 +26,13 @@ namespace Sharpen.Net
     class Ethernet
     {
 
-        public static unsafe EthernetHeader *CreateHeaderPtr(byte[] dest, byte[] src, EthernetTypes protocol)
+        public static unsafe EthernetHeader *FillHeader(NetBufferDescriptor *packet, byte[] dest, byte[] src, EthernetTypes protocol)
         {
+            packet->start -= (short)sizeof(EthernetHeader);
 
-            EthernetHeader* header = (EthernetHeader*)Heap.Alloc(sizeof(EthernetHeader));
+            EthernetHeader* header = (EthernetHeader*)(packet->buffer + packet->start);
 
+            Console.WriteHex(src[0]);
             for (int i = 0; i < 6; i++)
                 header->Destination[i] = dest[i];
 
@@ -42,26 +44,11 @@ namespace Sharpen.Net
             return header;
         }
 
-
-
-        public static unsafe EthernetHeader CreateHeader(byte[] dest, byte [] src, EthernetTypes protocol)
+        public static unsafe void Send(NetBufferDescriptor *packet, byte[] srcMAC, byte[] destMAC, EthernetTypes protocol)
         {
-            EthernetHeader* ptr = CreateHeaderPtr(dest, src, protocol);
-            EthernetHeader header = *ptr;
-            Heap.Free(ptr);
-            
-            return header;
-        }
+            FillHeader(packet, destMAC, srcMAC, protocol);
 
-
-
-        public static unsafe EthernetHeader *ReadHeader(byte *header)
-        {
-
-            EthernetHeader* outHeader = (EthernetHeader*)Heap.Alloc(sizeof(EthernetHeader));
-            Memory.Memcpy(outHeader, header, sizeof(EthernetHeader));
-
-            return outHeader;
+            Network.Transmit(packet);
         }
     }
 }

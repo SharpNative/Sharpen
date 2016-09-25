@@ -102,8 +102,16 @@ namespace Sharpen
             //AC97.Init();
             VboxDev.Init();
             //rtl8139.Init();
+
+            // Networking proto's 
+            Network.Init();
+            IPV4.Init();
+            UDP.Init();
+            //ARP.Init();
+
+            // Networking drivers
             //E1000.Init();
-            //PCNet2.Init();
+            PCNet2.Init();
 
             ATA.Init();
             Tasking.Init();

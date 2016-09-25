@@ -13,8 +13,6 @@ namespace Sharpen.Net
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe struct UDPHeader
     {
-        public IPV4Header ipv4;
-
         public UInt16 SourcePort;
         public UInt16 DestinationPort;
         public UInt16 Length;
@@ -23,24 +21,48 @@ namespace Sharpen.Net
 
     class UDP
     {
+        private const byte PROTOCOL_UDP = 17;
 
-        public static unsafe UDPHeader* createHeader(byte[] destMac, byte[] destIP, UInt16 sourcePort, UInt16 DestinationPort, UInt16 length)
+        public static unsafe void Init()
         {
-            UDPHeader* header = (UDPHeader*)Heap.Alloc(sizeof(UDPHeader));
+            IPV4.RegisterHandler(0x11, handler);
+        }
 
-            length += 8;
+        private static unsafe void handler(uint xid, byte *buffer, uint size)
+        {
+            // :-)
+            UDPHeader* header = (UDPHeader*)buffer;
 
-            // TODO: FIX THIS!
-            IPV4Header* hdrPtr = IPV4.CreateHeaderPtr(destMac, new byte[4], destIP, 0x11, (UInt16)(length + (ushort)20));
-            header->ipv4 = *hdrPtr;
-            Heap.Free(hdrPtr);
+        }
+
+        private static unsafe UDPHeader* FillHeader(NetBufferDescriptor *packet, byte[] destIP, UInt16 sourcePort, UInt16 DestinationPort)
+        {
+            UDPHeader* header = (UDPHeader*)packet->buffer;
+
+            packet->start -= (short)sizeof(UDPHeader);
+
 
             header->SourcePort = ByteUtil.ReverseBytes(sourcePort);
             header->DestinationPort = ByteUtil.ReverseBytes(DestinationPort);
-            header->Length = ByteUtil.ReverseBytes(length);
+            header->Length = ByteUtil.ReverseBytes((ushort)(packet->end - packet->start));
             header->Checksum = 0x1F59; // Isn't required :)
 
             return header;
+        }
+        
+        public static unsafe void Send(byte[] destMac, byte[] destIP, ushort srcPort, ushort DestPort, byte[] data, int size)
+        {
+            // No support for packets over 1500 bytes
+            if (size >= 1500)
+                return;
+
+            NetBufferDescriptor* buf = NetBuffer.Alloc();
+
+            Memory.Memcpy(buf->buffer + buf->start, Util.ObjectToVoidPtr(data), size);
+
+            FillHeader(buf, destIP, srcPort, DestPort);
+
+            IPV4.Send(buf, destMac, destIP, PROTOCOL_UDP);
         }
     }
 }

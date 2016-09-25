@@ -12,8 +12,6 @@ namespace Sharpen.Net
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe struct IPV4Header
     {
-        public EthernetHeader EthernetHeader;
-        
         public byte Version;
         public byte ServicesField;
         public UInt16 totalLength;
@@ -28,39 +26,45 @@ namespace Sharpen.Net
 
     class IPV4
     {
-        public static unsafe IPV4Header CreateHeader(byte[] dest)
+        // Network packet type handler
+        public unsafe delegate void PackerHandler(uint xid, byte* buffer, uint size);
+
+        private static PackerHandler[] m_handlers;
+
+        public static unsafe void Init()
         {
-            byte[] mymac = new byte[6];
-            Network.GetMac((byte*)Util.ObjectToVoidPtr(mymac));
-
-            IPV4Header header = new IPV4Header();
-            header.EthernetHeader = Ethernet.CreateHeader(dest, mymac, EthernetTypes.IPV4);
-
-            header.Version = 0x45;
-            header.ServicesField = 0;
-            header.totalLength = 0x2C01;
-            header.ID = 0x36A8;
-            header.FragmentOffset = 0;
-            header.TTL = 250;
-            header.Protocol = 0x11;
-            header.HeaderChecksum = 0xB817;
-
-
-            return header;
+            m_handlers = new PackerHandler[255];
+            Network.RegisterHandler(0x0800, Handle);
         }
 
-        public static unsafe IPV4Header *CreateHeaderPtr(byte[] destMac, byte[] sourceIP, byte[] destIP, byte protocol, UInt16 size)
+        private static unsafe void Handle(byte* buffer, uint size)
+        {
+            IPV4Header* header = (IPV4Header*)buffer;
+
+            byte proto = header->Protocol;
+            
+            m_handlers[proto]?.Invoke(ByteUtil.ReverseBytes(header->ID), buffer + sizeof(IPV4Header), size);
+        }
+
+        public static void RegisterHandler(byte proto, PackerHandler handler)
+        {
+            m_handlers[proto] = handler;
+        }
+        
+
+        public static unsafe IPV4Header *FillHeader(NetBufferDescriptor *packet, byte[] destMac, byte[] sourceIP, byte[] destIP, byte protocol)
         {
             byte[] mymac = new byte[6];
             Network.GetMac((byte*)Util.ObjectToVoidPtr(mymac));
 
+            packet->start -= (short)sizeof(IPV4Header);
 
-            IPV4Header* header = (IPV4Header*)Heap.Alloc(sizeof(IPV4Header));
-            header->EthernetHeader = Ethernet.CreateHeader(destMac, mymac, EthernetTypes.IPV4);
+
+            IPV4Header* header = (IPV4Header*)packet->buffer + packet->start;
 
             header->Version = 0x45;
             header->ServicesField = 0;
-            header->totalLength = ByteUtil.ReverseBytes(size);
+            header->totalLength = ByteUtil.ReverseBytes((ushort)(packet->end - packet->start));
             header->ID = 0x36A8;
             header->FragmentOffset = 0;
             header->TTL = 250;
@@ -73,6 +77,15 @@ namespace Sharpen.Net
 
 
             return header;
+        }
+        
+
+        public static unsafe void Send(NetBufferDescriptor* packet, byte[] destMac, byte[] destIP, byte protocol)
+        {
+            byte[] sourceIP = { 0x00, 0x00, 0x00, 0x00 };
+            FillHeader(packet, destMac, destIP, sourceIP, protocol);
+
+
         }
     }
 }

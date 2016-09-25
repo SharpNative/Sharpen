@@ -33,25 +33,23 @@ namespace Sharpen.Net
             for (int i = 0; i < 6; i++)
                 broadcast[i] = 0xFF;
 
-            EthernetHeader* header = Ethernet.CreateHeaderPtr(broadcast, ownmac, EthernetTypes.WoL);
+            NetBufferDescriptor* packet = NetBuffer.Alloc();
 
-            byte* buffer = (byte*)Heap.Alloc(116);
-            Memory.Memcpy(buffer, header, sizeof(EthernetHeader));
-            Heap.Free(header);
-
-            int offset = sizeof(EthernetHeader);
+            int offset = 0;
             for (int i = 0; i < 6; i++)
-                buffer[offset + i] = 0xFF;
+                packet->buffer[packet->start + offset + i] = 0xFF;
 
             offset += 6;
 
             for (int i = 0; i < 16; i++)
                 for (int j = 0; j < 6; j++)
-                    buffer[offset + (i * 6) + j] = mac[j];
+                    packet->buffer[packet->start + offset + (i * 6) + j] = mac[j];
 
-            Network.Transmit(buffer, 116);
+            packet->end += 102;
 
-            Heap.Free(buffer);
+            Ethernet.Send(packet, ownmac, broadcast, EthernetTypes.WoL);
+
+            Heap.Free(packet);
         }
     }
 }
