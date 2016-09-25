@@ -23,6 +23,9 @@ namespace Sharpen.Net
         public UInt16 Protocol;
     }
 
+    /// <summary>
+    /// LAYER 3 - ETHERNET
+    /// </summary>
     class Ethernet
     {
 
@@ -31,8 +34,7 @@ namespace Sharpen.Net
             packet->start -= (short)sizeof(EthernetHeader);
 
             EthernetHeader* header = (EthernetHeader*)(packet->buffer + packet->start);
-
-            Console.WriteHex(src[0]);
+            
             for (int i = 0; i < 6; i++)
                 header->Destination[i] = dest[i];
 
@@ -44,8 +46,12 @@ namespace Sharpen.Net
             return header;
         }
 
-        public static unsafe void Send(NetBufferDescriptor *packet, byte[] srcMAC, byte[] destMAC, EthernetTypes protocol)
+        public static unsafe void Send(NetBufferDescriptor *packet, byte[] destMAC, EthernetTypes protocol)
         {
+            // 1 TIME PLEASE
+            byte[] srcMAC = new byte[6];
+            Network.GetMac((byte*)Util.ObjectToVoidPtr(srcMAC));
+
             FillHeader(packet, destMAC, srcMAC, protocol);
 
             Network.Transmit(packet);

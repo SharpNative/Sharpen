@@ -26,8 +26,6 @@ namespace Sharpen.Net
             }
             Console.WriteLine("");
 
-            byte[] ownmac = new byte[6];
-            Network.GetMac((byte*)Util.ObjectToVoidPtr(ownmac));
 
             byte[] broadcast = new byte[6]; 
             for (int i = 0; i < 6; i++)
@@ -47,9 +45,33 @@ namespace Sharpen.Net
 
             packet->end += 102;
 
-            Ethernet.Send(packet, ownmac, broadcast, EthernetTypes.WoL);
+            Ethernet.Send(packet, broadcast, EthernetTypes.WoL);
 
             Heap.Free(packet);
+        }
+
+        public static unsafe ushort Checksum(byte* data, int len)
+        {
+            uint sum = 0;
+            ushort* p = (ushort*)data;
+
+            while (len > 1)
+            {
+                sum += *p++;
+                len -= 2;
+            }
+
+            if (len > 0)
+            {
+                byte* pa = (byte*)p;
+                sum += *pa;
+            }
+
+
+            sum = (sum & 0xffff) + (sum >> 16);
+            sum += (sum >> 16);
+
+            return (ushort)~sum;
         }
     }
 }

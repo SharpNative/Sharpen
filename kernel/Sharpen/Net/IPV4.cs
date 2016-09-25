@@ -24,6 +24,9 @@ namespace Sharpen.Net
         public fixed byte Destination[4];
     }
 
+    /// <summary>
+    /// LAYER 3 - IPV4
+    /// </summary>
     class IPV4
     {
         // Network packet type handler
@@ -40,7 +43,7 @@ namespace Sharpen.Net
         private static unsafe void Handle(byte* buffer, uint size)
         {
             IPV4Header* header = (IPV4Header*)buffer;
-
+            
             byte proto = header->Protocol;
             
             m_handlers[proto]?.Invoke(ByteUtil.ReverseBytes(header->ID), buffer + sizeof(IPV4Header), size);
@@ -60,21 +63,24 @@ namespace Sharpen.Net
             packet->start -= (short)sizeof(IPV4Header);
 
 
-            IPV4Header* header = (IPV4Header*)packet->buffer + packet->start;
+            IPV4Header* header = (IPV4Header*)(packet->buffer + packet->start);
 
-            header->Version = 0x45;
+            header->Version = (4 << 4) | 5;
             header->ServicesField = 0;
             header->totalLength = ByteUtil.ReverseBytes((ushort)(packet->end - packet->start));
-            header->ID = 0x36A8;
+            header->ID = ByteUtil.ReverseBytes(0); // TODO: FIX THIS!
             header->FragmentOffset = 0;
             header->TTL = 250;
             header->Protocol = protocol;
-            header->HeaderChecksum = ByteUtil.ReverseBytes(0x178B);
+            header->HeaderChecksum = 0; // CHECKSUM?
+            
             for (int i = 0; i < 4; i++)
                 header->Source[i] = sourceIP[i];
             for (int i = 0; i < 4; i++)
                 header->Destination[i] = destIP[i];
 
+
+            header->HeaderChecksum = ByteUtil.ReverseBytes(NetworkTools.Checksum(packet->buffer + packet->start, sizeof(IPV4Header)));
 
             return header;
         }
@@ -82,10 +88,13 @@ namespace Sharpen.Net
 
         public static unsafe void Send(NetBufferDescriptor* packet, byte[] destMac, byte[] destIP, byte protocol)
         {
-            byte[] sourceIP = { 0x00, 0x00, 0x00, 0x00 };
-            FillHeader(packet, destMac, destIP, sourceIP, protocol);
+            byte[] sourceIP = new byte[4];
+            for (int i = 0; i < 4; i++) sourceIP[i] = 0;
 
+            FillHeader(packet, destMac, sourceIP, destIP, protocol);
 
+            Ethernet.Send(packet, destMac, EthernetTypes.IPV4);
         }
+
     }
 }

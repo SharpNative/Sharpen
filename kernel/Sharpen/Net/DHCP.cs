@@ -12,12 +12,26 @@ namespace Sharpen.Net
     class DHCP
     {
         private static byte[] m_mac;
-        
+
+        private const byte OPT_REQUEST = 1;
+        private const byte OPT_REPLY = 2;
+
+        private const byte HARDTYPE_ETH = 1;
+
+        private const byte OPT_DHCP_MESSAGE_TYPE = 53;
+        private const byte OPT_PARAMETER_REQUEST = 55;
+        private const byte OPT_PADDING = 0;
+        private const byte OPT_SUBNET = 1;
+        private const byte OPT_ROUTER = 3;
+        private const byte OPT_DNS = 6;
+        private const byte OPT_END = 255;
+
+        private const uint MAGISCH_KOEKJE = 0x63825363;
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public unsafe struct DHCPBootstrapHeader
         {
-            public byte MessageType;
+            public byte Opcode;
 
             public byte HardwareType;
             public byte HardwareAddressLength;
@@ -33,32 +47,46 @@ namespace Sharpen.Net
             public fixed byte AddressPadding[10];
             public fixed byte Server[64];
             public fixed byte File[128];
-            public fixed byte MagicCookie[4];
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public unsafe struct MessageTypeHeader
+        /// <summary>
+        /// Fill DHCP header in packet
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="xid"></param>
+        /// <param name="clientIP"></param>
+        /// <param name="messageType"></param>
+        private static unsafe void FillHeader(NetBufferDescriptor *packet, uint xid, byte[] clientIP, byte messageType)
         {
-            public byte Type;
-            public byte Length;
-            public byte DHCP;
-        }
+            DHCPBootstrapHeader *header = (DHCPBootstrapHeader *)(packet->buffer + packet->start);
+            Memory.Memset(header, 0, sizeof(DHCPBootstrapHeader));
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public unsafe struct ClientID
-        {
-            public byte Type;
-            public byte Length;
-            public byte HardwareType;
-            public fixed byte ClientMac[6];
-        }
+            header->Opcode = OPT_REQUEST; // REQUEST
+            header->HardwareType = HARDTYPE_ETH; // Ethernet
+            header->HardwareAddressLength = 4; // IPV4
+            header->Hops = 0;
+            header->TransationID = ByteUtil.ReverseBytes(xid);
+            header->SecondsElapsed = 0; // NULLLLL
+            header->BootpFlags = 0; // NONNNN
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public unsafe struct RequestedIpAddress
-        {
-            public byte Type;
-            public byte Length;
-            public fixed byte ClientMac[4];
+            for (int i = 0; i < 4; i++)
+                header->ClientIP[i] = clientIP[i];
+            
+            packet->end += (short)sizeof(DHCPBootstrapHeader);
+
+            // Default options
+            byte* opt = (byte*)(packet->buffer + packet->end);
+
+            uint* topt = (uint*)opt;
+            *topt = ByteUtil.ReverseBytes(MAGISCH_KOEKJE); // 4 bytes!;
+            opt += 4; // Another FOUR!
+
+            // Set message type
+            *opt++ = OPT_DHCP_MESSAGE_TYPE; // OPT_DHCP_MESSAGE_TYPE
+            *opt++ = 1;
+            *opt++ = messageType;
+
+            packet->end += 11;
         }
 
         /// <summary>
@@ -78,67 +106,28 @@ namespace Sharpen.Net
             for (int i = 0; i < 4; i++)
                 dest[i] = 0xFF;
 
-            int size = sizeof(DHCPBootstrapHeader) + sizeof(MessageTypeHeader) + sizeof(ClientID) + sizeof(RequestedIpAddress) + 14;
-            //UDPHeader *headerr = UDP.createHeader(broadCast, dest, 68, 67, (ushort)(size));
-            void *ptr = Heap.Alloc(size + sizeof(UDPHeader));
-            Memory.Memset(ptr, 0, size);
-            //Memory.Memcpy(ptr, headerr, sizeof(UDPHeader));
+            byte[] src = new byte[4];
+            for (int i = 0; i < 4; i++)
+                src[i] = 0x00;
 
-            // DHCP Header
+            uint xid = 0x6666;
 
-            byte* offset = (byte*)ptr + sizeof(UDPHeader);
-            DHCPBootstrapHeader* headerDHCP = (DHCPBootstrapHeader*)offset;
-            headerDHCP->MessageType = 1;
-            headerDHCP->HardwareType = 1;
-            headerDHCP->HardwareAddressLength = 6;
-            headerDHCP->Hops = 0;
-            headerDHCP->TransationID = ByteUtil.ReverseBytes((uint)0x3D1D);
-            headerDHCP->SecondsElapsed = 0;
-            headerDHCP->BootpFlags = 0x00;
+            NetBufferDescriptor* packet = NetBuffer.Alloc();
 
-            for (int i = 0; i < 6; i++)
-                headerDHCP->ClientMac[i] = m_mac[i];
-            for (int i = 0; i < 10; i++)
-                headerDHCP->AddressPadding[i] = 0;
+            FillHeader(packet, xid, src, 1); // DHCP discover
 
-            headerDHCP->MagicCookie[0] = 0x63;
-            headerDHCP->MagicCookie[1] = 0x82;
-            headerDHCP->MagicCookie[2] = 0x53;
-            headerDHCP->MagicCookie[3] = 0x63;
+            // Specific options
+            byte *buf = (byte *)(packet->buffer + packet->end);
+            *buf++ = OPT_PARAMETER_REQUEST; // OPT_PARAMETER_REQUESt
+            *buf++ = 3; // Lengthy of 3 :)
+            *buf++ = OPT_SUBNET; // SUBNET
+            *buf++ = OPT_ROUTER; // ROUTER
+            *buf++ = OPT_DNS; // DNS
+            *buf++ = OPT_END; // And then
 
-            // MessageType
-            offset = offset + sizeof(DHCPBootstrapHeader);
-            MessageTypeHeader* type = (MessageTypeHeader*)offset;
-            type->Type = 0x35;
-            type->DHCP = 1;
-            type->Length = 1;
+            packet->end += 6;
 
-            // ClientID
-            offset = offset + sizeof(MessageTypeHeader);
-            ClientID* clientID = (ClientID*)offset;
-            clientID->Type = 0x3D;
-            clientID->HardwareType = 1;
-            clientID->Length = 7;
-            for (int i = 0; i < 6; i++)
-                clientID->ClientMac[i] = m_mac[i];
-
-            // Request IP
-            offset = offset + sizeof(ClientID);
-            RequestedIpAddress* reqIpAdr = (RequestedIpAddress*)offset;
-            reqIpAdr->Type = 0x32;
-            reqIpAdr->Length = 4;
-            offset = offset + sizeof(RequestedIpAddress);
-
-            // Request parameter list 
-            offset[0] = 0x37;
-            offset[1] = 4;
-            offset[2] = 1;
-            offset[3] = 3;
-            offset[4] = 6;
-            offset[5] = 42;
-            offset[6] = 0xFF;
-            
-            //Network.Transmit((byte *)ptr, (uint)(size + sizeof(UDPHeader)));
+            UDP.Send(packet, broadCast, dest, 68, 67);
         }
     }
 }

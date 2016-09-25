@@ -225,7 +225,7 @@ namespace Sharpen.Drivers.Net
 
             if((csr0 & CSR0_TINT) > 0)
             {
-                Console.WriteLine("TRANSMIT!");
+                // Transmitted ;)
             }
 
             if ((csr0 & CSR0_RINT) > 0)
@@ -236,10 +236,6 @@ namespace Sharpen.Drivers.Net
                          (m_rx_descriptors[m_currentRescDesc].status & RMD1_ENP) == RMD1_ENP
                         )
                     {
-                        int size = m_rx_descriptors[m_currentRescDesc].mcnt & STATUS_MASK;
-
-                        char* ptr = (char *)m_rx_descriptors[m_currentRescDesc].reserved;
-
                         int offset = m_currentRescDesc * 2048;
 
                         Memory.Memcpy(Util.ObjectToVoidPtr(buffer), (byte *)Util.ObjectToVoidPtr(m_rx_buffer) + offset, 2048);

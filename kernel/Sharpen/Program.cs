@@ -123,7 +123,7 @@ namespace Sharpen
             byte[] bac = new byte[6];
             Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
 
-            NetworkTools.WakeOnLan(bac);
+            //NetworkTools.WakeOnLan(bac);
             DHCP.Discover();
 
             // Initial process, usage: init [program]

@@ -74,15 +74,6 @@ namespace Sharpen.Drivers.Net
             m_transmit3 = new byte[8192 + 16];
             m_mac = new byte[6];
             
-            // Write irq "10"
-            //uint outVal = PCI.PCIReadWord(dev, 0x3C);
-            //Console.WriteNum((int)outVal);
-            //Console.WriteLine("");
-            //outVal &= 0x00;
-            //outVal |= 11;
-
-            //PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, 0x3C, outVal);
-
             ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
 
             cmd |= 0x04;    
@@ -149,16 +140,7 @@ namespace Sharpen.Drivers.Net
             netDev.GetMac = GetMac;
 
             Network.Set(netDev);
-
-
-            for (int i = 0; i < 6; i++)
-            {
-                Console.WriteHex(m_mac[i]);
-                Console.Write(":");
-            }
-            Console.WriteLine("");
-
-
+            
             ushort size = PortIO.In16((ushort)(m_io_base + REG_CBR));
             Console.WriteNum(size);
             Console.WriteLine("");
@@ -258,54 +240,12 @@ namespace Sharpen.Drivers.Net
         {
             while ((PortIO.In8((ushort)(m_io_base + REG_CMD)) & 0x01) == 0)
             {
-                UInt16* ptrFirst = (UInt16*)((byte*)Util.ObjectToVoidPtr(m_buffer) + rx_pos);
-
                 UInt16* ptr = (UInt16*)((byte*)Util.ObjectToVoidPtr(m_buffer) + rx_pos + 2);
                 ushort rx_len = *ptr;
 
                 byte* data = (byte*)Util.ObjectToVoidPtr(m_buffer) + rx_pos + 4;
-                EthernetHeader* header = (EthernetHeader*)data;
 
-                if ((*ptrFirst & 0x01) > 0)
-                {
-                    int type = 0;
-
-                    // Only handle our packages
-                    bool fnd = true;
-                    for (int i = 0; i < 6; i++)
-                        if (header->Destination[i] != 0xFF)
-                            fnd = false;
-
-                    if (fnd)
-                        type = 1;
-
-
-                    if (!fnd)
-                    {
-                        fnd = true;
-                        for (int i = 0; i < 6; i++)
-                            if (header->Destination[i] != m_mac[i])
-                                fnd = false;
-
-                        if (fnd)
-                        {
-                            type = 2;
-                        }
-                    }
-
-                    if (type == 2)
-                    {
-
-                        if ((ushort)ByteUtil.ReverseBytes(header->Protocol) != 0x26)
-                        {
-
-                            Console.WriteLine("YES!");
-                            Console.WriteHex((ushort)ByteUtil.ReverseBytes(header->Protocol));
-
-                            for (;;) ;
-                        }
-                    }
-                }
+                Network.HandlePacket(Util.PtrToArray(data), rx_len);
 
                 rx_pos = (rx_pos + rx_len + 4 + 3) & ~3;
                 if(rx_pos > 8 * 1024)

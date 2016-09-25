@@ -1,4 +1,6 @@
-﻿using Sharpen.Mem;
+﻿#define NETWORK_DEBUG
+
+using Sharpen.Mem;
 using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
@@ -55,6 +57,11 @@ namespace Sharpen.Net
 
         public static void RegisterHandler(ushort protocol, PackerHandler handler)
         {
+#if NETWORK_DEBUG
+            Console.Write("[NET] Registered protocol handler for: ");
+            Console.WriteHex(protocol);
+            Console.WriteLine("");
+#endif
             m_handlers[protocol] = handler;
         }
 
@@ -64,9 +71,11 @@ namespace Sharpen.Net
         /// <param name="device">Network device</param>
         public static void Set(NetDevice device)
         {
+#if NETWORK_DEBUG
             Console.Write("[NET] Primary network device set with ID ");
             Console.WriteHex((int)device.ID);
             Console.WriteLine("");
+#endif
             m_dev = device;
         }
 
@@ -84,9 +93,11 @@ namespace Sharpen.Net
 
             // LOGIC
 
+#if NETWORK_DEBUG
             Console.Write("[NET] Transmit packet with ");
             Console.WriteNum((int)size);
             Console.WriteLine(" bytes");
+#endif
 
             if (m_dev.ID != 0)
                 m_dev.Transmit(buffer, (uint)size);
