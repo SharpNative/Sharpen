@@ -55,7 +55,7 @@ namespace Sharpen.FileSystem
             // Detect if FAT16
             if (firstSector[FirstPartitonEntry + ENTRYTYPE] != 0x06)
                 return;
-            
+
             /*
              * 
              * LBA = (C × HPC + H) × SPT + (S - 1)
@@ -107,14 +107,12 @@ namespace Sharpen.FileSystem
                     offset = 0;
                 }
 
-                
-
                 // TODO: I think this can be overriden 
-                m_dirEntries[i] = curBufPtr[offset];    
+                m_dirEntries[i] = curBufPtr[offset];
 
                 offset++;
             }
-            
+
             m_numDirEntries = m_bpb->NumDirEntries;
             m_beginDataLBA = m_clusterBeginLBA + ((m_bpb->NumDirEntries * 32) / m_bpb->BytesPerSector);
         }
@@ -147,7 +145,7 @@ namespace Sharpen.FileSystem
             Node node = new Node();
             node.Size = dirEntry->Size;
             node.Cookie = (uint)dirEntry;
-            
+
             if ((dirEntry->Attribs & ATTRIB_SUBDIR) == 0)
             {
                 node.Read = readImpl;
@@ -160,7 +158,7 @@ namespace Sharpen.FileSystem
                 node.FindDir = findDirImpl;
                 node.Flags = NodeFlags.DIRECTORY;
             }
-            
+
             return node;
         }
 
@@ -244,7 +242,7 @@ namespace Sharpen.FileSystem
                 return null;
                 */
 
-            
+
             int j = 0;
 
             uint cluster = 0xFFFFFFFF;
@@ -278,7 +276,7 @@ namespace Sharpen.FileSystem
                     int offset = 0;
                     for (int z = 0; z < fnLength; z++)
                         outDir->Name[offset++] = entry.Name[z];
-                    
+
                     if ((dir.DirEntries[i].Attribs & ATTRIB_SUBDIR) == 0)
                     {
 
@@ -286,7 +284,7 @@ namespace Sharpen.FileSystem
                         if (extLength == -1)
                             extLength = 3;
 
-                        if(extLength != 0)
+                        if (extLength != 0)
                         {
                             outDir->Name[offset++] = '.';
 
@@ -334,7 +332,7 @@ namespace Sharpen.FileSystem
             byte[] fatBuffer = new byte[512];
             m_dev.Read(m_dev, adr, 512, fatBuffer);
 
-            byte* ptr = (byte *)Util.ObjectToVoidPtr(fatBuffer);
+            byte* ptr = (byte*)Util.ObjectToVoidPtr(fatBuffer);
             ushort* pointer = (ushort*)(ptr + offset);
 
 
@@ -342,7 +340,7 @@ namespace Sharpen.FileSystem
 
             if (nextCluster >= FAT_EOF)
                 return 0xFFFF;
-            
+
             return nextCluster;
         }
 
@@ -361,6 +359,19 @@ namespace Sharpen.FileSystem
             //}
 
             // FULL!!! :O
+            return 0;
+        }
+
+        private static uint writeFile(uint startCluster, uint offset, uint size, byte[] buffer)
+        {
+            // Calculate starting cluster
+            uint dataPerCluster = m_bpb->SectorsPerCluster;
+            uint sectorsOffset = (uint)((int)offset / 512);
+
+            uint clusterOffset = sectorsOffset / dataPerCluster;
+            
+
+
             return 0;
         }
 
@@ -490,7 +501,9 @@ namespace Sharpen.FileSystem
 
         private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            return 0;
+            FatDirEntry* entry = (FatDirEntry*)node.Cookie;
+            
+            return writeFile(entry->ClusterNumberLo, offset, size, buffer);
         }
     }
 }
