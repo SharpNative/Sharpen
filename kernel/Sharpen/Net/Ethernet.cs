@@ -24,7 +24,7 @@ namespace Sharpen.Net
     }
 
     /// <summary>
-    /// LAYER 4 - ETHERNET
+    /// LAYER 2 - ETHERNET
     /// </summary>
     class Ethernet
     {
