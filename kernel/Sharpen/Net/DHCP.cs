@@ -128,6 +128,8 @@ namespace Sharpen.Net
             packet->end += 6;
 
             UDP.Send(packet, broadCast, dest, 68, 67);
+
+            NetBuffer.Free(packet);
         }
     }
 }

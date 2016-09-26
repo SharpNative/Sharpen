@@ -25,5 +25,10 @@ namespace Sharpen.Net
 
             return desc;
         }
+
+        public static unsafe void Free(NetBufferDescriptor *packet)
+        {
+            Heap.Free(packet);
+        }
     }
 }

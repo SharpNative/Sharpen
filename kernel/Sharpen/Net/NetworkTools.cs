@@ -47,7 +47,7 @@ namespace Sharpen.Net
 
             Ethernet.Send(packet, broadcast, EthernetTypes.WoL);
 
-            Heap.Free(packet);
+            NetBuffer.Free(packet);
         }
 
         public static unsafe ushort Checksum(byte* data, int len)

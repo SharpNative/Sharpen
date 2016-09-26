@@ -110,13 +110,15 @@ namespace Sharpen.Net
             if (size >= 1500)
                 return;
 
-            NetBufferDescriptor* buf = NetBuffer.Alloc();
+            NetBufferDescriptor* packet = NetBuffer.Alloc();
 
-            Memory.Memcpy(buf->buffer + buf->start, Util.ObjectToVoidPtr(data), size);
+            Memory.Memcpy(packet->buffer + packet->start, Util.ObjectToVoidPtr(data), size);
 
-            FillHeader(buf, destIP, srcPort, DestPort);
+            FillHeader(packet, destIP, srcPort, DestPort);
 
-            IPV4.Send(buf, destMac, destIP, PROTOCOL_UDP);
+            IPV4.Send(packet, destMac, destIP, PROTOCOL_UDP);
+
+            NetBuffer.Free(packet);
         }
 
 
