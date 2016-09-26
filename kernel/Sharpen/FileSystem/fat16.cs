@@ -371,7 +371,6 @@ namespace Sharpen.FileSystem
             uint clusterOffset = sectorsOffset / dataPerCluster;
             
 
-
             return 0;
         }
 
