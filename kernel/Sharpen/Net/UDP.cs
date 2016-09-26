@@ -52,7 +52,7 @@ namespace Sharpen.Net
         }
 
         /// <summary>
-        /// Bind port
+        /// Bind UDP port
         /// </summary>
         /// <param name="port">The port</param>
         /// <param name="handler">The callback</param>
@@ -67,6 +67,12 @@ namespace Sharpen.Net
             m_handlers[port] = handler;
         }
 
+        /// <summary>
+        /// UDP packet handler
+        /// </summary>
+        /// <param name="xid">Identification ID</param>
+        /// <param name="buffer">Buffer pointer</param>
+        /// <param name="size">Packet size</param>
         private static unsafe void handler(uint xid, byte *buffer, uint size)
         {
 
@@ -88,8 +94,15 @@ namespace Sharpen.Net
             m_handlers[destPort]?.Invoke(xid, buffer + sizeof(UDPHeader), (uint)(header->Length - 8));
         }
         
-
-        private static unsafe UDPHeader* FillHeader(NetBufferDescriptor *packet, byte[] destIP, UInt16 sourcePort, UInt16 DestinationPort)
+        /// <summary>
+        /// Add UDP header to packet
+        /// </summary>
+        /// <param name="packet">Packet structure</param>
+        /// <param name="destIP">Destination IP</param>
+        /// <param name="sourcePort">Source port</param>
+        /// <param name="DestinationPort">Destination port</param>
+        /// <returns></returns>
+        private static unsafe UDPHeader* addHeader(NetPacketDesc *packet, byte[] destIP, UInt16 sourcePort, UInt16 DestinationPort)
         {
             packet->start -= (short)sizeof(UDPHeader);
 
@@ -103,32 +116,48 @@ namespace Sharpen.Net
 
             return header;
         }
-        
+
+        /// <summary>
+        /// Send UDP data
+        /// </summary>
+        /// <param name="destMac">Destination MAC</param>
+        /// <param name="destIP">Destination IP</param>
+        /// <param name="srcPort">Source port</param>
+        /// <param name="DestPort">Destination port</param>
+        /// <param name="data">Data pointer</param>
+        /// <param name="size">Data size</param>
         public static unsafe void Send(byte[] destMac, byte[] destIP, ushort srcPort, ushort DestPort, byte[] data, int size)
         {
             // No support for packets over 1500 bytes
             if (size >= 1500)
                 return;
 
-            NetBufferDescriptor* packet = NetBuffer.Alloc();
+            NetPacketDesc* packet = NetPacket.Alloc();
 
             Memory.Memcpy(packet->buffer + packet->start, Util.ObjectToVoidPtr(data), size);
 
-            FillHeader(packet, destIP, srcPort, DestPort);
+            addHeader(packet, destIP, srcPort, DestPort);
 
             IPV4.Send(packet, destMac, destIP, PROTOCOL_UDP);
 
-            NetBuffer.Free(packet);
+            NetPacket.Free(packet);
         }
 
-
-        public static unsafe void Send(NetBufferDescriptor *packet, byte[] destMac, byte[] destIP, ushort srcPort, ushort DestPort)
+        /// <summary>
+        /// Send UDP packet
+        /// </summary>
+        /// <param name="packet">Packet structure</param>
+        /// <param name="destMac">Destination MAC</param>
+        /// <param name="destIP">Destination IP</param>
+        /// <param name="srcPort">Source port</param>
+        /// <param name="DestPort">Destination port</param>
+        public static unsafe void Send(NetPacketDesc *packet, byte[] destMac, byte[] destIP, ushort srcPort, ushort DestPort)
         {
             // No support for packets over 1500 bytes
             if (packet->end - packet->start >= 1500)
                 return;
             
-            FillHeader(packet, destIP, srcPort, DestPort);
+            addHeader(packet, destIP, srcPort, DestPort);
 
             IPV4.Send(packet, destMac, destIP, PROTOCOL_UDP);
         }

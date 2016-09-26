@@ -29,7 +29,15 @@ namespace Sharpen.Net
     class Ethernet
     {
 
-        public static unsafe EthernetHeader *FillHeader(NetBufferDescriptor *packet, byte[] dest, byte[] src, EthernetTypes protocol)
+        /// <summary>
+        /// Add header to packet
+        /// </summary>
+        /// <param name="packet">Packet structure</param>
+        /// <param name="dest">Destination MAC</param>
+        /// <param name="src">Source MAC</param>
+        /// <param name="protocol">Protocol</param>
+        /// <returns></returns>
+        private static unsafe EthernetHeader *addHeader(NetPacketDesc *packet, byte[] dest, byte[] src, EthernetTypes protocol)
         {
             packet->start -= (short)sizeof(EthernetHeader);
 
@@ -46,13 +54,19 @@ namespace Sharpen.Net
             return header;
         }
 
-        public static unsafe void Send(NetBufferDescriptor *packet, byte[] destMAC, EthernetTypes protocol)
+        /// <summary>
+        /// Send ethernet packet
+        /// </summary>
+        /// <param name="packet">Packet structure</param>
+        /// <param name="destMAC">Destination MAC</param>
+        /// <param name="protocol">Protocol</param>
+        public static unsafe void Send(NetPacketDesc *packet, byte[] destMAC, EthernetTypes protocol)
         {
             // 1 TIME PLEASE
             byte[] srcMAC = new byte[6];
             Network.GetMac((byte*)Util.ObjectToVoidPtr(srcMAC));
 
-            FillHeader(packet, destMAC, srcMAC, protocol);
+            addHeader(packet, destMAC, srcMAC, protocol);
 
             Network.Transmit(packet);
         }

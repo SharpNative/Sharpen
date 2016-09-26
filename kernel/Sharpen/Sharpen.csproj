@@ -72,7 +72,7 @@
     <Compile Include="Net\Ethernet.cs" />
     <Compile Include="Net\IPV4.cs" />
     <Compile Include="Net\ARP.cs" />
-    <Compile Include="Net\NetBuffer.cs" />
+    <Compile Include="Net\NetPacket.cs" />
     <Compile Include="Net\Network.cs" />
     <Compile Include="Net\NetworkTools.cs" />
     <Compile Include="Net\UDP.cs" />

@@ -8,25 +8,25 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
-    public unsafe struct NetBufferDescriptor
+    public unsafe struct NetPacketDesc
     {
         public short start;
         public short end;
         public fixed byte buffer[2048];
     }
 
-    class NetBuffer
+    class NetPacket
     {
-        public static unsafe NetBufferDescriptor *Alloc()
+        public static unsafe NetPacketDesc *Alloc()
         {
-            NetBufferDescriptor *desc = (NetBufferDescriptor*)Heap.Alloc(sizeof(NetBufferDescriptor));
+            NetPacketDesc *desc = (NetPacketDesc*)Heap.Alloc(sizeof(NetPacketDesc));
             desc->start = 256;
             desc->end = 256;
 
             return desc;
         }
 
-        public static unsafe void Free(NetBufferDescriptor *packet)
+        public static unsafe void Free(NetPacketDesc *packet)
         {
             Heap.Free(packet);
         }

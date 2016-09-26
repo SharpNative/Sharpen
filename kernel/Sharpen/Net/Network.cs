@@ -84,7 +84,7 @@ namespace Sharpen.Net
         /// </summary>
         /// <param name="bytes">byte buffer</param>
         /// <param name="size">packet size</param>
-        public static unsafe void Transmit (NetBufferDescriptor* packet)
+        public static unsafe void Transmit (NetPacketDesc* packet)
         {
             int size = packet->end - packet->start;
             

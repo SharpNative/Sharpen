@@ -50,13 +50,13 @@ namespace Sharpen.Net
         }
 
         /// <summary>
-        /// Fill DHCP header in packet
+        /// Add DHCP header in packet
         /// </summary>
         /// <param name="packet"></param>
         /// <param name="xid"></param>
         /// <param name="clientIP"></param>
         /// <param name="messageType"></param>
-        private static unsafe void FillHeader(NetBufferDescriptor *packet, uint xid, byte[] clientIP, byte messageType)
+        private static unsafe void addHeader(NetPacketDesc *packet, uint xid, byte[] clientIP, byte messageType)
         {
             DHCPBootstrapHeader *header = (DHCPBootstrapHeader *)(packet->buffer + packet->start);
             Memory.Memset(header, 0, sizeof(DHCPBootstrapHeader));
@@ -112,14 +112,14 @@ namespace Sharpen.Net
 
             uint xid = 0x6666;
 
-            NetBufferDescriptor* packet = NetBuffer.Alloc();
+            NetPacketDesc* packet = NetPacket.Alloc();
 
-            FillHeader(packet, xid, src, 1); // DHCP discover
+            addHeader(packet, xid, src, 1); // DHCP discover
 
             // Specific options
             byte *buf = (byte *)(packet->buffer + packet->end);
             *buf++ = OPT_PARAMETER_REQUEST; // OPT_PARAMETER_REQUESt
-            *buf++ = 3; // Lengthy of 3 :)
+            *buf++ = 3; // Length of 3 :)
             *buf++ = OPT_SUBNET; // SUBNET
             *buf++ = OPT_ROUTER; // ROUTER
             *buf++ = OPT_DNS; // DNS
@@ -129,7 +129,7 @@ namespace Sharpen.Net
 
             UDP.Send(packet, broadCast, dest, 68, 67);
 
-            NetBuffer.Free(packet);
+            NetPacket.Free(packet);
         }
     }
 }

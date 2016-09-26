@@ -31,7 +31,7 @@ namespace Sharpen.Net
             for (int i = 0; i < 6; i++)
                 broadcast[i] = 0xFF;
 
-            NetBufferDescriptor* packet = NetBuffer.Alloc();
+            NetPacketDesc* packet = NetPacket.Alloc();
 
             int offset = 0;
             for (int i = 0; i < 6; i++)
@@ -47,9 +47,15 @@ namespace Sharpen.Net
 
             Ethernet.Send(packet, broadcast, EthernetTypes.WoL);
 
-            NetBuffer.Free(packet);
+            NetPacket.Free(packet);
         }
 
+        /// <summary>
+        /// Generate WEB checksum
+        /// </summary>
+        /// <param name="data">Pointer to data</param>
+        /// <param name="len">Length</param>
+        /// <returns>Length</returns>
         public static unsafe ushort Checksum(byte* data, int len)
         {
             uint sum = 0;
