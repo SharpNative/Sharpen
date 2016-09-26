@@ -132,20 +132,6 @@ namespace Sharpen
             argv[1] = "C://shell";
             argv[2] = null;
 
-
-            Node node = VFS.GetByPath("C://test.txt");
-
-            byte[] test = new byte[3];
-            Memory.Memset(Util.ObjectToVoidPtr(test), (byte)'1', 3);
-
-            node.Write(node, 0, 4, test);
-
-            byte[] testt = new byte[5];
-            node.Read(node, 0, 5, testt);
-            for (int i = 0; i < 5; i++)
-                Console.Write((char)test[i]);
-            for (;;) ;
-
             int error = Loader.StartProcess(argv[0], argv, Tasking.SpawnFlags.NONE);
             if (error < 0)
             {
