@@ -199,7 +199,7 @@ namespace Sharpen.Drivers.Net
             for (int i = 0; i < 6; i++)
             {
                 Console.WriteHex(m_mac[i]);
-                Console.PutChar(' ');
+                Console.Write(' ');
             }
             Console.WriteLine("");
             Console.Write("Linkspeed: ");

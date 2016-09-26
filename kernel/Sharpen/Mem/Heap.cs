@@ -52,7 +52,7 @@ namespace Sharpen.Mem
         {
             Console.Write("[HEAP] Temporary start at ");
             Console.WriteHex((int)start);
-            Console.PutChar('\n');
+            Console.Write('\n');
 
             CurrentEnd = start;
         }

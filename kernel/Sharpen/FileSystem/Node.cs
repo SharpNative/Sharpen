@@ -4,11 +4,14 @@
     {
         public uint Size;
         public uint Cookie;
+        public uint Cookie2;
+        public uint Cookie3;
         public FileMode FileMode;
         public NodeFlags Flags;
 
         public FSRead Read;
         public FSWrite Write;
+        public FSTruncate Truncate;
         public FSOpen Open;
         public FSClose Close;
         public FSFindDir FindDir;
@@ -17,6 +20,7 @@
         
         public unsafe delegate uint FSRead(Node node, uint offset, uint size, byte[] buffer);
         public unsafe delegate uint FSWrite(Node node, uint offset, uint size, byte[] buffer);
+        public unsafe delegate uint FSTruncate(Node node, uint size);
         public unsafe delegate void FSOpen(Node node);
         public unsafe delegate void FSClose(Node node);
         public unsafe delegate Node FSFindDir(Node node, string name);

@@ -26,7 +26,7 @@
         private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             for (int i = 0; i < size; i++)
-                Console.PutChar((char)buffer[i]);
+                Console.Write((char)buffer[i]);
             
             return size;
         }

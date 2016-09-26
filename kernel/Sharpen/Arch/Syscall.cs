@@ -20,7 +20,7 @@ namespace Sharpen.Arch
                 Console.WriteNum(function);
                 Console.Write(" > ");
                 Console.WriteNum(Syscalls.SYSCALL_MAX);
-                Console.PutChar('\n');
+                Console.Write('\n');
                 return;
             }
 

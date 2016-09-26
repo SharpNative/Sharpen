@@ -26,7 +26,7 @@ namespace Sharpen
         /// Puts a character to the screen at the current location
         /// </summary>
         /// <param name="ch"></param>
-        public unsafe static void PutChar(char ch)
+        public unsafe static void Write(char ch)
         {
             // Enter
             if (ch == '\n')
@@ -110,7 +110,7 @@ namespace Sharpen
         {
             for (int i = 0; text[i] != '\0'; i++)
             {
-                PutChar(text[i]);
+                Write(text[i]);
             }
         }
         
@@ -121,7 +121,7 @@ namespace Sharpen
         public static void WriteLine(string text)
         {
             Write(text);
-            PutChar('\n');
+            Write('\n');
         }
         
         /// <summary>
@@ -132,7 +132,7 @@ namespace Sharpen
         {
             if (num == 0)
             {
-                PutChar('0');
+                Write('0');
                 return;
             }
 
@@ -147,11 +147,11 @@ namespace Sharpen
                 noZeroes = false;
                 if (tmp >= 0x0A)
                 {
-                    PutChar((char)(tmp - 0x0A + 'A'));
+                    Write((char)(tmp - 0x0A + 'A'));
                 }
                 else
                 {
-                    PutChar((char)(tmp + '0'));
+                    Write((char)(tmp + '0'));
                 }
             }
         }
@@ -164,13 +164,13 @@ namespace Sharpen
         {
             if (num == 0)
             {
-                PutChar('0');
+                Write('0');
                 return;
             }
 
             if (num < 0)
             {
-                PutChar('-');
+                Write('-');
                 num = -num;
             }
 
@@ -178,7 +178,7 @@ namespace Sharpen
             if (num >= 10)
                 WriteNum(num / 10);
 
-            PutChar((char)('0' + a));
+            Write((char)('0' + a));
         }
 
         /// <summary>

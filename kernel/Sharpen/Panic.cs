@@ -52,8 +52,8 @@ namespace Sharpen
             {
                 Console.Write("  Errorcode: ");
                 Console.WriteHex(regsPtr->Error);
-                Console.PutChar('\n');
-                Console.PutChar('\n');
+                Console.Write('\n');
+                Console.Write('\n');
 
                 Console.Write("\tEAX ");
                 Console.WriteHex(regsPtr->EAX & 0xFFFFFFFF);
@@ -67,7 +67,7 @@ namespace Sharpen
                 Console.WriteHex(regsPtr->EDI & 0xFFFFFFFF);
                 Console.Write("  ESI ");
                 Console.WriteHex(regsPtr->ESI & 0xFFFFFFFF);
-                Console.PutChar('\n');
+                Console.Write('\n');
 
                 Console.Write("\tCS ");
                 Console.WriteHex(regsPtr->CS & 0xFFFF);
@@ -81,7 +81,7 @@ namespace Sharpen
                 Console.WriteHex(regsPtr->GS & 0xFFFF);
                 Console.Write("  SS ");
                 Console.WriteHex(regsPtr->SS & 0xFFFF);
-                Console.PutChar('\n');
+                Console.Write('\n');
 
                 Console.Write("\tEBP ");
                 Console.WriteHex(regsPtr->EBP & 0xFFFFFFFF);
@@ -91,7 +91,7 @@ namespace Sharpen
                 Console.WriteHex(regsPtr->EIP);
                 Console.Write("  CR2 ");
                 Console.WriteHex(Paging.ReadCR2());
-                Console.PutChar('\n');
+                Console.Write('\n');
             }
 
             // HALT
