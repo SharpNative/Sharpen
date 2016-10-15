@@ -89,7 +89,7 @@ namespace Sharpen.Net
             header->Version = (4 << 4) | 5;
             header->ServicesField = 0;
             header->totalLength = ByteUtil.ReverseBytes((ushort)(packet->end - packet->start));
-            header->ID = ByteUtil.ReverseBytes(0); // TODO: FIX THIS!
+            header->ID = ByteUtil.ReverseBytes(0xa836); // TODO: FIX THIS!
             header->FragmentOffset = 0;
             header->TTL = 250;
             header->Protocol = protocol;
@@ -101,7 +101,7 @@ namespace Sharpen.Net
                 header->Destination[i] = destIP[i];
 
 
-            header->HeaderChecksum = ByteUtil.ReverseBytes(NetworkTools.Checksum(packet->buffer + packet->start, sizeof(IPV4Header)));
+            header->HeaderChecksum = (NetworkTools.Checksum(packet->buffer + packet->start, sizeof(IPV4Header)));
 
             return header;
         }
@@ -116,7 +116,7 @@ namespace Sharpen.Net
         public static unsafe void Send(NetPacketDesc* packet, byte[] destMac, byte[] destIP, byte protocol)
         {
             byte[] sourceIP = new byte[4];
-            for (int i = 0; i < 4; i++) sourceIP[i] = 0;
+            for (int i = 0; i < 4; i++) sourceIP[i] = Network.Settings->IP[i];
 
             addHeader(packet, destMac, sourceIP, destIP, protocol);
 

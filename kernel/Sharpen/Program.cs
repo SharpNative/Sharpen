@@ -124,7 +124,7 @@ namespace Sharpen
             Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
 
             //NetworkTools.WakeOnLan(bac);
-            DHCP.Discover();
+            //DHCP.Init();
 
             // Initial process, usage: init [program]
             string[] argv = new string[3];

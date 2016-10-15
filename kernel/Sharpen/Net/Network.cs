@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Sharpen.Net
 { 
 
-    public class Network
+    public unsafe class Network
     {
 
         /// <summary>
@@ -41,7 +41,9 @@ namespace Sharpen.Net
         public unsafe delegate void GetMACAction(byte *mac);
 
 
-        public static NetDevice m_dev;
+        private static NetDevice m_dev;
+
+        public static NetworkSettings *Settings { get; private set; }
 
         private static PackerHandler[] m_handlers;
 
@@ -53,6 +55,9 @@ namespace Sharpen.Net
         public static void Init()
         {
             m_handlers = new PackerHandler[65536];
+
+            Settings = (NetworkSettings*)Heap.Alloc(sizeof(NetworkSettings));
+            Memory.Memset(Settings, 0, sizeof(NetworkSettings));
         }
 
         public static void RegisterHandler(ushort protocol, PackerHandler handler)

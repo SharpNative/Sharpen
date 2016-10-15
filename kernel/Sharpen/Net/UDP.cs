@@ -112,7 +112,8 @@ namespace Sharpen.Net
             header->SourcePort = ByteUtil.ReverseBytes(sourcePort);
             header->DestinationPort = ByteUtil.ReverseBytes(DestinationPort);
             header->Length = ByteUtil.ReverseBytes((ushort)(packet->end - packet->start));
-            header->Checksum = 0; // Isn't required :)
+
+            header->Checksum = 0;
 
             return header;
         }
