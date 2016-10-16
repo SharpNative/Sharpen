@@ -17,7 +17,8 @@ namespace Sharpen.Task
         public enum SpawnFlags
         {
             NONE = 0,
-            SWAP_PID = 1
+            SWAP_PID = 1,
+            KERNEL = 2
         }
 
         /// <summary>
@@ -139,6 +140,7 @@ namespace Sharpen.Task
                 current = current.Next;
             }
 
+
             // Critical section, a task switch may not occur now
             CPU.CLI();
 
@@ -178,7 +180,7 @@ namespace Sharpen.Task
             newTask.TimeFull = (int)priority;
             newTask.TimeLeft = (int)priority;
             newTask.Flags = Task.TaskFlags.NOFLAGS;
-
+            
             // Stack
             int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
             newTask.StackStart = (int*)((int)stacks + 4096);
@@ -195,17 +197,28 @@ namespace Sharpen.Task
                 newTask.Stack = stack;
             }
 
+            int cs = Task.USERSPACE_CS;
+            int ds = Task.USERSPACE_DS;
+            if((flags & SpawnFlags.KERNEL) != SpawnFlags.KERNEL)
+            {
+                // FS related stuff
+                CurrentTask.CloneDescriptorsTo(newTask);
+                newTask.CurrentDirectory = String.Clone(CurrentTask.CurrentDirectory);
+            }
+            else
+            {
+                // Kernel descriptors
+                cs = Task.KERNEL_CS;
+                ds = Task.KERNEL_DS;
+            }
+
             // Continue with stacks
-            newTask.Stack = writeSchedulerStack(newTask.Stack, 0x1B, 0x23, eip);
+            newTask.Stack = writeSchedulerStack(newTask.Stack, cs, ds, eip);
             newTask.KernelStackStart = stacks;
             newTask.KernelStack = (int*)((int)newTask.KernelStackStart + 4096);
 
             // Program data space end
             newTask.DataEnd = null;
-
-            // FS related stuff
-            CurrentTask.CloneDescriptorsTo(newTask);
-            newTask.CurrentDirectory = String.Clone(CurrentTask.CurrentDirectory);
 
             // FPU context
             newTask.FPUContext = Heap.AlignedAlloc(16, 512);

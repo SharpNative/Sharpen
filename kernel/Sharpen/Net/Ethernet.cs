@@ -12,7 +12,8 @@ namespace Sharpen.Net
     enum EthernetTypes
     {
         IPV4 = 0x0800,
-        WoL = 0x0842
+        WoL = 0x0842,
+        ARP = 0x0806
     }
     
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -60,13 +61,38 @@ namespace Sharpen.Net
         /// <param name="packet">Packet structure</param>
         /// <param name="destMAC">Destination MAC</param>
         /// <param name="protocol">Protocol</param>
-        public static unsafe void Send(NetPacketDesc *packet, byte[] destMAC, EthernetTypes protocol)
+        public static unsafe void Send(NetPacketDesc *packet, byte[] destIP, EthernetTypes protocol)
         {
             // 1 TIME PLEASE
             byte[] srcMAC = new byte[6];
             Network.GetMac((byte*)Util.ObjectToVoidPtr(srcMAC));
 
-            addHeader(packet, destMAC, srcMAC, protocol);
+            // Get MAC from ARP :D
+            byte* dstMac = (byte*)Heap.Alloc(6);
+
+            ARP.Lookup(destIP, dstMac);
+
+            addHeader(packet, Util.PtrToArray(dstMac), srcMAC, protocol);
+
+            Network.Transmit(packet);
+
+            Heap.Free(dstMac);
+        }
+
+
+        /// <summary>
+        /// Send ethernet packet
+        /// </summary>
+        /// <param name="packet">Packet structure</param>
+        /// <param name="destMAC">Destination MAC</param>
+        /// <param name="protocol">Protocol</param>
+        public static unsafe void SendMAC(NetPacketDesc* packet, byte[] destMac, EthernetTypes protocol)
+        {
+            // 1 TIME PLEASE
+            byte[] srcMAC = new byte[6];
+            Network.GetMac((byte*)Util.ObjectToVoidPtr(srcMAC));
+            
+            addHeader(packet, destMac, srcMAC, protocol);
 
             Network.Transmit(packet);
         }

@@ -30,7 +30,7 @@ namespace Sharpen.Net
     class IPV4
     {
         // Network packet type handler
-        public unsafe delegate void PackerHandler(uint xid, byte* buffer, uint size);
+        public unsafe delegate void PackerHandler(byte[] ip, byte* buffer, uint size);
 
         private static PackerHandler[] m_handlers;
 
@@ -53,8 +53,12 @@ namespace Sharpen.Net
             IPV4Header* header = (IPV4Header*)buffer;
             
             byte proto = header->Protocol;
+
+            byte[] ip = new byte[4];
+            for (int i = 0; i < 4; i++)
+                ip[i] = header->Source[i];
             
-            m_handlers[proto]?.Invoke(ByteUtil.ReverseBytes(header->ID), buffer + sizeof(IPV4Header), size);
+            m_handlers[proto]?.Invoke(ip, buffer + sizeof(IPV4Header), size);
         }
 
         /// <summary>
@@ -71,12 +75,11 @@ namespace Sharpen.Net
         /// Add IPV4 header to packet
         /// </summary>
         /// <param name="packet">Packet structure</param>
-        /// <param name="destMac">Destination MAC address</param>
         /// <param name="sourceIP">Source IP</param>
         /// <param name="destIP">Destination IP</param>
         /// <param name="protocol">Protocol</param>
         /// <returns></returns>
-        private static unsafe IPV4Header *addHeader(NetPacketDesc *packet, byte[] destMac, byte[] sourceIP, byte[] destIP, byte protocol)
+        private static unsafe IPV4Header *addHeader(NetPacketDesc *packet, byte[] sourceIP, byte[] destIP, byte protocol)
         {
             byte[] mymac = new byte[6];
             Network.GetMac((byte*)Util.ObjectToVoidPtr(mymac));
@@ -113,14 +116,14 @@ namespace Sharpen.Net
         /// <param name="destMac">Destination mac</param>
         /// <param name="destIP">Destination IP</param>
         /// <param name="protocol">Protocol</param>
-        public static unsafe void Send(NetPacketDesc* packet, byte[] destMac, byte[] destIP, byte protocol)
+        public static unsafe void Send(NetPacketDesc* packet, byte[] destIP, byte protocol)
         {
             byte[] sourceIP = new byte[4];
             for (int i = 0; i < 4; i++) sourceIP[i] = Network.Settings->IP[i];
 
-            addHeader(packet, destMac, sourceIP, destIP, protocol);
+            addHeader(packet, sourceIP, destIP, protocol);
 
-            Ethernet.Send(packet, destMac, EthernetTypes.IPV4);
+            Ethernet.Send(packet, destIP, EthernetTypes.IPV4);
         }
 
     }

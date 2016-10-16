@@ -57,6 +57,7 @@
     <Compile Include="Arch\IDT.cs" />
     <Compile Include="Arch\IRQ.cs" />
     <Compile Include="Arch\ISR.cs" />
+    <Compile Include="Collections\Queue.cs" />
     <Compile Include="Drivers\Net\E1000.cs" />
     <Compile Include="Drivers\Net\PCNet2.cs" />
     <Compile Include="Drivers\Net\rtl8139.cs" />
@@ -76,6 +77,7 @@
     <Compile Include="Net\Network.cs" />
     <Compile Include="Net\NetworkSettings.cs" />
     <Compile Include="Net\NetworkTools.cs" />
+    <Compile Include="Net\NTP.cs" />
     <Compile Include="Net\UDP.cs" />
     <Compile Include="Task\FileDescriptors.cs" />
     <Compile Include="Task\Task.cs" />

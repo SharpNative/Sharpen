@@ -65,7 +65,6 @@ namespace Sharpen.Drivers.Net
         /// <param name="dev">This PCI device</param>
         private static unsafe void initHandler(PCI.PciDevice dev)
         {
-            Console.WriteLine("JA");
             m_io_base = dev.Port1;
             
             m_buffer = new byte[8 * 1024];
@@ -242,7 +241,7 @@ namespace Sharpen.Drivers.Net
 
                 byte* data = (byte*)Util.ObjectToVoidPtr(m_buffer) + rx_pos + 4;
 
-                Network.HandlePacket(Util.PtrToArray(data), rx_len);
+                Network.QueueReceivePacket(Util.PtrToArray(data), rx_len);
 
                 rx_pos = (rx_pos + rx_len + 4 + 3) & ~3;
                 if(rx_pos > 8 * 1024)

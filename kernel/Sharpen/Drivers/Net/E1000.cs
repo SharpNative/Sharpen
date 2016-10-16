@@ -130,7 +130,6 @@ namespace Sharpen.Drivers.Net
                 {
                     for (int i = 0; i < 6; i++)
                         m_mac[i] = base_8[i];
-                    Console.WriteLine("YES");
                 }
                 else
                 {

@@ -186,6 +186,8 @@ namespace Sharpen.Drivers.Net
                 m_currentTransDesc = 0;
         }
 
+        private static int a = 0;
+
         private static unsafe void handler(Regs* regsPtr)
         {
 
@@ -241,11 +243,11 @@ namespace Sharpen.Drivers.Net
                         Memory.Memcpy(Util.ObjectToVoidPtr(buffer), (byte *)Util.ObjectToVoidPtr(m_rx_buffer) + offset, 2048);
 
                         // TODO: REAL PACKET SIZE PLEASE!
-                        Network.HandlePacket(buffer, 2048);
+                        Network.QueueReceivePacket(buffer, 2048);
                     }
                     
                     uint adr = m_rx_descriptors[m_currentRescDesc].reserved;
-
+                    
                     m_rx_descriptors[m_currentRescDesc].address = (uint)Paging.GetPhysicalFromVirtual((void*)(adr));
                     m_rx_descriptors[m_currentRescDesc].status = 0xF000 | (-2048 & STATUS_MASK);
                     m_rx_descriptors[m_currentRescDesc].mcnt = 0;
@@ -253,6 +255,7 @@ namespace Sharpen.Drivers.Net
                     m_rx_descriptors[m_currentRescDesc].rpc = 0;
                     m_rx_descriptors[m_currentRescDesc].reserved = adr;
 
+                    a++;
                     m_currentRescDesc++;
                     if (m_currentRescDesc >= 255)
                         m_currentRescDesc = 0;

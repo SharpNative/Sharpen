@@ -1,4 +1,4 @@
-﻿// #define HEAP_DEBUG
+﻿ #define HEAP_DEBUG
 
 using Sharpen.Arch;
 using Sharpen.Drivers.Char;

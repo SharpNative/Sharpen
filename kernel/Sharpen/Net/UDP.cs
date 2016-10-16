@@ -36,7 +36,7 @@ namespace Sharpen.Net
         /// <param name="xid"></param>
         /// <param name="buffer"></param>
         /// <param name="size"></param>
-        public unsafe delegate void UDPPacketHandler(uint xid, byte* buffer, uint size);
+        public unsafe delegate void UDPPacketHandler(byte[] ip, ushort sourcePort, byte* buffer, uint size);
 
         /// <summary>
         /// Initializes UDP
@@ -68,17 +68,45 @@ namespace Sharpen.Net
         }
 
         /// <summary>
+        /// Unbind UDP port
+        /// </summary>
+        /// <param name="port">The port</param>
+        /// <param name="handler">The callback</param>
+        public static void UnBind(short port)
+        {
+#if UDP_DEBUG
+            Console.Write("[UDP] Unbind Port: ");
+            Console.WriteNum(port);
+            Console.WriteLine("");
+#endif
+
+            m_handlers[port] = null;
+        }
+
+        private static ushort m_portOffset = 49100;
+
+        /// <summary>
+        /// Get random port :)
+        /// </summary>
+        /// <returns></returns>
+        public static ushort RequestPort()
+        {
+            return m_portOffset++;
+        }
+
+        /// <summary>
         /// UDP packet handler
         /// </summary>
         /// <param name="xid">Identification ID</param>
         /// <param name="buffer">Buffer pointer</param>
         /// <param name="size">Packet size</param>
-        private static unsafe void handler(uint xid, byte *buffer, uint size)
+        private static unsafe void handler(byte[] sourceIp, byte *buffer, uint size)
         {
 
             UDPHeader* header = (UDPHeader*)buffer;
 
             ushort destPort = (ushort)ByteUtil.ReverseBytes(header->DestinationPort);
+            ushort sourcePort = (ushort)ByteUtil.ReverseBytes(header->SourcePort);
 
 #if UDP_DEBUG_PACKETS
             
@@ -91,7 +119,7 @@ namespace Sharpen.Net
             Console.WriteLine("");
 #endif
 
-            m_handlers[destPort]?.Invoke(xid, buffer + sizeof(UDPHeader), (uint)(header->Length - 8));
+            m_handlers[destPort]?.Invoke(sourceIp, sourcePort, buffer + sizeof(UDPHeader), (uint)(header->Length - 8));
         }
         
         /// <summary>
@@ -139,7 +167,7 @@ namespace Sharpen.Net
 
             addHeader(packet, destIP, srcPort, DestPort);
 
-            IPV4.Send(packet, destMac, destIP, PROTOCOL_UDP);
+            IPV4.Send(packet, destIP, PROTOCOL_UDP);
 
             NetPacket.Free(packet);
         }
@@ -152,7 +180,7 @@ namespace Sharpen.Net
         /// <param name="destIP">Destination IP</param>
         /// <param name="srcPort">Source port</param>
         /// <param name="DestPort">Destination port</param>
-        public static unsafe void Send(NetPacketDesc *packet, byte[] destMac, byte[] destIP, ushort srcPort, ushort DestPort)
+        public static unsafe void Send(NetPacketDesc *packet, byte[] destIP, ushort srcPort, ushort DestPort)
         {
             // No support for packets over 1500 bytes
             if (packet->end - packet->start >= 1500)
@@ -160,7 +188,7 @@ namespace Sharpen.Net
             
             addHeader(packet, destIP, srcPort, DestPort);
 
-            IPV4.Send(packet, destMac, destIP, PROTOCOL_UDP);
+            IPV4.Send(packet, destIP, PROTOCOL_UDP);
         }
     }
 }

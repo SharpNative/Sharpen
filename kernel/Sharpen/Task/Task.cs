@@ -7,6 +7,11 @@ namespace Sharpen.Task
 {
     public unsafe class Task
     {
+        public const int KERNEL_CS = 0x08;
+        public const int KERNEL_DS = 0x10;
+        public const int USERSPACE_CS = 0x1B;
+        public const int USERSPACE_DS = 0x23;
+
         public enum TaskFlags
         {
             NOFLAGS = 0,

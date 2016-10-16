@@ -28,6 +28,7 @@ namespace Sharpen.Net
         private const byte OPT_SUBNET = 1;
         private const byte OPT_ROUTER = 3;
         private const byte OPT_DNS = 6;
+        private const byte OPT_HOSTNAME = 12;
         private const byte OPT_NTP = 42;
         private const byte OPT_REQ_IP = 50;
         private const byte OPT_LEASE_TIME = 51;
@@ -139,7 +140,7 @@ namespace Sharpen.Net
             Discover();
         }
 
-        private static unsafe void PacketHandler(uint xid, byte* buffer, uint size)
+        private static unsafe void PacketHandler(byte[] ip, ushort port, byte* buffer, uint size)
         {
             // We need to do a size check?
 
@@ -154,19 +155,25 @@ namespace Sharpen.Net
                 case DHCP_NAK:
                     nak(buffer);
                     break;
+
+                case DHCP_AK:
+                    handleAck(buffer);
+                    break;
             }
 
         }
 
-        private static unsafe void handleOffer(byte* buffer)
+        private static unsafe void handleAck(byte* buffer)
         {
             DHCPBootstrapHeader* header = (DHCPBootstrapHeader*)buffer;
 
             for (int i = 0; i < 4; i++)
+            {
                 Network.Settings->IP[i] = header->YourClientIP[i];
+            }
 
             int offset = sizeof(DHCPBootstrapHeader) + 7;
-
+            
             // With sanity check
             while(*(buffer + offset) != 255)
             {
@@ -225,8 +232,12 @@ namespace Sharpen.Net
                         offset++;
                         break;
                 }
-
             }
+
+
+
+            // Lets do a disover on the network!
+            ARP.ArpRange(Util.PtrToArray(Network.Settings->IP));
         }
 
         private static unsafe void request(byte* buffer)
@@ -235,17 +246,7 @@ namespace Sharpen.Net
             NetPacketDesc* packet = NetPacket.Alloc();
 
             addHeader(packet, ByteUtil.ReverseBytes(header->TransactionID), new byte[4], DHCP_REQUEST);
-
-
-            Console.Write("Requesting lease for: ");
-            for (int i = 0; i < 3; i++)
-            {
-                Console.WriteNum(header->YourClientIP[i]);
-                Console.Write('.');
-            }
-            Console.WriteNum(header->YourClientIP[3]);
-            Console.WriteLine("");
-
+            
             byte* buf = (byte*)(packet->buffer + packet->end);
             *buf++ = OPT_REQ_IP;
             *buf++ = 4; // IP is 4 bytes
@@ -253,6 +254,18 @@ namespace Sharpen.Net
                 *buf++ = header->YourClientIP[i];
 
             packet->end += 6;
+
+            buf = (byte*)(packet->buffer + packet->end);
+            *buf++ = OPT_HOSTNAME;
+            *buf++ = 8;
+
+            string hostname = "Sharpen";
+
+            for (int i = 0; i < 8; i++)
+                *buf++ = (byte)hostname[i];
+
+            packet->end += 10;
+
 
             buf = (byte*)(packet->buffer + packet->end);
             *buf++ = OPT_PARAMETER_REQUEST; // OPT_PARAMETER_REQUEST
@@ -264,15 +277,11 @@ namespace Sharpen.Net
             *buf++ = OPT_END; // And then
             packet->end += 14;
 
-            byte[] broadCast = new byte[6];
-            for (int i = 0; i < 6; i++)
-                broadCast[i] = 0xFF;
-
             byte[] dest = new byte[4];
             for (int i = 0; i < 4; i++)
                 dest[i] = 0xFF;
 
-            UDP.Send(packet, broadCast, dest, 68, 67);
+            UDP.Send(packet, dest, 68, 67);
 
             NetPacket.Free(packet);
         }
@@ -299,10 +308,6 @@ namespace Sharpen.Net
             m_mac = new byte[6];
 
             Network.GetMac((byte *)Util.ObjectToVoidPtr(m_mac));
-
-            byte[] broadCast = new byte[6];
-            for (int i = 0; i < 6; i++)
-                broadCast[i] = 0xFF;
 
             byte[] dest = new byte[4];
             for (int i = 0; i < 4; i++)
@@ -354,7 +359,7 @@ namespace Sharpen.Net
 
             packet->end += 14;
 
-            UDP.Send(packet, broadCast, dest, 68, 67);
+            UDP.Send(packet, dest, 68, 67);
 
             NetPacket.Free(packet);
         }

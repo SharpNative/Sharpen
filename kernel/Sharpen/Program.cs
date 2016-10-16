@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Collections;
 using Sharpen.Drivers.Block;
 using Sharpen.Drivers.Char;
 using Sharpen.Drivers.Net;
@@ -97,24 +98,27 @@ namespace Sharpen
             STDOUT.Init();
             SerialPort.Init();
             PipeFS.Init();
-            
+
+
             PCI.Init();
             //AC97.Init();
             VboxDev.Init();
-            //rtl8139.Init();
+
+
+            Tasking.Init();
 
             // Networking proto's 
             Network.Init();
             IPV4.Init();
             UDP.Init();
-            //ARP.Init();
+            ARP.Init();
 
             // Networking drivers
             //E1000.Init();
-            //PCNet2.Init();
+            PCNet2.Init();
+            //rtl8139.Init();
 
             ATA.Init();
-            Tasking.Init();
             
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
@@ -124,8 +128,8 @@ namespace Sharpen
             Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
 
             //NetworkTools.WakeOnLan(bac);
-            //DHCP.Init();
-
+            DHCP.Init();
+            
             // Initial process, usage: init [program]
             string[] argv = new string[3];
             argv[0] = "C://init";

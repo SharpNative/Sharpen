@@ -12,8 +12,8 @@ set USER_LD_FLAGS=-s -T../link.ld
 
 rem KERNELSPACE
 set KERNEL_ASM_FLAGS=-f elf32
-set KERNEL_C_FLAGS=-I./include -Wall -O2 -std=c99
-set KERNEL_LD_FLAGS=-Tlinker.ld -s
+set KERNEL_C_FLAGS=-I./include -Wall -O1 -std=c99
+set KERNEL_LD_FLAGS=-Tlinker.ld
 
 rem DISK IMAGE
 set DRIVE_LETTER=G

@@ -1,6 +1,9 @@
-﻿#define NETWORK_DEBUG
+﻿//#define NETWORK_DEBUG
 
+using Sharpen.Arch;
+using Sharpen.Collections;
 using Sharpen.Mem;
+using Sharpen.Task;
 using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
@@ -24,6 +27,12 @@ namespace Sharpen.Net
             public GetMACAction GetMac;
         }
 
+        public struct NetRecBuffer
+        {
+            public int Size;
+            public byte* Buffer;
+        }
+
         // Network packet type handler
         public unsafe delegate void PackerHandler(byte *buffer, uint size);
 
@@ -40,6 +49,7 @@ namespace Sharpen.Net
         /// <param name="mac">6 byte struct to read the mac address in</param>
         public unsafe delegate void GetMACAction(byte *mac);
 
+        private static Queue m_recPacketQueue;
 
         private static NetDevice m_dev;
 
@@ -58,6 +68,12 @@ namespace Sharpen.Net
 
             Settings = (NetworkSettings*)Heap.Alloc(sizeof(NetworkSettings));
             Memory.Memset(Settings, 0, sizeof(NetworkSettings));
+
+            m_recPacketQueue = new Queue();
+            
+            Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(handlePackets), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
+            newTask.PageDir = Paging.KernelDirectory;
+            //Tasking.ScheduleTask(newTask);
         }
 
         public static void RegisterHandler(ushort protocol, PackerHandler handler)
@@ -120,15 +136,59 @@ namespace Sharpen.Net
                 m_dev.GetMac(mac);
         }
 
-        public static unsafe void HandlePacket(byte[] buffer, int size)
+        /// <summary>
+        /// Add packet for handling
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        public static unsafe void QueueReceivePacket(byte[] buffer, int size)
+        {
+            //NetRecBuffer* netBuf = (NetRecBuffer*)Heap.Alloc(sizeof(NetRecBuffer));
+            //netBuf->Size = size;
+            //netBuf->Buffer = (byte*)Heap.Alloc(size);
+            //Memory.Memcpy(netBuf->Buffer, Util.ObjectToVoidPtr(buffer), size);
+
+            // Queue packet
+            //m_recPacketQueue.Push(netBuf);
+            handlePacket(buffer, size);
+        }
+
+        /// <summary>
+        /// Wait for packets and handle it!
+        /// </summary>
+        private static unsafe void handlePackets()
+        {
+            while(true)
+            {
+                NetRecBuffer* buffer = (NetRecBuffer *)m_recPacketQueue.Pop();
+                if (buffer == null)
+                {
+                    continue;
+                }
+                
+                //handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
+
+                Heap.Free(buffer->Buffer);
+                Heap.Free(buffer);
+            }
+        }
+
+        /// <summary>
+        /// Handle single receive packet
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        private static unsafe void handlePacket(byte[] buffer, int size)
         {
             byte* bufPtr = (byte*)Util.ObjectToVoidPtr(buffer);
 
             EthernetHeader* header = (EthernetHeader*)bufPtr;
             
             ushort proto = ByteUtil.ReverseBytes(header->Protocol);
+
             
             m_handlers[proto]?.Invoke(bufPtr + sizeof(EthernetHeader), (uint)size);
+
         }
 
     }
