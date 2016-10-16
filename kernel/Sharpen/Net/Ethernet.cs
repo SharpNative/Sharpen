@@ -72,6 +72,13 @@ namespace Sharpen.Net
 
             ARP.Lookup(destIP, dstMac);
 
+            if(dstMac[0] == 0x00 && dstMac[1] == 0x00 && dstMac[2] == 0x00 && dstMac[3] == 0x00 && dstMac[4] == 0x00 && dstMac[5] == 0x00)
+            {
+                ARP.ArpSend(ARP.OP_REQUEST, new byte[6], destIP);
+
+                return;
+            }
+
             addHeader(packet, Util.PtrToArray(dstMac), srcMAC, protocol);
 
             Network.Transmit(packet);

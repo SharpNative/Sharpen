@@ -71,14 +71,22 @@ namespace Sharpen.Net
             NetPacket.Free(packet);
 
             // And we wait :)
-            UDP.Bind((short)sourcePort, PacketHandler);
+            UDP.Bind(sourcePort, PacketHandler);
         }
 
         private static unsafe void PacketHandler(byte[] ip, ushort port, byte* buffer, uint size)
         {
+            NTPHeader* header = (NTPHeader*)buffer;
 
+            ulong seconds = header->TransmitTimestamp;
+
+            Console.Write("[NTP] Seconds since 1970 ");
+            Console.WriteHex((int)seconds);
+            Console.WriteLine("");
 
             sourcePort = 0;
+
+            UDP.UnBind(sourcePort);
         }
     }
 }

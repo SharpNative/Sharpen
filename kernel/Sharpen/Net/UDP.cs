@@ -56,7 +56,7 @@ namespace Sharpen.Net
         /// </summary>
         /// <param name="port">The port</param>
         /// <param name="handler">The callback</param>
-        public static void Bind(short port, UDPPacketHandler handler)
+        public static void Bind(ushort port, UDPPacketHandler handler)
         {
 #if UDP_DEBUG
             Console.Write("[UDP] Bind Port: ");
@@ -72,7 +72,7 @@ namespace Sharpen.Net
         /// </summary>
         /// <param name="port">The port</param>
         /// <param name="handler">The callback</param>
-        public static void UnBind(short port)
+        public static void UnBind(ushort port)
         {
 #if UDP_DEBUG
             Console.Write("[UDP] Unbind Port: ");

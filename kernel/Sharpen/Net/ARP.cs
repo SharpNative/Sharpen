@@ -33,8 +33,8 @@ namespace Sharpen.Net
             public fixed byte IP[4];
         }
 
-        private const byte OP_REQUEST = 0x01;
-        private const byte OP_REPLY = 0x02;
+        public const byte OP_REQUEST = 0x01;
+        public const byte OP_REPLY = 0x02;
 
         private static int m_offset = 0;
         private static ARPEntry[] m_arpTable;
@@ -64,7 +64,7 @@ namespace Sharpen.Net
             for (int i = 0; i < 6; i++)
                 brdIP[i] = 0xFF;
 
-            for(int i = 10; i < 11; i++)
+            for(int i = 1; i < 2; i++)
             {
                 cloneIP[3] = (byte)i;
                 ArpSend(OP_REQUEST, brdIP, cloneIP);
@@ -165,6 +165,7 @@ namespace Sharpen.Net
                     //}
                     //Console.WriteLine(" to the arp table");
 
+                    //NTP.Send(Util.PtrToArray(header->SrcIP));
 
                     m_offset++;
                 }

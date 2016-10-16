@@ -79,6 +79,7 @@
     <Compile Include="Net\NetworkTools.cs" />
     <Compile Include="Net\NTP.cs" />
     <Compile Include="Net\UDP.cs" />
+    <Compile Include="Net\UDPDevice.cs" />
     <Compile Include="Task\FileDescriptors.cs" />
     <Compile Include="Task\Task.cs" />
     <Compile Include="Task\Tasking.cs" />
