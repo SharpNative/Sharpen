@@ -367,7 +367,7 @@ void Shell_Program_Main_1char___(char** args)
 				}
 			}
 			else if(Sharpen_Utilities_String_Equals_2char__char__(command, "dir")){
-				struct class_Sharpen_IO_Directory* dir = Sharpen_IO_Directory_Open_1char__(".");
+				struct class_Sharpen_IO_Directory* dir = Sharpen_IO_Directory_Open_1char__(Sharpen_IO_Directory_GetCurrentDirectory_0());
 				uint32_t i = 0;
 				while(true)
 				{

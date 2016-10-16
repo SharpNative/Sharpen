@@ -34,7 +34,7 @@ namespace Sharpen.Net
         }
 
         // Network packet type handler
-        public unsafe delegate void PackerHandler(byte *buffer, uint size);
+        public unsafe delegate void PackerHandler(byte[] srcMac, byte *buffer, uint size);
 
         /// <summary>
         /// Transmit packet
@@ -185,9 +185,8 @@ namespace Sharpen.Net
             EthernetHeader* header = (EthernetHeader*)bufPtr;
             
             ushort proto = ByteUtil.ReverseBytes(header->Protocol);
-
             
-            m_handlers[proto]?.Invoke(bufPtr + sizeof(EthernetHeader), (uint)size);
+            m_handlers[proto]?.Invoke(Util.PtrToArray(header->Source), bufPtr + sizeof(EthernetHeader), (uint)size);
 
         }
 

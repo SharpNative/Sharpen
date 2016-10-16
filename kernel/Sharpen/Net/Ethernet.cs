@@ -74,7 +74,11 @@ namespace Sharpen.Net
 
             if(dstMac[0] == 0x00 && dstMac[1] == 0x00 && dstMac[2] == 0x00 && dstMac[3] == 0x00 && dstMac[4] == 0x00 && dstMac[5] == 0x00)
             {
-                ARP.ArpSend(ARP.OP_REQUEST, new byte[6], destIP);
+                byte[] mac = new byte[6];
+                for (int i = 0; i < 6; i++)
+                    mac[i] = 0xFF;
+
+                ARP.ArpSend(ARP.OP_REQUEST, mac, destIP);
 
                 return;
             }

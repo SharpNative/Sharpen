@@ -48,7 +48,7 @@ namespace Sharpen.Net
         /// </summary>
         /// <param name="buffer">Buffer pointer</param>
         /// <param name="size">Packet size</param>
-        private static unsafe void Handle(byte* buffer, uint size)
+        private static unsafe void Handle(byte[] mac, byte* buffer, uint size)
         {
             IPV4Header* header = (IPV4Header*)buffer;
             
@@ -57,8 +57,16 @@ namespace Sharpen.Net
             byte[] ip = new byte[4];
             for (int i = 0; i < 4; i++)
                 ip[i] = header->Source[i];
+
+            // Fake ARP
+            if(!(ip[0] == 255 && ip[1] == 255 && ip[2] == 255 && ip[3] == 255))
+            {
+                ARP.FindOrAdd(ip, mac);
+            }
+
+            ushort sz = (ushort)(ByteUtil.ReverseBytes(header->totalLength) - 20);
             
-            m_handlers[proto]?.Invoke(ip, buffer + sizeof(IPV4Header), size);
+            m_handlers[proto]?.Invoke(ip, buffer + sizeof(IPV4Header), sz);
         }
 
         /// <summary>

@@ -98,6 +98,7 @@ namespace Sharpen
             STDOUT.Init();
             SerialPort.Init();
             PipeFS.Init();
+            NetFS.Init();
 
 
             PCI.Init();
@@ -112,6 +113,7 @@ namespace Sharpen
             IPV4.Init();
             UDP.Init();
             ARP.Init();
+            ICMP.Init();
 
             // Networking drivers
             //E1000.Init();
@@ -129,13 +131,18 @@ namespace Sharpen
 
             //NetworkTools.WakeOnLan(bac);
             //DHCP.Init();
-            
+
+
+            //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(arpDiscover), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
+            //newTask.PageDir = Paging.KernelDirectory;
+            //Tasking.ScheduleTask(newTask);
+
             // Initial process, usage: init [program]
             string[] argv = new string[3];
             argv[0] = "C://init";
             argv[1] = "C://shell";
             argv[2] = null;
-
+            
             int error = Loader.StartProcess(argv[0], argv, Tasking.SpawnFlags.NONE);
             if (error < 0)
             {
@@ -145,6 +152,33 @@ namespace Sharpen
             }
 
             // Idle loop
+            while (true)
+                CPU.HLT();
+        }
+
+        private static unsafe void arpDiscover()
+        {
+            while(Network.Settings->IP[0] == 0x00)
+            {
+                CPU.HLT();
+            }
+
+            NetPacketDesc* packet = NetPacket.Alloc();
+
+            packet->buffer[0] = 0xFF;
+            packet->buffer[1] = 0xFF;
+            packet->buffer[2] = 0xFF;
+
+            packet->end += 3;
+
+            byte[] destIp = new byte[4];
+            destIp[0] = 192;
+            destIp[1] = 168;
+            destIp[2] = 10;
+            destIp[3] = 1;
+            
+            UDP.Send(packet, destIp, 60, 666);
+
             while (true)
                 CPU.HLT();
         }

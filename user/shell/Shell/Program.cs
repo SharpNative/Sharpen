@@ -79,8 +79,8 @@ namespace Shell
                 }
                 else if (String.Equals(command, "dir"))
                 {
-                    Directory dir = Directory.Open(".");
-
+                    Directory dir = Directory.Open(Directory.GetCurrentDirectory());
+                    
                     uint i = 0;
                     while (true)
                     {

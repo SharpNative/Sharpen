@@ -1,4 +1,5 @@
-﻿using Sharpen.Task;
+﻿using Sharpen.Arch;
+using Sharpen.Task;
 using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
@@ -57,17 +58,19 @@ namespace Sharpen.Net
         public static unsafe void ArpRange(byte[] ip)
         {
             byte[] cloneIP = new byte[4];
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 4; i++)
                 cloneIP[i] = ip[i];
 
             byte[] brdIP = new byte[6];
             for (int i = 0; i < 6; i++)
                 brdIP[i] = 0xFF;
-
+            
             for(int i = 1; i < 2; i++)
             {
                 cloneIP[3] = (byte)i;
                 ArpSend(OP_REQUEST, brdIP, cloneIP);
+
+                for(int j = 0; j < 5; j++) PortIO.In32(0x80);
             }
         }
 
@@ -84,8 +87,9 @@ namespace Sharpen.Net
 
             hdr->HardwareAdrLength = 6;
             hdr->ProtocolAdrLength = 4;
-
+            
             hdr->Opcode = ByteUtil.ReverseBytes(op);
+
 
             for (int i = 0; i < 6; i++)
                 hdr->SrcHw[i] = mac[i];
@@ -109,10 +113,38 @@ namespace Sharpen.Net
 
 
             packet->end += (short)sizeof(ARPHeader);
-
             Ethernet.SendMAC(packet, hwAddr, EthernetTypes.ARP);
 
             NetPacket.Free(packet);
+        }
+
+        public static unsafe void FindOrAdd(byte[] srcIP, byte[] srcHW)
+        {
+            ARPEntry* entry = GetEntry(srcIP);
+
+            if (entry == null)
+            {
+                // Add entry
+
+                fixed (byte* ip = m_arpTable[m_offset].IP)
+                {
+                    for (int i = 0; i < 4; i++)
+                        ip[i] = srcIP[i];
+                }
+
+                fixed (byte* mac = m_arpTable[m_offset].MAC)
+                {
+                    for (int i = 0; i < 6; i++)
+                        mac[i] = srcHW[i];
+                }
+
+                m_offset++;
+            }
+            else
+            {
+                for (int i = 0; i < 6; i++)
+                    entry->MAC[i] = srcHW[i];
+            }
         }
 
         /// <summary>
@@ -120,7 +152,7 @@ namespace Sharpen.Net
         /// </summary>
         /// <param name="buffer">Buffer pointer</param>
         /// <param name="size">Size</param>
-        private static unsafe void handler(byte* buffer, uint size)
+        private static unsafe void handler(byte[] mac, byte* buffer, uint size)
         {
             ARPHeader* header = (ARPHeader*)buffer;
 
@@ -130,50 +162,7 @@ namespace Sharpen.Net
 
             if (ByteUtil.ReverseBytes(header->Opcode) == OP_REPLY)
             {
-
-                ARPEntry* entry = GetEntry(Util.PtrToArray(header->SrcIP));
-
-                if (entry == null)
-                {
-                    // Add entry
-
-                    fixed(byte *ip = m_arpTable[m_offset].IP)
-                    {
-                        for (int i = 0; i < 4; i++)
-                            ip[i] = header->SrcIP[i];
-                    }
-
-                    fixed (byte* mac = m_arpTable[m_offset].MAC)
-                    {
-                        for (int i = 0; i < 6; i++)
-                            mac[i] = header->SrcHw[i];
-                    }
-
-                    //Console.Write("[ARP] Adding entry ");
-                    //for(int i = 0; i < 4; i++)
-                    //{
-                    //    Console.WriteNum(header->SrcIP[i]);
-                    //    if (i < 3)
-                    //        Console.Write('.');
-                    //}
-                    //Console.Write(" - ");
-                    //for (int i = 0; i < 6; i++)
-                    //{
-                    //    Console.WriteHex(header->SrcHw[i]);
-                    //    if (i < 5)
-                    //        Console.Write(':');
-                    //}
-                    //Console.WriteLine(" to the arp table");
-
-                    //NTP.Send(Util.PtrToArray(header->SrcIP));
-
-                    m_offset++;
-                }
-                else
-                {
-                    for (int i = 0; i < 6; i++)
-                        entry->MAC[i] = header->SrcHw[i];
-                }
+                FindOrAdd(Util.PtrToArray(header->SrcIP), Util.PtrToArray(header->SrcHw));
             }
             else
             {

@@ -327,7 +327,7 @@ namespace Sharpen.Exec
             DirEntry* gotEntry = VFS.ReadDir(node, index);
             if (gotEntry == null)
                 return -(int)ErrorCode.ENOENT;
-
+            
             Memory.Memcpy(entry, gotEntry, sizeof(DirEntry));
             Heap.Free(gotEntry);
             return 0;

@@ -172,6 +172,7 @@ namespace Sharpen.Net
                 Network.Settings->IP[i] = header->YourClientIP[i];
             }
 
+
             int offset = sizeof(DHCPBootstrapHeader) + 7;
             
             // With sanity check
@@ -233,11 +234,6 @@ namespace Sharpen.Net
                         break;
                 }
             }
-
-
-
-            // Lets do a disover on the network!
-            ARP.ArpRange(Util.PtrToArray(Network.Settings->IP));
         }
 
         private static unsafe void request(byte* buffer)
