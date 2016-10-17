@@ -36,6 +36,7 @@ namespace Sharpen.Net
                 return null;
 
             byte* dstMac = (byte*)Heap.Alloc(6);
+            Memory.Memset(dstMac, 0, 6);
 
             ARP.Lookup(ip, dstMac);
 
@@ -62,7 +63,7 @@ namespace Sharpen.Net
         /// <returns>The directory entry</returns>
         private static unsafe DirEntry* readDirImpl(Node node, uint index)
         {
-            // We need sprintf for taht
+            // We need sprintf for this
 
             return null;
         }

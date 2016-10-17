@@ -5,7 +5,7 @@
 
 int main(int argc, char* argv[])
 {
-    int file = open("net://arp/192.168.10.2", O_RDONLY);
+    int file = open("net://arp/192.168.10.10", O_RDONLY);
     if(file == -1)
     {
         printf("ARP request done\n");

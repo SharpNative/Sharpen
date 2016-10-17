@@ -92,30 +92,31 @@ namespace Sharpen.Net
 
             int index = String.IndexOf(ipIn, ".");
             string part = String.SubString(ipIn, 0, index);
-            string overig = String.SubString(ipIn, index + 1, String.Length(ipIn) - index + 1);
+            string remaning = String.SubString(ipIn, index + 1, String.Length(ipIn) - index + 1);
 
             int i = 0; 
-            while(i < 4)
+            while(i < 3)
             {
                 ip[i] = (byte)Int.Parse(part);
 
                 Heap.Free(Util.ObjectToVoidPtr(part));
 
-                index = String.IndexOf(overig, ".");
+                index = String.IndexOf(remaning, ".");
                 if (i == 2)
-                    index = String.Length(overig);
-                else if(index == -1)
-                {
-                    //Heap.Free((char*)Util.ObjectToVoidPtr(overig));
-                    break;
-                }
+                    index = String.Length(remaning);
 
-                part = String.SubString(overig, 0, index);
+                part = String.SubString(remaning, 0, index);
                 
-                char* oudOverig = (char *)Util.ObjectToVoidPtr(overig);
-                overig = String.SubString(overig, index + 1, String.Length(overig) - index + 1);
 
-                //Heap.Free(oudOverig);
+                if (i == 2)
+                    Heap.Free(Util.ObjectToVoidPtr(part));
+                else
+                {
+                    char* oldRemaning = (char*)Util.ObjectToVoidPtr(remaning);
+                    remaning = String.SubString(remaning, index + 1, String.Length(remaning) - index + 1);
+
+                    Heap.Free(oldRemaning);
+                }
 
                 i++;
             }
