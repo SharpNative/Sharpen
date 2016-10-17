@@ -73,7 +73,7 @@ namespace Sharpen.Net
             
             Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(handlePackets), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
             newTask.PageDir = Paging.KernelDirectory;
-            //Tasking.ScheduleTask(newTask);
+            Tasking.ScheduleTask(newTask);
         }
 
         public static void RegisterHandler(ushort protocol, PackerHandler handler)
@@ -165,8 +165,8 @@ namespace Sharpen.Net
                 {
                     continue;
                 }
-                
-                //handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
+
+                handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
 
                 Heap.Free(buffer->Buffer);
                 Heap.Free(buffer);

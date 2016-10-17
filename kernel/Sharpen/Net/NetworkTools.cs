@@ -11,45 +11,6 @@ namespace Sharpen.Net
     {
 
         /// <summary>
-        /// Wake on lan
-        /// </summary>
-        /// <param name="mac">MAC address to wake</param>
-        public static unsafe void WakeOnLan(byte[] mac)
-        {
-            Console.Write("Waking up by LAN, MAC: ");
-            for(int i =0; i < 6; i++)
-            {
-                Console.WriteHex(mac[i]);
-                if(i != 5)
-                    Console.Write(":");
-            }
-            Console.WriteLine("");
-
-
-            byte[] broadcast = new byte[6]; 
-            for (int i = 0; i < 6; i++)
-                broadcast[i] = 0xFF;
-
-            NetPacketDesc* packet = NetPacket.Alloc();
-
-            int offset = 0;
-            for (int i = 0; i < 6; i++)
-                packet->buffer[packet->start + offset + i] = 0xFF;
-
-            offset += 6;
-
-            for (int i = 0; i < 16; i++)
-                for (int j = 0; j < 6; j++)
-                    packet->buffer[packet->start + offset + (i * 6) + j] = mac[j];
-
-            packet->end += 102;
-
-            Ethernet.Send(packet, broadcast, EthernetTypes.WoL);
-
-            NetPacket.Free(packet);
-        }
-
-        /// <summary>
         /// Generate WEB checksum
         /// </summary>
         /// <param name="data">Pointer to data</param>

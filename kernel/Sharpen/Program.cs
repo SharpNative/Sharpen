@@ -128,8 +128,7 @@ namespace Sharpen
             
             byte[] bac = new byte[6];
             Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
-
-            //NetworkTools.WakeOnLan(bac);
+            
             DHCP.Init();
 
             //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(testing), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
