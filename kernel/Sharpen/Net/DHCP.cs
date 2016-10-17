@@ -140,7 +140,7 @@ namespace Sharpen.Net
             Discover();
         }
 
-        private static unsafe void PacketHandler(byte[] ip, ushort port, byte* buffer, uint size)
+        private static unsafe void PacketHandler(byte[] ip, ushort port, ushort destport, byte* buffer, uint size)
         {
             // We need to do a size check?
 

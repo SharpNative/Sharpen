@@ -167,7 +167,8 @@ namespace Sharpen
             ip[1] = 168;
             ip[2] = 10;
             ip[3] = 13;
-            
+
+            Console.WriteLine("Checking ARP table");
             if (!ARP.IpExists(ip))
             {
 
@@ -182,13 +183,11 @@ namespace Sharpen
             
             while (!ARP.IpExists(ip))
                 CPU.HLT();
-            
+
+            Console.WriteLine("Exists continuee");
             UDPSocket sock = new UDPSocket();
             sock.Connect("192.168.10.13", 11000);
-
-            for (int i = 0; i < 1000; i++)
-                PortIO.In32(0x80);
-
+            
             char* chars = (char*)Heap.Alloc(5);
             chars[0] = 'H';
             chars[1] = 'A';
@@ -196,7 +195,18 @@ namespace Sharpen
             chars[3] = 'I';
             chars[4] = '\0';
 
+            Console.WriteLine("Sending 5 bytes..");
             sock.Send((byte *)chars, 5);
+
+            Console.WriteLine("Receiving 4 bytes..");
+            while (sock.GetSize() == 0)
+                 CPU.HLT();
+
+            char* buf = (char*)Heap.Alloc(4);
+            sock.Read((byte *)buf, 4);
+            buf[3] = (char)0x00;
+
+            Console.WriteLine(Util.CharPtrToString(buf));
 
             sock.Close();
 

@@ -3,11 +3,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-/* This init process is the base of everything */
-/* This is meant to initialize userspace and to let the user log in */
-/* If the last process exits, the waitpid will stop waiting */
-/* So we can shutdown */
-
 int main(int argc, char* argv[])
 {
 

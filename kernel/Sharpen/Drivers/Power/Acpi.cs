@@ -220,7 +220,7 @@ namespace Sharpen.Drivers.Power
         /// Power shutdown
         /// </summary>
         public static void Shutdown()
-        {
+        {for (;;) ;
             // Try 1 through the pm1a control block
             PortIO.Out16((ushort)m_fadt->PM1aControlBlock, (ushort)(SLP_TYPa | SLP_EN));
             // Try 2 through the pm1b control block

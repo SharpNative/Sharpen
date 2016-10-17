@@ -307,13 +307,24 @@ namespace Sharpen.Mem
             }
         }
 
+        private static bool Mutex = false;
+
         /// <summary>
         /// Allocates a piece of memory
         /// </summary>
         /// <param name="size">The size</param>
         public static unsafe void* Alloc(int size)
         {
-            return AlignedAlloc(4, size);
+            while (Mutex)
+                CPU.HLT();
+
+            Mutex = true;
+
+            void *outVal = AlignedAlloc(4, size);
+
+            Mutex = false;
+
+            return outVal;
         }
 
         /// <summary>

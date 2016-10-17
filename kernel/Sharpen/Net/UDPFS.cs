@@ -27,6 +27,8 @@ namespace Sharpen.Net
             dev.node.Flags = NodeFlags.DIRECTORY;
 
             NetFS.RegisterDevice(dev);
+
+            UDPSocketDevice.Init();
         }
 
         /// <summary>
@@ -44,6 +46,10 @@ namespace Sharpen.Net
                 else if (String.Equals(name, "connect"))
                     return byID(OPT_SOCK);
             }
+            else if(node.Cookie == OPT_SOCK)
+            {
+                return UDPSocketDevice.Open(name);
+            }
 
             return null;
         }
@@ -52,7 +58,9 @@ namespace Sharpen.Net
         {
             Node node = new Node();
             node.Cookie = id;
-
+            node.Flags = NodeFlags.DIRECTORY;
+            node.FindDir = findDirImpl;
+            
             return node;
         }
 

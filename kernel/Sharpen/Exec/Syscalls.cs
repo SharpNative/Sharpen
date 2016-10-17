@@ -110,7 +110,7 @@ namespace Sharpen.Exec
             Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
-
+            
             uint offset = Tasking.CurrentTask.GetOffsetFromDescriptor(descriptor);
             Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] += size;
 
@@ -435,10 +435,11 @@ namespace Sharpen.Exec
 
             // Check if it's a directory and if it exists
             Node node = VFS.GetByPath(newDir);
-            
+
+
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
-            
+
             if (node.Flags != NodeFlags.DIRECTORY)
                 return -(int)ErrorCode.ENOTDIR;
             
