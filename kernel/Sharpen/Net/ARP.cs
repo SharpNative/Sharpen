@@ -55,23 +55,13 @@ namespace Sharpen.Net
         /// Request ARP range
         /// </summary>
         /// <param name="ip">Sample 192.168.10.1 (Will do 192.168.10.1 - 192.168.10.255)</param>
-        public static unsafe void ArpRange(byte[] ip)
+        public static unsafe void Request(byte[] ip)
         {
-            byte[] cloneIP = new byte[4];
-            for (int i = 0; i < 4; i++)
-                cloneIP[i] = ip[i];
-
             byte[] brdIP = new byte[6];
             for (int i = 0; i < 6; i++)
                 brdIP[i] = 0xFF;
             
-            for(int i = 1; i < 2; i++)
-            {
-                cloneIP[3] = (byte)i;
-                ArpSend(OP_REQUEST, brdIP, cloneIP);
-
-                for(int j = 0; j < 5; j++) PortIO.In32(0x80);
-            }
+            ArpSend(OP_REQUEST, brdIP, ip);
         }
 
         public static unsafe void ArpSend(ushort op, byte[] hwAddr, byte[] ip)
@@ -217,8 +207,6 @@ namespace Sharpen.Net
                     return true;
                 }
             }
-
-            Console.WriteLine("We didn't find it in arp :(");
 
             return false;
         }

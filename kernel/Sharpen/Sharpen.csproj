@@ -69,6 +69,7 @@
     <Compile Include="FileSystem\Fat16BPB.cs" />
     <Compile Include="FileSystem\PipeFS.cs" />
     <Compile Include="FileSystem\STDOUT.cs" />
+    <Compile Include="Net\ARPDevice.cs" />
     <Compile Include="Net\DHCP.cs" />
     <Compile Include="Net\Ethernet.cs" />
     <Compile Include="Net\ICMP.cs" />
@@ -127,6 +128,7 @@
     <Compile Include="Arch\Paging.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\Int.cs" />
     <Compile Include="Utilities\String.cs" />
     <Compile Include="Task\TaskPriority.cs" />
     <Compile Include="Time.cs" />

@@ -3,9 +3,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-int shutdown(void);
-int sched_yield(void);
-
 /* This init process is the base of everything */
 /* This is meant to initialize userspace and to let the user log in */
 /* If the last process exits, the waitpid will stop waiting */

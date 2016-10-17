@@ -130,9 +130,8 @@ namespace Sharpen
             Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
 
             //NetworkTools.WakeOnLan(bac);
-            //DHCP.Init();
-
-
+            DHCP.Init();
+            
             //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(arpDiscover), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
             //newTask.PageDir = Paging.KernelDirectory;
             //Tasking.ScheduleTask(newTask);

@@ -34,6 +34,7 @@ namespace Sharpen.Net
             VFS.AddMountPoint(mp);
 
             NetworkInfoDevice.Init();
+            ARPDevice.Init();
         }
 
         /// <summary>

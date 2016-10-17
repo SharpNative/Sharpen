@@ -1,6 +1,5 @@
 ﻿using Sharpen.Mem;
 using Sharpen.Utilities;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -78,6 +77,50 @@ namespace Sharpen.Net
             sum += (sum >> 16);
 
             return (ushort)~sum;
+        }
+        
+        public static unsafe byte[] StringToIp(string ipIn)
+        {
+            // TODO: Potential memleak in implementation
+
+            int num = String.Count(ipIn, '.');
+
+            if (num != 3)
+                return null;
+
+            byte[] ip = new byte[4];
+
+            int index = String.IndexOf(ipIn, ".");
+            string part = String.SubString(ipIn, 0, index);
+            string overig = String.SubString(ipIn, index + 1, String.Length(ipIn) - index + 1);
+
+            int i = 0; 
+            while(i < 4)
+            {
+                ip[i] = (byte)Int.Parse(part);
+
+                Heap.Free(Util.ObjectToVoidPtr(part));
+
+                index = String.IndexOf(overig, ".");
+                if (i == 2)
+                    index = String.Length(overig);
+                else if(index == -1)
+                {
+                    //Heap.Free((char*)Util.ObjectToVoidPtr(overig));
+                    break;
+                }
+
+                part = String.SubString(overig, 0, index);
+                
+                char* oudOverig = (char *)Util.ObjectToVoidPtr(overig);
+                overig = String.SubString(overig, index + 1, String.Length(overig) - index + 1);
+
+                //Heap.Free(oudOverig);
+
+                i++;
+            }
+
+            return ip;
         }
     }
 }
