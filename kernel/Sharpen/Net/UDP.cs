@@ -29,6 +29,7 @@ namespace Sharpen.Net
 
         // TODO: find better way to handle this, this is wasted space
         private static UDPPacketHandler[] m_handlers;
+        private static UDPSocket[] m_sockets;
 
         /// <summary>
         /// UDP packet handler
@@ -44,6 +45,8 @@ namespace Sharpen.Net
         public static unsafe void Init()
         {
             m_handlers = new UDPPacketHandler[65536];
+            m_sockets = new UDPSocket[65536];
+
             IPV4.RegisterHandler(0x11, handler);
 
 #if UDP_DEBUG
@@ -65,6 +68,32 @@ namespace Sharpen.Net
 #endif
 
             m_handlers[port] = handler;
+        }
+
+        public static unsafe void BindSocket(UDPSocket socket)
+        {
+            ushort port = UDP.RequestPort();
+
+            m_handlers[port] = socketHandler;
+            m_sockets[port] = socket;
+
+            socket.SourcePort = port;
+        }
+
+        public static unsafe void UnBindSocket(UDPSocket socket)
+        {
+            m_handlers[socket.SourcePort] = null;
+            m_sockets[socket.SourcePort] = null;
+
+            socket.SourcePort = 0;
+        }
+
+        public static unsafe void socketHandler(byte[] ip, ushort sourcePort, byte* buffer, uint size)
+        {
+            UDPSocket sock = m_sockets[sourcePort];
+
+            if (sock != null)
+                sock.Receive(buffer, size);
         }
 
         /// <summary>
@@ -185,7 +214,6 @@ namespace Sharpen.Net
             // No support for packets over 1500 bytes
             if (packet->end - packet->start >= 1500)
                 return;
-            
             addHeader(packet, destIP, srcPort, DestPort);
 
             IPV4.Send(packet, destIP, PROTOCOL_UDP);

@@ -189,7 +189,8 @@ namespace Sharpen.Net
             // Broadcast?
             if(IP[0] == 0xFF && IP[1] == 0xFF && IP[2] == 0xFF && IP[3] == 0xFF)
             {
-                for(int i =0; i < 6; i++)
+                if (DestMac != null)
+                    for (int i =0; i < 6; i++)
                     DestMac[i] = 0xFF;
 
                 return true;
@@ -200,15 +201,20 @@ namespace Sharpen.Net
 
                 if(entry != null)
                 {
-
-                    for (int i = 0; i < 6; i++)
-                        DestMac[i] = entry->MAC[i];
-
+                    if(DestMac != null)
+                        for (int i = 0; i < 6; i++)
+                            DestMac[i] = entry->MAC[i];
+                    
                     return true;
                 }
             }
 
             return false;
+        }
+
+        public static unsafe bool IpExists(byte[] IP)
+        {
+            return Lookup(IP, null);
         }
 
         /// <summary>

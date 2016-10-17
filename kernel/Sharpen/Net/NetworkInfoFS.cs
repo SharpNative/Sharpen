@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
-    class NetworkInfoDevice
+    class NetworkInfoFS
     {
 
         public static unsafe void Init()

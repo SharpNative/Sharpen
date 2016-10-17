@@ -131,8 +131,8 @@ namespace Sharpen
 
             //NetworkTools.WakeOnLan(bac);
             DHCP.Init();
-            
-            //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(arpDiscover), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
+
+            //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(testing), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
             //newTask.PageDir = Paging.KernelDirectory;
             //Tasking.ScheduleTask(newTask);
 
@@ -155,28 +155,50 @@ namespace Sharpen
                 CPU.HLT();
         }
 
-        private static unsafe void arpDiscover()
+        private static unsafe void testing()
         {
+            // Wait for dhcp to complete
             while(Network.Settings->IP[0] == 0x00)
-            {
                 CPU.HLT();
-            }
 
-            NetPacketDesc* packet = NetPacket.Alloc();
-
-            packet->buffer[0] = 0xFF;
-            packet->buffer[1] = 0xFF;
-            packet->buffer[2] = 0xFF;
-
-            packet->end += 3;
-
-            byte[] destIp = new byte[4];
-            destIp[0] = 192;
-            destIp[1] = 168;
-            destIp[2] = 10;
-            destIp[3] = 1;
+            // Ensure it is in the arp table
+            byte[] ip = new byte[4];
+            ip[0] = 192;
+            ip[1] = 168;
+            ip[2] = 10;
+            ip[3] = 13;
             
-            UDP.Send(packet, destIp, 60, 666);
+            if (!ARP.IpExists(ip))
+            {
+
+                byte[] mac = new byte[6];
+                for (int i = 0; i < 6; i++)
+                    mac[i] = 0xFF;
+                
+                ARP.ArpSend(ARP.OP_REQUEST, mac, ip);
+
+                //TODO: Free mac?
+            }
+            
+            while (!ARP.IpExists(ip))
+                CPU.HLT();
+            
+            UDPSocket sock = new UDPSocket();
+            sock.Connect("192.168.10.13", 11000);
+
+            for (int i = 0; i < 1000; i++)
+                PortIO.In32(0x80);
+
+            char* chars = (char*)Heap.Alloc(5);
+            chars[0] = 'H';
+            chars[1] = 'A';
+            chars[2] = 'I';
+            chars[3] = 'I';
+            chars[4] = '\0';
+
+            sock.Send((byte *)chars, 5);
+
+            sock.Close();
 
             while (true)
                 CPU.HLT();

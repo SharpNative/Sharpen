@@ -81,8 +81,6 @@ namespace Sharpen.Net
         
         public static unsafe byte[] StringToIp(string ipIn)
         {
-            // TODO: Potential memleak in implementation
-
             int num = String.Count(ipIn, '.');
 
             if (num != 3)
@@ -95,7 +93,7 @@ namespace Sharpen.Net
             string remaning = String.SubString(ipIn, index + 1, String.Length(ipIn) - index + 1);
 
             int i = 0; 
-            while(i < 3)
+            while(i < 4)
             {
                 ip[i] = (byte)Int.Parse(part);
 
@@ -104,19 +102,18 @@ namespace Sharpen.Net
                 index = String.IndexOf(remaning, ".");
                 if (i == 2)
                     index = String.Length(remaning);
+                else if(index == -1)
+                {
+                    break;
+                }
 
                 part = String.SubString(remaning, 0, index);
-                
 
-                if (i == 2)
-                    Heap.Free(Util.ObjectToVoidPtr(part));
-                else
-                {
-                    char* oldRemaning = (char*)Util.ObjectToVoidPtr(remaning);
-                    remaning = String.SubString(remaning, index + 1, String.Length(remaning) - index + 1);
 
-                    Heap.Free(oldRemaning);
-                }
+                char* oldRemaning = (char*)Util.ObjectToVoidPtr(remaning);
+                remaning = String.SubString(remaning, index + 1, String.Length(remaning) - index + 1);
+
+                Heap.Free(oldRemaning);
 
                 i++;
             }

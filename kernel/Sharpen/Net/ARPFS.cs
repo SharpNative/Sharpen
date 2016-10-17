@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
-    class ARPDevice
+    class ARPFS
     {
         public static unsafe void Init()
         {

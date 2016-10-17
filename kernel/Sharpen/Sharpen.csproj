@@ -69,7 +69,8 @@
     <Compile Include="FileSystem\Fat16BPB.cs" />
     <Compile Include="FileSystem\PipeFS.cs" />
     <Compile Include="FileSystem\STDOUT.cs" />
-    <Compile Include="Net\ARPDevice.cs" />
+    <Compile Include="Net\UDPFS.cs" />
+    <Compile Include="Net\ARPFS.cs" />
     <Compile Include="Net\DHCP.cs" />
     <Compile Include="Net\Ethernet.cs" />
     <Compile Include="Net\ICMP.cs" />
@@ -78,10 +79,11 @@
     <Compile Include="Net\NetFS.cs" />
     <Compile Include="Net\NetPacket.cs" />
     <Compile Include="Net\Network.cs" />
-    <Compile Include="Net\NetworkInfoDevice.cs" />
+    <Compile Include="Net\NetworkInfoFS.cs" />
     <Compile Include="Net\NetworkSettings.cs" />
     <Compile Include="Net\NetworkTools.cs" />
     <Compile Include="Net\UDP.cs" />
+    <Compile Include="Net\UDPSocket.cs" />
     <Compile Include="Task\FileDescriptors.cs" />
     <Compile Include="Task\Task.cs" />
     <Compile Include="Task\Tasking.cs" />
