@@ -362,7 +362,7 @@ namespace Sharpen.Drivers.Net
 
         private static unsafe void InitCard()
         {
-            CARD_REG* reg = (CARD_REG*)Heap.AlignedAlloc(0x1000,sizeof(CARD_REG));
+            CARD_REG* reg = (CARD_REG*)Heap.AlignedAlloc(0x1000, sizeof(CARD_REG));
             reg->MODE = 0x0180;
             reg->TLEN = 255;
             reg->RLEN = 255;

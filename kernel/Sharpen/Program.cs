@@ -108,17 +108,25 @@ namespace Sharpen
 
             Tasking.Init();
 
-            // Networking proto's 
-            Network.Init();
-            IPV4.Init();
-            UDP.Init();
-            ARP.Init();
-            ICMP.Init();
+            // Networking
 
-            // Networking drivers
+
+            Network.Init();
+
+            // Layer 1 - drivers
             //E1000.Init();
             PCNet2.Init();
             //rtl8139.Init();
+
+            // Layer 3 - Networking protocols
+            IPV4.Init();
+            ICMP.Init();
+
+            // Layer 4 - Transport protocols
+            UDP.Init();
+            TCP.Init();
+            ARP.Init();
+            
 
             ATA.Init();
             
