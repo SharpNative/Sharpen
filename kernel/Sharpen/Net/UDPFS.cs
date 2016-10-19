@@ -50,6 +50,10 @@ namespace Sharpen.Net
             {
                 return UDPSocketDevice.Open(name);
             }
+            else if(node.Cookie == OPT_BIND)
+            {
+                return UDPBindSocketDevice.Open(name);
+            }
 
             return null;
         }

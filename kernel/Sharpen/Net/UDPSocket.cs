@@ -1,4 +1,5 @@
 ﻿using Sharpen.Mem;
+using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,19 +12,28 @@ namespace Sharpen.Net
     {
         private const ushort BACKLOG = 20;
 
-        private unsafe struct UDPPacket
+        private unsafe struct UDPBacklogEntry
         {
             public fixed byte Buffer[2048];
             public uint Size;
             public bool InUse;
+            public fixed byte IP[4];
         }
 
-        private UDPPacket[] m_packets;
+        private unsafe struct UDPPacketHeader
+        {
+            public fixed byte IP[4];
+            public uint Size;
+        }
+
+        private UDPBacklogEntry[] m_packets;
 
         private ushort m_sourcePort;
         private ushort m_targetPort;
         private bool m_connected = false;
         private byte[] m_ip;
+
+        private bool m_ipSpecified = false;
 
         public ushort SourcePort
         {
@@ -33,11 +43,12 @@ namespace Sharpen.Net
 
         public ushort TargetPort
         {
+
             get { return m_targetPort; }
         }
 
         /// <summary>
-        /// Connect to port
+        /// Connect to UDP client
         /// </summary>
         /// <param name="ip">IP</param>
         /// <param name="port">Target port</param>
@@ -54,15 +65,41 @@ namespace Sharpen.Net
             
             m_connected = true;
 
-            m_packets = new UDPPacket[BACKLOG];
+            m_packets = new UDPBacklogEntry[BACKLOG];
             for (int i = 0; i < BACKLOG; i++)
                 m_packets[i].InUse = false;
 
             m_targetPort = port;
-             
+
+            m_ipSpecified = true;
+
             // Register a sourcePort
             UDP.BindSocket(this);
 
+            return true;
+        }
+
+
+        /// <summary>
+        ///  Bind to port
+        /// </summary>
+        /// <param name="ip">IP</param>
+        /// <param name="port">Target port</param>
+        /// <returns></returns>
+        public bool Bind(ushort port)
+        {
+            m_sourcePort = port;
+
+            // Register a sourcePort
+            UDP.BindSocket(this);
+
+            m_ipSpecified = false;
+            m_connected = true;
+
+            m_packets = new UDPBacklogEntry[BACKLOG];
+            for (int i = 0; i < BACKLOG; i++)
+                m_packets[i].InUse = false;
+            
             return true;
         }
 
@@ -71,7 +108,7 @@ namespace Sharpen.Net
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="size"></param>
-        public unsafe void Receive(byte* buffer, uint size)
+        public unsafe void Receive(byte[] ip, byte* buffer, uint size)
         {
             // Do not accept empty packets
             if (size == 0)
@@ -95,6 +132,12 @@ namespace Sharpen.Net
                     }
 
                     m_packets[i].InUse = true;
+                    
+                    fixed (byte* ptr = m_packets[i].IP)
+                    {
+                        Memory.Memcpy(ptr, Util.ObjectToVoidPtr(ip), 4);
+                    }
+
 
                     break;
                 }
@@ -111,6 +154,10 @@ namespace Sharpen.Net
         /// <returns></returns>
         public unsafe uint Read(byte *buffer, uint size)
         {
+            // We can't do this if we just connect
+            if (!m_ipSpecified)
+                return 0;
+
             if (GetSize() == 0)
                 return 0;
 
@@ -144,6 +191,60 @@ namespace Sharpen.Net
             return size;
         }
 
+
+        /// <summary>
+        /// Read packet from UDP
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        public unsafe uint ReadPacket(byte* buffer, uint size)
+        {
+            // Minimum size of 6
+            if (size < 6)
+                return 0;
+
+            if (GetSize() == 0)
+                return 0;
+
+            bool found = false;
+
+            int i = 0;
+            while (i < BACKLOG)
+            {
+                if (m_packets[i].InUse)
+                {
+
+                    if (size > m_packets[i].Size + sizeof(UDPPacketHeader))
+                        size = m_packets[i].Size + (uint)sizeof(UDPPacketHeader);
+
+                    uint offset = (uint)sizeof(UDPPacketHeader);
+                    uint sizeData = size - offset;
+
+                    UDPPacketHeader* packet = (UDPPacketHeader*)buffer;
+                    packet->Size = sizeData;
+
+
+                    fixed(byte *ptr = m_packets[i].IP)
+                        Memory.Memcpy(packet->IP, ptr, 4);
+
+                    if(sizeData > 0)
+                        fixed (byte* ptr = m_packets[i].Buffer)
+                            Memory.Memcpy(buffer + offset, ptr, (int)sizeData);
+
+                    m_packets[i].InUse = false;
+
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+                return 0;
+
+            return size;
+        }
+
         /// <summary>
         /// Send to UDP
         /// </summary>
@@ -151,6 +252,10 @@ namespace Sharpen.Net
         /// <param name="size"></param>
         public unsafe void Send(byte* buffer, uint size)
         {
+            // We can't do this if we just connect
+            if (!m_ipSpecified)
+                return;
+
             NetPacketDesc* packet = NetPacket.Alloc();
 
             Memory.Memcpy(packet->buffer + packet->start, buffer, (int)size);
@@ -158,6 +263,34 @@ namespace Sharpen.Net
             packet->end += (short)size;
             
             UDP.Send(packet, m_ip, m_sourcePort, m_targetPort);
+
+            NetPacket.Free(packet);
+        }
+
+        /// <summary>
+        /// Send to UDP
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        public unsafe void SendByPacket(byte* buffer, uint size)
+        {
+            // Minimal size :O
+            if (size < 6)
+                return;
+
+            UDPPacketHeader* header = (UDPPacketHeader*)buffer;
+
+            // Uhhh no
+            if (size < header->Size + sizeof(UDPPacketHeader))
+                return;
+            
+            NetPacketDesc* packet = NetPacket.Alloc();
+
+            Memory.Memcpy(packet->buffer + packet->start + sizeof(UDPPacketHeader), buffer, (int)header->Size);
+
+            packet->end += (short)header->Size;
+
+            UDP.Send(packet, Util.PtrToArray(header->IP), m_sourcePort, m_targetPort);
 
             NetPacket.Free(packet);
         }
@@ -191,8 +324,8 @@ namespace Sharpen.Net
         {
             // Free buffer here :)
 
-            //UDP.UnBindSocket(this);
-            //m_connected = false;
+            UDP.UnBindSocket(this);
+            m_connected = false;
         }
     }
 }

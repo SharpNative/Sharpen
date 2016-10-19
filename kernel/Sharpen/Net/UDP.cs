@@ -93,7 +93,7 @@ namespace Sharpen.Net
             UDPSocket sock = m_sockets[destPort];
 
             if (sock != null)
-                sock.Receive(buffer, size);
+                sock.Receive(ip, buffer, size);
         }
 
         /// <summary>

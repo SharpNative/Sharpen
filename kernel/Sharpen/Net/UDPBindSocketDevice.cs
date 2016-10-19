@@ -4,7 +4,7 @@ using Sharpen.Utilities;
 
 namespace Sharpen.Net
 {
-    class UDPSocketDevice
+    class UDPBindSocketDevice
     {
         private struct UDPSocketItem
         {
@@ -22,26 +22,15 @@ namespace Sharpen.Net
 
         public static unsafe Node Open(string name)
         {
-            int foundIndex = String.IndexOf(name, ":");
-
-            if (foundIndex == -1)
+            int port = Int.Parse(name);
+            if (port == -1)
                 return null;
-
-            string ip = String.SubString(name, 0, foundIndex);
-            string portText = String.SubString(name, foundIndex + 1, String.Length(name) - foundIndex - 1);
-            
-            int port = Int.Parse(portText);
 
             UDPSocket sock = new UDPSocket();
-            bool found = sock.Connect(ip, (ushort)port);
+            bool found = sock.Bind((ushort)port);
 
             if(!found)
-            {
-                Heap.Free((void*)Util.ObjectToVoidPtr(portText));
-                Heap.Free((void*)Util.ObjectToVoidPtr(ip));
-
                 return null;
-            }
 
             uint index = i++;
 
@@ -56,27 +45,32 @@ namespace Sharpen.Net
             node.GetSize = getSize;
             node.Close = close;
 
-            //Heap.Free((void *)Util.ObjectToVoidPtr(portText));
-            //Heap.Free((void*)Util.ObjectToVoidPtr(ip));
-
             return node;
         }
 
         private static unsafe uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
+            // Only header is 6 bytes
+            if (size < 6)
+                return 0;
+
             UDPSocket sock = m_list[node.Cookie].Socket;
             uint ret = 0;
-            if(sock != null)
-                ret = sock.Read((byte*)Util.ObjectToVoidPtr(buffer), size);
+            if (sock != null)
+                ret = sock.ReadPacket((byte*)Util.ObjectToVoidPtr(buffer), size);
             
             return ret;
         }
 
         private static unsafe uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
+            // Only header is 6 bytes
+            if (size < 6)
+                return 0;
+
             UDPSocket sock = m_list[node.Cookie].Socket;
             if (sock != null)
-                sock.Send((byte *)Util.ObjectToVoidPtr(buffer), size);
+                sock.SendByPacket((byte *)Util.ObjectToVoidPtr(buffer), size);
 
             return size;
         }
