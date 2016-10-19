@@ -74,7 +74,7 @@ namespace Sharpen.Net
             m_ipSpecified = true;
 
             // Register a sourcePort
-            UDP.BindSocket(this);
+            UDP.BindSocketRequest(this);
 
             return true;
         }
@@ -113,7 +113,7 @@ namespace Sharpen.Net
             // Do not accept empty packets
             if (size == 0)
                 return;
-
+            
             int i = 0;
 
             while (i < BACKLOG)
@@ -160,7 +160,7 @@ namespace Sharpen.Net
 
             if (GetSize() == 0)
                 return 0;
-
+            
             bool found = false;
 
             int i = 0;
@@ -231,6 +231,8 @@ namespace Sharpen.Net
                     if(sizeData > 0)
                         fixed (byte* ptr = m_packets[i].Buffer)
                             Memory.Memcpy(buffer + offset, ptr, (int)sizeData);
+
+
 
                     m_packets[i].InUse = false;
 

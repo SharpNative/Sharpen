@@ -70,15 +70,24 @@ namespace Sharpen.Net
             m_handlers[port] = handler;
         }
 
-        public static unsafe void BindSocket(UDPSocket socket)
+        public static unsafe void BindSocketRequest(UDPSocket socket)
         {
             ushort port = UDP.RequestPort();
 
+            socket.SourcePort = port;
+
+            BindSocket(socket);
+
+        }
+
+        public static unsafe void BindSocket(UDPSocket socket)
+        {
+            ushort port = socket.SourcePort;
+            
             m_handlers[port] = socketHandler;
             m_sockets[port] = socket;
-
-            socket.SourcePort = port;
         }
+
 
         public static unsafe void UnBindSocket(UDPSocket socket)
         {
@@ -91,6 +100,8 @@ namespace Sharpen.Net
         public static unsafe void socketHandler(byte[] ip, ushort sourcePort, ushort destPort, byte* buffer, uint size)
         {
             UDPSocket sock = m_sockets[destPort];
+
+            Console.WriteLine("test");
 
             if (sock != null)
                 sock.Receive(ip, buffer, size);
@@ -138,8 +149,6 @@ namespace Sharpen.Net
             ushort sourcePort = (ushort)ByteUtil.ReverseBytes(header->SourcePort);
             
 #if UDP_DEBUG_PACKETS
-            
-            ushort sourcePort = (ushort)ByteUtil.ReverseBytes(header->SourcePort);
 
             Console.Write("[UDP] Receive from ");
             Console.WriteNum(sourcePort);
@@ -147,6 +156,13 @@ namespace Sharpen.Net
             Console.WriteNum(destPort);
             Console.WriteLine("");
 #endif
+
+            if(destPort == 999)
+            {
+                Console.WriteLine("");
+                Console.WriteNum((int)Util.ObjectToVoidPtr(m_handlers[destPort]));
+                Console.WriteLine("");
+            }
 
             m_handlers[destPort]?.Invoke(sourceIp, sourcePort, destPort, buffer + sizeof(UDPHeader), (uint)(header->Length - 8));
         }
