@@ -53,7 +53,7 @@ namespace Sharpen.Net
             // Only header is 6 bytes
             if (size < 6)
                 return 0;
-
+            
             UDPSocket sock = m_list[node.Cookie].Socket;
             uint ret = 0;
             if (sock != null)

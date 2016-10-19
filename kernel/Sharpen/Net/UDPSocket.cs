@@ -220,7 +220,7 @@ namespace Sharpen.Net
 
                     uint offset = (uint)sizeof(UDPPacketHeader);
                     uint sizeData = size - offset;
-
+                    
                     UDPPacketHeader* packet = (UDPPacketHeader*)buffer;
                     packet->Size = sizeData;
 

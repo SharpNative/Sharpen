@@ -101,8 +101,6 @@ namespace Sharpen.Net
         {
             UDPSocket sock = m_sockets[destPort];
 
-            Console.WriteLine("test");
-
             if (sock != null)
                 sock.Receive(ip, buffer, size);
         }
@@ -157,14 +155,7 @@ namespace Sharpen.Net
             Console.WriteLine("");
 #endif
 
-            if(destPort == 999)
-            {
-                Console.WriteLine("");
-                Console.WriteNum((int)Util.ObjectToVoidPtr(m_handlers[destPort]));
-                Console.WriteLine("");
-            }
-
-            m_handlers[destPort]?.Invoke(sourceIp, sourcePort, destPort, buffer + sizeof(UDPHeader), (uint)(header->Length - 8));
+            m_handlers[destPort]?.Invoke(sourceIp, sourcePort, destPort, buffer + sizeof(UDPHeader), (uint)(ByteUtil.ReverseBytes(header->Length) - 8));
         }
         
         /// <summary>
