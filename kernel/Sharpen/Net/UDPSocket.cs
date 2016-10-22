@@ -231,9 +231,7 @@ namespace Sharpen.Net
                     if(sizeData > 0)
                         fixed (byte* ptr = m_packets[i].Buffer)
                             Memory.Memcpy(buffer + offset, ptr, (int)sizeData);
-
-
-
+                    
                     m_packets[i].InUse = false;
 
                     found = true;
