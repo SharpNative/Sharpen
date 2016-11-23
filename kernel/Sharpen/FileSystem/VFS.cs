@@ -311,6 +311,26 @@ namespace Sharpen.FileSystem
         }
 
         /// <summary>
+        /// Truncate data to a node
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="offset">The offset</param>
+        /// <param name="size">The size</param>
+        /// <param name="buffer">The buffer to get the data from</param>
+        /// <returns>The amount of written bytes</returns>
+        public static uint Truncate(Node node, uint size)
+        {
+            if (node.Truncate == null)
+                return 0;
+
+            if (node.FileMode == FileMode.O_RDONLY)
+                return 0;
+
+            return node.Truncate(node, size);
+        }
+
+
+        /// <summary>
         /// Writes data to a node
         /// </summary>
         /// <param name="node">The node</param>

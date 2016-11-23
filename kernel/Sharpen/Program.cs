@@ -139,6 +139,7 @@ namespace Sharpen
             
             DHCP.Init();
 
+
             //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(testing), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
             //newTask.PageDir = Paging.KernelDirectory;
             //Tasking.ScheduleTask(newTask);

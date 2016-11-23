@@ -173,7 +173,8 @@ namespace Sharpen.FileSystem
             if ((dirEntry->Attribs & ATTRIB_SUBDIR) == 0)
             {
                 node.Read = readImpl;
-                node.Write = writeImpl;
+                //node.Write = writeImpl;
+                node.Truncate = truncateImpl;
                 node.Flags = NodeFlags.FILE;
             }
             else
@@ -632,6 +633,45 @@ namespace Sharpen.FileSystem
         private static uint truncateImpl(Node node, uint size)
         {
             // TODO: This :)
+
+            FatDirEntry* entry = (FatDirEntry*)node.Cookie;
+
+            Console.WriteLine("");
+            Console.WriteNum((int)size);
+            Console.WriteLine("");
+
+            int diff = (int)size - (int)entry->Size;
+
+            // Shrink
+            if(diff < 0)
+            {
+                // Make positive :-)
+                diff = ~diff + 1;
+
+
+                uint diffSectors = (uint)diff / 512;
+                uint diffClusters = diffSectors / m_bpb->SectorsPerCluster;
+                
+                Console.Write(" Test: ");
+                Console.WriteNum((int)diff);
+                Console.Write(" : ");
+                Console.WriteNum((int)diffSectors);
+                Console.WriteLine("");
+
+            }
+            else
+            {
+
+            }
+
+
+            /**
+             * Update node
+             */ 
+            //uint cluster = node.Cookie2;
+            //uint num = node.Cookie3;
+
+            //SetFileSize(cluster, num, size);
 
             return 0;
         }
