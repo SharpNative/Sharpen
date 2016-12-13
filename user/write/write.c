@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
 {
     if(argc <= 1)
     {
-        printf("Usage: Type filename\n");
+        printf("Usage: write filename\n");
 
         return 0;
     }
