@@ -78,19 +78,20 @@ namespace Sharpen
             }
 
             #endregion
-
+            
             Heap.TempInit(heapStart);
+            
 
             GDT.Init();
             PIC.Remap();
             IDT.Init();
             Acpi.Init();
             FPU.Init();
-
+            
             PhysicalMemoryManager.Init(memSize);
             Paging.Init(memSize);
             Heap.SetupRealHeap();
-
+            
             PIT.Init();
             VFS.Init();
             DevFS.Init();
@@ -99,7 +100,7 @@ namespace Sharpen
             SerialPort.Init();
             PipeFS.Init();
             NetFS.Init();
-
+            
 
             PCI.Init();
             //AC97.Init();

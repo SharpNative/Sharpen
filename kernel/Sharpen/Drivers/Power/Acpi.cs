@@ -104,6 +104,8 @@ namespace Sharpen.Drivers.Power
 
             if(rdsp == null)
                 Panic.DoPanic("RDSP not found!");
+
+            Memory.Memcpy(m_rdsp, rdsp, sizeof(RDSP));
         }
 
         /// <summary>
@@ -136,6 +138,7 @@ namespace Sharpen.Drivers.Power
         public static void Init()
         {
             SetRDSP();
+            SetTables();
             SetTypes();
             Enable();
         }
