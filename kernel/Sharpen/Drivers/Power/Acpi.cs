@@ -131,18 +131,6 @@ namespace Sharpen.Drivers.Power
                 Panic.DoPanic("FACP not found!");
 
             Memory.Memcpy(m_fadt, fadt, sizeof(FADT));
-
-            uint length = m_fadt->Header.Length;
-
-            byte* ptr = (byte *)m_fadt;
-
-            int i = 0;
-            while(i < length)
-            {
-                SerialPort.write(ptr[i], 0x3F8);
-
-                i++;
-            }
         }
 
         /// <summary>
