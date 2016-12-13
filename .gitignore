@@ -230,3 +230,4 @@ user/newlib/include
 
 trace-*
 *.dump
+*.txtd
