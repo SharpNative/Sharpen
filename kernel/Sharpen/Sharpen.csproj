@@ -61,6 +61,7 @@
     <Compile Include="Drivers\Net\E1000.cs" />
     <Compile Include="Drivers\Net\PCNet2.cs" />
     <Compile Include="Drivers\Net\rtl8139.cs" />
+    <Compile Include="Drivers\Power\AcpiHelper.cs" />
     <Compile Include="Drivers\USB\UHCI.cs" />
     <Compile Include="ErrorCode.cs" />
     <Compile Include="Exec\ELFLoader.cs" />

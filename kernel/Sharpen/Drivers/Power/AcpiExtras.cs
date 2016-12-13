@@ -26,6 +26,7 @@ namespace Sharpen.Drivers.Power
         public fixed char OEMID[6];
         public byte Revision;
         public uint RsdtAddress;
+        public uint Length;
     }
 
 

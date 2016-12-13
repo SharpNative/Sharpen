@@ -16,95 +16,14 @@ namespace Sharpen.Drivers.Power
         private const uint SLP_EN = 1 << 13;
 
         /// <summary>
-        /// Find the RSDT and other entries
+        /// 
+        /// Finds SLP_TYPa and SLP_TYPb
+        /// 
         /// </summary>
-        private static unsafe void Find()
+        private static void SetTypes()
         {
-            RDSP* rdsp = null;
-            RSDT* rsdt = null;
-            FADT* fadt = null;
-            m_rdsp = (RDSP*)Heap.Alloc(sizeof(RDSP));
-            m_rsdt = (RSDT*)Heap.Alloc(sizeof(RSDT));
-            m_fadt = (FADT*)Heap.Alloc(sizeof(FADT));
+            // TODO: make this work though a AML interpreter/parser
 
-            // First attempt in bios data
-            byte* biosp = (byte*)0x000E0000;
-
-            while ((uint)biosp < 0x000FFFFF)
-            {
-                if (Memory.Compare((char*)biosp, (char*)Util.ObjectToVoidPtr("RSD PTR "), 8) && CheckSum((uint*)biosp, (uint)sizeof(RSDT)))
-                {
-                    rdsp = (RDSP*)biosp;
-                    break;
-                }
-
-                biosp += 16;
-            }
-
-            // Search the rdsp through bios data when the rdsp is not found in the ebda
-            if (rdsp == null)
-            {
-                ushort* adr = (ushort*)0x040E;
-                byte* ebdap = (byte*)((*adr) << 4);
-
-                while ((int)ebdap < 0x000A0000)
-                {
-                    if (Memory.Compare((char*)ebdap, (char*)Util.ObjectToVoidPtr("RSD PTR "), 8) && CheckSum((uint*)ebdap, (uint)sizeof(RSDT)))
-                    {
-                        rdsp = (RDSP*)biosp;
-                        break;
-                    }
-
-                    ebdap += 16;
-                }
-
-                if (rdsp == null)
-                    Panic.DoPanic("RDSP not found!");
-            }
-
-            Memory.Memcpy(m_rdsp, rdsp, sizeof(RDSP));
-
-            rsdt = (RSDT*)rdsp->RsdtAddress;
-            if (rsdt == null)
-                Panic.DoPanic("RDST not found!");
-
-            Memory.Memcpy(m_rsdt, rsdt, sizeof(RSDT));
-
-            fadt = (FADT*)getEntry("FACP");
-            if (fadt == null)
-                Panic.DoPanic("FACP not found!");
-            
-            Memory.Memcpy(m_fadt, fadt, sizeof(FADT));
-        }
-
-        /// <summary>
-        /// Checksum
-        /// </summary>
-        /// <param name="address">The address</param>
-        /// <param name="length">The length</param>
-        /// <returns>If the check was successfull</returns>
-        private static bool CheckSum(void* address, uint length)
-        {
-            char* bptr = (char*)address;
-            byte check = 0;
-
-            for (int i = 0; i < length; i++)
-            {
-                check += (byte)*bptr;
-                bptr++;
-            }
-
-            if (check == 0)
-                return true;
-
-            return false;
-        }
-
-        /// <summary>
-        /// Parses the S5 object
-        /// </summary>
-        private static void parseS5Object()
-        {
             bool s5Found = false;
 
             uint dsdtLength = (m_fadt->Dsdt + 1) - 36;
@@ -168,7 +87,7 @@ namespace Sharpen.Drivers.Power
                 RDSTH* header = (RDSTH*)(m_rsdt->firstSDT + i);
 
                 if (Memory.Compare((char*)header, (char*)Util.ObjectToVoidPtr(signature), 4))
-                    if (CheckSum(header, header->Length))
+                    if (AcpiHelper.CheckSum(header, header->Length))
                         return (void*)header;
 
             }
@@ -177,12 +96,47 @@ namespace Sharpen.Drivers.Power
         }
 
         /// <summary>
+        /// Find and set RDSP table
+        /// </summary>
+        public static void SetRDSP()
+        {
+            RDSP *rdsp = AcpiHelper.FindRSDP();
+
+            if(rdsp == null)
+                Panic.DoPanic("RDSP not found!");
+        }
+
+        /// <summary>
+        /// Set addresses of other tables FADT, etc...
+        /// </summary>
+        public static void SetTables()
+        {
+            RSDT* rsdt = null;
+            FADT* fadt = null;
+            m_rsdt = (RSDT*)Heap.Alloc(sizeof(RSDT));
+            m_fadt = (FADT*)Heap.Alloc(sizeof(FADT));
+
+
+            rsdt = (RSDT*)m_rdsp->RsdtAddress;
+            if (rsdt == null)
+                Panic.DoPanic("RDST not found!");
+
+            Memory.Memcpy(m_rsdt, rsdt, sizeof(RSDT));
+
+            fadt = (FADT*)getEntry("FACP");
+            if (fadt == null)
+                Panic.DoPanic("FACP not found!");
+
+            Memory.Memcpy(m_fadt, fadt, sizeof(FADT));
+        }
+
+        /// <summary>
         /// Initalize ACPI
         /// </summary>
         public static void Init()
         {
-            Find();
-            parseS5Object();
+            SetRDSP();
+            SetTypes();
             Enable();
         }
 
@@ -220,7 +174,7 @@ namespace Sharpen.Drivers.Power
         /// Power shutdown
         /// </summary>
         public static void Shutdown()
-        {for (;;) ;
+        {
             // Try 1 through the pm1a control block
             PortIO.Out16((ushort)m_fadt->PM1aControlBlock, (ushort)(SLP_TYPa | SLP_EN));
             // Try 2 through the pm1b control block
