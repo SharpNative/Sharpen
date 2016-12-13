@@ -355,7 +355,7 @@ namespace Sharpen.Exec
             if (Tasking.CurrentTask.UID > 0)
                 return -(int)ErrorCode.EPERM;
 
-            Acpi.Reset();
+            Acpi.Reboot();
             return 0;
         }
 

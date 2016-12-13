@@ -78,7 +78,7 @@ namespace Sharpen
             }
 
             #endregion
-            
+
             Heap.TempInit(heapStart);
             
 

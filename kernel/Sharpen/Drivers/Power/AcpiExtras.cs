@@ -57,7 +57,7 @@ namespace Sharpen.Drivers.Power
         // compatibility with ACPI 1.0
         public byte Reserved;
 
-        byte PreferredPowerManagementProfile;
+        public byte PreferredPowerManagementProfile;
         public ushort SCI_Interrupt;
         public uint SMI_CommandPort;
         public byte AcpiEnable;

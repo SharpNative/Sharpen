@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Drivers.Char;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -130,6 +131,18 @@ namespace Sharpen.Drivers.Power
                 Panic.DoPanic("FACP not found!");
 
             Memory.Memcpy(m_fadt, fadt, sizeof(FADT));
+
+            uint length = m_fadt->Header.Length;
+
+            byte* ptr = (byte *)m_fadt;
+
+            int i = 0;
+            while(i < length)
+            {
+                SerialPort.write(ptr[i], 0x3F8);
+
+                i++;
+            }
         }
 
         /// <summary>
@@ -159,14 +172,29 @@ namespace Sharpen.Drivers.Power
             PortIO.Out8((ushort)m_fadt->SMI_CommandPort, m_fadt->AcpiDisable);
         }
 
+        private static void Sleep(int cnt)
+        {
+            for (int i = 0; i < cnt; i++)
+                PortIO.In32(0x80);
+        }
+
         /// <summary>
         /// Power reset
         /// </summary>
-        public static void Reset()
+        public static void Reboot()
         {
-            // TODO: Fix nice reset :)
-            // PortIO.Out8((ushort)fadt->ResetReg.Address, fadt->ResetValue);
+            // If we have a REV 2 header, then we can just extract it
+            if(m_fadt->Header.Revision >= 2)
+            {
+                PortIO.Out8((ushort)m_fadt->ResetReg.Address, m_fadt->ResetValue);
+            }
 
+            // Do a lucky try
+            PortIO.Out8(0xCF9, 0x06);
+
+            Sleep(5000);
+
+            // Otherwise just reset through keyboard
             byte good = 0x02;
             while ((good & 0x02) > 0)
                 good = PortIO.In8(0x64);

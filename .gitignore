@@ -229,3 +229,4 @@ user/newlib/include
 *.opendb
 
 trace-*
+*.dump
