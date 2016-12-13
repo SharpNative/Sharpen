@@ -100,7 +100,9 @@ namespace Sharpen
             SerialPort.Init();
             PipeFS.Init();
             NetFS.Init();
-            
+            VboxDevFSDriver.Init();
+
+
 
             PCI.Init();
             //AC97.Init();
@@ -139,7 +141,6 @@ namespace Sharpen
             Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
             
             DHCP.Init();
-
 
             //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(testing), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
             //newTask.PageDir = Paging.KernelDirectory;
