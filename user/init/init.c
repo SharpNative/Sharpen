@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 
     // TODO: launch login, set userid, groupid, ...
 
-    printf("init: Launching %s\n", argv[1]);
+    // printf("init: Launching %s\n", argv[1]);
 
     // TODO: should be moved to a terminal instead of here in init
     int in[2];
