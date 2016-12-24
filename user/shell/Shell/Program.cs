@@ -32,7 +32,8 @@ namespace Shell
         /// <param name="args">Arguments</param>
         unsafe static void Main(string[] args)
         {
-            Console.WriteLine("Welcome");
+            Console.WriteLine("Project Sharpen");
+            Console.WriteLine("(c) 2016 SharpNative\n");
 
             while (true)
             {

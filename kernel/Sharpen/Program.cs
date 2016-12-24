@@ -137,19 +137,17 @@ namespace Sharpen
             Fat16.Init(hddNode, "C");
             Tasking.KernelTask.CurrentDirectory = "C://";
             
-            byte[] bac = new byte[6];
-            Network.GetMac((byte *)Util.ObjectToVoidPtr(bac));
-            
             DHCP.Init();
 
             //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(testing), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
             //newTask.PageDir = Paging.KernelDirectory;
             //Tasking.ScheduleTask(newTask);
 
+            Console.WriteLine(" ");
             // Initial process, usage: init [program]
             string[] argv = new string[3];
-            argv[0] = "C://init";
-            argv[1] = "C://shell";
+            argv[0] = "C://exec/init";
+            argv[1] = "C://exec/shell";
             argv[2] = null;
             
             int error = Loader.StartProcess(argv[0], argv, Tasking.SpawnFlags.NONE);

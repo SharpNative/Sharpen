@@ -362,7 +362,8 @@ int32_t Shell_Program_TryRunFromExecDir_3char__char___int32_t_(char* name, char*
 }
 void Shell_Program_Main_1char___(char** args)
 {
-	Sharpen_IO_Console_WriteLine_1char__("Welcome");
+	Sharpen_IO_Console_WriteLine_1char__("Project Sharpen");
+	Sharpen_IO_Console_WriteLine_1char__("(c) 2016 SharpNative\n");
 	while(true)
 	{
 		{
