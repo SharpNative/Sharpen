@@ -32,11 +32,7 @@ namespace Sharpen.FileSystem
         {
             uint left = size;
             uint i = 0;
-
-            Console.WriteLine("RANDOM:\nTotal size:");
-            Console.WriteHex((int)size);
-            Console.WriteLine("");
-
+            
             int rand;
 
             /*
@@ -47,9 +43,9 @@ namespace Sharpen.FileSystem
                 rand = Random.Rand();
 
                 buffer[i] = (byte)(rand & 0xFF);
-                buffer[i + 1] = (byte)((rand << 8) & 0xFF);
-                buffer[i + 2] = (byte)((rand << 16) & 0xFF);
-                buffer[i + 3] = (byte)((rand << 24) & 0xFF);
+                buffer[i + 1] = (byte)((rand >> 8) & 0xFF);
+                buffer[i + 2] = (byte)((rand >> 16) & 0xFF);
+                buffer[i + 3] = (byte)((rand >> 24) & 0xFF);
 
                 left -= 4;
                 i += 4;
@@ -64,15 +60,15 @@ namespace Sharpen.FileSystem
                 buffer[i] = (byte)(rand & 0xFF);
 
             if (left >= 2)
-                buffer[i + 1] = (byte)((rand << 8) & 0xFF);
+                buffer[i + 1] = (byte)((rand >> 8) & 0xFF);
 
 
             if (left >= 3)
-                buffer[i + 2] = (byte)((rand << 16) & 0xFF);
+                buffer[i + 2] = (byte)((rand >> 16) & 0xFF);
 
 
             if (left >= 4)
-                buffer[i + 3] = (byte)((rand << 24) & 0xFF);
+                buffer[i + 3] = (byte)((rand >> 24) & 0xFF);
 
             return size;
         }

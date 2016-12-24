@@ -437,8 +437,6 @@ namespace Sharpen.FileSystem
 
             for (int i = 0; i < sizeInSectors; i++)
             {
-                Console.WriteNum((int)currentOffset);
-                Console.WriteLine("");
                 if (offsetInCluster == m_bpb->SectorsPerCluster)
                 {
                     currentCluster = FindNextCluster(currentCluster);
