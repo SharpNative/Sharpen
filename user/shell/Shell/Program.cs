@@ -1,11 +1,35 @@
 ﻿using Sharpen;
 using Sharpen.IO;
+using Sharpen.Memory;
 using Sharpen.Utilities;
 
 namespace Shell
 {
     class Program
     {
+
+        /// <summary>
+        /// Try find program in C://exec and run it
+        /// </summary>
+        /// <param name="name">The program nama</param>
+        /// <param name="argv">Arguments</param>
+        /// <param name="argc">Argument length</param>
+        /// <returns></returns>
+        private unsafe static int TryRunFromExecDir(string name, string[] argv, int argc)
+        {
+            string total_string = String.Merge("C://exec/", name);
+
+            int ret = Process.Run(total_string, argv, argc);
+
+            Heap.Free(Util.ObjectToVoidPtr(total_string));
+
+            return ret;
+        }
+
+        /// <summary>
+        /// Program entry point
+        /// </summary>
+        /// <param name="args">Arguments</param>
         unsafe static void Main(string[] args)
         {
             Console.WriteLine("Welcome");
@@ -107,8 +131,13 @@ namespace Shell
                     int ret = Process.Run(command, argv, argc);
                     if (ret < 0)
                     {
-                        Console.Write(command);
-                        Console.WriteLine(": Bad command or filename");
+                        ret = TryRunFromExecDir(command, argv, argc);
+
+                        if (ret < 0)
+                        {
+                            Console.Write(command);
+                            Console.WriteLine(": Bad command or filename");
+                        }
                     }
 
                     // Wait until exit to return to prompt

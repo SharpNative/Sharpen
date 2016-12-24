@@ -3,6 +3,7 @@ struct class_Sharpen_IO_Console;
 struct class_Sharpen_IO_Directory;
 struct struct_Sharpen_IO_Directory_DirEntry;
 struct class_Sharpen_Memory_Heap;
+struct class_Shell_Sharpen_Memory_Mem;
 struct class_Sharpen_Process;
 struct class_Shell_Program;
 struct class_Sharpen_Utilities_String;
@@ -48,6 +49,16 @@ struct class_Sharpen_Memory_Heap
 struct
 {
 } classStatics_Sharpen_Memory_Heap = {
+};
+struct class_Shell_Sharpen_Memory_Mem
+{
+	int32_t usage_count;
+	void** lookup_table;
+};
+
+struct
+{
+} classStatics_Shell_Sharpen_Memory_Mem = {
 };
 struct class_Sharpen_Process
 {
@@ -110,7 +121,7 @@ typedef char* (*fp_Sharpen_IO_Console_ReadLine_0)(void);
 void Sharpen_IO_Console_WriteHex_1int64_t_(int64_t num);
 typedef void (*fp_Sharpen_IO_Console_WriteHex_1int64_t_)(int64_t num);
 struct class_Sharpen_IO_Directory* classInit_Sharpen_IO_Directory(void);
-inline struct struct_Sharpen_IO_Directory_DirEntry structInit_Sharpen_IO_Directory_DirEntry(void);
+static inline struct struct_Sharpen_IO_Directory_DirEntry structInit_Sharpen_IO_Directory_DirEntry(void);
 void* Sharpen_IO_Directory_OpenInternal_1char__(char* path);
 typedef void* (*fp_Sharpen_IO_Directory_OpenInternal_1char__)(char* path);
 void Sharpen_IO_Directory_ReaddirInternal_3void__struct_struct_Sharpen_IO_Directory_DirEntry__uint32_t_(void* instance, struct struct_Sharpen_IO_Directory_DirEntry* entry, uint32_t index);
@@ -132,6 +143,13 @@ void* Sharpen_Memory_Heap_Alloc_1int32_t_(int32_t size);
 typedef void* (*fp_Sharpen_Memory_Heap_Alloc_1int32_t_)(int32_t size);
 void Sharpen_Memory_Heap_Free_1void__(void* ptr);
 typedef void (*fp_Sharpen_Memory_Heap_Free_1void__)(void* ptr);
+struct class_Shell_Sharpen_Memory_Mem* classInit_Shell_Sharpen_Memory_Mem(void);
+void Shell_Sharpen_Memory_Mem_Memcpy_3void__void__int32_t_(void* destination, void* source, int32_t num);
+typedef void (*fp_Shell_Sharpen_Memory_Mem_Memcpy_3void__void__int32_t_)(void* destination, void* source, int32_t num);
+int32_t Shell_Sharpen_Memory_Mem_Compare_3char__char__int32_t_(char* s1, char* s2, int32_t n);
+typedef int32_t (*fp_Shell_Sharpen_Memory_Mem_Compare_3char__char__int32_t_)(char* s1, char* s2, int32_t n);
+void Shell_Sharpen_Memory_Mem_Memset_3void__int32_t_int32_t_(void* ptr, int32_t value, int32_t num);
+typedef void (*fp_Shell_Sharpen_Memory_Mem_Memset_3void__int32_t_int32_t_)(void* ptr, int32_t value, int32_t num);
 struct class_Sharpen_Process* classInit_Sharpen_Process(void);
 int32_t Sharpen_Process_internalRun_2char__char___(char* path, char** args);
 typedef int32_t (*fp_Sharpen_Process_internalRun_2char__char___)(char* path, char** args);
@@ -142,11 +160,15 @@ typedef void (*fp_Sharpen_Process_Exit_1int32_t_)(int32_t status);
 int32_t Sharpen_Process_Run_3char__char___int32_t_(char* path, char** argv, int32_t argc);
 typedef int32_t (*fp_Sharpen_Process_Run_3char__char___int32_t_)(char* path, char** argv, int32_t argc);
 struct class_Shell_Program* classInit_Shell_Program(void);
+int32_t Shell_Program_TryRunFromExecDir_3char__char___int32_t_(char* name, char** argv, int32_t argc);
+typedef int32_t (*fp_Shell_Program_TryRunFromExecDir_3char__char___int32_t_)(char* name, char** argv, int32_t argc);
 void Shell_Program_Main_1char___(char** args);
 typedef void (*fp_Shell_Program_Main_1char___)(char** args);
 struct class_Sharpen_Utilities_String* classInit_Sharpen_Utilities_String(void);
 int32_t Sharpen_Utilities_String_Length_1char__(char* text);
 typedef int32_t (*fp_Sharpen_Utilities_String_Length_1char__)(char* text);
+char* Sharpen_Utilities_String_Merge_2char__char__(char* first, char* second);
+typedef char* (*fp_Sharpen_Utilities_String_Merge_2char__char__)(char* first, char* second);
 int32_t Sharpen_Utilities_String_IndexOf_2char__char__(char* text, char* occurence);
 typedef int32_t (*fp_Sharpen_Utilities_String_IndexOf_2char__char__)(char* text, char* occurence);
 int32_t Sharpen_Utilities_String_Count_2char__char_(char* str, char occurence);
@@ -170,6 +192,7 @@ typedef void* (*fp_Sharpen_Utilities_Util_ObjectToVoidPtr_1void__)(void* obj);
 static void* methods_Sharpen_IO_Console[];
 static void* methods_Sharpen_IO_Directory[];
 static void* methods_Sharpen_Memory_Heap[];
+static void* methods_Shell_Sharpen_Memory_Mem[];
 static void* methods_Sharpen_Process[];
 static void* methods_Shell_Program[];
 static void* methods_Sharpen_Utilities_String[];
@@ -243,7 +266,7 @@ struct class_Sharpen_IO_Directory* classInit_Sharpen_IO_Directory(void)
 	return object;
 }
 
-inline struct struct_Sharpen_IO_Directory_DirEntry structInit_Sharpen_IO_Directory_DirEntry(void)
+static inline struct struct_Sharpen_IO_Directory_DirEntry structInit_Sharpen_IO_Directory_DirEntry(void)
 {
 	struct struct_Sharpen_IO_Directory_DirEntry object;
 	return object;
@@ -274,6 +297,29 @@ struct class_Sharpen_Memory_Heap* classInit_Sharpen_Memory_Heap(void)
 	return object;
 }
 
+struct class_Shell_Sharpen_Memory_Mem* classInit_Shell_Sharpen_Memory_Mem(void)
+{
+	struct class_Shell_Sharpen_Memory_Mem* object = calloc(1, sizeof(struct class_Shell_Sharpen_Memory_Mem));
+	if(!object)
+		return NULL;
+	object->usage_count = 1;
+	object->lookup_table = methods_Shell_Sharpen_Memory_Mem;
+	return object;
+}
+
+int32_t Shell_Sharpen_Memory_Mem_Compare_3char__char__int32_t_(char* s1, char* s2, int32_t n)
+{
+	for(int32_t i = 0;i < n;i = i + 1
+	)
+	{
+		{
+			if(s1[i] != s2[i])
+						return false;
+		}
+	}
+	;
+	return true;
+}
 struct class_Sharpen_Process* classInit_Sharpen_Process(void)
 {
 	struct class_Sharpen_Process* object = calloc(1, sizeof(struct class_Sharpen_Process));
@@ -307,6 +353,13 @@ struct class_Shell_Program* classInit_Shell_Program(void)
 	return object;
 }
 
+int32_t Shell_Program_TryRunFromExecDir_3char__char___int32_t_(char* name, char** argv, int32_t argc)
+{
+	char* total_string = Sharpen_Utilities_String_Merge_2char__char__("C://exec/", name);
+	int32_t ret = Sharpen_Process_Run_3char__char___int32_t_(total_string, argv, argc);
+	Sharpen_Memory_Heap_Free_1void__(Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(total_string));
+	return ret;
+}
 void Shell_Program_Main_1char___(char** args)
 {
 	Sharpen_IO_Console_WriteLine_1char__("Welcome");
@@ -391,8 +444,11 @@ void Shell_Program_Main_1char___(char** args)
 			{
 				int32_t ret = Sharpen_Process_Run_3char__char___int32_t_(command, argv, argc);
 				if(ret < 0){
-					Sharpen_IO_Console_Write_1char__(command);
-					Sharpen_IO_Console_WriteLine_1char__(": Bad command or filename");
+					ret = Shell_Program_TryRunFromExecDir_3char__char___int32_t_(command, argv, argc);
+					if(ret < 0){
+						Sharpen_IO_Console_Write_1char__(command);
+						Sharpen_IO_Console_WriteLine_1char__(": Bad command or filename");
+					}
 				}
 				Sharpen_Process_WaitForExit_1int32_t_(ret);
 			}
@@ -419,6 +475,17 @@ int32_t Sharpen_Utilities_String_Length_1char__(char* text)
 	}
 	;
 	return i;
+}
+char* Sharpen_Utilities_String_Merge_2char__char__(char* first, char* second)
+{
+	int32_t firstLength = Sharpen_Utilities_String_Length_1char__(first);
+	int32_t secondLength = Sharpen_Utilities_String_Length_1char__(second);
+	int32_t totalLength = firstLength + secondLength;
+	char* outVal = (char*)Sharpen_Memory_Heap_Alloc_1int32_t_(totalLength + 1);
+	Shell_Sharpen_Memory_Mem_Memcpy_3void__void__int32_t_(outVal, Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(first), firstLength);
+	Shell_Sharpen_Memory_Mem_Memcpy_3void__void__int32_t_((void*) ( (int32_t)outVal + firstLength ) , Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(second), secondLength);
+	outVal[totalLength] = '\0';
+	return Sharpen_Utilities_Util_CharPtrToString_1char__(outVal);
 }
 int32_t Sharpen_Utilities_String_IndexOf_2char__char__(char* text, char* occurence)
 {
@@ -526,9 +593,10 @@ struct class_Sharpen_Utilities_Util* classInit_Sharpen_Utilities_Util(void)
 static void* methods_Sharpen_IO_Console[] = {Sharpen_IO_Console_Write_1char__,Sharpen_IO_Console_Write_1char_,Sharpen_IO_Console_WriteLine_1char__,Sharpen_IO_Console_ReadChar_0,Sharpen_IO_Console_ReadLine_0,Sharpen_IO_Console_WriteHex_1int64_t_,};
 static void* methods_Sharpen_IO_Directory[] = {Sharpen_IO_Directory_OpenInternal_1char__,Sharpen_IO_Directory_ReaddirInternal_3void__struct_struct_Sharpen_IO_Directory_DirEntry__uint32_t_,Sharpen_IO_Directory_CloseInternal_1void__,Sharpen_IO_Directory_Open_1char__,Sharpen_IO_Directory_Readdir_2class_uint32_t_,Sharpen_IO_Directory_Close_1class_,Sharpen_IO_Directory_SetCurrentDirectory_1char__,Sharpen_IO_Directory_GetCurrentDirectory_0,};
 static void* methods_Sharpen_Memory_Heap[] = {Sharpen_Memory_Heap_Alloc_1int32_t_,Sharpen_Memory_Heap_Free_1void__,};
+static void* methods_Shell_Sharpen_Memory_Mem[] = {Shell_Sharpen_Memory_Mem_Memcpy_3void__void__int32_t_,Shell_Sharpen_Memory_Mem_Compare_3char__char__int32_t_,Shell_Sharpen_Memory_Mem_Memset_3void__int32_t_int32_t_,};
 static void* methods_Sharpen_Process[] = {Sharpen_Process_internalRun_2char__char___,Sharpen_Process_WaitForExit_1int32_t_,Sharpen_Process_Exit_1int32_t_,Sharpen_Process_Run_3char__char___int32_t_,};
-static void* methods_Shell_Program[] = {Shell_Program_Main_1char___,};
-static void* methods_Sharpen_Utilities_String[] = {Sharpen_Utilities_String_Length_1char__,Sharpen_Utilities_String_IndexOf_2char__char__,Sharpen_Utilities_String_Count_2char__char_,Sharpen_Utilities_String_SubString_3char__int32_t_int32_t_,Sharpen_Utilities_String_Equals_2char__char__,Sharpen_Utilities_String_ToUpper_1char_,Sharpen_Utilities_String_ToLower_1char_,};
+static void* methods_Shell_Program[] = {Shell_Program_TryRunFromExecDir_3char__char___int32_t_,Shell_Program_Main_1char___,};
+static void* methods_Sharpen_Utilities_String[] = {Sharpen_Utilities_String_Length_1char__,Sharpen_Utilities_String_Merge_2char__char__,Sharpen_Utilities_String_IndexOf_2char__char__,Sharpen_Utilities_String_Count_2char__char_,Sharpen_Utilities_String_SubString_3char__int32_t_int32_t_,Sharpen_Utilities_String_Equals_2char__char__,Sharpen_Utilities_String_ToUpper_1char_,Sharpen_Utilities_String_ToLower_1char_,};
 static void* methods_Sharpen_Utilities_Util[] = {Sharpen_Utilities_Util_CharArrayToString_1char__,Sharpen_Utilities_Util_CharPtrToString_1char__,Sharpen_Utilities_Util_ObjectToVoidPtr_1void__,};
 
 void init(void)

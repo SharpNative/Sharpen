@@ -17,7 +17,12 @@
         private static unsafe extern void* OpenInternal(string path);
         private static unsafe extern void ReaddirInternal(void* instance, DirEntry* entry, uint index);
         private static unsafe extern void CloseInternal(void* instance);
-
+        
+        /// <summary>
+        /// Open directory
+        /// </summary>
+        /// <param name="path">Path</param>
+        /// <returns></returns>
         public static unsafe Directory Open(string path)
         {
             Directory instance = new Directory();
@@ -25,6 +30,11 @@
             return instance;
         }
 
+        /// <summary>
+        /// Read directory item
+        /// </summary>
+        /// <param name="index">Index</param>
+        /// <returns></returns>
         public unsafe DirEntry Readdir(uint index)
         {
             DirEntry entry = new DirEntry();

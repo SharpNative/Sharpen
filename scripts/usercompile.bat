@@ -10,7 +10,7 @@ i686-elf-ld %USER_LD_FLAGS% build\%FILE%.o ..\newlib\libc.a -o %FILE%.elf
 
 echo Copying...
 call ..\..\scripts\mount
-copy %FILE%.elf G:\%FILE%
+copy %FILE%.elf G:\exec\%FILE%
 call ..\..\scripts\unmount
 rem del %FILE%.elf
 

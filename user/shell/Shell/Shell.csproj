@@ -50,6 +50,7 @@
     <Compile Include="Sharpen\IO\Console.cs" />
     <Compile Include="Sharpen\IO\Directory.cs" />
     <Compile Include="Sharpen\Memory\Heap.cs" />
+    <Compile Include="Sharpen\Memory\Memory.cs" />
     <Compile Include="Sharpen\Process.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

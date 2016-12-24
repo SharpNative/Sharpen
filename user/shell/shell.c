@@ -23,7 +23,14 @@ inline char* Sharpen_Utilities_Util_CharPtrToString_1char__(char* ptr)
     return ptr;
 }
 
-
+void Shell_Sharpen_Memory_Mem_Memcpy_3void__void__int32_t_(void* destination, void* source, int32_t num)
+{
+    memcpy(destination, source, num);
+}
+void Shell_Sharpen_Memory_Mem_Memset_3void__int32_t_int32_t_(void* ptr, int32_t value, int32_t num)
+{
+    memset(ptr, value, num);
+}
 
 #include "Shell/C/output.c"
 

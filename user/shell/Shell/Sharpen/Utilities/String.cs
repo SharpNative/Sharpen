@@ -1,4 +1,6 @@
-﻿using Sharpen.Memory;
+﻿using Sharpen.IO;
+using Sharpen.Memory;
+using Shell.Sharpen.Memory;
 
 namespace Sharpen.Utilities
 {
@@ -15,7 +17,28 @@ namespace Sharpen.Utilities
             for (; text[i] != '\0'; i++) ;
             return i;
         }
-        
+
+        /// <summary>
+        /// Merge 2 strings
+        /// </summary>
+        /// <param name="first">The first string</param>
+        /// <param name="second">The second string</param>
+        /// <returns>The merged string</returns>
+        public static unsafe string Merge(string first, string second)
+        {
+            int firstLength = Length(first);
+            int secondLength = Length(second);
+
+            int totalLength = firstLength + secondLength;
+            char* outVal = (char*)Heap.Alloc(totalLength + 1);
+            Mem.Memcpy(outVal, Util.ObjectToVoidPtr(first), firstLength);
+            Mem.Memcpy((void*)((int)outVal + firstLength), Util.ObjectToVoidPtr(second), secondLength);
+
+            outVal[totalLength] = '\0';
+
+            return Util.CharPtrToString(outVal);
+        }
+
         /// <summary>
         /// IndexOf implementation
         /// </summary>
