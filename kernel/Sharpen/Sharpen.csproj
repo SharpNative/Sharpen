@@ -69,8 +69,11 @@
     <Compile Include="Exec\Loader.cs" />
     <Compile Include="Exec\Syscalls.cs" />
     <Compile Include="FileSystem\Fat16BPB.cs" />
+    <Compile Include="FileSystem\RandomFS.cs" />
+    <Compile Include="FileSystem\NullFS.cs" />
     <Compile Include="FileSystem\PipeFS.cs" />
     <Compile Include="FileSystem\STDOUT.cs" />
+    <Compile Include="Lib\Random.cs" />
     <Compile Include="Net\TCP.cs" />
     <Compile Include="Net\TCPSocket.cs" />
     <Compile Include="Net\UDPBindSocketDevice.cs" />

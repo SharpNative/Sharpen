@@ -47,20 +47,20 @@ int main(int argc, char* argv[])
 
                     return 0;
                 }
+            }
 
-                if (fseek(fp, 0L, SEEK_SET) != 0) 
-                {
-                    printf("Cannot read file\n");
+            if (fseek(fp, 0L, SEEK_SET) != 0) 
+            {
+                printf("Cannot read file\n");
 
-                    fclose(fp);
+                fclose(fp);
 
-                    return 0;
-                }
+                return 0;
             }
 
             source = malloc(sizeof(char) * (bufsize + 1));
 
-
+            bufsize = (int)bufsize;
 
             size_t newLen = fread(source, sizeof(char), bufsize, fp);
             if (newLen == 0) {

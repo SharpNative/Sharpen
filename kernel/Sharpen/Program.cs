@@ -95,12 +95,13 @@ namespace Sharpen
             PIT.Init();
             VFS.Init();
             DevFS.Init();
+            NullFS.Init();
+            RandomFS.Init();
             Keyboard.Init();
             STDOUT.Init();
             SerialPort.Init();
             PipeFS.Init();
             NetFS.Init();
-            VboxDevFSDriver.Init();
 
 
 
