@@ -13,7 +13,7 @@ namespace Sharpen.Lib
 
         public static void Init()
         {
-            m_seed = 0xFFFF;
+            m_seed = (uint)Time.CalculateEpochTime();
         }
 
         public static int Rand()
