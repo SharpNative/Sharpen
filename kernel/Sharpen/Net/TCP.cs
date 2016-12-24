@@ -42,7 +42,7 @@ namespace Sharpen.Net
         }
 
         /// <summary>
-        /// Initializes UDP
+        /// Initializes TCP
         /// </summary>
         public static unsafe void Init()
         {

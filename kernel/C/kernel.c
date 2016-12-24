@@ -17,6 +17,7 @@ void* calloc(int nitems, int size);
 /* Compiled C file */
 #include "output.c"
 
+
 void* calloc(int nitems, int size)
 {
 	void* ptr = malloc(nitems * size);
@@ -54,4 +55,11 @@ inline void* Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(void* ptr)
 inline void* Sharpen_Utilities_Util_MethodToPtr_1void__(void* ptr)
 {
 	return ptr;
+}
+
+extern void int32(unsigned char intnum, struct struct_Sharpen_Arch_V8086Regs *regs);
+
+void Sharpen_Arch_V8086_Int_2uint8_t_struct_struct_Sharpen_Arch_V8086Regs__(unsigned char intnum, struct struct_Sharpen_Arch_V8086Regs *regs)
+{
+	int32(intnum, regs);
 }

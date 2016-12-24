@@ -3,6 +3,7 @@ call ..\..\scripts\pre
 
 echo Assembling..
 nasm %KERNEL_ASM_FLAGS% arch\arch.asm -o build\arch.o
+nasm %KERNEL_ASM_FLAGS% arch\int19.asm -o build\int19.o
 
 echo Compiling..
 i686-elf-gcc %KERNEL_C_FLAGS% kernel.c -c -o build\kernel.o
