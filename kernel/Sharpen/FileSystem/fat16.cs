@@ -202,7 +202,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="cluster">Cluster number</param>
         /// <returns></returns>
-        private static unsafe uint FindNextCluster(uint cluster)
+        public static unsafe uint FindNextCluster(uint cluster)
         {
             int beginFat = m_beginLBA + m_bpb->ReservedSectors;
             uint clusters = (cluster / 256);
@@ -226,10 +226,53 @@ namespace Sharpen.FileSystem
         }
 
         /// <summary>
-        /// Find next free sector in FAT
+        /// Change cluster value in FAT
+        /// </summary>
+        /// <param name="cluster">Cluster number</param>
+        /// <param name="value">Fat value</param>
+        private static unsafe void changeClusterValue(uint cluster, ushort value)
+        {
+            int beginFat = m_beginLBA + m_bpb->ReservedSectors;
+            uint clusters = (cluster / 256);
+            uint adr = (uint)(beginFat + clusters);
+            uint offset = (cluster * 2) - (clusters * 512);
+
+
+            byte[] fatBuffer = new byte[512];
+            m_dev.Read(m_dev, adr, 512, fatBuffer);
+
+            byte* ptr = (byte*)Util.ObjectToVoidPtr(fatBuffer);
+            ushort* pointer = (ushort*)(ptr + offset);
+            
+            *pointer = value;
+
+            m_dev.Write(m_dev, adr, 512, fatBuffer);
+            
+            Heap.Free(ptr);
+        }
+
+        /// <summary>
+        /// Find last cluster for file in FAT
+        /// </summary>
+        /// <returns>Last cluster of file in FAT</returns>
+        private static uint findLastCluster(uint cluster)
+        {
+            uint lastValue = cluster;
+            uint lastResult = cluster;
+            while (lastResult != 0xFFFF)
+            {
+                lastValue = lastResult;
+                lastResult = FindNextCluster(cluster);
+            }
+
+            return lastResult;
+        }
+
+        /// <summary>
+        /// Find next free cluster in FAT
         /// </summary>
         /// <returns></returns>
-        private static uint FirstFirstFreeSector()
+        private static uint findNextFreeCluster()
         {
             int beginFat = m_beginLBA + m_bpb->ReservedSectors;
             uint adr = (uint)(beginFat);
