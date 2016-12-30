@@ -32,11 +32,14 @@ int main(int argc, char* argv[])
         char word[251];
         fgets (word, 250, stdin);
 
-        int len = strlen((char *)word);
+        // Exclude newline
+        int len = strlen((char *)word) - 1;
 
         if(word[0] == '\n')
             break;
         
+        if(written != 0)
+            write(fd, "\n", 1);
         write(fd, (char *)word, len);
 
         written += len;
