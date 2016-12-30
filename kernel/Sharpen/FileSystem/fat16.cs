@@ -813,12 +813,6 @@ namespace Sharpen.FileSystem
 
             uint totalSize = size + offset;
             
-            /**
-             * Can't resize files yet!
-             */
-            if (entry->Size < totalSize)
-                return 0;
-
             return writeFile(entry->ClusterNumberLo, offset, size, buffer);
         }
         

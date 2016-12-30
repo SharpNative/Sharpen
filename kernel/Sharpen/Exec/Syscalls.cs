@@ -146,6 +146,7 @@ namespace Sharpen.Exec
         {
             if (Tasking.CurrentTask.CurrentDirectory != null && !VFS.IsAbsolutePath(path))
                 path = String.Merge(Tasking.CurrentTask.CurrentDirectory, path);
+            
 
             path = VFS.ResolvePath(path);
             Node node = VFS.GetByPath(path);
@@ -442,7 +443,12 @@ namespace Sharpen.Exec
 
             if (node.Flags != NodeFlags.DIRECTORY)
                 return -(int)ErrorCode.ENOTDIR;
-            
+
+            int len = String.Length(newDir);
+
+            if (newDir[len - 1] != '/')
+                newDir = String.Merge(newDir, "/");
+
             Tasking.CurrentTask.CurrentDirectory = newDir;
 
             return 0;
