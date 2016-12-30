@@ -811,12 +811,14 @@ namespace Sharpen.FileSystem
         private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             FatDirEntry* entry = (FatDirEntry*)node.Cookie;
-
-            // If the offset is behind the size, stop here
-            if (offset > entry->Size)
-                return 0;
-
+            
             uint totalSize = size + offset;
+
+            if (entry->Size < totalSize)
+            {
+                if (ResizeFile(entry, node.Cookie2, node.Cookie3, totalSize) == 0)
+                    return 0;
+            }
             
             return writeFile(entry->ClusterNumberLo, offset, size, buffer);
         }
@@ -834,7 +836,7 @@ namespace Sharpen.FileSystem
              * 
              */
 
-            uint realsize = 0;
+            uint realsize = size;
 
             int bytesPerCluster = m_bpb->SectorsPerCluster * m_bpb->BytesPerSector;
 
@@ -854,13 +856,40 @@ namespace Sharpen.FileSystem
             uint clusterDiff = clustersNew - clustersOld;
             uint sectorDiff = sectorsNew - sectorsOld;
 
+            /**
+             * Allocate or remove clusters :P
+             */
             if (clusterDiff != 0)
                 return 0;
+            
+            uint startPoint = (uint)(size > direntry->Size ? direntry->Size : size);
+            uint offsetSector = startPoint / 512;
+            uint offset = startPoint - (offsetSector * 512);
 
-            /**
-             * TODO: Empty file!
-             */ 
+            uint lba = Data_clust_to_lba(direntry->ClusterNumberLo);
+            
+            byte[] writeSec = new byte[m_bpb->BytesPerSector];
+            byte[] readSec = new byte[m_bpb->BytesPerSector];
 
+            for (uint i = offsetSector; i < m_bpb->SectorsPerCluster; i++)
+            {
+                if(offset != 0)
+                {
+                    m_dev.Read(m_dev, lba + i, 512, readSec);
+                    Memory.Memcpy(Util.ObjectToVoidPtr(writeSec), (byte *)Util.ObjectToVoidPtr(readSec), (int)offset);
+                    Memory.Memset((byte *)Util.ObjectToVoidPtr(writeSec) + offset, 0x00, (int)(512 - offset));
+                }
+                else
+                {
+                    Memory.Memset(Util.ObjectToVoidPtr(writeSec), 0x00, 512);
+                }
+                
+                offset = 0;
+                m_dev.Write(m_dev, lba + i, 512, writeSec);
+            }
+
+            Heap.Free(Util.ObjectToVoidPtr(writeSec));
+            Heap.Free(Util.ObjectToVoidPtr(readSec));
 
             /**
              * Finally update node!
