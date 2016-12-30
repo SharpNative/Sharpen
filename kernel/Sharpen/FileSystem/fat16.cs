@@ -1,4 +1,5 @@
-﻿using Sharpen.Mem;
+﻿using Sharpen.Lib;
+using Sharpen.Mem;
 using Sharpen.Utilities;
 
 namespace Sharpen.FileSystem
@@ -30,6 +31,7 @@ namespace Sharpen.FileSystem
         private static Fat16BPB* m_bpb;
         private static FatDirEntry* m_dirEntries;
         private static uint m_numDirEntries;
+        private static uint m_fatSize;
 
         private static uint m_sectorOffset;
 
@@ -111,6 +113,13 @@ namespace Sharpen.FileSystem
             Memory.Memcpy(bpb, bootPtr, 90);
             m_bpb = (Fat16BPB*)bpb;
 
+            
+            int fatRegionSize = m_bpb->NumFats * m_bpb->SectorsPerFat16;
+            int rootDirSize = (512 * 32) / m_bpb->BytesPerSector;
+            long dataRegionSize = m_bpb->LargeAmountOfSectors - (m_bpb->ReservedSectors + fatRegionSize + rootDirSize);
+
+            m_fatSize = (uint)dataRegionSize / m_bpb->SectorsPerCluster;
+
             parseBoot();
         }
 
@@ -173,7 +182,7 @@ namespace Sharpen.FileSystem
             if ((dirEntry->Attribs & ATTRIB_SUBDIR) == 0)
             {
                 node.Read = readImpl;
-                //node.Write = writeImpl;
+                node.Write = writeImpl;
                 node.Truncate = truncateImpl;
                 node.Flags = NodeFlags.FILE;
             }
@@ -202,14 +211,13 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="cluster">Cluster number</param>
         /// <returns></returns>
-        public static unsafe uint FindNextCluster(uint cluster)
+        public static unsafe ushort FindNextCluster(uint cluster)
         {
             int beginFat = m_beginLBA + m_bpb->ReservedSectors;
             uint clusters = (cluster / 256);
             uint adr = (uint)(beginFat + clusters);
             uint offset = (cluster * 2) - (clusters * 512);
-
-
+            
             byte[] fatBuffer = new byte[512];
             m_dev.Read(m_dev, adr, 512, fatBuffer);
 
@@ -223,6 +231,16 @@ namespace Sharpen.FileSystem
                 return 0xFFFF;
 
             return nextCluster;
+        }
+
+        public static unsafe uint CalculateFatOffset(uint cluster)
+        {
+            int beginFat = m_beginLBA + m_bpb->ReservedSectors;
+            uint clusters = (cluster / 256);
+            uint adr = (uint)((beginFat * 512) + clusters * 512);
+            uint offset = (cluster * 2) - (clusters * 512);
+
+            return adr + offset;
         }
 
         /// <summary>
@@ -255,17 +273,40 @@ namespace Sharpen.FileSystem
         /// Find last cluster for file in FAT
         /// </summary>
         /// <returns>Last cluster of file in FAT</returns>
-        private static uint findLastCluster(uint cluster)
+        private static ushort findLastCluster(ushort cluster)
         {
-            uint lastValue = cluster;
-            uint lastResult = cluster;
+            ushort lastValue = cluster;
+            ushort lastResult = cluster;
             while (lastResult != 0xFFFF)
             {
                 lastValue = lastResult;
-                lastResult = FindNextCluster(cluster);
+                lastResult = FindNextCluster(lastResult);
             }
 
-            return lastResult;
+            return lastValue;
+        }
+
+        /// <summary>
+        /// Find last cluster for file in FAT
+        /// </summary>
+        /// <returns>Last cluster of file in FAT</returns>
+        private static ushort findLastCluster(ushort cluster, uint offset)
+        {
+            ushort lastValue = cluster;
+            ushort lastResult = cluster;
+            while (!(lastResult == 0xFFFF && offset == 0))
+            {
+                if (lastResult == 0xFFFF)
+                {
+                    offset--;
+                }
+                    
+
+                lastValue = lastResult;
+                lastResult = FindNextCluster(lastResult);
+            }
+
+            return lastValue;
         }
 
         /// <summary>
@@ -280,23 +321,52 @@ namespace Sharpen.FileSystem
             byte[] fatBuffer = new byte[512];
             m_dev.Read(m_dev, adr, 512, fatBuffer);
 
-            byte* ptr = (byte*)Util.ObjectToVoidPtr(fatBuffer);
-            ushort* pointer = (ushort*)(ptr);
+            byte* fatPointer = (byte*)Util.ObjectToVoidPtr(fatBuffer);
+            ushort* curPointer = (ushort*)(fatPointer);
 
-            Console.WriteHex(m_bpb->SectorsPerFat16);
-            for (;;) ;
+            uint offset = 0;
+            uint offsetSector = 0;
 
-            for (int i = 0; i < m_bpb->SectorsPerFat16; i++)
+            ushort offsetCluster = 0;
+            ushort freeSector = 0;
+
+            /**
+             * 
+             * Find free cluster?
+             * 
+             */ 
+            for (int i = 0; i < m_fatSize; i++)
             {
+                if(offset >= 256)
+                {
+                    offsetSector++;
 
+                    /**
+                     * Read new sector
+                     */
+                    m_dev.Read(m_dev, adr + offsetSector, 512, fatBuffer);
+
+                    curPointer = (ushort*)(fatPointer);
+
+                    offset = 0;
+                }
+
+                if (*curPointer == 0x0000)
+                {
+                    freeSector = offsetCluster;
+                    break;
+                }
+
+                
+                offset++;
+                curPointer++;
+                offsetCluster++;
             }
 
-            ushort nextCluster = *pointer;
+            Heap.Free(fatPointer);
 
-            if (nextCluster >= FAT_EOF)
-                return 0xFFFF;
-
-
+            if(freeSector != 0)
+                return freeSector;
 
             // FULL!!! :O
             return 0;
@@ -310,8 +380,6 @@ namespace Sharpen.FileSystem
         /// <param name="size">Size</param>
         private static void SetFileSize(uint cluster, uint num, uint size)
         {
-            //Note: We only support 1 cluster 
-
             uint offset = num * (uint)sizeof(FatDirEntry);
 
             uint offsetSector = offset / 512;
@@ -326,11 +394,19 @@ namespace Sharpen.FileSystem
             byte[] buf = new byte[512];
             m_dev.Read(m_dev, realOffset, 512, buf);
 
+            Console.WriteLine("Offset:");
+            Console.WriteHex(realOffset * 512 + offset);
+            Console.WriteLine("");
+
+
             byte* bufPtr = (byte*)Util.ObjectToVoidPtr(buf);
             FatDirEntry* entry = (FatDirEntry*)(bufPtr + offset);
-            Console.WriteNum((int)entry->Size);
+            Console.WriteNum((int)size);
+            Console.WriteLine("");
             entry->Size = size;
 
+
+            for (;;) ;
             m_dev.Write(m_dev, realOffset, 512, buf);
 
             // Update dir entry if needed
@@ -419,7 +495,7 @@ namespace Sharpen.FileSystem
         #region Read/Write
 
         /// <summary>
-        /// Write file
+        /// Write file (NOTE: This will stop when file is ending, not resizing file yet)
         /// </summary>
         /// <param name="startCluster">Start cluster</param>
         /// <param name="offset">Start offset</param>
@@ -428,9 +504,74 @@ namespace Sharpen.FileSystem
         /// <returns>Bytes written</returns>
         private static uint writeFile(uint startCluster, uint offset, uint size, byte[] buffer)
         {
+            // Calculate starting cluster
+            uint dataPerCluster = m_bpb->SectorsPerCluster;
+            uint sectorsOffset = (uint)((int)offset / 512);
 
+            uint clusterOffset = sectorsOffset / dataPerCluster;
 
-            return 0;
+            if (clusterOffset > 0)
+            {
+                for (int i = 0; i < clusterOffset; i++)
+                {
+                    startCluster = FindNextCluster(startCluster);
+
+                    if (startCluster == 0xFFFF)
+                        return 0;
+                }
+            }
+
+            uint StartOffset = offset - (sectorsOffset * 512);
+            sectorsOffset = sectorsOffset - (clusterOffset * m_bpb->SectorsPerCluster);
+
+            // Read starting cluster
+            byte[] buf = new byte[512];
+            m_dev.Read(m_dev, Data_clust_to_lba(startCluster), 512, buf);
+
+            // Calculate size in sectors
+            uint sizeInSectors = size / 512;
+            if (sizeInSectors == 0)
+                sizeInSectors++;
+
+            uint offsetInCluster = sectorsOffset;
+            uint offsetInSector = StartOffset;
+            uint currentCluster = startCluster;
+            uint currentOffset = 0;
+            int sizeLeft = (int)size;
+
+            for (int i = 0; i < sizeInSectors; i++)
+            {
+                if (offsetInCluster == m_bpb->SectorsPerCluster)
+                {
+                    currentCluster = FindNextCluster(currentCluster);
+
+                    if (currentCluster == 0xFFFF)
+                        return currentOffset;
+
+                    offsetInCluster = 0;
+                }
+
+                int sizeTemp = (sizeLeft > 512) ? 512 : sizeLeft;
+                int sizeLeftinSector = 512;
+                sizeLeftinSector -= (int)offsetInSector;
+                if (sizeLeft > sizeLeftinSector)
+                {
+                    sizeTemp = sizeLeftinSector;
+                    sizeInSectors++;
+                }
+
+                m_dev.Read(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
+                Memory.Memcpy((void *)((int)Util.ObjectToVoidPtr(buf) + offsetInSector), (void *)((int)Util.ObjectToVoidPtr(buffer) + currentOffset), sizeTemp);
+
+                m_dev.Write(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
+
+                currentOffset += (uint)sizeTemp;
+                sizeLeft -= sizeTemp;
+                offsetInCluster++;
+                offsetInSector = 0;
+            }
+            
+            return currentOffset;
         }
 
         /// <summary>
@@ -670,51 +811,102 @@ namespace Sharpen.FileSystem
         {
             FatDirEntry* entry = (FatDirEntry*)node.Cookie;
 
-            return 0;
+            uint totalSize = size + offset;
+            
+            /**
+             * Can't resize files yet!
+             */
+            if (entry->Size < totalSize)
+                return 0;
+
+            return writeFile(entry->ClusterNumberLo, offset, size, buffer);
         }
         
-        private static uint truncateImpl(Node node, uint size)
+        private static uint ResizeFile(FatDirEntry *direntry, uint cluster, uint num, uint size)
         {
-            // TODO: This :)
+            /**
+             * 
+             * DO NOY USE YET!
+             * 
+             */
+            return 0;
 
-            FatDirEntry* entry = (FatDirEntry*)node.Cookie;
-
-            Console.WriteLine("");
+            uint realsize = 0;
+            Console.WriteLine("Resizing file!: ");
             Console.WriteNum((int)size);
+            Console.WriteLine(" FROM ");
+            Console.WriteNum((int)direntry->Size);
             Console.WriteLine("");
 
-            int diff = (int)size - (int)entry->Size;
+            int diff = (int)size - (int)direntry->Size;
+            
 
             // Shrink
-            if(diff < 0)
+            if (diff < 0)
             {
                 // Make positive :-)
                 diff = ~diff + 1;
 
 
+                /**
+                 * Always round down!
+                 */
                 uint diffSectors = (uint)diff / 512;
-                uint diffClusters = diffSectors / m_bpb->SectorsPerCluster;
-                
-                Console.Write(" Test: ");
-                Console.WriteNum((int)diff);
-                Console.Write(" : ");
-                Console.WriteNum((int)diffSectors);
+                uint diffClusters = (uint)diffSectors / m_bpb->SectorsPerCluster;
+
+                /**
+                 * Shrink :(
+                 */
+
+                for (uint i = 0; i < diffClusters; i++)
+                {
+                    uint clust = findLastCluster(direntry->ClusterNumberLo, i);
+                    
+                    Console.WriteHex(clust);
+                    Console.WriteLine("");
+                    for (;;) ;
+                }
+
+                Console.WriteLine("Smaller!:");
+                Console.WriteNum((int)diffClusters);
                 Console.WriteLine("");
 
             }
             else
             {
 
+                /**
+                 * Always round up!
+                 */
+                uint diffSectors = (uint)Math.Ceil((double)diff / (double)512);
+                uint diffClusters = (uint)(double)Math.Ceil((double)diffSectors / (double)m_bpb->SectorsPerCluster);
+
+                Console.WriteLine("Bigger!:");
+                Console.WriteNum((int)diffClusters);
+                Console.WriteLine("");
             }
 
-
             /**
-             * Update node
-             */ 
-            //uint cluster = node.Cookie2;
-            //uint num = node.Cookie3;
-
+             * Finally update node!
+             */
             //SetFileSize(cluster, num, size);
+
+            return realsize;
+        }
+
+        private static uint truncateImpl(Node node, uint size)
+        {
+            // TODO: This :)
+
+            FatDirEntry* entry = (FatDirEntry*)node.Cookie;
+            if (entry == (FatDirEntry *)0x0000)
+                return 0;
+
+            if (size == 0)
+                return 0;
+
+
+            ResizeFile(entry, node.Cookie2, node.Cookie3, size);
 
             return 0;
         }

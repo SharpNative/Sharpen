@@ -74,6 +74,7 @@
     <Compile Include="FileSystem\NullFS.cs" />
     <Compile Include="FileSystem\PipeFS.cs" />
     <Compile Include="FileSystem\STDOUT.cs" />
+    <Compile Include="Lib\Math.cs" />
     <Compile Include="Lib\Random.cs" />
     <Compile Include="Net\TCP.cs" />
     <Compile Include="Net\TCPSocket.cs" />
