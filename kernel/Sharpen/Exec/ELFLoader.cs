@@ -161,9 +161,7 @@ namespace Sharpen.Exec
         {
             ELF32* elf;
             fixed (byte* ptr = buffer)
-            {
                 elf = (ELF32*)ptr;
-            }
 
             if (!isValidELF(elf))
                 return -(int)ErrorCode.EINVAL;
@@ -192,18 +190,14 @@ namespace Sharpen.Exec
                 // Copy
                 else
                 {
-
                     Memory.Memcpy((void*)((uint)allocated + offset), (void*)((uint)elf + section->Offset), (int)section->Size);
                 }
             }
 
             // Count arguments
             int argc = 0;
-            if (argv != null)
-            {
-                while (argv[argc] != null)
-                    argc++;
-            }
+            while (argv[argc] != null)
+                argc++;
 
             // Stack
             int[] initialStack = new int[2];
@@ -211,14 +205,15 @@ namespace Sharpen.Exec
             initialStack[1] = argc;
             
             Task.Task newTask = Tasking.CreateTask((void*)elf->Entry, TaskPriority.NORMAL, initialStack, 2, flags);
-            
+
             // Map memory
             Paging.PageDirectory* newDirectory = Paging.CloneDirectory(Paging.CurrentDirectory);
+            Paging.PageFlags pageFlags = Paging.PageFlags.Present | Paging.PageFlags.Writable | Paging.PageFlags.UserMode;
             for (uint j = 0; j < size; j += 0x1000)
             {
-                Paging.MapPage(newDirectory, (int)Paging.GetPhysicalFromVirtual((void*)((uint)allocated + j)), (int)(virtAddress + j), (int)Paging.PageFlags.Present | (int)Paging.PageFlags.Writable | (int)Paging.PageFlags.UserMode);
+                Paging.MapPage(newDirectory, (int)Paging.GetPhysicalFromVirtual((void*)((uint)allocated + j)), (int)(virtAddress + j), pageFlags);
             }
-            
+
             // Schedule task
             newTask.PageDir = newDirectory;
             Tasking.ScheduleTask(newTask);

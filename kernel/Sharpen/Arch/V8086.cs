@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
 
-namespace Sharpen.Arch
+// Doesn't work because of an undefined reference, investigate...
+/*namespace Sharpen.Arch
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct V8086Regs
@@ -33,3 +29,4 @@ namespace Sharpen.Arch
         private extern static void Int(byte intnum, V8086Regs *regs);
     }
 }
+*/

@@ -6,7 +6,7 @@ namespace Sharpen.Task
 {
     public class Tasking
     {
-        private static int m_nextPid = 0;
+        
         private static bool m_taskingEnabled = false;
 
         private static Task m_taskToClone = null;
@@ -18,7 +18,7 @@ namespace Sharpen.Task
         {
             NONE = 0,
             SWAP_PID = 1,
-            KERNEL = 2
+            KERNEL_TASK = 2
         }
 
         /// <summary>
@@ -29,16 +29,16 @@ namespace Sharpen.Task
             // Critical code, disable interrupts
             CPU.CLI();
 
-            // Kernel task, the data will be filled in when the first schedule happens
+            // Kernel task, the remaining data will be filled in when the first schedule happens
             Task kernel = new Task();
-            kernel.PID = m_nextPid++;
             kernel.GID = 0;
             kernel.UID = 0;
             kernel.PageDir = Paging.KernelDirectory;
             kernel.Next = null;
             kernel.FPUContext = Heap.AlignedAlloc(16, 512);
             kernel.Flags = Task.TaskFlags.NOFLAGS;
-            kernel.FileDescriptors.Capacity = 0;
+            // The Idle task has a low priority
+            kernel.TimeFull = (int)TaskPriority.LOW;
 
             KernelTask = kernel;
             CurrentTask = kernel;
@@ -47,6 +47,8 @@ namespace Sharpen.Task
             m_taskingEnabled = true;
             CPU.STI();
             ManualSchedule();
+
+            Console.WriteLine("[Tasking] Initialized");
         }
 
         /// <summary>
@@ -107,26 +109,7 @@ namespace Sharpen.Task
             while (true)
                 ManualSchedule();
         }
-
-        /// <summary>
-        /// Dump info about tasks
-        /// </summary>
-        private static unsafe void dump()
-        {
-            Task current = KernelTask;
-            while (true)
-            {
-                Console.WriteHex((int)Util.ObjectToVoidPtr(current));
-                Console.Write(" ");
-                Console.WriteHex(current.PID);
-                Console.WriteLine("");
-
-                current = current.Next;
-                if (current == null)
-                    return;
-            }
-        }
-
+        
         /// <summary>
         /// Schedules a task
         /// </summary>
@@ -139,8 +122,7 @@ namespace Sharpen.Task
             {
                 current = current.Next;
             }
-
-
+            
             // Critical section, a task switch may not occur now
             CPU.CLI();
 
@@ -163,8 +145,6 @@ namespace Sharpen.Task
         {
             // Fill in data
             Task newTask = new Task();
-            
-            newTask.PID = m_nextPid++;
 
             if ((flags & SpawnFlags.SWAP_PID) == SpawnFlags.SWAP_PID)
             {
@@ -199,10 +179,13 @@ namespace Sharpen.Task
 
             int cs = Task.USERSPACE_CS;
             int ds = Task.USERSPACE_DS;
-            if((flags & SpawnFlags.KERNEL) != SpawnFlags.KERNEL)
+            if((flags & SpawnFlags.KERNEL_TASK) != SpawnFlags.KERNEL_TASK)
             {
                 // FS related stuff
-                CurrentTask.CloneDescriptorsTo(newTask);
+                if (CurrentTask.FileDescriptors == null)
+                    newTask.FileDescriptors = new FileDescriptors();
+                else
+                    newTask.FileDescriptors = CurrentTask.FileDescriptors.Clone();
                 newTask.CurrentDirectory = String.Clone(CurrentTask.CurrentDirectory);
             }
             else
@@ -235,8 +218,10 @@ namespace Sharpen.Task
         {
             int pid = CurrentTask.PID;
             m_taskToClone = CurrentTask;
-            ManualSchedule();
-            return (pid == CurrentTask.PID ? m_nextPid - 1 : 0);
+            CPU.STI();
+            CPU.HLT();
+            CPU.CLI();
+            return (pid == CurrentTask.PID ? Task.NextPid - 1 : 0);
         }
 
         /// <summary>
@@ -247,7 +232,6 @@ namespace Sharpen.Task
         {
             // Fill in data
             Task newTask = new Task();
-            newTask.PID = m_nextPid++;
             newTask.GID = sourceTask.GID;
             newTask.UID = sourceTask.UID;
             newTask.TimeFull = sourceTask.TimeFull;
@@ -266,12 +250,19 @@ namespace Sharpen.Task
 
             newTask.Stack = (int*)((int)newTask.StackStart + diffStack);
             newTask.KernelStack = (int*)((int)newTask.KernelStackStart + diffKernelStack);
-
+            
             // Program data space end
             newTask.DataEnd = sourceTask.DataEnd;
 
             // FS related stuff
-            sourceTask.CloneDescriptorsTo(newTask);
+            if(sourceTask.FileDescriptors == null)
+            {
+                newTask.FileDescriptors = new FileDescriptors();
+            }
+            else
+            {
+                newTask.FileDescriptors = sourceTask.FileDescriptors.Clone();
+            }
             newTask.CurrentDirectory = String.Clone(sourceTask.CurrentDirectory);
 
             // FPU context
@@ -323,13 +314,7 @@ namespace Sharpen.Task
             oldTask.KernelStack = (int*)GDT.TSS_Entry->ESP0;
             FPU.StoreContext(oldTask.FPUContext);
 
-            // Context is stored, now we can manipulate it
-            // such as forking etc
-            if (m_taskToClone != null)
-            {
-                cloneTask(m_taskToClone);
-                m_taskToClone = null;
-            }
+            
 
             // Switch to next task
             Task current = FindNextTask();
@@ -338,10 +323,21 @@ namespace Sharpen.Task
             GDT.TSS_Entry->ESP0 = (uint)current.KernelStack;
             CurrentTask = current;
 
+            
+
             // Cleanup old task
             if ((oldTask.Flags & Task.TaskFlags.DESCHEDULED) == Task.TaskFlags.DESCHEDULED)
             {
                 oldTask.Cleanup();
+            }
+
+            // Context is stored, now we can manipulate it
+            // such as forking etc
+            if (m_taskToClone != null)
+            {
+                Task toClone = m_taskToClone;
+                m_taskToClone = null;
+                cloneTask(toClone);
             }
 
             // Return the next task context

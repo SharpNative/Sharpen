@@ -39,7 +39,7 @@
         /// <param name="regsPtr">Pointer to registers</param>
         public static unsafe void Handler(Regs* regsPtr)
         {
-            int irqNum = (*regsPtr).IntNum - MASTER_OFFSET;
+            int irqNum = regsPtr->IntNum - MASTER_OFFSET;
             handlers[irqNum]?.Invoke(regsPtr);
             PIC.SendEOI((byte)irqNum);
         }

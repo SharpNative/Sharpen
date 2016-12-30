@@ -40,6 +40,13 @@ namespace Sharpen.Utilities
         public static unsafe extern void* ObjectToVoidPtr(object obj);
 
         /// <summary>
+        /// Converts an object to a void pointer
+        /// </summary>
+        /// <param name="obj">The pointer</param>
+        /// <returns>The object</returns>
+        public static unsafe extern object VoidPtrToObject(void* ptr);
+
+        /// <summary>
         /// Converts a method to a pointer
         /// </summary>
         /// <param name="method">The method</param>

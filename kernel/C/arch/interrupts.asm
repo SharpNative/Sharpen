@@ -185,7 +185,7 @@ Sharpen_Arch_IDT_IRQ0_0:
 ; Manual scheduler
 global Sharpen_Task_Tasking_ManualSchedule_0
 Sharpen_Task_Tasking_ManualSchedule_0:
-    ; Setup interrupt stack frame
+    ; Setup fake interrupt stack frame
     pushfd
     push cs
     push .r

@@ -29,7 +29,7 @@ namespace Sharpen
         public static unsafe void KernelMain(Multiboot.Header* header, uint magic, uint end)
         {
             Console.Clear();
-            
+
             void* heapStart = (void*)end;
             uint memSize;
             #region Multiboot
@@ -79,7 +79,7 @@ namespace Sharpen
 
             #endregion
 
-            Heap.TempInit(heapStart);
+            Heap.InitTempHeap(heapStart);
             
 
             GDT.Init();
@@ -90,7 +90,7 @@ namespace Sharpen
             
             PhysicalMemoryManager.Init(memSize);
             Paging.Init(memSize);
-            Heap.SetupRealHeap();
+            Heap.InitRealHeap();
             
             PIT.Init();
             VFS.Init();
@@ -104,24 +104,22 @@ namespace Sharpen
             NetFS.Init();
 
 
-
+            
             PCI.Init();
             //AC97.Init();
             VboxDev.Init();
 
-
+            
             Tasking.Init();
-
+            
             // Networking
-
-
             Network.Init();
-
+            
             // Layer 1 - drivers
             //E1000.Init();
             PCNet2.Init();
             //rtl8139.Init();
-
+            
             // Layer 3 - Networking protocols
             IPV4.Init();
             ICMP.Init();

@@ -5,11 +5,6 @@ using Sharpen.Collections;
 using Sharpen.Mem;
 using Sharpen.Task;
 using Sharpen.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Net
 { 
@@ -71,7 +66,7 @@ namespace Sharpen.Net
 
             m_recPacketQueue = new Queue();
             
-            Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(handlePackets), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
+            Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(handlePackets), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL_TASK);
             newTask.PageDir = Paging.KernelDirectory;
             Tasking.ScheduleTask(newTask);
         }

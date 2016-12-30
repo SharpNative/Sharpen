@@ -73,6 +73,7 @@ namespace Sharpen.Exec
         /// <returns>The previous data space end</returns>
         public static unsafe void* Sbrk(int increase)
         {
+            // TODO: free this when the task ends
             void* c = Paging.AllocateVirtual(increase);
             return c;
         }
@@ -107,12 +108,14 @@ namespace Sharpen.Exec
         /// <returns>The amount of bytes written</returns>
         public static int Write(int descriptor, byte[] buffer, uint size)
         {
-            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+
+            Node node = descriptors.GetNode(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
             
-            uint offset = Tasking.CurrentTask.GetOffsetFromDescriptor(descriptor);
-            Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] += size;
+            uint offset = descriptors.GetOffset(descriptor);
+            descriptors.SetOffset(descriptor, offset + size);
 
             return (int)VFS.Write(node, offset, size, buffer);
         }
@@ -126,12 +129,14 @@ namespace Sharpen.Exec
         /// <returns>The amount of bytes read</returns>
         public static int Read(int descriptor, byte[] buffer, uint size)
         {
-            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+
+            Node node = descriptors.GetNode(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
 
-            uint offset = Tasking.CurrentTask.GetOffsetFromDescriptor(descriptor);
-            Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] += size;
+            uint offset = descriptors.GetOffset(descriptor);
+            descriptors.SetOffset(descriptor, offset + size);
 
             return (int)VFS.Read(node, offset, size, buffer);
         }
@@ -147,14 +152,15 @@ namespace Sharpen.Exec
             if (Tasking.CurrentTask.CurrentDirectory != null && !VFS.IsAbsolutePath(path))
                 path = String.Merge(Tasking.CurrentTask.CurrentDirectory, path);
             
-
             path = VFS.ResolvePath(path);
             Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
 
             VFS.Open(node, (FileMode)flags);
-            return Tasking.CurrentTask.AddNodeToDescriptor(node);
+
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+            return descriptors.AddNode(node);
         }
 
         /// <summary>
@@ -164,16 +170,8 @@ namespace Sharpen.Exec
         /// <returns>The errorcode</returns>
         public static int Close(int descriptor)
         {
-            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
-            if (node == null)
-                return -(int)ErrorCode.EBADF;
-
-            VFS.Close(node);
-
-            Tasking.CurrentTask.FileDescriptors.Nodes[descriptor] = null;
-            Tasking.CurrentTask.FileDescriptors.Used--;
-
-            return 0;
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+            return descriptors.Close(descriptor);
         }
 
         /// <summary>
@@ -185,18 +183,26 @@ namespace Sharpen.Exec
         /// <returns>The new offset from the beginning of the file in bytes</returns>
         public static int Seek(int descriptor, uint offset, FileWhence whence)
         {
-            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+
+            Node node = descriptors.GetNode(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
 
-            if (whence == FileWhence.SEEK_CUR)
-                Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] += offset;
-            else if (whence == FileWhence.SEEK_SET)
-                Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] = offset;
-            else /* if (whence == FileWhence.SEEK_END) */
-                Tasking.CurrentTask.FileDescriptors.Offsets[descriptor] = node.Size - offset;
+            uint currentOffset = descriptors.GetOffset(descriptor);
 
-            return (int)Tasking.CurrentTask.FileDescriptors.Offsets[descriptor];
+            if (whence == FileWhence.SEEK_CUR)
+                currentOffset += offset;
+            else if (whence == FileWhence.SEEK_SET)
+                currentOffset = offset;
+            else if (whence == FileWhence.SEEK_END)
+                currentOffset = node.Size - offset;
+            else
+                return -(int)ErrorCode.EINVAL;
+
+            descriptors.SetOffset(descriptor, currentOffset);
+
+            return (int)currentOffset;
         }
 
         /// <summary>
@@ -207,7 +213,9 @@ namespace Sharpen.Exec
         /// <returns>The errorcode</returns>
         public static unsafe int FStat(int descriptor, Stat* st)
         {
-            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+
+            Node node = descriptors.GetNode(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
 
@@ -321,7 +329,9 @@ namespace Sharpen.Exec
         /// <returns>Errorcode</returns>
         public static unsafe int Readdir(int descriptor, DirEntry* entry, uint index)
         {
-            Node node = Tasking.CurrentTask.GetNodeFromDescriptor(descriptor);
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+
+            Node node = descriptors.GetNode(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
 
@@ -384,8 +394,9 @@ namespace Sharpen.Exec
             if (error != ErrorCode.SUCCESS)
                 return -(int)error;
 
-            pipefd[0] = Tasking.CurrentTask.AddNodeToDescriptor(nodes[0]);
-            pipefd[1] = Tasking.CurrentTask.AddNodeToDescriptor(nodes[1]);
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+            pipefd[0] = descriptors.AddNode(nodes[0]);
+            pipefd[1] = descriptors.AddNode(nodes[1]);
 
             return 0;
         }
@@ -396,23 +407,10 @@ namespace Sharpen.Exec
         /// <param name="oldfd">The old file descriptor</param>
         /// <param name="newfd">The new file descriptor</param>
         /// <returns>The new file descriptor or errorcode</returns>
-        public static unsafe int Dup2(int oldfd, int newfd)
+        public static int Dup2(int oldfd, int newfd)
         {
-            Task.Task current = Tasking.CurrentTask;
-            if (oldfd < 0 || newfd < 0 || oldfd >= current.FileDescriptors.Capacity || newfd >= current.FileDescriptors.Capacity)
-                return -(int)ErrorCode.EBADF;
-
-            // If there is an old file descriptor node, close it
-            Node old = current.FileDescriptors.Nodes[oldfd];
-            if (old != null)
-            {
-                VFS.Close(old);
-            }
-
-            Node newNode = current.FileDescriptors.Nodes[newfd];
-            current.FileDescriptors.Nodes[oldfd] = newNode.Clone();
-
-            return newfd;
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+            return descriptors.Dup2(oldfd, newfd);
         }
 
         /// <summary>

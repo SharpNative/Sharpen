@@ -21,7 +21,7 @@ namespace Sharpen.Arch
             public ushort Function;
 
             public byte classCode;
-            public byte SubClass 
+            public byte SubClass; 
 
             public ushort Vendor;
             public ushort Device;

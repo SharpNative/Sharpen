@@ -24,12 +24,19 @@ namespace Sharpen.Arch
                 return;
             }
 
-            //if (function != 0xD && function != 9 && function != 0x16)
+            //if (function != 0x0D && function != 0x09 && function != 0x16)
             //{
             //    Console.Write("syscall func: ");
             //    Console.WriteNum(function);
             //    Console.WriteLine("");
             //}
+
+            /*if (function != 0x0D && function != 0x09 && function != 0x16)
+            {
+                Console.Write("syscall func: ");
+                Console.WriteNum(function);
+                Console.WriteLine("");
+            }*/
 
             Tasking.CurrentTask.SysRegs = regsPtr;
 

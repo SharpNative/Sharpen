@@ -1,4 +1,6 @@
-﻿using Sharpen.Arch;
+﻿// #define CLEAR_SCREEN
+
+using Sharpen.Arch;
 using Sharpen.Task;
 
 namespace Sharpen
@@ -23,20 +25,21 @@ namespace Sharpen
         {
             // Clear interrupts
             CPU.CLI();
-
-            // Empty screen
+            
             Console.Attribute = 0x4F;
-            //Console.Clear();
 
-            // Logo
-            /*Console.WriteLine("");
+            // Empty screen with logo
+#if CLEAR_SCREEN
+            Console.Clear();
+            Console.WriteLine("");
             Console.WriteLine("  ____  _                                 ");
             Console.WriteLine(" / ___|| |__   __ _ _ __ _ __   ___ _ __  ");
             Console.WriteLine(" \\___ \\| '_ \\ / _` | '__| '_ \\ / _ \\ '_ \\ ");
             Console.WriteLine("  ___) | | | | (_| | |  | |_) |  __/ | | |");
             Console.WriteLine(" |____/|_| |_|\\__,_|_|  | .__/ \\___|_| |_|");
             Console.WriteLine("                        |_|               ");
-            Console.WriteLine("");*/
+            Console.WriteLine("");
+#endif
 
             // Message
             Console.Write("\tMessage: ");
@@ -88,10 +91,11 @@ namespace Sharpen
                 Console.Write("  ESP ");
                 Console.WriteHex(regsPtr->ESP & 0xFFFFFFFF);
                 Console.Write("  EIP ");
-                Console.WriteHex(regsPtr->EIP);
+                Console.WriteHex(regsPtr->EIP & 0xFFFFFFFF);
                 Console.Write("  CR2 ");
-                Console.WriteHex(Paging.ReadCR2());
-                Console.Write('\n');
+                Console.WriteHex(Paging.ReadCR2() & 0xFFFFFFFF);
+                Console.Write("  EFlags ");
+                Console.WriteHex(regsPtr->EFlags & 0xFFFFFFFF);
             }
 
             // HALT

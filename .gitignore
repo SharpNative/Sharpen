@@ -212,6 +212,8 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 
+
+
 kernel/C/build
 kernel/C/kernel
 
@@ -228,6 +230,7 @@ user/newlib/include
 *.db
 *.opendb
 
-trace-*
+trace*
 *.dump
-*.txtd
+*.txt
+*.elf

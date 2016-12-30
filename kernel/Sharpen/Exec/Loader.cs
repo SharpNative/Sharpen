@@ -14,6 +14,9 @@ namespace Sharpen.Exec
         /// <returns>Errorcode</returns>
         public static int StartProcess(string path, string[] argv, Tasking.SpawnFlags flags)
         {
+            if (argv == null)
+                Panic.DoPanic("argv == null");
+
             Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;

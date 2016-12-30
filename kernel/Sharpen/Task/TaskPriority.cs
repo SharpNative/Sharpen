@@ -2,10 +2,10 @@
 {
     public enum TaskPriority
     {
-        VERYLOW = 10,
-        LOW = 20,
-        NORMAL = 30,
-        HIGH = 40,
-        VERYHIGH = 50
+        VERYLOW = 5,
+        LOW = 10,
+        NORMAL = 15,
+        HIGH = 20,
+        VERYHIGH = 25
     }
 }

@@ -1,7 +1,7 @@
-﻿ #define HEAP_DEBUG
+﻿// #define HEAP_DEBUG
 
 using Sharpen.Arch;
-using Sharpen.Drivers.Char;
+using Sharpen.Utilities;
 
 namespace Sharpen.Mem
 {
@@ -27,6 +27,9 @@ namespace Sharpen.Mem
             public BlockDescriptor* Next;
             public Block* First;
             public Block* FirstFree;
+#if HEAP_DEBUG
+            public uint Magic;
+#endif
         }
 
         // Current end address of the heap
@@ -39,16 +42,16 @@ namespace Sharpen.Mem
         private static unsafe BlockDescriptor* firstDescriptor;
 
         // Minimal amount of pages in a descriptor
-        private const int MINIMALPAGES = 1024;
+        private const int MINIMALPAGES = 128;
 
         // Heap magic (DEBUG)
-        private const uint HEAPMAGIC = 0xDEADBEEF;
+        private const uint HEAP_MAGIC = 0xDEADBEEF;
 
         /// <summary>
         /// Initializes the temporary heap at the given start address
         /// </summary>
         /// <param name="start">The start address</param>
-        public static unsafe void TempInit(void* start)
+        public static unsafe void InitTempHeap(void* start)
         {
             Console.Write("[HEAP] Temporary start at ");
             Console.WriteHex((int)start);
@@ -58,14 +61,38 @@ namespace Sharpen.Mem
         }
 
         /// <summary>
+        /// Sets up the real heap
+        /// </summary>
+        public static void InitRealHeap()
+        {
+            firstDescriptor = createBlockDescriptor(MINIMALPAGES * 0x1000);
+            m_realHeap = true;
+            Console.WriteLine("[HEAP] Initialized");
+        }
+
+        /// <summary>
         /// Calculates the required amount of pages
         /// </summary>
         /// <param name="size">The requested size</param>
         /// <returns>The required amount of pages</returns>
         private static int getRequiredPageCount(int size)
         {
-            // Calculate the required amount of pages
-            int required = size / 0x1000;
+            // Calculate the required amount of pages (round up to nearest page)
+            int required = (int)Paging.Align((uint)size) / 0x1000;
+
+            // Round up to the next minimal pages count (based on power of twos)
+            int power = 1;
+            while (power < required)
+                power *= 2;
+
+            required = power;
+
+#if HEAP_DEBUG
+            Console.Write("[HEAP] Required page count: ");
+            Console.WriteNum(required);
+            Console.Write('\n');
+#endif
+
             return (required < MINIMALPAGES) ? MINIMALPAGES : required;
         }
 
@@ -77,28 +104,34 @@ namespace Sharpen.Mem
         private static unsafe BlockDescriptor* createBlockDescriptor(int size)
         {
 #if HEAP_DEBUG
-            Console.WriteLine("CREATING NEW BLOCK DESCRIPTOR");
+            Console.WriteLine("[HEAP] Creating a new block descriptor");
 #endif
+
+            // Add size of Block and BlockDescriptor
+            size += sizeof(Block) + sizeof(BlockDescriptor);
 
             // Allocate descriptor
             size = getRequiredPageCount(size) * 0x1000;
             BlockDescriptor* descriptor = (BlockDescriptor*)Paging.AllocateVirtual(size);
-            Memory.Memset(descriptor, 0, size);
+
+#if HEAP_DEBUG
+            Console.Write("[HEAP] New descriptor is at 0x");
+            Console.WriteHex((long)descriptor);
+            Console.Write('\n');
+#endif
 
             if (descriptor == null)
-            {
                 Panic.DoPanic("descriptor == null");
-                return null;
-            }
 
             // Setup block
             Block* first = (Block*)((int)descriptor + sizeof(BlockDescriptor));
+            first->Prev = null;
             first->Next = null;
             first->Size = size - sizeof(BlockDescriptor);
             first->Used = false;
             first->Descriptor = descriptor;
 #if HEAP_DEBUG
-            first->Magic = HEAPMAGIC;
+            first->Magic = HEAP_MAGIC;
 #endif
 
             // Setup descriptor
@@ -106,8 +139,36 @@ namespace Sharpen.Mem
             descriptor->First = first;
             descriptor->FirstFree = first;
             descriptor->Next = null;
+#if HEAP_DEBUG
+            descriptor->Magic = HEAP_MAGIC;
+#endif
 
             return descriptor;
+        }
+
+        /// <summary>
+        /// Dumps a table of the descriptors
+        /// </summary>
+        private static unsafe void dumpDescriptors()
+        {
+            BlockDescriptor* descriptor = firstDescriptor;
+
+            Console.WriteLine("---");
+
+            // Search for a big enough descriptor
+            while (true)
+            {
+                if (descriptor->Next == null)
+                    break;
+
+                descriptor = descriptor->Next;
+
+                Console.Write("[");
+                Console.WriteHex((int)descriptor);
+                Console.WriteLine("]");
+            }
+
+            Console.WriteLine("---");
         }
 
         /// <summary>
@@ -115,14 +176,21 @@ namespace Sharpen.Mem
         /// </summary>
         /// <param name="size">The required size</param>
         /// <returns>The block descriptor</returns>
-        private static unsafe BlockDescriptor* getSufficientDescriptor(int size)
+        private static unsafe BlockDescriptor* getSufficientDescriptor(BlockDescriptor* first, int size)
         {
-            BlockDescriptor* descriptor = firstDescriptor;
+            BlockDescriptor* descriptor = first;
+            if (descriptor == null)
+                descriptor = firstDescriptor;
 
             // Search for a big enough descriptor
             while (true)
             {
-                if (descriptor->FreeSpace >= size)
+#if HEAP_DEBUG
+                if (descriptor->Magic != HEAP_MAGIC)
+                    Panic.DoPanic("descriptor->magic != HEAP_MAGIC");
+#endif
+
+                if (descriptor != first && descriptor->FreeSpace >= size)
                     return descriptor;
 
                 if (descriptor->Next == null)
@@ -132,19 +200,9 @@ namespace Sharpen.Mem
             }
 
             // Create next descriptor because there is no descriptor that is big enough
-            BlockDescriptor* newDescriptor = createBlockDescriptor(size * 2);
+            BlockDescriptor* newDescriptor = createBlockDescriptor(size);
             descriptor->Next = newDescriptor;
             return newDescriptor;
-        }
-
-        /// <summary>
-        /// Sets up the real heap
-        /// </summary>
-        public static void SetupRealHeap()
-        {
-            firstDescriptor = createBlockDescriptor(MINIMALPAGES * 0x1000 * 4);
-            m_realHeap = true;
-            Console.WriteLine("[HEAP] Initialized");
         }
 
         /// <summary>
@@ -167,13 +225,13 @@ namespace Sharpen.Mem
                     size += alignment;
                 }
 
-                Block* currentBlock;
-                Block* previousBlock;
-                int safeSize = size;
-                BlockDescriptor* descriptor = getSufficientDescriptor(safeSize);
+                Block* currentBlock = null;
+                Block* previousBlock = null;
+                BlockDescriptor* descriptor = getSufficientDescriptor(null, size);
+
                 if (descriptor == null)
                     Panic.DoPanic("descriptor == null");
-
+                
                 retry:
 
                 currentBlock = descriptor->FirstFree;
@@ -185,7 +243,7 @@ namespace Sharpen.Mem
                     // Can fit in here
                     if (currentBlock->Used || currentBlock->Size < size)
                         goto nextBlock;
-
+                    
                     // Check if this block data would be aligned
                     int currentData = (int)currentBlock + sizeof(Block);
                     int remainder = currentData % alignment;
@@ -242,7 +300,7 @@ namespace Sharpen.Mem
                             first->Size = gapSize;
                             first->Descriptor = descriptor;
 #if HEAP_DEBUG
-                            first->Magic = HEAPMAGIC;
+                            first->Magic = HEAP_MAGIC;
 #endif
                             currentBlock->Prev = first;
                         }
@@ -256,7 +314,7 @@ namespace Sharpen.Mem
                     currentBlock->Descriptor = descriptor;
                     currentBlock->Prev = previousBlock;
 #if HEAP_DEBUG
-                    currentBlock->Magic = HEAPMAGIC;
+                    currentBlock->Magic = HEAP_MAGIC;
 #endif
                     descriptor->FreeSpace -= size;
 
@@ -272,7 +330,7 @@ namespace Sharpen.Mem
                         afterBlock->Descriptor = descriptor;
 
 #if HEAP_DEBUG
-                        afterBlock->Magic = HEAPMAGIC;
+                        afterBlock->Magic = HEAP_MAGIC;
 #endif
 
                         if (currentBlock->Next != null)
@@ -292,7 +350,10 @@ namespace Sharpen.Mem
                         currentBlock = currentBlock->Next;
                         if (currentBlock == null)
                         {
-                            descriptor = createBlockDescriptor(safeSize);
+                            // This was the last block in the descriptor
+                            // Due to alignment issues we haven't found a good place
+                            // Get another descriptor that has enough free space
+                            descriptor = getSufficientDescriptor(descriptor, size);
                             goto retry;
                         }
                     }
@@ -307,24 +368,13 @@ namespace Sharpen.Mem
             }
         }
 
-        private static bool Mutex = false;
-
         /// <summary>
         /// Allocates a piece of memory
         /// </summary>
         /// <param name="size">The size</param>
         public static unsafe void* Alloc(int size)
         {
-            while (Mutex)
-                CPU.HLT();
-
-            Mutex = true;
-
-            void *outVal = AlignedAlloc(4, size);
-
-            Mutex = false;
-
-            return outVal;
+            return AlignedAlloc(4, size);
         }
 
         /// <summary>
@@ -365,9 +415,9 @@ namespace Sharpen.Mem
             Block* block = getBlockFromPtr(ptr);
 
 #if HEAP_DEBUG
-            if (block->Magic != HEAPMAGIC)
+            if (block->Magic != HEAP_MAGIC)
             {
-                Panic.DoPanic("block->Magic != HEAPMAGIC");
+                Panic.DoPanic("block->Magic != HEAP_MAGIC");
                 return;
             }
 #endif
@@ -405,6 +455,15 @@ namespace Sharpen.Mem
                 if (block->Next != null)
                     block->Next->Prev = prev;
             }
+        }
+
+        /// <summary>
+        /// Frees a piece of memory
+        /// </summary>
+        /// <param name="obj">The object</param>
+        public static unsafe void FreeObject(object ptr)
+        {
+            Free(Util.ObjectToVoidPtr(ptr));
         }
 
         /// <summary>
@@ -467,10 +526,7 @@ namespace Sharpen.Mem
         {
 #if HEAP_DEBUG
             if (m_realHeap)
-            {
                 Panic.DoPanic("KAlloc has been called after real heap started!");
-                return null;
-            }
 #endif
 
             if (PhysicalMemoryManager.isInitialized)
