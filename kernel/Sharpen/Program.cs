@@ -140,13 +140,13 @@ namespace Sharpen
             
             DHCP.Init();
 
-            byte[] buf = new byte[2];
-            buf[0] = (byte)'H';
-            buf[1] = (byte)'i';
+            //byte[] buf = new byte[2];
+            //buf[0] = (byte)'H';
+            //buf[1] = (byte)'i';
 
-            //Node nd = VFS.GetByPath("C://hi.txt");
+            //Node nd = VFS.GetByPath("C://conf/hostname");
             //nd.FileMode = FileMode.O_RDWR;
-            //VFS.Write(nd, 0, 2, buf);
+            //VFS.Truncate(nd, 7);
 
             //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(testing), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
             //newTask.PageDir = Paging.KernelDirectory;
