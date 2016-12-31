@@ -140,7 +140,19 @@ namespace Sharpen
             Tasking.KernelTask.CurrentDirectory = "C://";
             
             DHCP.Init();
-            
+
+            byte[] buf = new byte[3];
+            buf[0] = (byte)'A';
+            buf[1] = (byte)'B';
+            buf[2] = (byte)'C';
+
+            Node node = VFS.GetByPath("C://conf/hostname");
+            node.FileMode = FileMode.O_RDWR;
+            VFS.Truncate(node, 7);
+
+            for (int i = 0; i < 3; i++)
+                Console.Write((char)buf[i]);
+            Console.WriteLine("");
             //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(testing), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
             //newTask.PageDir = Paging.KernelDirectory;
             //Tasking.ScheduleTask(newTask);

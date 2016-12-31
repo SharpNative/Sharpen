@@ -299,6 +299,7 @@ namespace Sharpen.FileSystem
             ushort* pointer = (ushort*)(ptr + offset);
             
             *pointer = value;
+            
 
             m_dev.Write(m_dev, adr, 512, fatBuffer);
             
@@ -357,7 +358,7 @@ namespace Sharpen.FileSystem
         /// Find next free cluster in FAT
         /// </summary>
         /// <returns></returns>
-        private static uint findNextFreeCluster()
+        private static ushort findNextFreeCluster()
         {
             int beginFat = m_beginLBA + m_bpb->ReservedSectors;
             uint adr = (uint)(beginFat);
@@ -437,7 +438,7 @@ namespace Sharpen.FileSystem
 
             byte[] buf = new byte[512];
             m_dev.Read(m_dev, realOffset, 512, buf);
-            
+
 
             byte* bufPtr = (byte*)Util.ObjectToVoidPtr(buf);
             FatDirEntry* entry = (FatDirEntry*)(bufPtr + offset);
@@ -727,16 +728,80 @@ namespace Sharpen.FileSystem
                 clustersOld++;
 
             /**
-             * Calculate diffirence
+             * Calculate difference
              */
-            uint clusterDiff = clustersNew - clustersOld;
-            uint sectorDiff = sectorsNew - sectorsOld;
+            int clusterDiff = (int)clustersNew - (int)clustersOld;
 
             /**
-             * @TODO: Cluster allocation and removal
+             * @TODO: Test this! (lightly tested, looks like is that it is working)
              */
             if (clusterDiff != 0)
-                return 0;
+            {
+                /**
+                 * Increase or decrease
+                 */ 
+                if(clusterDiff < 0)
+                {
+
+                    clusterDiff = Math.Abs(clusterDiff);
+
+                    ushort currentLastCluster = findLastCluster((ushort)cluster);
+                    ushort newLastCluster = findLastCluster((ushort)cluster, 1);
+
+                    /**
+                     * Removing clusters
+                     */
+                    for (int i = 0; i < clusterDiff; i++)
+                    {
+
+                        /**
+                         * Change cluster table values
+                         */
+                        changeClusterValue(currentLastCluster, 0x0000);
+                        changeClusterValue(newLastCluster, 0xFFFF);
+
+                        currentLastCluster = findLastCluster((ushort)cluster);
+                        newLastCluster = findLastCluster((ushort)cluster, 1);
+                    }
+                }
+                else
+                {
+                    
+                    ushort currentCluster = findLastCluster((ushort)cluster);
+                    
+
+                    byte[] buf = new byte[(int)m_bpb->BytesPerSector];
+                    Memory.Memset(Util.ObjectToVoidPtr(buf), 0x00, (int)m_bpb->BytesPerSector);
+
+                    /**
+                     * Allocating clusters
+                     */
+                    for (int i = 0; i < clusterDiff; i++)
+                    {
+
+                        ushort freeCluster = findNextFreeCluster();
+
+                        /**
+                         * Change cluster table values
+                         */
+                        changeClusterValue(currentCluster, freeCluster);
+                        changeClusterValue(freeCluster, 0xFFFF);
+
+                        currentCluster = freeCluster;
+
+                        /**
+                         * Free cluster
+                         */
+                        uint toFreeLBA = Data_clust_to_lba(currentCluster);
+                        
+                        for(uint x = 0; x < m_bpb->SectorsPerCluster; x++)
+                            m_dev.Write(m_dev, toFreeLBA + x, m_bpb->BytesPerSector, buf);
+
+                    }
+
+                    Heap.Free(buf);
+                }
+            }
 
             /**
              * CLEAR EMPTY SPACE
@@ -783,11 +848,13 @@ namespace Sharpen.FileSystem
              */
             Heap.Free(Util.ObjectToVoidPtr(writeSec));
             Heap.Free(Util.ObjectToVoidPtr(readSec));
-
+            
             /**
              * Finally update node!
              */
-            SetFileSize(cluster, num, size);
+            SetFileSize(cluster, num, realsize);
+
+            direntry->Size = realsize;
 
             return realsize;
         }
@@ -1046,6 +1113,7 @@ namespace Sharpen.FileSystem
             if (size == 0)
                 return 0;
 
+            
 
             /**
              * Resize file

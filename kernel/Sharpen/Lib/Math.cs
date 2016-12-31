@@ -8,6 +8,21 @@ namespace Sharpen.Lib
 {
     class Math
     {
+        public static int Abs(int num)
+        {
+            if (num > 0)
+                return num;
+
+            return num * -1;
+        }
+
+        public static uint Abs(uint num)
+        {
+            if (num > 0)
+                return num;
+
+            return num * -1;
+        }
 
         public static int Ceil(double num)
         {
