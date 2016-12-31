@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <malloc.h>
 #include <fcntl.h>
 #include <dirent.h>
@@ -7,7 +8,9 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#define abort(s) perror(s)
+/* Types */
+typedef void* action_t;
+typedef void* object_t;
 
 /* Error messages */
 const static char* __ERROR_NULL_CALLED__ = "The program tried to call a method of an object that is null";
@@ -17,6 +20,12 @@ char* get_current_dir_name(void);
 #define true (1)
 #define false (0)
 #define null NULL
+
+void fatal(const char* s)
+{
+    perror(s);
+    abort();
+}
 
 inline char* Sharpen_Utilities_Util_CharArrayToString_1char__(char* array)
 {
@@ -80,7 +89,7 @@ void Sharpen_Process_Exit_1int32_t_(int32_t status)
     _exit(status);
 }
 
-inline void *Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(void* ptr)
+inline void *Sharpen_Utilities_Util_ObjectToVoidPtr_1object_t_(object_t ptr)
 {
     return ptr;
 }

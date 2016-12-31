@@ -6,12 +6,16 @@
 #define NULL ((void*) 0)
 #define null ((void*) 0)
 
+/* Types */
+typedef void* action_t;
+typedef void* object_t;
+
 /* Macro to methods */
 #define malloc      Sharpen_Mem_Heap_Alloc_1int32_t_
 #define free        Sharpen_Mem_Heap_Free_1void__
 #define memcpy      Sharpen_Mem_Memory_Memcpy_3void__void__int32_t_
 #define memset      Sharpen_Mem_Memory_Memset_3void__int32_t_int32_t_
-#define abort(msg)  __abort(__FUNCTION__, __LINE__, msg)
+#define fatal(msg)  __abort(__FUNCTION__, __LINE__, msg)
 
 static void* calloc(int nitems, int size);
 static void __abort(const char* function, int line, const char* msg);
@@ -62,7 +66,7 @@ inline char** Sharpen_Utilities_Util_PtrToArray_1char___(char** ptr)
     return ptr;
 }
 
-inline void* Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(void* ptr)
+inline void* Sharpen_Utilities_Util_ObjectToVoidPtr_1object_t_(object_t ptr)
 {
     return ptr;
 }
@@ -72,7 +76,7 @@ inline void* Sharpen_Utilities_Util_VoidPtrToObject_1void__(void* ptr)
     return ptr;
 }
 
-inline void* Sharpen_Utilities_Util_MethodToPtr_1void__(void* ptr)
+inline void* Sharpen_Utilities_Util_MethodToPtr_1action_t_(action_t ptr)
 {
     return ptr;
 }

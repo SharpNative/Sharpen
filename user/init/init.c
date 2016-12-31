@@ -29,12 +29,10 @@ int main(int argc, char* argv[])
     }
 
     // TODO: launch login, set userid, groupid, ...
-
-    // printf("init: Launching %s\n", argv[1]);
-
     // TODO: should be moved to a terminal instead of here in init
-    int in[2];
+
     // 0 is read end, 1 is write end
+    int in[2];
     pipe(in);
 
     // Child process
@@ -123,8 +121,13 @@ int main(int argc, char* argv[])
         }
     }
     
+    // Count down
     puts("init: Child stopped, shutting down...");
-    // TODO: sleep 3 seconds
+    for(int i = 5; i >= 1; i--)
+    {
+        printf("Shutting down in %d\n", i);
+        sleep(1);
+    }
 
     // Done, shutdown
     if(shutdown())

@@ -461,7 +461,7 @@ namespace Sharpen.Mem
         /// Frees a piece of memory
         /// </summary>
         /// <param name="obj">The object</param>
-        public static unsafe void FreeObject(object ptr)
+        public static unsafe void Free(object ptr)
         {
             Free(Util.ObjectToVoidPtr(ptr));
         }

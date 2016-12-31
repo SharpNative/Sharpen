@@ -186,8 +186,8 @@ char* Sharpen_Utilities_Util_CharArrayToString_1char__(char* array);
 typedef char* (*fp_Sharpen_Utilities_Util_CharArrayToString_1char__)(char* array);
 char* Sharpen_Utilities_Util_CharPtrToString_1char__(char* ptr);
 typedef char* (*fp_Sharpen_Utilities_Util_CharPtrToString_1char__)(char* ptr);
-void* Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(void* obj);
-typedef void* (*fp_Sharpen_Utilities_Util_ObjectToVoidPtr_1void__)(void* obj);
+void* Sharpen_Utilities_Util_ObjectToVoidPtr_1object_t_(object_t obj);
+typedef void* (*fp_Sharpen_Utilities_Util_ObjectToVoidPtr_1object_t_)(object_t obj);
 
 static void* methods_Sharpen_IO_Console[];
 static void* methods_Sharpen_IO_Directory[];
@@ -279,12 +279,14 @@ struct class_Sharpen_IO_Directory* Sharpen_IO_Directory_Open_1char__(char* path)
 }
 struct struct_Sharpen_IO_Directory_DirEntry Sharpen_IO_Directory_Readdir_2class_uint32_t_(struct class_Sharpen_IO_Directory* obj, uint32_t index)
 {
+	if(obj == NULL) fatal(__ERROR_NULL_CALLED__);
 	struct struct_Sharpen_IO_Directory_DirEntry entry = structInit_Sharpen_IO_Directory_DirEntry();
 	Sharpen_IO_Directory_ReaddirInternal_3void__struct_struct_Sharpen_IO_Directory_DirEntry__uint32_t_(obj->field_m_instance, &entry, index);
 	return entry;
 }
 void Sharpen_IO_Directory_Close_1class_(struct class_Sharpen_IO_Directory* obj)
 {
+	if(obj == NULL) fatal(__ERROR_NULL_CALLED__);
 	Sharpen_IO_Directory_CloseInternal_1void__(obj->field_m_instance);
 }
 struct class_Sharpen_Memory_Heap* classInit_Sharpen_Memory_Heap(void)
@@ -357,7 +359,7 @@ int32_t Shell_Program_TryRunFromExecDir_3char__char___int32_t_(char* name, char*
 {
 	char* total_string = Sharpen_Utilities_String_Merge_2char__char__("C://exec/", name);
 	int32_t ret = Sharpen_Process_Run_3char__char___int32_t_(total_string, argv, argc);
-	Sharpen_Memory_Heap_Free_1void__(Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(total_string));
+	Sharpen_Memory_Heap_Free_1void__(Sharpen_Utilities_Util_ObjectToVoidPtr_1object_t_(total_string));
 	return ret;
 }
 void Shell_Program_Main_1char___(char** args)
@@ -483,8 +485,8 @@ char* Sharpen_Utilities_String_Merge_2char__char__(char* first, char* second)
 	int32_t secondLength = Sharpen_Utilities_String_Length_1char__(second);
 	int32_t totalLength = firstLength + secondLength;
 	char* outVal = (char*)Sharpen_Memory_Heap_Alloc_1int32_t_(totalLength + 1);
-	Shell_Sharpen_Memory_Mem_Memcpy_3void__void__int32_t_(outVal, Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(first), firstLength);
-	Shell_Sharpen_Memory_Mem_Memcpy_3void__void__int32_t_((void*) ( (int32_t)outVal + firstLength ) , Sharpen_Utilities_Util_ObjectToVoidPtr_1void__(second), secondLength);
+	Shell_Sharpen_Memory_Mem_Memcpy_3void__void__int32_t_(outVal, Sharpen_Utilities_Util_ObjectToVoidPtr_1object_t_(first), firstLength);
+	Shell_Sharpen_Memory_Mem_Memcpy_3void__void__int32_t_((void*) ( (int32_t)outVal + firstLength ) , Sharpen_Utilities_Util_ObjectToVoidPtr_1object_t_(second), secondLength);
 	outVal[totalLength] = '\0';
 	return Sharpen_Utilities_Util_CharPtrToString_1char__(outVal);
 }
@@ -598,7 +600,7 @@ static void* methods_Shell_Sharpen_Memory_Mem[] = {Shell_Sharpen_Memory_Mem_Memc
 static void* methods_Sharpen_Process[] = {Sharpen_Process_internalRun_2char__char___,Sharpen_Process_WaitForExit_1int32_t_,Sharpen_Process_Exit_1int32_t_,Sharpen_Process_Run_3char__char___int32_t_,};
 static void* methods_Shell_Program[] = {Shell_Program_TryRunFromExecDir_3char__char___int32_t_,Shell_Program_Main_1char___,};
 static void* methods_Sharpen_Utilities_String[] = {Sharpen_Utilities_String_Length_1char__,Sharpen_Utilities_String_Merge_2char__char__,Sharpen_Utilities_String_IndexOf_2char__char__,Sharpen_Utilities_String_Count_2char__char_,Sharpen_Utilities_String_SubString_3char__int32_t_int32_t_,Sharpen_Utilities_String_Equals_2char__char__,Sharpen_Utilities_String_ToUpper_1char_,Sharpen_Utilities_String_ToLower_1char_,};
-static void* methods_Sharpen_Utilities_Util[] = {Sharpen_Utilities_Util_CharArrayToString_1char__,Sharpen_Utilities_Util_CharPtrToString_1char__,Sharpen_Utilities_Util_ObjectToVoidPtr_1void__,};
+static void* methods_Sharpen_Utilities_Util[] = {Sharpen_Utilities_Util_CharArrayToString_1char__,Sharpen_Utilities_Util_CharPtrToString_1char__,Sharpen_Utilities_Util_ObjectToVoidPtr_1object_t_,};
 
 void init(void)
 {
