@@ -58,8 +58,8 @@ namespace Sharpen.Net
             m_ip = NetworkTools.StringToIp(ip);
             if (m_ip == null)
                 return false;
-            
-            bool found = ARP.IpExists(m_ip);
+
+            bool found = Route.FindRoute(m_ip);
             if (!found)
                 return false;
             

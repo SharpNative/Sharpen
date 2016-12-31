@@ -196,7 +196,9 @@ namespace Sharpen.Net
                     case OPT_ROUTER:
                         for (int i = 0; i < 4; i++)
                             Network.Settings->Gateway[i] = buffer[offset + 2 + i];
-                        
+
+                        Route.SetGateway(Util.PtrToArray(Network.Settings->Gateway));
+
                         offset += 6;
                         break;
 

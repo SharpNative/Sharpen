@@ -116,7 +116,8 @@ namespace Sharpen
             
             // Networking
             Network.Init();
-            
+            Route.Init();
+
             // Layer 1 - drivers
             //E1000.Init();
             PCNet2.Init();

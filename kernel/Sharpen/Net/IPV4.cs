@@ -50,6 +50,7 @@ namespace Sharpen.Net
         /// <param name="size">Packet size</param>
         private static unsafe void Handle(byte[] mac, byte* buffer, uint size)
         {
+
             IPV4Header* header = (IPV4Header*)buffer;
             
             byte proto = header->Protocol;

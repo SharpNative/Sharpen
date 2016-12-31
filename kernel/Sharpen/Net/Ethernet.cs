@@ -70,19 +70,11 @@ namespace Sharpen.Net
             // Get MAC from ARP :D
             byte* dstMac = (byte*)Heap.Alloc(6);
 
-            ARP.Lookup(destIP, dstMac);
-
-            if(dstMac[0] == 0x00 && dstMac[1] == 0x00 && dstMac[2] == 0x00 && dstMac[3] == 0x00 && dstMac[4] == 0x00 && dstMac[5] == 0x00)
-            {
-                byte[] mac = new byte[6];
-                for (int i = 0; i < 6; i++)
-                    mac[i] = 0xFF;
-
-                ARP.ArpSend(ARP.OP_REQUEST, mac, destIP);
-
+            bool found = Route.FindRoute(destIP, dstMac);
+            
+            if (!found)
                 return;
-            }
-
+            
             addHeader(packet, Util.PtrToArray(dstMac), srcMAC, protocol);
 
             Network.Transmit(packet);

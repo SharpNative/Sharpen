@@ -52,9 +52,7 @@ namespace Sharpen.Net
         public static NetworkSettings *Settings { get; private set; }
 
         private static PackerHandler[] m_handlers;
-
-        private static string m_hostname = null;
-        private static int m_hostnameLength
+        
 
         public static NetDevice Device
         {
@@ -195,7 +193,7 @@ namespace Sharpen.Net
         /// <returns></returns>
         public static string GetHostName()
         {
-            return String.Clone("SHARPEN");
+            return String.Clone("SHARPEN");  
         }
     }
 }
