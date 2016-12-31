@@ -1,3 +1,4 @@
+#include <machine/endian.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/fcntl.h>
@@ -540,4 +541,40 @@ int ftruncate(int fd, off_t length)
     }
 
     return ret;
+}
+
+uint32_t ntohl(uint32_t x)
+{
+    #if BYTE_ORDER == LITTLE_ENDIAN
+        return __builtin_bswap32(x);
+    #else
+        return x;
+    #endif
+}
+
+uint32_t htonl(uint32_t x)
+{
+    #if BYTE_ORDER == LITTLE_ENDIAN
+        return __builtin_bswap32(x);
+    #else
+        return x;
+    #endif
+}
+
+uint16_t ntohs(uint16_t x)
+{
+    #if BYTE_ORDER == LITTLE_ENDIAN
+        return __builtin_bswap16(x);
+    #else
+        return x;
+    #endif
+}
+
+uint16_t htons(uint16_t x)
+{
+    #if BYTE_ORDER == LITTLE_ENDIAN
+        return __builtin_bswap16(x);
+    #else
+        return x;
+    #endif
 }
