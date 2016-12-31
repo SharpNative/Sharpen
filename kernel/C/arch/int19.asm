@@ -59,6 +59,12 @@ endstruc
 
 
 section .text
+
+	; --- modification
+	global Sharpen_Arch_V8086_Int_2uint8_t_struct_struct_Sharpen_Arch_V8086Regs__
+	Sharpen_Arch_V8086_Int_2uint8_t_struct_struct_Sharpen_Arch_V8086Regs__:
+	; --- modification
+
 	int32: use32                               ; by Napalm
 	_int32:
 		cli                                    ; disable interrupts

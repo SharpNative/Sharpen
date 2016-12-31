@@ -1,7 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-// Doesn't work because of an undefined reference, investigate...
-/*namespace Sharpen.Arch
+namespace Sharpen.Arch
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct V8086Regs
@@ -26,7 +25,11 @@
             Paging.Enable();
         }
 
+        /// <summary>
+        /// Do the actual BIOS interrupt internally
+        /// </summary>
+        /// <param name="intnum">Interrupt number</param>
+        /// <param name="regs">Register struct</param>
         private extern static void Int(byte intnum, V8086Regs *regs);
     }
 }
-*/
