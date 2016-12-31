@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Collections;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -7,6 +8,8 @@ namespace Sharpen.Task
     public class Tasking
     {
         private static bool taskingEnabled = false;
+
+        private static List sleepingTasks;
 
         private static Task taskToClone = null;
 
@@ -28,16 +31,17 @@ namespace Sharpen.Task
             // Critical code, disable interrupts
             CPU.CLI();
 
+            // Keeps track of which tasks need to wake up
+            sleepingTasks = new List();
+
             // Kernel task, the remaining data will be filled in when the first schedule happens
-            Task kernel = new Task();
+            // The Idle task has a low priority
+            Task kernel = new Task(TaskPriority.LOW);
             kernel.GID = 0;
             kernel.UID = 0;
             kernel.PageDir = Paging.KernelDirectory;
             kernel.Next = null;
             kernel.FPUContext = Heap.AlignedAlloc(16, 512);
-            kernel.Flags = Task.TaskFlags.NOFLAGS;
-            // The Idle task has a low priority
-            kernel.TimeFull = (int)TaskPriority.LOW;
 
             KernelTask = kernel;
             CurrentTask = kernel;
@@ -48,6 +52,15 @@ namespace Sharpen.Task
             ManualSchedule();
 
             Console.WriteLine("[Tasking] Initialized");
+        }
+
+        /// <summary>
+        /// Adds a task to the sleeping list
+        /// </summary>
+        /// <param name="task">The task</param>
+        public static void AddToSleepingList(Task task)
+        {
+            sleepingTasks.Add(task);
         }
 
         /// <summary>
@@ -108,7 +121,7 @@ namespace Sharpen.Task
             while (true)
                 ManualSchedule();
         }
-        
+
         /// <summary>
         /// Schedules a task
         /// </summary>
@@ -121,7 +134,7 @@ namespace Sharpen.Task
             {
                 current = current.Next;
             }
-            
+
             // Critical section, a task switch may not occur now
             CPU.CLI();
 
@@ -143,7 +156,7 @@ namespace Sharpen.Task
         public static unsafe Task CreateTask(void* eip, TaskPriority priority, int[] initialStack, int initialStackSize, SpawnFlags flags)
         {
             // Fill in data
-            Task newTask = new Task();
+            Task newTask = new Task(priority);
 
             if ((flags & SpawnFlags.SWAP_PID) == SpawnFlags.SWAP_PID)
             {
@@ -156,10 +169,7 @@ namespace Sharpen.Task
 
             newTask.GID = 0;
             newTask.UID = 0;
-            newTask.TimeFull = (int)priority;
-            newTask.TimeLeft = (int)priority;
-            newTask.Flags = Task.TaskFlags.NOFLAGS;
-            
+
             // Stack
             int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
             newTask.StackStart = (int*)((int)stacks + 4096);
@@ -178,10 +188,10 @@ namespace Sharpen.Task
 
             int cs = Task.USERSPACE_CS;
             int ds = Task.USERSPACE_DS;
-            if((flags & SpawnFlags.KERNEL_TASK) != SpawnFlags.KERNEL_TASK)
+            if ((flags & SpawnFlags.KERNEL_TASK) != SpawnFlags.KERNEL_TASK)
             {
                 // FS related stuff
-                newTask.FileDescriptors = CurrentTask.FileDescriptors.Clone();
+                newTask.SetFileDescriptors(CurrentTask.FileDescriptors.Clone());
                 newTask.CurrentDirectory = String.Clone(CurrentTask.CurrentDirectory);
             }
             else
@@ -227,12 +237,9 @@ namespace Sharpen.Task
         private static unsafe void cloneTask(Task sourceTask)
         {
             // Fill in data
-            Task newTask = new Task();
+            Task newTask = new Task(sourceTask.Priority);
             newTask.GID = sourceTask.GID;
             newTask.UID = sourceTask.UID;
-            newTask.TimeFull = sourceTask.TimeFull;
-            newTask.TimeLeft = sourceTask.TimeFull;
-            newTask.Flags = Task.TaskFlags.NOFLAGS;
 
             // Stack
             int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
@@ -246,12 +253,12 @@ namespace Sharpen.Task
 
             newTask.Stack = (int*)((int)newTask.StackStart + diffStack);
             newTask.KernelStack = (int*)((int)newTask.KernelStackStart + diffKernelStack);
-            
+
             // Program data space end
             newTask.DataEnd = sourceTask.DataEnd;
 
             // FS related stuff
-            newTask.FileDescriptors = sourceTask.FileDescriptors.Clone();
+            newTask.SetFileDescriptors(sourceTask.FileDescriptors.Clone());
             newTask.CurrentDirectory = String.Clone(sourceTask.CurrentDirectory);
 
             // FPU context
@@ -264,7 +271,7 @@ namespace Sharpen.Task
             // Schedule
             ScheduleTask(newTask);
         }
-        
+
         /// <summary>
         /// Finds the next task for the scheduler
         /// </summary>
@@ -272,16 +279,57 @@ namespace Sharpen.Task
         public static unsafe Task FindNextTask()
         {
             Task current = CurrentTask;
+            Task next = null;
 
-            current.TimeLeft--;
-            if (current.TimeLeft > 0)
-                return current;
+            // Check if there are tasks that need to wake up
+            int sleeping = sleepingTasks.Count;
+            if (sleeping > 0)
+            {
+                for (int i = sleeping - 1; i >= 0; i--)
+                {
+                    Task task = (Task)sleepingTasks.Item[i];
+                    if (!task.IsSleeping())
+                    {
+                        sleepingTasks.RemoveAt(i);
+                        next = task;
+                    }
+                }
+            }
 
-            current.TimeLeft = current.TimeFull;
+            // If a task has woke up, switch to that task
+            if (next != null)
+                return next;
 
-            Task next = CurrentTask.Next;
+            // Only keep going with this task if we're not sleeping
+            if (!current.IsSleeping())
+            {
+                // Decrease the time, if there is still time left, keep going with this task
+                current.TimeLeft--;
+                if (current.TimeLeft > 0)
+                    return current;
+
+                // Time is up, reset time to full time
+                current.TimeLeft = (int)current.Priority;
+            }
+
+            // Get the next task to switch to and if there is no next task, go to the kernel task
+            next = current.Next;
             if (next == null)
                 return KernelTask;
+
+            // Skip until a non-sleeping task has been found
+            while (next.IsSleeping())
+            {
+                // Get next task
+                next = next.Next;
+
+                // No next task? Go the the Kernel Idle task
+                if (next == null)
+                {
+                    next = KernelTask;
+                    break;
+                }
+            }
 
             return next;
         }
@@ -302,14 +350,14 @@ namespace Sharpen.Task
             oldTask.Stack = (int*)regsPtr;
             oldTask.KernelStack = (int*)GDT.TSS_Entry->ESP0;
             FPU.StoreContext(oldTask.FPUContext);
-            
+
             // Switch to next task
             Task current = FindNextTask();
             Paging.CurrentDirectory = current.PageDir;
             FPU.RestoreContext(current.FPUContext);
             GDT.TSS_Entry->ESP0 = (uint)current.KernelStack;
             CurrentTask = current;
-            
+
             // Cleanup old task
             if ((oldTask.Flags & Task.TaskFlags.DESCHEDULED) == Task.TaskFlags.DESCHEDULED)
             {

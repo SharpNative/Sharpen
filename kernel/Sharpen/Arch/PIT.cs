@@ -5,7 +5,7 @@
         /// <summary>
         /// Timer frequency in Hz
         /// </summary>
-        public static int Frequency
+        public static uint Frequency
         {
             get
             {
@@ -27,7 +27,7 @@
         }
 
         // In MHz
-        public const int PIT_OSCILLATOR = 1193182;
+        public const uint PIT_OSCILLATOR = 1193182;
 
         // PIT channel 0 data port
         // We use channel 0 because it is linked to IRQ 0
@@ -37,11 +37,11 @@
         public const ushort PIT_CMD = 0x43;
 
         // Frequency in Hz
-        private static int m_frequency;
+        private static uint m_frequency;
 
         // Timer ticks
-        public static int SubTicks { get; private set; } = 0;
-        public static int FullTicks { get; private set; } = 0;
+        public static uint SubTicks { get; private set; } = 0;
+        public static uint FullTicks { get; private set; } = 0;
 
         #region Helpers
 

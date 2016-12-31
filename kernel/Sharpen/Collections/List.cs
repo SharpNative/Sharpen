@@ -5,8 +5,8 @@ namespace Sharpen.Collections
 {
     public class List
     {
-        // Default capacity of 4
-        private int m_currentCap = 4;
+        private const int DEFAULT_CAP = 4;
+        private int m_currentCap = DEFAULT_CAP;
 
         // Array of items
         public object[] Item { get; private set; }
@@ -79,10 +79,10 @@ namespace Sharpen.Collections
             int destination = (int)Util.ObjectToVoidPtr(Item) + (index * sizeof(void*));
             int source = (int)Util.ObjectToVoidPtr(Item) + ((index + 1) * sizeof(void*));
             Memory.Memcpy((void*)destination, (void*)source, (Count - index - 1) * sizeof(void*));
-
+            
             // Decrease capacity if the list has enough free space
             Count--;
-            if (Count * 2 < Capacity)
+            if (Count * DEFAULT_CAP < Capacity && Capacity > DEFAULT_CAP)
                 Capacity /= 2;
         }
 

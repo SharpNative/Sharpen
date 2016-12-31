@@ -104,6 +104,9 @@ SYS0(yield,         22);
 SYS2(getcwd,        23, char*, size_t);
 SYS1(chdir,         24, const char*);
 SYS1(times,         25, struct tms*);
+SYS2(sleep,         26, uint32_t, uint32_t);
+SYS2(truncate,      27, const char*, off_t);
+SYS2(ftruncate,     28, int, off_t)
 
 // =================================== //
 // --- Implementations of methods  --- //
@@ -422,13 +425,13 @@ int pclose(FILE* stream)
 
 void flockfile(FILE* filehandle)
 {
-    UNIMPLEMENTED;
+    //UNIMPLEMENTED;
     return;
 }
 
 void funlockfile(FILE* filehandle)
 {
-    UNIMPLEMENTED;
+    //UNIMPLEMENTED;
     return;
 }
 
@@ -489,4 +492,52 @@ char* getcwd(char* buf, size_t size)
 char* get_current_dir_name(void)
 {
     return getcwd(NULL, 0);
+}
+
+unsigned int sleep(unsigned int seconds)
+{
+    int ret = sys_sleep(seconds, 0);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return (unsigned int)ret;
+}
+
+int usleep(useconds_t usec)
+{
+    int ret = sys_sleep(0, usec);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return (unsigned int)ret;
+}
+
+int truncate(const char* path, off_t length)
+{
+    int ret = sys_truncate(path, length);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return ret;
+}
+
+int ftruncate(int fd, off_t length)
+{
+    int ret = sys_ftruncate(fd, length);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return ret;
 }

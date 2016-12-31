@@ -136,6 +136,18 @@ namespace Sharpen.Arch
                     ret = Syscalls.ChDir(Util.CharPtrToString((char*)regsPtr->EBX));
                     break;
 
+                case Syscalls.SYS_SLEEP:
+                    ret = Syscalls.Sleep((uint)regsPtr->EBX, (uint)regsPtr->ECX);
+                    break;
+
+                case Syscalls.SYS_TRUNCATE:
+                    ret = Syscalls.Truncate(Util.CharPtrToString((char*)regsPtr->EBX), (uint)regsPtr->ECX);
+                    break;
+
+                case Syscalls.SYS_FTRUNCATE:
+                    ret = Syscalls.FTruncate(regsPtr->EBX, (uint)regsPtr->ECX);
+                    break;
+
                 default:
                     Console.Write("Unhandled syscall ");
                     Console.WriteNum(function);

@@ -20,10 +20,10 @@
         public const byte CMOS_STATUS_B = 0x0B;
 
         // RTC flags in CMOS status
-        public const int CMOS_RTC_UPDATING = (1 << 7); // Bit 7 in status register A is set when RTC update is happening
-        public const int CMOS_RTC_24H = (1 << 1);      // Bit 1 in status register B is set for 24h mode
-        public const int CMOS_RTC_BIN_MODE = (1 << 2); // Bit 2 in status register B is set for binary mode
-        public const int CMOS_RTC_HOURS_PM = (1 << 7); // Bit 7 is set on read hours value if it's in pm
+        public const uint CMOS_RTC_UPDATING = (1 << 7); // Bit 7 in status register A is set when RTC update is happening
+        public const uint CMOS_RTC_24H = (1 << 1);      // Bit 1 in status register B is set for 24h mode
+        public const uint CMOS_RTC_BIN_MODE = (1 << 2); // Bit 2 in status register B is set for binary mode
+        public const uint CMOS_RTC_HOURS_PM = (1 << 7); // Bit 7 is set on read hours value if it's in pm
 
         /// <summary>
         /// Gets data from a CMOS register
@@ -41,7 +41,7 @@
         /// </summary>
         /// <param name="x">The input value in BCD format</param>
         /// <returns>The output number in BIN format</returns>
-        public static int BCD_TO_BIN(int x)
+        public static uint BCDToBin(uint x)
         {
             return (((x >> 4) * 10) + (x & 0x0F));
         }
@@ -62,7 +62,7 @@
             // if not, we keep reading until that's the case
 
             // The old values
-            int oldSeconds, oldMinutes, oldHours, oldDay, oldMonth, oldYear;
+            uint oldSeconds, oldMinutes, oldHours, oldDay, oldMonth, oldYear;
             
             // First, wait until the CMOS is not updating
             while ((GetData(CMOS_STATUS_A) & CMOS_RTC_UPDATING) > 0) ;
@@ -103,12 +103,12 @@
                 // Convert seconds, minutes and hours if required
                 if (!isBin)
                 {
-                    Time.Seconds = BCD_TO_BIN(Time.Seconds);
-                    Time.Minutes = BCD_TO_BIN(Time.Minutes);
-                    Time.Hours = BCD_TO_BIN(Time.Hours);
-                    Time.Day = BCD_TO_BIN(Time.Day);
-                    Time.Month = BCD_TO_BIN(Time.Month);
-                    Time.Year = BCD_TO_BIN(Time.Year);
+                    Time.Seconds = BCDToBin(Time.Seconds);
+                    Time.Minutes = BCDToBin(Time.Minutes);
+                    Time.Hours = BCDToBin(Time.Hours);
+                    Time.Day = BCDToBin(Time.Day);
+                    Time.Month = BCDToBin(Time.Month);
+                    Time.Year = BCDToBin(Time.Year);
                 }
 
                 // Add century to year

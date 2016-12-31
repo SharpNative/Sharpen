@@ -37,15 +37,21 @@ namespace Sharpen.Exec
         public const int SYS_GETCWD = 23;
         public const int SYS_CHDIR = 24;
         public const int SYS_TIMES = 25;
+        public const int SYS_SLEEP = 26;
+        public const int SYS_TRUNCATE = 27;
+        public const int SYS_FTRUNCATE = 28;
 
         // Highest syscall number
-        public const int SYSCALL_MAX = 25;
+        public const int SYSCALL_MAX = 28;
 
         #endregion
 
+        #region Constants
+
         private const int WNOHANG = 1;
         private const int O_NONBLOCK = 0x4000;
-        private const int CLOCKS_PER_SEC = 1000;
+
+        #endregion
 
         /// <summary>
         /// Exit syscall
@@ -114,7 +120,7 @@ namespace Sharpen.Exec
             Node node = descriptors.GetNode(descriptor);
             if (node == null)
                 return -(int)ErrorCode.EBADF;
-            
+
             uint offset = descriptors.GetOffset(descriptor);
             descriptors.SetOffset(descriptor, offset + size);
 
@@ -167,7 +173,7 @@ namespace Sharpen.Exec
         {
             if (Tasking.CurrentTask.CurrentDirectory != null && !VFS.IsAbsolutePath(path))
                 path = String.Merge(Tasking.CurrentTask.CurrentDirectory, path);
-            
+
             path = VFS.ResolvePath(path);
             Node node = VFS.GetByPath(path);
             if (node == null)
@@ -354,7 +360,7 @@ namespace Sharpen.Exec
             DirEntry* gotEntry = VFS.ReadDir(node, index);
             if (gotEntry == null)
                 return -(int)ErrorCode.ENOENT;
-            
+
             Memory.Memcpy(entry, gotEntry, sizeof(DirEntry));
             Heap.Free(gotEntry);
             return 0;
@@ -393,8 +399,8 @@ namespace Sharpen.Exec
         /// <returns>The errorcode</returns>
         public static unsafe int GetTimeOfDay(Time.Timeval* tv)
         {
-            tv->tv_sec = (ulong)PIT.FullTicks;
-            tv->tv_usec = (ulong)(PIT.SubTicks * 1000000 / PIT.Frequency);
+            tv->tv_sec = PIT.FullTicks;
+            tv->tv_usec = (PIT.SubTicks * 1000000 / PIT.Frequency);
             return 0;
         }
 
@@ -451,7 +457,6 @@ namespace Sharpen.Exec
             // Check if it's a directory and if it exists
             Node node = VFS.GetByPath(newDir);
 
-
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
 
@@ -481,6 +486,60 @@ namespace Sharpen.Exec
                 Memory.Memcpy(destination, ptr, size);
                 destination[size] = '\0';
             }
+            return 0;
+        }
+
+        /// <summary>
+        /// Sleeps some time
+        /// </summary>
+        /// <param name="seconds">Whole seconds</param>
+        /// <param name="usec">Microseconds</param>
+        /// <returns>The amount of time the task still needs to sleep</returns>
+        public static int Sleep(uint seconds, uint usec)
+        {
+            // 1,000,000 usec = 1 second
+            // 1,000,000 usec = PIT.Frequency subticks
+            
+            uint fullTicks = PIT.FullTicks + seconds;
+            uint subTicks = PIT.SubTicks + (PIT.Frequency * usec / 1000000);
+            fullTicks += subTicks / PIT.Frequency;
+            subTicks %= PIT.Frequency;
+
+            // Update task as paused task
+            return (int)Tasking.CurrentTask.SleepUntil(fullTicks, subTicks);
+        }
+
+        /// <summary>
+        /// Truncates a file by path
+        /// </summary>
+        /// <param name="path">The path of the file to truncate</param>
+        /// <param name="length">The length to truncate to</param>
+        /// <returns>Errorcode</returns>
+        public static int Truncate(string path, uint length)
+        {
+            Node node = VFS.GetByPath(path);
+            if (node == null)
+                return -(int)ErrorCode.ENOENT;
+
+            VFS.Truncate(node, length);
+            return 0;
+        }
+
+        /// <summary>
+        /// Truncates a file by a file descriptor
+        /// </summary>
+        /// <param name="descriptor">The file descriptor</param>
+        /// <param name="length">The length to truncate to</param>
+        /// <returns>Errorcode</returns>
+        public static int FTruncate(int descriptor, uint length)
+        {
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+
+            Node node = descriptors.GetNode(descriptor);
+            if (node == null)
+                return -(int)ErrorCode.EBADF;
+
+            VFS.Truncate(node, length);
             return 0;
         }
     }

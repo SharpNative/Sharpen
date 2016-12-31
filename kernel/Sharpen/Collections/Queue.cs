@@ -1,10 +1,5 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Mem;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Collections
 {
@@ -39,10 +34,6 @@ namespace Sharpen.Collections
 
         public void Push(void *value)
         {
-            Console.Write("VAL: ");
-            Console.WriteHex((long)value);
-            Console.WriteLine("");
-            
             if (m_length == 0)
                 m_last = null;
 
@@ -55,11 +46,6 @@ namespace Sharpen.Collections
             m_length++;
             if (m_next == null)
                 m_next = m_last;
-
-            Console.Write("");
-            Console.WriteHex((long)m_next);
-            Console.WriteLine("");
-
         }
 
         public unsafe void *Pop()
@@ -78,13 +64,7 @@ namespace Sharpen.Collections
             void* ret = node->Value;
             
             Heap.Free(node);
-
-            Console.Write("NEXT: ");
-            Console.WriteHex((long)node);
-            Console.Write(":");
-            Console.WriteHex((int)m_next);
-            Console.WriteLine("");
-
+            
             m_length--;
 
             CPU.STI();

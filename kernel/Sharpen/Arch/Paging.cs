@@ -1,14 +1,12 @@
 ﻿using Sharpen.Collections;
 using Sharpen.Mem;
-using Sharpen.Utilities;
 
 namespace Sharpen.Arch
 {
     public sealed class Paging
     {
         // TODO: (VERIFY THIS) set temp address to used in frames
-        // TODO: use one big block of memory in the page cloning routine for extra speed and security
-
+        
         // Last page entry in last table
         // TODO: update this, the real value we want doesn't work because of overflowing numbers, great!
         private const uint TEMP_MAP_ADDRESS = 0x7FFFF000;//0xFFFFF000;
