@@ -32,7 +32,12 @@ namespace Sharpen.Net
             
             int port = Int.Parse(portText);
             if (port == -1)
+            {
+                Heap.Free((void*)Util.ObjectToVoidPtr(portText));
+                Heap.Free((void*)Util.ObjectToVoidPtr(ip));
+
                 return null;
+            }
 
             UDPSocket sock = new UDPSocket();
             bool found = sock.Connect(ip, (ushort)port);
@@ -58,8 +63,8 @@ namespace Sharpen.Net
             node.GetSize = getSize;
             node.Close = close;
 
-            //Heap.Free((void *)Util.ObjectToVoidPtr(portText));
-            //Heap.Free((void*)Util.ObjectToVoidPtr(ip));
+            Heap.Free((void *)Util.ObjectToVoidPtr(portText));
+            Heap.Free((void*)Util.ObjectToVoidPtr(ip));
 
             return node;
         }

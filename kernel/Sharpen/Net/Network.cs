@@ -185,5 +185,9 @@ namespace Sharpen.Net
 
         }
 
+        public static string GetHostName()
+        {
+            return "Sharpen";
+        }
     }
 }

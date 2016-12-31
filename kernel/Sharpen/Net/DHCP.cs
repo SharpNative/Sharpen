@@ -255,10 +255,12 @@ namespace Sharpen.Net
             *buf++ = OPT_HOSTNAME;
             *buf++ = 8;
 
-            string hostname = "Sharpen";
+            string hostname = Network.GetHostName();
 
             for (int i = 0; i < 8; i++)
                 *buf++ = (byte)hostname[i];
+
+            Heap.Free(Util.ObjectToVoidPtr(hostname));
 
             packet->end += 10;
 
