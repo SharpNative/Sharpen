@@ -251,13 +251,17 @@ namespace Sharpen.Net
 
             packet->end += 6;
 
+            string hostname = Network.GetHostName();
+            int hostnameLength = Utilities.String.Length(hostname);
+            if (hostnameLength > 0xFF)
+                hostnameLength = 0xFF;
+
             buf = (byte*)(packet->buffer + packet->end);
             *buf++ = OPT_HOSTNAME;
-            *buf++ = 8;
+            *buf++ = (byte)(hostnameLength & 0xFF);
 
-            string hostname = Network.GetHostName();
 
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < hostnameLength; i++)
                 *buf++ = (byte)hostname[i];
 
             Heap.Free(Util.ObjectToVoidPtr(hostname));
