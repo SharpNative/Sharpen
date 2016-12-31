@@ -37,6 +37,7 @@ namespace Sharpen.Drivers.Char
             dev.node.Flags = NodeFlags.FILE;
             dev.node.Write = writeImpl;
             dev.node.Read = readImpl;
+            dev.node.GetSize = getSizeImpl;
 
             DevFS.RegisterDevice(dev);
         }
@@ -63,6 +64,20 @@ namespace Sharpen.Drivers.Char
             }
 
             return i;
+        }
+
+
+        /// <summary>
+        /// Gets the size of the available data
+        /// </summary>
+        /// <param name="node">The pipe node</param>
+        /// <returns>The size</returns>
+        private static uint getSizeImpl(Node node)
+        {
+            if (comports[node.Cookie].Buffer == null)
+                return 0;
+
+            return comports[node.Cookie].Buffer.AvailableBytes;
         }
 
         /// <summary>
@@ -177,6 +192,9 @@ namespace Sharpen.Drivers.Char
             while (hasReceived(port.Address))
                 port.Buffer.WriteByte(read(port.Address));
         }
+
+
+
 
         /// <summary>
         /// Initialize serialport

@@ -47,7 +47,6 @@ namespace Sharpen.Net
             return null;
         }
 
-
         /// <summary>
         /// Read method for filesystem
         /// </summary>
@@ -114,6 +113,7 @@ namespace Sharpen.Net
             Node node = new Node();
             node.Cookie = id;
             node.Read = readImpl;
+            node.Size = 4;
 
             return node;
         }

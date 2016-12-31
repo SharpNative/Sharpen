@@ -31,6 +31,8 @@ namespace Sharpen.Net
             string portText = String.SubString(name, foundIndex + 1, String.Length(name) - foundIndex - 1);
             
             int port = Int.Parse(portText);
+            if (port == -1)
+                return null;
 
             UDPSocket sock = new UDPSocket();
             bool found = sock.Connect(ip, (ushort)port);
