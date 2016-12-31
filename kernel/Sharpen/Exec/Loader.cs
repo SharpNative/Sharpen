@@ -22,7 +22,7 @@ namespace Sharpen.Exec
                 return -(int)ErrorCode.ENOENT;
 
             // Open and create buffer
-            VFS.Open(node, FileMode.O_RDONLY);
+            VFS.Open(node, (int)FileMode.O_RDONLY);
             byte[] buffer = new byte[node.Size];
             if (buffer == null)
             {

@@ -31,13 +31,6 @@ namespace Sharpen.Arch
             //    Console.WriteLine("");
             //}
 
-            /*if (function != 0x0D && function != 0x09 && function != 0x16)
-            {
-                Console.Write("syscall func: ");
-                Console.WriteNum(function);
-                Console.WriteLine("");
-            }*/
-
             Tasking.CurrentTask.SysRegs = regsPtr;
 
             int ret = 0;

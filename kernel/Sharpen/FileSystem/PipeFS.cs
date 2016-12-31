@@ -41,8 +41,8 @@ namespace Sharpen.FileSystem
             writeEnd.Write = writeImpl;
 
             // Should be already opened before entering the program again
-            VFS.Open(readEnd, FileMode.O_RDONLY);
-            VFS.Open(writeEnd, FileMode.O_WRONLY);
+            VFS.Open(readEnd, (int)FileMode.O_RDONLY);
+            VFS.Open(writeEnd, (int)FileMode.O_WRONLY);
 
             nodes[0] = readEnd;
             nodes[1] = writeEnd;

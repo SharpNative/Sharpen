@@ -6,10 +6,9 @@ namespace Sharpen.Task
 {
     public class Tasking
     {
-        
-        private static bool m_taskingEnabled = false;
+        private static bool taskingEnabled = false;
 
-        private static Task m_taskToClone = null;
+        private static Task taskToClone = null;
 
         public static Task KernelTask { get; private set; }
         public static Task CurrentTask { get; private set; }
@@ -44,7 +43,7 @@ namespace Sharpen.Task
             CurrentTask = kernel;
 
             // Schedule, we are now multitasking
-            m_taskingEnabled = true;
+            taskingEnabled = true;
             CPU.STI();
             ManualSchedule();
 
@@ -182,10 +181,7 @@ namespace Sharpen.Task
             if((flags & SpawnFlags.KERNEL_TASK) != SpawnFlags.KERNEL_TASK)
             {
                 // FS related stuff
-                if (CurrentTask.FileDescriptors == null)
-                    newTask.FileDescriptors = new FileDescriptors();
-                else
-                    newTask.FileDescriptors = CurrentTask.FileDescriptors.Clone();
+                newTask.FileDescriptors = CurrentTask.FileDescriptors.Clone();
                 newTask.CurrentDirectory = String.Clone(CurrentTask.CurrentDirectory);
             }
             else
@@ -217,7 +213,7 @@ namespace Sharpen.Task
         public static int Fork()
         {
             int pid = CurrentTask.PID;
-            m_taskToClone = CurrentTask;
+            taskToClone = CurrentTask;
             CPU.STI();
             CPU.HLT();
             CPU.CLI();
@@ -255,14 +251,7 @@ namespace Sharpen.Task
             newTask.DataEnd = sourceTask.DataEnd;
 
             // FS related stuff
-            if(sourceTask.FileDescriptors == null)
-            {
-                newTask.FileDescriptors = new FileDescriptors();
-            }
-            else
-            {
-                newTask.FileDescriptors = sourceTask.FileDescriptors.Clone();
-            }
+            newTask.FileDescriptors = sourceTask.FileDescriptors.Clone();
             newTask.CurrentDirectory = String.Clone(sourceTask.CurrentDirectory);
 
             // FPU context
@@ -305,7 +294,7 @@ namespace Sharpen.Task
         private static unsafe Regs* scheduler(Regs* regsPtr)
         {
             // Only do this if tasking is enabled
-            if (!m_taskingEnabled)
+            if (!taskingEnabled)
                 return regsPtr;
 
             // Store old context
@@ -313,18 +302,14 @@ namespace Sharpen.Task
             oldTask.Stack = (int*)regsPtr;
             oldTask.KernelStack = (int*)GDT.TSS_Entry->ESP0;
             FPU.StoreContext(oldTask.FPUContext);
-
             
-
             // Switch to next task
             Task current = FindNextTask();
             Paging.CurrentDirectory = current.PageDir;
             FPU.RestoreContext(current.FPUContext);
             GDT.TSS_Entry->ESP0 = (uint)current.KernelStack;
             CurrentTask = current;
-
             
-
             // Cleanup old task
             if ((oldTask.Flags & Task.TaskFlags.DESCHEDULED) == Task.TaskFlags.DESCHEDULED)
             {
@@ -333,10 +318,10 @@ namespace Sharpen.Task
 
             // Context is stored, now we can manipulate it
             // such as forking etc
-            if (m_taskToClone != null)
+            if (taskToClone != null)
             {
-                Task toClone = m_taskToClone;
-                m_taskToClone = null;
+                Task toClone = taskToClone;
+                taskToClone = null;
                 cloneTask(toClone);
             }
 

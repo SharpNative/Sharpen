@@ -11,7 +11,7 @@ namespace Shell
         /// <summary>
         /// Try find program in C://exec and run it
         /// </summary>
-        /// <param name="name">The program nama</param>
+        /// <param name="name">The program name</param>
         /// <param name="argv">Arguments</param>
         /// <param name="argc">Argument length</param>
         /// <returns></returns>

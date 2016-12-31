@@ -266,10 +266,11 @@ namespace Sharpen.FileSystem
         /// Opens a node
         /// </summary>
         /// <param name="node">The node</param>
-        /// <param name="fileMode">The filemode (read/write/readwrite)</param>
-        public static void Open(Node node, FileMode fileMode)
+        /// <param name="flags">The flags</param>
+        public static void Open(Node node, int flags)
         {
-            node.FileMode = fileMode;
+            node.FileMode = (FileMode)(flags & 0x3);
+            node.OpenFlags = flags;
 
             if (node.Open == null)
                 return;

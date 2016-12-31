@@ -7,6 +7,11 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#define abort(s) perror(s)
+
+/* Error messages */
+const static char* __ERROR_NULL_CALLED__ = "The program tried to call a method of an object that is null";
+
 char* get_current_dir_name(void);
 
 #define true (1)

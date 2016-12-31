@@ -44,6 +44,7 @@ namespace Sharpen.Exec
         #endregion
 
         private const int WNOHANG = 1;
+        private const int O_NONBLOCK = 0x4000;
         private const int CLOCKS_PER_SEC = 1000;
 
         /// <summary>
@@ -135,6 +136,21 @@ namespace Sharpen.Exec
             if (node == null)
                 return -(int)ErrorCode.EBADF;
 
+            bool isNonBlocking = ((node.OpenFlags & O_NONBLOCK) == O_NONBLOCK);
+
+            // Wait until data is available if its blocking
+            if (!isNonBlocking)
+            {
+                while (VFS.GetSize(node) == 0)
+                    Tasking.ManualSchedule();
+            }
+            // Non-blocking but no data available?
+            else
+            {
+                if (VFS.GetSize(node) == 0)
+                    return -(int)ErrorCode.EAGAIN;
+            }
+
             uint offset = descriptors.GetOffset(descriptor);
             descriptors.SetOffset(descriptor, offset + size);
 
@@ -157,7 +173,7 @@ namespace Sharpen.Exec
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
 
-            VFS.Open(node, (FileMode)flags);
+            VFS.Open(node, flags);
 
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
             return descriptors.AddNode(node);

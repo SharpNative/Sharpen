@@ -7,6 +7,7 @@
         public uint Cookie2;
         public uint Cookie3;
         public FileMode FileMode;
+        public int OpenFlags;
         public NodeFlags Flags;
 
         public FSRead Read;
