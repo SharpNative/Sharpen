@@ -2,6 +2,7 @@
 
 using Sharpen.Arch;
 using Sharpen.Collections;
+using Sharpen.FileSystem;
 using Sharpen.Mem;
 using Sharpen.Task;
 using Sharpen.Utilities;
@@ -51,6 +52,9 @@ namespace Sharpen.Net
         public static NetworkSettings *Settings { get; private set; }
 
         private static PackerHandler[] m_handlers;
+
+        private static string m_hostname = null;
+        private static int m_hostnameLength
 
         public static NetDevice Device
         {
@@ -185,9 +189,13 @@ namespace Sharpen.Net
 
         }
 
+        /// <summary>
+        /// Get hostname
+        /// </summary>
+        /// <returns></returns>
         public static string GetHostName()
         {
-            return "Sharpen";
+            return String.Clone("SHARPEN");
         }
     }
 }
