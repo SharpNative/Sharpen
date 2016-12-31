@@ -57,13 +57,13 @@ namespace Sharpen.Net
 
             // Generate stub header
             TCPHeader* header = (TCPHeader*)(packet->buffer + packet->start);
-            header->SourcePort = ByteUtil.ReverseBytes(srcPort);
-            header->DestPort = ByteUtil.ReverseBytes(dstPort);
+            header->SourcePort = Utilities.Byte.ReverseBytes(srcPort);
+            header->DestPort = Utilities.Byte.ReverseBytes(dstPort);
             header->Flags = flags;
             header->Urgent = 0;
-            header->WindowSize = ByteUtil.ReverseBytes(winSize);
-            header->Acknowledge = ByteUtil.ReverseBytes(ackNum);
-            header->Sequence = ByteUtil.ReverseBytes(seqNum);
+            header->WindowSize = Utilities.Byte.ReverseBytes(winSize);
+            header->Acknowledge = Utilities.Byte.ReverseBytes(ackNum);
+            header->Sequence = Utilities.Byte.ReverseBytes(seqNum);
             header->Checksum = 0;
 
             return header;
@@ -91,7 +91,7 @@ namespace Sharpen.Net
 
             checksumHeader->Protocol = PROTOCOL_TCP;
             checksumHeader->Reserved = 0;
-            checksumHeader->Length = ByteUtil.ReverseBytes((ushort)packetLength);
+            checksumHeader->Length = Utilities.Byte.ReverseBytes((ushort)packetLength);
 
             byte* ptr = (byte*)(packet->buffer + packet->start - sizeof(TCPChecksum));
 
@@ -133,8 +133,8 @@ namespace Sharpen.Net
         {
             TCPHeader* header = (TCPHeader*)buffer;
 
-            ushort source = ByteUtil.ReverseBytes(header->SourcePort);
-            ushort dest = ByteUtil.ReverseBytes(header->DestPort);
+            ushort source = Utilities.Byte.ReverseBytes(header->SourcePort);
+            ushort dest = Utilities.Byte.ReverseBytes(header->DestPort);
             
             int length = (header->Length >> 4) * 8;
 
@@ -142,7 +142,7 @@ namespace Sharpen.Net
             Memory.Memcpy(data, buffer + 20, length - 20);
 
 
-            SendPacket(sourceIp, ByteUtil.ReverseBytes(header->Sequence) + 1, dest, source, FLAG_ACK | FLAG_SYN, data, length);
+            SendPacket(sourceIp, Utilities.Byte.ReverseBytes(header->Sequence) + 1, dest, source, FLAG_ACK | FLAG_SYN, data, length);
         }
     }
 }

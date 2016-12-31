@@ -104,7 +104,7 @@ namespace Sharpen.Drivers.Other
                     if (size < 4)
                         return 0;
 
-                    int state = ByteUtil.ToInt(buffer);
+                    int state = Byte.ToInt(buffer);
                     VboxDevPowerState stateConverted = (VboxDevPowerState)state;
 
                     VboxDev.ChangePowerState(stateConverted);
@@ -135,7 +135,7 @@ namespace Sharpen.Drivers.Other
 
                     ulong sessionID = VboxDev.GetSessionID();
 
-                    ByteUtil.ToBytes((long)sessionID, buffer);
+                    Byte.ToBytes((long)sessionID, buffer);
 
                     return 8;
 
@@ -145,7 +145,7 @@ namespace Sharpen.Drivers.Other
 
                     ulong time = VboxDev.GetHostTime();
 
-                    ByteUtil.ToBytes((long)time, buffer);
+                    Byte.ToBytes((long)time, buffer);
 
                     return 8;
             }

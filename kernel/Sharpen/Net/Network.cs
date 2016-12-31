@@ -183,7 +183,7 @@ namespace Sharpen.Net
 
             EthernetHeader* header = (EthernetHeader*)bufPtr;
             
-            ushort proto = ByteUtil.ReverseBytes(header->Protocol);
+            ushort proto = Byte.ReverseBytes(header->Protocol);
             
             m_handlers[proto]?.Invoke(Util.PtrToArray(header->Source), bufPtr + sizeof(EthernetHeader), (uint)size);
 

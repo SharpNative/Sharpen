@@ -103,7 +103,7 @@
     <Compile Include="Arch\PIT.cs" />
     <Compile Include="Arch\Regs.cs" />
     <Compile Include="Arch\Syscall.cs" />
-    <Compile Include="Utilities\ByteUtil.cs" />
+    <Compile Include="Utilities\Byte.cs" />
     <Compile Include="Drivers\Other\VboxDev.cs" />
     <Compile Include="Drivers\Other\VboxDevExtras.cs" />
     <Compile Include="Drivers\Other\VboxDevFSDriver.cs" />

@@ -78,7 +78,7 @@ namespace Sharpen.Net
             header->HardwareType = HARDTYPE_ETH; // Ethernet
             header->HardwareAddressLength = 6; // IPV4
             header->Hops = 0;
-            header->TransactionID = ByteUtil.ReverseBytes(xid);
+            header->TransactionID = Utilities.Byte.ReverseBytes(xid);
             header->SecondsElapsed = 0; // NULLLLL
             header->BootpFlags = 0; // NONNNN
 
@@ -99,7 +99,7 @@ namespace Sharpen.Net
             byte* opt = (byte*)(packet->buffer + packet->end);
 
             uint* topt = (uint*)opt;
-            *topt = ByteUtil.ReverseBytes(MAGISCH_KOEKJE); // 4 bytes!;
+            *topt = Utilities.Byte.ReverseBytes(MAGISCH_KOEKJE); // 4 bytes!;
             opt += 4; // Another FOUR!
 
             // Set message type
@@ -122,11 +122,11 @@ namespace Sharpen.Net
             Console.Write(", hops = ");
             Console.WriteHex(header->Hops);
             Console.Write(", xid = ");
-            Console.WriteHex(ByteUtil.ReverseBytes(header->TransactionID));
+            Console.WriteHex(Utilities.Byte.ReverseBytes(header->TransactionID));
             Console.Write(", secs = ");
-            Console.WriteNum(ByteUtil.ReverseBytes(header->SecondsElapsed));
+            Console.WriteNum(Utilities.Byte.ReverseBytes(header->SecondsElapsed));
             Console.Write(", flags = ");
-            Console.WriteHex(ByteUtil.ReverseBytes(header->BootpFlags));
+            Console.WriteHex(Utilities.Byte.ReverseBytes(header->BootpFlags));
 
             Console.WriteLine("");
 
@@ -241,7 +241,7 @@ namespace Sharpen.Net
             DHCPBootstrapHeader* header = (DHCPBootstrapHeader*)buffer;
             NetPacketDesc* packet = NetPacket.Alloc();
 
-            addHeader(packet, ByteUtil.ReverseBytes(header->TransactionID), new byte[4], DHCP_REQUEST);
+            addHeader(packet, Utilities.Byte.ReverseBytes(header->TransactionID), new byte[4], DHCP_REQUEST);
             
             byte* buf = (byte*)(packet->buffer + packet->end);
             *buf++ = OPT_REQ_IP;
@@ -319,7 +319,7 @@ namespace Sharpen.Net
             for (int i = 0; i < 4; i++)
                 src[i] = 0x00;
 
-            uint xid = 0x6666;
+            uint xid = (uint)Lib.Random.Rand();
 
             NetPacketDesc* packet = NetPacket.Alloc();
 

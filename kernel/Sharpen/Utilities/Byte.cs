@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Utilities
 {
-    class ByteUtil
+    class Byte
     {
         /// <summary>
         /// Converts an int to a byte array

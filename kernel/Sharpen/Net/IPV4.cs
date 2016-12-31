@@ -64,7 +64,7 @@ namespace Sharpen.Net
                 ARP.FindOrAdd(ip, mac);
             }
 
-            ushort sz = (ushort)(ByteUtil.ReverseBytes(header->totalLength) - 20);
+            ushort sz = (ushort)(Utilities.Byte.ReverseBytes(header->totalLength) - 20);
             
             m_handlers[proto]?.Invoke(ip, buffer + sizeof(IPV4Header), sz);
         }
@@ -99,8 +99,8 @@ namespace Sharpen.Net
 
             header->Version = (4 << 4) | 5;
             header->ServicesField = 0;
-            header->totalLength = ByteUtil.ReverseBytes((ushort)(packet->end - packet->start));
-            header->ID = ByteUtil.ReverseBytes(0xa836); // TODO: FIX THIS!
+            header->totalLength = Utilities.Byte.ReverseBytes((ushort)(packet->end - packet->start));
+            header->ID = Utilities.Byte.ReverseBytes(0xa836); // TODO: FIX THIS!
             header->FragmentOffset = 0;
             header->TTL = 250;
             header->Protocol = protocol;

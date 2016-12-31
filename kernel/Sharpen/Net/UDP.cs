@@ -143,9 +143,9 @@ namespace Sharpen.Net
 
             UDPHeader* header = (UDPHeader*)buffer;
 
-            ushort destPort = (ushort)ByteUtil.ReverseBytes(header->DestinationPort);
-            ushort sourcePort = (ushort)ByteUtil.ReverseBytes(header->SourcePort);
-            
+            ushort destPort = (ushort)Utilities.Byte.ReverseBytes(header->DestinationPort);
+            ushort sourcePort = (ushort)Utilities.Byte.ReverseBytes(header->SourcePort);
+
 #if UDP_DEBUG_PACKETS
 
             Console.Write("[UDP] Receive from ");
@@ -155,7 +155,7 @@ namespace Sharpen.Net
             Console.WriteLine("");
 #endif
 
-            m_handlers[destPort]?.Invoke(sourceIp, sourcePort, destPort, buffer + sizeof(UDPHeader), (uint)(ByteUtil.ReverseBytes(header->Length) - 8));
+            m_handlers[destPort]?.Invoke(sourceIp, sourcePort, destPort, buffer + sizeof(UDPHeader), (uint)(Utilities.Byte.ReverseBytes(header->Length) - 8));
         }
         
         /// <summary>
@@ -173,9 +173,9 @@ namespace Sharpen.Net
             UDPHeader* header = (UDPHeader*)(packet->buffer + packet->start);
 
 
-            header->SourcePort = ByteUtil.ReverseBytes(sourcePort);
-            header->DestinationPort = ByteUtil.ReverseBytes(DestinationPort);
-            header->Length = ByteUtil.ReverseBytes((ushort)(packet->end - packet->start));
+            header->SourcePort = Utilities.Byte.ReverseBytes(sourcePort);
+            header->DestinationPort = Utilities.Byte.ReverseBytes(DestinationPort);
+            header->Length = Utilities.Byte.ReverseBytes((ushort)(packet->end - packet->start));
 
             header->Checksum = 0;
 

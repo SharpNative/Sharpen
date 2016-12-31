@@ -8,6 +8,7 @@ using Sharpen.Drivers.Power;
 using Sharpen.Drivers.Sound;
 using Sharpen.Exec;
 using Sharpen.FileSystem;
+using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.Task;
@@ -93,6 +94,7 @@ namespace Sharpen
             Heap.InitRealHeap();
             
             PIT.Init();
+            Random.Init();
             VFS.Init();
             DevFS.Init();
             NullFS.Init();

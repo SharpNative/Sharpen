@@ -72,13 +72,13 @@ namespace Sharpen.Net
             NetPacketDesc* packet = NetPacket.Alloc();
 
             ARPHeader *hdr = (ARPHeader *)(packet->buffer + packet->end);
-            hdr->HardwareType = ByteUtil.ReverseBytes(0x01);
-            hdr->ProtocolType = ByteUtil.ReverseBytes(0x800);
+            hdr->HardwareType = Utilities.Byte.ReverseBytes(0x01);
+            hdr->ProtocolType = Utilities.Byte.ReverseBytes(0x800);
 
             hdr->HardwareAdrLength = 6;
             hdr->ProtocolAdrLength = 4;
             
-            hdr->Opcode = ByteUtil.ReverseBytes(op);
+            hdr->Opcode = Utilities.Byte.ReverseBytes(op);
 
 
             for (int i = 0; i < 6; i++)
@@ -147,10 +147,10 @@ namespace Sharpen.Net
             ARPHeader* header = (ARPHeader*)buffer;
 
             // Only IPV4 - Ethernet ARP packages allowed! :)
-            if (ByteUtil.ReverseBytes(header->ProtocolType) != 0x0800 || ByteUtil.ReverseBytes(header->HardwareType) != 1)
+            if (Utilities.Byte.ReverseBytes(header->ProtocolType) != 0x0800 || Utilities.Byte.ReverseBytes(header->HardwareType) != 1)
                 return;
 
-            if (ByteUtil.ReverseBytes(header->Opcode) == OP_REPLY)
+            if (Utilities.Byte.ReverseBytes(header->Opcode) == OP_REPLY)
             {
                 FindOrAdd(Util.PtrToArray(header->SrcIP), Util.PtrToArray(header->SrcHw));
             }

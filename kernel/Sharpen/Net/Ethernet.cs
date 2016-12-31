@@ -50,7 +50,7 @@ namespace Sharpen.Net
             for (int i = 0; i < 6; i++)
                 header->Source[i] = src[i];
 
-            header->Protocol = (UInt16)ByteUtil.ReverseBytes((ushort)protocol);
+            header->Protocol = (UInt16)Utilities.Byte.ReverseBytes((ushort)protocol);
 
             return header;
         }
