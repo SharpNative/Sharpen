@@ -16,11 +16,11 @@ namespace Sharpen.Arch
             int function = regsPtr->EAX;
             if (function < 0 || function > Syscalls.SYSCALL_MAX)
             {
-                Console.Write("[SYSCALL] ");
+                Console.Write("[SYSCALL] Invalid syscall requested (");
                 Console.WriteNum(function);
                 Console.Write(" > ");
                 Console.WriteNum(Syscalls.SYSCALL_MAX);
-                Console.Write('\n');
+                Console.Write(")\n");
                 return;
             }
 
@@ -30,7 +30,7 @@ namespace Sharpen.Arch
             //    Console.WriteNum(function);
             //    Console.WriteLine("");
             //}
-
+            
             Tasking.CurrentTask.SysRegs = regsPtr;
 
             int ret = 0;

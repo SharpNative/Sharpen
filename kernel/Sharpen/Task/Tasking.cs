@@ -160,11 +160,9 @@ namespace Sharpen.Task
 
             if ((flags & SpawnFlags.SWAP_PID) == SpawnFlags.SWAP_PID)
             {
-                CPU.CLI();
                 int old = newTask.PID;
                 newTask.PID = CurrentTask.PID;
                 CurrentTask.PID = old;
-                CPU.STI();
             }
 
             newTask.GID = 0;
