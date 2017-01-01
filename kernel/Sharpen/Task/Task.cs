@@ -68,8 +68,8 @@ namespace Sharpen.Task
         {
             // TODO: more cleaning required
             FileDescriptors.Cleanup();
-            Heap.Free(FPUContext);
-            Heap.Free(KernelStackStart);
+            //Heap.Free(FPUContext);
+            //Heap.Free(KernelStackStart);
             //Paging.FreeDirectory(PageDir);
         }
 

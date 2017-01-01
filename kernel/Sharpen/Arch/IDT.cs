@@ -188,8 +188,6 @@ namespace Sharpen.Arch
                 flushIDT(ptr);
             }
 
-            CPU.STI();
-
             #endregion
         }
         
