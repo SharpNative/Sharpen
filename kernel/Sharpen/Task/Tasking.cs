@@ -28,9 +28,6 @@ namespace Sharpen.Task
         /// </summary>
         public static unsafe void Init()
         {
-            // Critical code, disable interrupts
-            CPU.CLI();
-
             // Keeps track of which tasks need to wake up
             sleepingTasks = new List();
 
@@ -46,7 +43,7 @@ namespace Sharpen.Task
             KernelTask = kernel;
             CurrentTask = kernel;
 
-            // Schedule, we are now multitasking
+            // Enable interrupts, because we can now do multitasking
             taskingEnabled = true;
             CPU.STI();
             ManualSchedule();
@@ -160,11 +157,9 @@ namespace Sharpen.Task
 
             if ((flags & SpawnFlags.SWAP_PID) == SpawnFlags.SWAP_PID)
             {
-                CPU.CLI();
                 int old = newTask.PID;
                 newTask.PID = CurrentTask.PID;
                 CurrentTask.PID = old;
-                CPU.STI();
             }
 
             newTask.GID = 0;

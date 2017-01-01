@@ -58,6 +58,7 @@
     <Compile Include="Arch\IRQ.cs" />
     <Compile Include="Arch\ISR.cs" />
     <Compile Include="Arch\V8086.cs" />
+    <Compile Include="Arch\X86Arch.cs" />
     <Compile Include="Collections\Queue.cs" />
     <Compile Include="Drivers\Net\E1000.cs" />
     <Compile Include="Drivers\Net\PCNet2.cs" />

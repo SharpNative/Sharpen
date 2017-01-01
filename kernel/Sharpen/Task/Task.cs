@@ -67,7 +67,7 @@ namespace Sharpen.Task
         public void Cleanup()
         {
             // TODO: more cleaning required
-            //FileDescriptors.Cleanup();
+            FileDescriptors.Cleanup();
             //Heap.Free(FPUContext);
             //Heap.Free(KernelStackStart);
             //Paging.FreeDirectory(PageDir);
