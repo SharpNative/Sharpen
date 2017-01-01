@@ -106,7 +106,7 @@ namespace Sharpen
             NetFS.Init();
 
 
-            
+
             PCI.Init();
             //AC97.Init();
             VboxDev.Init();
@@ -119,10 +119,10 @@ namespace Sharpen
             Route.Init();
 
             // Layer 1 - drivers
-            //E1000.Init();
+            E1000.Init();
             PCNet2.Init();
-            //rtl8139.Init();
-            
+            rtl8139.Init();
+
             // Layer 3 - Networking protocols
             IPV4.Init();
             ICMP.Init();

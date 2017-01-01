@@ -123,9 +123,10 @@ namespace Sharpen.Drivers.Net
         {
             buffer = new byte[2048];
             m_dev = dev;
-            m_io_base = dev.Port1;
-            FixCommand();
+            m_io_base = (ushort)(dev.BAR0.Address);
 
+            FixCommand();
+            
             // Read the current MAC
             ReadMac();
 
@@ -136,7 +137,7 @@ namespace Sharpen.Drivers.Net
 
             // Initialize buffers
             InitBuffers();
-
+            
             InitCard();
 
             int interrupt = (PCI.PCIReadWord(dev, 0x3C) & 0xFF);
@@ -370,7 +371,6 @@ namespace Sharpen.Drivers.Net
                 reg->MAC[i] = m_mac[i];
             reg->first_rec_entry = (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_rx_descriptors));
             reg->first_transmit_entry = (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_tx_descriptors));
-
 
             uint reg_adr = (uint)Paging.GetPhysicalFromVirtual(reg);
             writeCSR(0x01, (ushort)(reg_adr & 0xFFFF));

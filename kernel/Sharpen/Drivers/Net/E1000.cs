@@ -1,4 +1,8 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Mem;
+using Sharpen.Net;
+using Sharpen.Task;
+using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,23 +12,127 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.Net
 {
-    class E1000
+    unsafe class E1000
     {
+        private const ushort NUM_RX_DESCRIPTORS = 256;
+        private const ushort NUM_TX_DESCRIPTIORS = 256;
+
+        /**
+        * Device ids
+        */
         private const ushort MANUID_INTEL = 0x8086;
         private const ushort DEVID_EMU = 0x100E;
         private const ushort DEVID_I217 = 0x153A;
         private const ushort DEVID_82577LM = 0x10EA;
 
-        private const ushort EEP_DONE = 0x04;
+        /**
+         * Registers (incomplete)
+         */
+        private const ushort REG_CTRL       = 0x00;
+        private const ushort REG_STATUS     = 0x08;
+        private const ushort REG_EECD       = 0x10;
+        private const ushort REG_EERD       = 0x14;
+        private const ushort REG_FLA        = 0x1C;
+        private const ushort REG_CTRL_EXT   = 0x18;
+        private const ushort REG_MDIC       = 0x20;
+        private const ushort REG_ICR        = 0xC0;
+        private const ushort REG_LEDCTL     = 0xE00;
+        private const ushort REG_MULTICAST  = 0x5200;
+        private const ushort REG_IMASK      = 0x00D0;
+        private const ushort REG_RCTL  = 0x0100;
+        private const ushort REG_RDBAL = 0x2800;
+        private const ushort REG_RDBAH = 0x2804;
+        private const ushort REG_RDLEN = 0x2808;
+        private const ushort REG_RDH   = 0x2810;
+        private const ushort REG_RDT   = 0x2818;
 
-        private const ushort REG_EEPROM = 0x0014;
+        private const ushort REG_TDBAL = 0x3800;
+        private const ushort REG_TDBAH = 0x3804;
+        private const ushort REG_TDLEN = 0x3808;
+        private const ushort REG_TDH   = 0x3810;
+        private const ushort REG_TDT   = 0x3818;
+        private const ushort REG_TCTL  = 0x0400;
+
+        /**
+         * EEP REQ bits
+         */
+        private const ushort REG_EEP_SK     = (1 << 0);
+        private const ushort REG_EEP_CS     = (1 << 1);
+        private const ushort REG_EEP_DI     = (1 << 2);
+        private const ushort REG_EEP_DO     = (1 << 3);
+        private const ushort REG_EEP_FWE    = (1 << 4) | (1 << 5);
+        private const ushort REG_EEP_REQ    = (1 << 6);
+        private const ushort REG_EEP_GNT    = (1 << 7);
+        private const ushort REG_EEP_PRES   = (1 << 8);
+        private const ushort REG_EEP_SIZE   = (1 << 9);
+        private const ushort REG_EEP_SIZE2  = (1 << 10);
+        private const ushort REG_EEP_TYPE   = (1 << 13);
+
+        /**
+         * Control register
+         */
+        private const ushort REG_CTRL_FD     = (1 << 0);
+        private const ushort REG_CTRL_LRST   = (1 << 3);
+        private const ushort REG_CTRL_ASDE   = (1 << 5);
+        private const ushort REG_CTRL_SLU    = (1 << 6);
+        private const ushort REG_CTRL_ILOS   = (1 << 7);
+        private const ushort REG_CTRL_SPEED  = (1 << 8) | (1 << 9);
+        private const ushort REG_CTRL_FRCSPD = (1 << 11);
+
+        /**
+         * EERD registers
+         */
+        private const ushort REG_EERD_START = (1 << 0);
+        private const ushort REG_EERD_DONE  = (1 << 4);
+
+        /**
+         * Read control register
+         */
+        private const uint REG_RCT_SBP     = (1 << 2);
+        private const uint REG_RCT_UPE     = (1 << 3);
+        private const uint REG_RCT_MPE     = (1 << 4);
+        private const uint REG_RCT_LPE     = (1 << 5);
+        private const uint REG_RCT_RDMTS   = (1 << 8);
+        private const uint REG_RCT_BAM     = (1 << 15);
+        private const uint REG_RCTL_BSIZE  = (1 << 16);
+        private const uint REG_RCTL_BSEX   = (1 << 25);
+        private const uint REG_RCTL_BSECRC = (1 << 26);
+
+        /**
+         * Interrupt status register
+         */
+        private const uint REG_RXSEQ = (1 << 3);
+        private const uint REG_RXO   = (1 << 6);
+        private const uint REG_RXT0  = (1 << 7);
+
+        /**
+         * We should do this in the PCI driver!
+         */
+        private const ushort PCI_MEM = (1 << 0);
+        private const ushort PCI_SIZE = (1 << 1) | (1 << 2);
 
         private static byte[] m_mac;
-        private static ushort m_io_base;
-        private static ushort m_mem_base;
-        private static bool m_has_epp = false;
 
-        // RX_DESC
+        /**
+         * Register bases
+         */
+        private static uint m_register_base;
+        private static uint m_flash_base;
+        private static uint m_io_base;
+
+        private static ushort m_irq_num;
+
+        private static RX_DESC* m_rx_descs;
+        private static TX_DESC* m_tx_descs;
+
+        private static byte** m_rx_buffers;
+        private static byte** m_tx_buffers;
+        private static uint m_rx_next = 0;
+        private static uint m_tx_next = 0;
+
+        /**
+         * RX_DESC
+         */
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct RX_DESC
         {
@@ -36,7 +144,9 @@ namespace Sharpen.Drivers.Net
             public ushort Special;
         }
 
-        // TX_DESC
+        /*
+         * TX_DESC
+         */
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct TX_DESC
         {
@@ -51,130 +161,262 @@ namespace Sharpen.Drivers.Net
 
         }
 
-
-        private static void initHandler(PCI.PciDevice dev)
+        private unsafe static void detect_eeptype()
         {
-            m_io_base = dev.Port2;
-            m_mem_base = dev.Port1; // 0?
 
-            ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
+        }
 
-            cmd |= 0x04;
+        private unsafe static ushort eepRead(uint adr)
+        {
+            /**
+             * Start read, and write address
+             */
+            uint *ptr = (uint*)(m_register_base + REG_EERD);
 
-            // Enable bus mastering
-            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, cmd);
-
-            DetectEEP();
-            ReadMac();
-
-            for (int i = 0; i < 0x80; i++)
-                WriteToDevice((ushort)(0x5200 + i * 4), 0);
+            *ptr = (REG_EERD_START) | (adr << 8);
 
 
+            /**
+             * Wait till done
+             */
+            while ((*ptr & REG_EERD_DONE) == 0)
+                CPU.HLT();
 
-            for (int i = 0; i < 6; i++)
-                Console.WriteHex(m_mac[i]);
+            return (ushort)((*ptr >> 16) & 0xFFFF);
+        }
+
+        private static void readMac()
+        {
+            m_mac = new byte[6];
+
+            ushort tmp = eepRead(0);
+            m_mac[0] = (byte)(tmp & 0xFF);
+            m_mac[1] = (byte)((tmp >> 8) & 0xFF);
+            tmp = eepRead(1);
+            m_mac[2] = (byte)(tmp & 0xFF);
+            m_mac[3] = (byte)((tmp >> 8) & 0xFF);
+            tmp = eepRead(2);
+            m_mac[4] = (byte)(tmp & 0xFF);
+            m_mac[5] = (byte)((tmp >> 8) & 0xFF);
+        }
+
+
+        private static unsafe void initHandler(PCI.PciDevice dev)
+        {
+            m_register_base = (uint)dev.BAR0.Address;
+            m_flash_base = (uint)dev.BAR1.Address;
+
+            m_irq_num = (ushort)PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
+
+            /**
+             * Check if 32bit
+             */
+            if ((dev.BAR0.Address == 0x00))
+            {
+                Console.WriteLine("[E1000] No support for 64bit addressing!");
+                return;
+            }
+
+            /**
+             * Check if 32bit
+             */
+            if ((dev.BAR0.flags & PCI.BAR_IO) > 0)
+            {
+                Console.WriteLine("[E1000] Device not MMIO!");
+                return;
+            }
+            
+
+            m_register_base = (uint)Paging.MapAddress(Paging.KernelDirectory, (int)m_register_base, 20 * 0x1000, Paging.PageFlags.Writable | Paging.PageFlags.Present);
+
+            readMac();
+
+            IRQ.SetHandler(m_irq_num, handler);
+
+
+            start();
+
+            // Register device as the main network device
+            Network.NetDevice netDev = new Network.NetDevice();
+            netDev.ID = dev.Device;
+            netDev.Transmit = Transmit;
+            netDev.GetMac = GetMac;
+
+            Network.Set(netDev);
+        }
+
+        private static unsafe void start()
+        {
+            linkUp();
+
+            // Clearout multicast filter
+            for(int i = 0; i < 0x80; i++)
+            {
+                *(uint*)(m_register_base + REG_MULTICAST + (i * 4)) = 0;
+            }
+
+            setInterruptMask();
+            rxInit();
+            txInit();
+        }
+
+        private static unsafe void setInterruptMask()
+        {
+            uint *ptr = (uint *)(m_register_base + REG_IMASK);
+
+            *ptr = 0x1F6DC;
+            *ptr = 0xFF & ~4;
+        }
+
+        private static unsafe void linkUp()
+        {
+            uint *ptr = (uint *)(m_register_base + REG_CTRL);
+
+            uint val = *ptr;
+            *ptr = val | REG_CTRL_SLU;
+
+        }
+
+        private static unsafe void rxInit()
+        {
+            /**
+             * Alloc RX descs
+             */
+            m_rx_descs = (RX_DESC*)Heap.AlignedAlloc(16, NUM_RX_DESCRIPTORS * sizeof(RX_DESC));
+            m_rx_buffers = (byte**)Heap.Alloc(NUM_RX_DESCRIPTORS * sizeof(byte*));
+            
+            
+            for (int i = 0; i < NUM_RX_DESCRIPTORS; i++)
+            {
+                m_rx_buffers[i] = (byte *)Heap.AlignedAlloc(16, 8192);
+                m_rx_descs[i].Address = (uint)(Paging.GetPhysicalFromVirtual(m_rx_buffers[i]));
+                m_rx_descs[i].Status = 0;
+            }
+
+            /**
+             * Set address
+             */
+            *(uint*)(m_register_base + REG_RDBAL) = (uint)Paging.GetPhysicalFromVirtual(m_rx_descs);
+            *(uint*)(m_register_base + REG_RDBAH) = 0;
+
+            ///**
+            // * Setup total length
+            // */
+            *(uint*)(m_register_base + REG_RDLEN) = NUM_RX_DESCRIPTORS * 16;
+            *(uint*)(m_register_base + REG_RDH) = 0;
+            *(uint*)(m_register_base + REG_RDT) = NUM_RX_DESCRIPTORS;
+            m_rx_next = 0x00;
+
+            *(uint*)(m_register_base + REG_RCTL) = REG_RCTL_BSEX | REG_RCTL_BSECRC | REG_RCT_BAM | REG_RCT_LPE | 0 << 8 | 0 << 4 | 0 << 3 | REG_RCT_SBP | ( 2 << 16);
+        }
+
+
+
+
+        public static unsafe void Transmit(byte* bytes, uint size)
+        {
+            if (size > 8000)
+                return;
+            
+
+            uint index = m_tx_next++;
+            m_tx_next &= (NUM_TX_DESCRIPTIORS - 1);
+
+            Console.WriteNum((int)index);
+            Console.WriteLine("");
+            Console.WriteNum((int)m_tx_next);
             Console.WriteLine("");
 
+            Memory.Memcpy(m_tx_buffers[index], bytes, (int)size);
+
+            m_tx_descs[index].Address = (uint)m_tx_buffers[index];
+            m_tx_descs[index].Length = (ushort)((ushort)size  - 4);
+            m_tx_descs[index].CSO = 0;
+            m_tx_descs[index].CMD = (1 << 3) | (1 << 1) | (1 << 0);
+            m_tx_descs[index].STA = 0;
+            m_tx_descs[index].CSO = 0;
+            m_tx_descs[index].Special = 0;
+
+            *(uint*)(m_register_base + REG_TDT) = m_tx_next;
+        }
+
+        private static unsafe void txInit()
+        {
+
+            /**
+             * Alloc TX descs
+             */
+            m_tx_descs = (TX_DESC*)Heap.AlignedAlloc(16, NUM_TX_DESCRIPTIORS * sizeof(TX_DESC));
+            m_tx_buffers = (byte**)Heap.Alloc(NUM_TX_DESCRIPTIORS * sizeof(byte*));
+
+            for (int i = 0; i < NUM_TX_DESCRIPTIORS; i++)
+            {
+                m_tx_buffers[i] = (byte*)Heap.AlignedAlloc(16, 8192);
+                m_tx_descs[i].Address = 0;
+                m_tx_descs[i].CMD = 0;
+                m_tx_descs[i].CSO = 0;
+                m_tx_descs[i].CSS = 0;
+                m_tx_descs[i].Length = 0;
+                m_tx_descs[i].Special = 0;
+                m_tx_descs[i].STA = 0;
+            }
+
+            /**
+             * Set address
+             */
+            *(uint*)(m_register_base + REG_TDBAL) = (uint)Paging.GetPhysicalFromVirtual(m_rx_descs);
+            *(uint*)(m_register_base + REG_TDBAH) = 0;
+
+            ///**
+            // * Setup total length
+            // */
+            *(uint*)(m_register_base + REG_TDLEN) = NUM_TX_DESCRIPTIORS * 16;
+            *(uint*)(m_register_base + REG_TDH) = 0;
+            *(uint*)(m_register_base + REG_TDT) = NUM_TX_DESCRIPTIORS;
+            m_tx_next = 0x00;
+
+            *(uint*)(m_register_base + REG_TCTL) = (1 << 1) | (1 << 3);
+
+        }
+
+        private static unsafe void handler(Regs* regsPtr)
+        {
+            uint icr = *(uint *)(m_register_base + REG_ICR);
+
+            if ((icr & REG_RXSEQ) > 0)
+                linkUp();
+
+            if ((icr & REG_RXT0) > 0)
+            {
+                /**
+                 * Receive packet!
+                 */
+            }
+
+            if ((icr & REG_RXO) > 0)
+                Console.WriteLine("Link still ok :)");
+
+            if((icr & 0x2) > 0)
+            {
+                Console.WriteHex(*(uint*)(m_register_base + REG_STATUS));
+                Console.WriteLine("");
+            }
+
+            Console.Write("ICR: ");
+            Console.WriteHex(icr);
+            Console.WriteLine("");
+        }
+
+
+        private static unsafe void GetMac(byte* mac)
+        {
+            for (int i = 0; i < 6; i++)
+                mac[i] = m_mac[i];
         }
 
         private static void exitHandler(PCI.PciDevice dev)
         {
 
-        }
-
-        private static unsafe  void WriteToDevice(ushort address, uint value)
-        {
-            // Set address
-            PortIO.Out32(m_io_base, address);
-
-            // Write to address
-            PortIO.Out32((ushort)(m_io_base + 4), value);
-        }
-
-        private static unsafe uint ReadFromDevice(ushort address)
-        {
-            // Set address
-            PortIO.Out32(m_io_base, address);
-
-            // Read from address
-            return PortIO.In32((ushort)(m_io_base + 4));
-        }
-
-        private static unsafe void ReadMac()
-        {
-            m_mac = new byte[6];
-
-            // Do we have an EPP?
-            if(m_has_epp)
-            {
-                uint tmp;
-                tmp = EEPRead(0);
-                m_mac[0] = (byte)(tmp & 0xff);
-                m_mac[1] = (byte)(tmp >> 8);
-                tmp = EEPRead(1);
-                m_mac[2] = (byte)(tmp & 0xff);
-                m_mac[3] = (byte)(tmp >> 8);
-                tmp = EEPRead(2);
-                m_mac[4] = (byte)(tmp & 0xff);
-                m_mac[5] = (byte)(tmp >> 8);
-                Console.WriteHex(tmp);
-                for (;;) ;
-            }
-            else
-            {
-                byte* base_8 = (byte*)(m_mem_base + 0x5400);
-                uint* base_32 = (uint*)(m_mem_base + 0x5400);
-
-                if (*base_32 != 0)
-                {
-                    for (int i = 0; i < 6; i++)
-                        m_mac[i] = base_8[i];
-                }
-                else
-                {
-                    Console.WriteLine("Mayday, soldier down!");
-                }
-            }
-        }
-
-        private static bool DetectEEP()
-        {
-            uint val = 0;
-            WriteToDevice(REG_EEPROM, 0x01);
-
-            for (int i = 0; i < 1000 && !m_has_epp; i++)
-            {
-                val = ReadFromDevice(REG_EEPROM);
-                if ((val & 0x10) > 0)
-                    m_has_epp = true;
-                else
-                    m_has_epp = false;
-            }
-
-            if(!m_has_epp)
-                Console.WriteLine("Oh dear, we're fucked");
-
-            return m_has_epp;
-        }
-
-        private static uint EEPRead(byte adr)
-        {
-            ushort data = 0;
-            uint tmp = 0;
-            if(m_has_epp)
-            {
-                WriteToDevice(REG_EEPROM, (1) | ((uint)(adr) << 8));
-                while (((tmp = ReadFromDevice(REG_EEPROM)) & EEP_DONE) == 0) ;
-            }
-            else
-            {
-                WriteToDevice(REG_EEPROM, (1) | ((uint)(adr) << 2));
-                while (((tmp = ReadFromDevice(REG_EEPROM)) & EEP_DONE) == 0) ;
-            }
-            data = (ushort)((tmp >> 16) & 0xFFFF);
-        
-            return data;
         }
 
         public static void Init()
@@ -185,8 +427,8 @@ namespace Sharpen.Drivers.Net
             driver.Init = initHandler;
 
             PCI.RegisterDriver(MANUID_INTEL, DEVID_EMU, driver);
-            PCI.RegisterDriver(MANUID_INTEL, DEVID_I217, driver);
-            PCI.RegisterDriver(MANUID_INTEL, DEVID_82577LM, driver);
+            //PCI.RegisterDriver(MANUID_INTEL, DEVID_I217, driver);
+            //PCI.RegisterDriver(MANUID_INTEL, DEVID_82577LM, driver);
         }
     }
 }

@@ -164,10 +164,24 @@ namespace Sharpen.Arch
             // Get indices
             int pageIndex = virt / 0x1000;
             int tableIndex = pageIndex / 1024;
-
+            
             // Set page
             PageTable* table = (PageTable*)(directory->tables[tableIndex] & 0xFFFFF000);
             table->pages[pageIndex & (1024 - 1)] = ToFrameAddress(phys) | (int)flags;
+        }
+
+        public static unsafe void* MapAddress(PageDirectory* directory, int phys, int size, PageFlags flags)
+        {
+            /*int free = m_bitmap.FindFirstFree(true);
+            int virt = free * 0x1000;
+            MapPage(directory, phys, virt, flags);
+            return (void*)virt;*/
+            // TODO
+
+            int virt = (int)(TEMP_MAP_ADDRESS - 0x1000 - 0x1000 * size);
+            for(int i = 0; i < size / 0x1000; i++)
+                MapPage(directory, phys + 0x1000 * i, virt + 0x1000 * i, flags);
+            return (void*)virt;
         }
 
         /// <summary>

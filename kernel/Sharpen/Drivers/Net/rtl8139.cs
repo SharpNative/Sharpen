@@ -65,7 +65,10 @@ namespace Sharpen.Drivers.Net
         /// <param name="dev">This PCI device</param>
         private static unsafe void initHandler(PCI.PciDevice dev)
         {
-            m_io_base = dev.Port1;
+            m_io_base = (ushort)(dev.BAR0.Address);
+
+            Console.WriteHex(m_io_base);
+            Console.WriteLine("");
             
             m_buffer = new byte[8 * 1024];
             m_transmit0 = new byte[8192 + 16];
@@ -133,6 +136,8 @@ namespace Sharpen.Drivers.Net
 
             readMac();
 
+            Console.WriteLine("[RTL8139] Intialized");
+
             // Register device as the main network device
             Network.NetDevice netDev = new Network.NetDevice();
             netDev.ID = dev.Device;
@@ -140,6 +145,8 @@ namespace Sharpen.Drivers.Net
             netDev.GetMac = GetMac;
 
             Network.Set(netDev);
+
+            //PrintRes();
         }
 
         private static unsafe void GetMac(byte* mac)
@@ -175,6 +182,7 @@ namespace Sharpen.Drivers.Net
                 adr = (ushort)(m_io_base + REG_TSD3);
                 m_curBuffer = 0;
             }
+
 
             // Clear transmit buffer
             Memory.Memset(inAdr, 0x00, 8192 + 16);
@@ -214,6 +222,7 @@ namespace Sharpen.Drivers.Net
 
         private static unsafe void handler(Regs* regsPtr)
         {
+            Console.WriteLine("JA");
             // SET IMR + ISR
             setInterruptMask(0);
 

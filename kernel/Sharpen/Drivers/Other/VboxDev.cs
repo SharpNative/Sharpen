@@ -61,7 +61,7 @@ namespace Sharpen.Drivers.Other
             req->interfaceVersion = 0x10000;
             req->osType = 0x10000;
 
-            PortIO.Out32(m_dev.Port1, (uint)Paging.GetPhysicalFromVirtual(req));
+            PortIO.Out32((ushort)m_dev.BAR0.Address, (uint)Paging.GetPhysicalFromVirtual(req));
 
             if (req->header.rc == 0)
             {
@@ -126,7 +126,7 @@ namespace Sharpen.Drivers.Other
             req->header.rc = 0xFFFFF;
             req->PowerState = state;
 
-            PortIO.Out32(m_dev.Port1, (uint)Paging.GetPhysicalFromVirtual(req));
+            PortIO.Out32((ushort)m_dev.BAR0.Address, (uint)Paging.GetPhysicalFromVirtual(req));
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace Sharpen.Drivers.Other
             req->header.requestType = VboxDevRequestTypes.VMMDevReq_GetSessionId;
             req->header.rc = 0xFFFFF;
 
-            PortIO.Out32(m_dev.Port1, (uint)Paging.GetPhysicalFromVirtual(req));
+            PortIO.Out32((ushort)m_dev.BAR0.Address, (uint)Paging.GetPhysicalFromVirtual(req));
 
             return req->idSession;
         }
@@ -158,7 +158,7 @@ namespace Sharpen.Drivers.Other
             req->header.requestType = VboxDevRequestTypes.VMMDevReq_GetHostTime;
             req->header.rc = 0xFFFFF;
 
-            PortIO.Out32(m_dev.Port1, (uint)Paging.GetPhysicalFromVirtual(req));
+            PortIO.Out32((ushort)m_dev.BAR0.Address, (uint)Paging.GetPhysicalFromVirtual(req));
 
             return req->Time;
         }
