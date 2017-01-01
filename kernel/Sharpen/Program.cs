@@ -122,7 +122,7 @@ namespace Sharpen
             //E1000.Init();
             PCNet2.Init();
             //rtl8139.Init();
-            
+
             // Layer 3 - Networking protocols
             IPV4.Init();
             ICMP.Init();
@@ -138,9 +138,9 @@ namespace Sharpen
             Node hddNode = VFS.GetByPath("devices://HDD0");
             Fat16.Init(hddNode, "C");
             Tasking.KernelTask.CurrentDirectory = "C://";
-            
+
             DHCP.Init();
-            
+
             //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(testing), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL);
             //newTask.PageDir = Paging.KernelDirectory;
             //Tasking.ScheduleTask(newTask);

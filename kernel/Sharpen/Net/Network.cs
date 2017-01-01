@@ -68,9 +68,9 @@ namespace Sharpen.Net
 
             m_recPacketQueue = new Queue();
             
-            Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(handlePackets), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL_TASK);
-            newTask.PageDir = Paging.KernelDirectory;
-            Tasking.ScheduleTask(newTask);
+            //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(handlePackets), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL_TASK);
+            //newTask.PageDir = Paging.KernelDirectory;
+            //Tasking.ScheduleTask(newTask);
         }
 
         public static void RegisterHandler(ushort protocol, PackerHandler handler)
@@ -145,7 +145,6 @@ namespace Sharpen.Net
             //netBuf->Buffer = (byte*)Heap.Alloc(size);
             //Memory.Memcpy(netBuf->Buffer, Util.ObjectToVoidPtr(buffer), size);
 
-            // Queue packet
             //m_recPacketQueue.Push(netBuf);
             handlePacket(buffer, size);
         }
@@ -163,7 +162,7 @@ namespace Sharpen.Net
                     continue;
                 }
 
-                handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
+                //handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
 
                 Heap.Free(buffer->Buffer);
                 Heap.Free(buffer);
@@ -178,7 +177,7 @@ namespace Sharpen.Net
         private static unsafe void handlePacket(byte[] buffer, int size)
         {
             byte* bufPtr = (byte*)Util.ObjectToVoidPtr(buffer);
-
+            //Console.WriteLine("HANDLING");
             EthernetHeader* header = (EthernetHeader*)bufPtr;
             
             ushort proto = Byte.ReverseBytes(header->Protocol);
