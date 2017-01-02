@@ -455,7 +455,7 @@ namespace Sharpen.Drivers.Net
 
             PCI.RegisterDriver(MANUID_INTEL, DEVID_EMU, driver);
             PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EMA, driver);
-            PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EM, driver);
+            PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EMAF, driver);
         }
     }
 }
