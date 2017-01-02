@@ -24,6 +24,8 @@ namespace Sharpen.Drivers.Net
         private const ushort DEVID_EMU = 0x100E;
         private const ushort DEVID_I217 = 0x153A;
         private const ushort DEVID_82577LM = 0x10EA;
+        private const ushort DEVID_82545EMA = 0x100;
+        private const ushort DEVID_82545EMAF = 1011;
 
         /**
          * Registers (incomplete)
@@ -452,8 +454,8 @@ namespace Sharpen.Drivers.Net
             driver.Init = initHandler;
 
             PCI.RegisterDriver(MANUID_INTEL, DEVID_EMU, driver);
-            //PCI.RegisterDriver(MANUID_INTEL, DEVID_I217, driver);
-            //PCI.RegisterDriver(MANUID_INTEL, DEVID_82577LM, driver);
+            PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EMA, driver);
+            PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EM, driver);
         }
     }
 }
