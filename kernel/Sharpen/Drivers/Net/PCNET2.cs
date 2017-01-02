@@ -244,6 +244,7 @@ namespace Sharpen.Drivers.Net
 
                         Memory.Memcpy(Util.ObjectToVoidPtr(buffer), (byte *)Util.ObjectToVoidPtr(m_rx_buffer) + offset, 2048);
 
+
                         // TODO: REAL PACKET SIZE PLEASE!
                         Network.QueueReceivePacket(buffer, 2048);
                     }
