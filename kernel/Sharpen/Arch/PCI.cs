@@ -2,9 +2,50 @@
 
 namespace Sharpen.Arch
 {
-    class PCI
+    public struct PciBar
+    {
+        public ulong Size;
+        public ulong Address;
+        public byte flags;
+    }
+
+
+    unsafe class PCI
     {
         public const ushort COMMAND = 0x04;
+
+        public const ushort CONFIG_ADR = 0xCF8;
+        public const ushort DATA_ADR = 0xCFC;
+
+
+        public const ushort CONFIG_HEADER_MUTLI_FUNC = 0x80;
+
+        /**
+         * Config registers
+         */
+        public const ushort CONFIG_VENDOR_ID   = 0x00;
+        public const ushort CONFIG_DEVICE_ID   = 0x02;
+        public const ushort CONFIG_COMMAND     = 0x04;
+        public const ushort CONFIG_STATUS      = 0x06;
+        public const ushort CONFIG_REV_ID      = 0x08;
+        public const ushort CONFIG_PROG_INTF   = 0x09;
+        public const ushort CONFIG_SUB_CLASS   = 0x0A;
+        public const ushort CONFIG_CLASS_CODE  = 0x0B;
+        public const ushort CONFIG_CACHE_SIZE  = 0x0C;
+        public const ushort CONFIG_LETENCY     = 0x0D;
+        public const ushort CONFIG_HEADER_TYPE = 0x0E;
+        public const ushort CONFIG_BIST        = 0x0F;
+
+        public const ushort BAR_IO        = 0x01;
+        public const ushort BAR_LOWMEM    = 0x02;
+        public const ushort BAR_64        = 0x04;
+
+        public const ushort BAR0 = 0x10;
+        public const ushort BAR1 = 0x14;
+        public const ushort BAR2 = 0x18;
+        public const ushort BAR3 = 0x1C;
+        public const ushort BAR4 = 0x20;
+        public const ushort BAR5 = 0x24;
 
         public struct PciDriver
         {
@@ -26,12 +67,12 @@ namespace Sharpen.Arch
             public ushort Vendor;
             public ushort Device;
             public PciDriver Driver;
-            public ushort Port1;
-            public ushort Port2;
+            public PciBar BAR0;
+            public PciBar BAR1;
 
             public byte Type;
         }
-        
+
         public unsafe delegate void PciDriverInit(PciDevice dev);
         public unsafe delegate void PciDriverExit(PciDevice dev);
 
@@ -77,14 +118,14 @@ namespace Sharpen.Arch
         {
             uint address = generateAddress(bus, slot, function, offset);
 
-            PortIO.Out32(0xCF8, address);
+            PortIO.Out32(CONFIG_ADR, address);
 
             if (size == 4)
-                return PortIO.In32(0xCFC);
+                return PortIO.In32(DATA_ADR);
             else if (size == 2)
-                return ((PortIO.In32(0xCFC) >> ((offset & 2) * 8)) & 0xFFFF);
-            else if(size == 1)
-                return ((PortIO.In32(0xCFC) >> ((offset & 4) * 8)) & 0xFF);
+                return PortIO.In16((ushort)(DATA_ADR + (offset & 0x02)));
+            else if (size == 1)
+                return PortIO.In8((ushort)(DATA_ADR + (offset & 0x03)));
 
             return 0xFFFFFFFF;
         }
@@ -101,8 +142,8 @@ namespace Sharpen.Arch
         {
             uint address = generateAddress(bus, slot, function, offset);
 
-            PortIO.Out32(0xCF8, address);
-            PortIO.Out32(0xCFC, value);
+            PortIO.Out32(CONFIG_ADR, address);
+            PortIO.Out32(DATA_ADR, value);
         }
 
         /// <summary>
@@ -140,18 +181,6 @@ namespace Sharpen.Arch
         }
 
         /// <summary>
-        /// Get header type
-        /// </summary>
-        /// <param name="bus">Bus</param>
-        /// <param name="device">Device</param>
-        /// <param name="function">Function</param>
-        /// <returns>Header type</returns>
-        private static ushort getHeaderType(ushort bus, ushort device, ushort function)
-        {
-            return (ushort)(ReadWord(bus, device, function, 0xE) & 0xFF);
-        }
-
-        /// <summary>
         /// Get vendor ID
         /// </summary>
         /// <param name="bus">Bus</param>
@@ -163,70 +192,6 @@ namespace Sharpen.Arch
              return ReadWord(bus, device, function, 0);
         }
 
-        /// <summary>
-        /// Get Class ID
-        /// </summary>
-        /// <param name="bus">Bus</param>
-        /// <param name="device">Device</param>
-        /// <param name="function">Function</param>
-        /// <returns>Class ID</returns>
-        private static ushort GetClassID(ushort bus, ushort device, ushort function)
-        {
-            return (byte)(ReadWord(bus, device, function, 0XA) & 0xFF);
-        }
-        
-        /// <summary>
-        /// Get sub class ID
-        /// </summary>
-        /// <param name="bus">Bus</param>
-        /// <param name="device">Device</param>
-        /// <param name="function">Function</param>
-        /// <returns>Class ID</returns>
-        private static byte GetSubClassID(ushort bus, ushort device, ushort function)
-        {
-            return (byte)((ReadWord(bus, device, function, 0XA) >> 8) & 0xFF);
-        }
-
-        /// <summary>
-        /// Check PCI bus
-        /// </summary>
-        /// <param name="bus">The bus to check</param>
-        private static void checkBus(byte bus)
-        {
-            for (byte device = 0; device < 32; device++)
-                checkDevice(bus, device);
-        }
-
-        /// <summary>
-        /// Checks a device
-        /// </summary>
-        /// <param name="bus">The bus</param>
-        /// <param name="device">The device</param>
-        private static void checkDevice(byte bus, byte device)
-        {
-            ushort vendorID = GetVendorID(bus, device, 0);
-            if (vendorID == 0xFFFF)
-                return;
-
-            ushort deviceID = getDeviceID(bus, device, 0);
-            if (deviceID == 0xFFFF)
-                return;
-            
-            PciDevice dev = new PciDevice();
-            dev.Device = deviceID;
-            dev.Function = 0;
-            dev.Bus = bus;
-            dev.Slot = device;
-
-            dev.Vendor = vendorID;
-            dev.Port1 = (ushort)(ReadWord(bus, device, 0, 0x10) & ~1);
-            dev.Port2 = (ushort)(ReadWord(bus, device, 0, 0x14) & ~1);
-            dev.Type = (byte)(ReadWord(bus, device, 0, 0x0D) & 0xFF);
-            dev.classCode = (byte)(ReadWord(bus, device, 0, 0x0A) & 0xFF);
-            dev.SubClass = (byte)((ReadWord(bus, device, 0, 0x0A) & 0x00FF) >> 8);
-            
-            m_devices[m_currentdevice++] = dev;
-        }
 
         public static PciDevice[] GetDevices()
         {
@@ -308,5 +273,104 @@ namespace Sharpen.Arch
             m_devices = new PciDevice[300];
             Probe();
         }
+
+        public static uint PciGetMask(ushort bus, ushort slot, ushort function, uint index)
+        {
+            ushort reg = (ushort)(BAR0 + (index * sizeof(uint)));
+
+            PCIWrite(bus, slot, function, reg, 0xffffffff);
+
+            return PCIRead(bus, slot, function, reg, 4);
+        }
+
+        #region Bus Scanning
+
+
+        /// <summary>
+        /// Check PCI bus
+        /// </summary>
+        /// <param name="bus">The bus to check</param>
+        private static void checkBus(byte bus)
+        {
+            for (byte device = 0; device < 32; device++)
+            {
+                uint headerType = PCIRead(bus, device, 0, CONFIG_HEADER_TYPE, 1);
+                uint functionCount = (uint)(((headerType & CONFIG_HEADER_MUTLI_FUNC) > 0) ? 8 : 1);
+
+                for (ushort i = 0; i < functionCount; i++)
+                    checkDevice(bus, device, i);
+            }
+        }
+
+        private static PciBar GetBar(byte bus, byte device, ushort function, ushort offset)
+        {
+            PciBar ret = new PciBar();
+
+            uint address = PCIRead(bus, device, function, offset, 4);
+
+            PCIWrite(bus, device, function, offset, 0xffffffff);
+            uint mask = PCIRead(bus, device, function, offset, 4);
+
+            PCIWrite(bus, device, function, offset, address);
+
+            if ((address & BAR_64) > 0)
+            {
+
+                /**
+                 * We don't support this yet
+                 */
+
+                return ret;
+            }
+            else if ((address & BAR_IO) > 0)
+            {
+
+                ret.Address = (ushort)(address & ~0x3);
+                ret.Size    = (ushort)(~(mask & ~0x3) + 1);
+                ret.flags   = (byte)(address & 0x3);
+            }
+            else
+            {
+
+                ret.Address = (ulong)(address & ~0xF);
+                ret.Size = (ulong)(~(mask & ~0xF) + 1);
+                ret.flags = (byte)(address & 0xF);
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// Checks a device
+        /// </summary>
+        /// <param name="bus">The bus</param>
+        /// <param name="device">The device</param>
+        private static void checkDevice(byte bus, byte device, ushort function)
+        {
+            ushort vendorID = GetVendorID(bus, device, function);
+            if (vendorID == 0xFFFF)
+                return;
+
+            ushort deviceID = getDeviceID(bus, device, function);
+            if (deviceID == 0xFFFF)
+                return;
+
+            PciDevice dev = new PciDevice();
+            dev.Device = deviceID;
+            dev.Function = function;
+            dev.Bus = bus;
+            dev.Slot = device;
+
+            dev.Vendor = vendorID;
+            dev.BAR0 = GetBar(bus, device, function, BAR0);
+            dev.BAR1 = GetBar(bus, device, function, BAR1);
+            dev.Type = (byte)PCIRead(bus, device, function, CONFIG_HEADER_TYPE, 1);
+            dev.classCode = (byte)PCIRead(bus, device, function, CONFIG_CLASS_CODE, 1);
+            dev.SubClass = (byte)PCIRead(bus, device, function, CONFIG_SUB_CLASS, 1);
+            
+            m_devices[m_currentdevice++] = dev;
+        }
+
+        #endregion
     }
 }

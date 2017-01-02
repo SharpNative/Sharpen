@@ -162,14 +162,13 @@ namespace Sharpen.Utilities
         public static unsafe string SubString(string str, int start, int count)
         {
             if (count <= 0)
-                return null;
+                return "";
 
             int stringLength = Length(str);
 
             if (start > stringLength)
                 return "";
-
-
+            
             char* ch = (char*)Heap.Alloc(count + 1);
             int j = 0;
 
@@ -186,23 +185,6 @@ namespace Sharpen.Utilities
 
             return Util.CharPtrToString(ch);
         }
-        /*
-        public long toLong(string str)
-        {
-            int len = Length(str);
-            int num = 0;
-            for (int i = 0; i < len; i++)
-            {
-                num *= 16;
-                if (str[i] > '9')
-                    num += str[i] - 'A' + 10;
-                else
-                    num += str[i] - '0';
-            }
-
-            return num;
-        }
-        */
 
         /// <summary>
         /// Merge 2 strings
@@ -257,19 +239,15 @@ namespace Sharpen.Utilities
         /// <param name="one">First string</param>
         /// <param name="two">Second string</param>
         /// <returns>If the two string are equal</returns>
-        public static bool Equals(string one, string two)
+        public static unsafe bool Equals(string one, string two)
         {
-            int oneLength = Length(one);
-            int twoLength = Length(two);
-
-            if (oneLength != twoLength)
-                return false;
-
-            for (int i = 0; i < oneLength; i++)
-                if (one[i] != two[i])
-                    return false;
-
-            return true;
+            fixed(char* onePtr = one)
+            {
+                fixed(char* twoPtr = two)
+                {
+                    return Memory.Compare(onePtr, twoPtr, Length(one));
+                }
+            }
         }
 
         /// <summary>

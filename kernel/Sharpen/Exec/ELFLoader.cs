@@ -203,7 +203,9 @@ namespace Sharpen.Exec
             int[] initialStack = new int[2];
             initialStack[0] = (int)Util.ObjectToVoidPtr(argv);
             initialStack[1] = argc;
-            
+
+            CPU.CLI();
+
             Task.Task newTask = Tasking.CreateTask((void*)elf->Entry, TaskPriority.NORMAL, initialStack, 2, flags);
 
             // Map memory
@@ -217,6 +219,9 @@ namespace Sharpen.Exec
             // Schedule task
             newTask.PageDir = newDirectory;
             Tasking.ScheduleTask(newTask);
+
+            CPU.STI();
+
             return newTask.PID;
         }
     }

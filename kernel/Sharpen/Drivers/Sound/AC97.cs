@@ -54,8 +54,8 @@ namespace Sharpen.Drivers.Sound
         private static unsafe void InitHandler(PCI.PciDevice dev)
         {
             m_dev = dev;
-            m_nambar = dev.Port1;
-            m_nabmbar = dev.Port2;
+            m_nambar = (ushort)dev.BAR0.Address;
+            m_nabmbar = (ushort)dev.BAR1.Address;
 
             // Set IRQ handler
             uint irqNum = PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);

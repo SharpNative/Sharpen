@@ -12,6 +12,6 @@ echo Copying...
 call ..\..\scripts\mount
 copy %FILE%.elf G:\exec\%FILE%
 call ..\..\scripts\unmount
-rem del %FILE%.elf
+del %FILE%.elf
 
 call ..\..\scripts\qemu

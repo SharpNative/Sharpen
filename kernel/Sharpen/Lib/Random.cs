@@ -1,21 +1,21 @@
-﻿using Sharpen.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Sharpen.Lib
+﻿namespace Sharpen.Lib
 {
     unsafe class Random
     {
         private static uint m_seed;
 
+        /// <summary>
+        /// Initializes the random number generator
+        /// </summary>
         public static void Init()
         {
-            m_seed = (uint)Time.CalculateEpochTime();
+            m_seed = Time.CalculateEpochTime();
         }
 
+        /// <summary>
+        /// Generates a random number
+        /// </summary>
+        /// <returns>The random number</returns>
         public static int Rand()
         {
             uint next = m_seed;

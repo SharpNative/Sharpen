@@ -61,6 +61,8 @@ namespace Sharpen.Net
 
         public static void Init()
         {
+            m_dev.ID = 0;
+
             m_handlers = new PackerHandler[65536];
 
             Settings = (NetworkSettings*)Heap.Alloc(sizeof(NetworkSettings));
@@ -117,7 +119,7 @@ namespace Sharpen.Net
             Console.WriteLine(" bytes");
 #endif
 
-            if (m_dev.ID != 0)
+            if (m_dev.ID != 0 && m_dev.Transmit != null)
                 m_dev.Transmit(buffer, (uint)size);
 
             Heap.Free(buffer);
@@ -129,7 +131,7 @@ namespace Sharpen.Net
         /// <param name="mac">6 byte struct to read the mac address in</param>
         public static unsafe void GetMac(byte* mac)
         {
-            if (m_dev.ID != 0)
+            if (m_dev.ID != 0 && m_dev.GetMac != null)
                 m_dev.GetMac(mac);
         }
 
