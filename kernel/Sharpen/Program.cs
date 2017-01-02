@@ -103,9 +103,9 @@ namespace Sharpen
             Route.Init();
 
             // Layer 1 - drivers
-            //E1000.Init();
+            E1000.Init();
             PCNet2.Init();
-            //rtl8139.Init();
+            rtl8139.Init();
 
             // Layer 2 - Networking protocols
             IPV4.Init();

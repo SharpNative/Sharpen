@@ -53,6 +53,8 @@ namespace Sharpen.Drivers.Net
         private const ushort REG_TDT   = 0x3818;
         private const ushort REG_TCTL  = 0x0400;
 
+        private static ushort REG_RD_EOP = (1 << 1);
+
         /**
          * EEP REQ bits
          */
@@ -205,8 +207,16 @@ namespace Sharpen.Drivers.Net
         {
             m_register_base = (uint)dev.BAR0.Address;
             m_flash_base = (uint)dev.BAR1.Address;
-
+            
             m_irq_num = (ushort)PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
+
+
+            ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
+
+            cmd |= 0x04;
+
+            // Enable bus mastering
+            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, cmd);
 
             /**
              * Check if 32bit
@@ -230,6 +240,7 @@ namespace Sharpen.Drivers.Net
             m_register_base = (uint)Paging.MapAddress(Paging.KernelDirectory, (int)m_register_base, 20 * 0x1000, Paging.PageFlags.Writable | Paging.PageFlags.Present);
 
             readMac();
+
 
             IRQ.SetHandler(m_irq_num, handler);
 
@@ -307,11 +318,11 @@ namespace Sharpen.Drivers.Net
             *(uint*)(m_register_base + REG_RDT) = NUM_RX_DESCRIPTORS;
             m_rx_next = 0x00;
 
-            *(uint*)(m_register_base + REG_RCTL) = REG_RCTL_BSEX | REG_RCTL_BSECRC | REG_RCT_BAM | REG_RCT_LPE | 0 << 8 | 0 << 4 | 0 << 3 | REG_RCT_SBP | ( 2 << 16);
+            *(uint*)(m_register_base + REG_RCTL) = REG_RCTL_BSEX | REG_RCTL_BSECRC | REG_RCT_BAM | REG_RCT_LPE | 0 << 8 | 0 << 4 | 0 << 3 | (1 << 1) | REG_RCT_SBP | ( 2 << 16);
         }
 
 
-
+        private static int a = 0;
 
         public static unsafe void Transmit(byte* bytes, uint size)
         {
@@ -321,22 +332,18 @@ namespace Sharpen.Drivers.Net
 
             uint index = m_tx_next++;
             m_tx_next &= (NUM_TX_DESCRIPTIORS - 1);
-
-            Console.WriteNum((int)index);
-            Console.WriteLine("");
-            Console.WriteNum((int)m_tx_next);
-            Console.WriteLine("");
-
+            
             Memory.Memcpy(m_tx_buffers[index], bytes, (int)size);
 
-            m_tx_descs[index].Address = (uint)m_tx_buffers[index];
-            m_tx_descs[index].Length = (ushort)((ushort)size  - 4);
+
+            m_tx_descs[index].Address = (uint)Paging.GetPhysicalFromVirtual(m_tx_buffers[index]);
+            m_tx_descs[index].Length = (ushort)size;
             m_tx_descs[index].CSO = 0;
             m_tx_descs[index].CMD = (1 << 3) | (1 << 1) | (1 << 0);
             m_tx_descs[index].STA = 0;
             m_tx_descs[index].CSO = 0;
             m_tx_descs[index].Special = 0;
-
+            
             *(uint*)(m_register_base + REG_TDT) = m_tx_next;
         }
 
@@ -364,7 +371,7 @@ namespace Sharpen.Drivers.Net
             /**
              * Set address
              */
-            *(uint*)(m_register_base + REG_TDBAL) = (uint)Paging.GetPhysicalFromVirtual(m_rx_descs);
+            *(uint*)(m_register_base + REG_TDBAL) = (uint)Paging.GetPhysicalFromVirtual(m_tx_descs);
             *(uint*)(m_register_base + REG_TDBAH) = 0;
 
             ///**
@@ -376,6 +383,29 @@ namespace Sharpen.Drivers.Net
             m_tx_next = 0x00;
 
             *(uint*)(m_register_base + REG_TCTL) = (1 << 1) | (1 << 3);
+
+        }
+
+        private static void receive()
+        {
+            while((m_rx_descs[m_rx_next].Status & REG_RD_EOP) > 0)
+            {
+
+                uint cur = m_rx_next++;
+                m_rx_next &= (NUM_RX_DESCRIPTORS - 1);
+
+                ushort len = m_rx_descs[cur].Length;
+
+                byte[] buf = new byte[len];
+                Memory.Memcpy(Util.ObjectToVoidPtr(buf), m_rx_buffers[cur], len);
+                
+                Network.QueueReceivePacket(buf, len);
+
+                m_rx_descs[cur].Status = 0;
+                
+
+                *(uint*)(m_register_base + REG_RDT) = 0;
+            }
 
         }
 
@@ -391,20 +421,15 @@ namespace Sharpen.Drivers.Net
                 /**
                  * Receive packet!
                  */
+                receive();
             }
 
             if ((icr & REG_RXO) > 0)
                 Console.WriteLine("Link still ok :)");
 
-            if((icr & 0x2) > 0)
-            {
-                Console.WriteHex(*(uint*)(m_register_base + REG_STATUS));
-                Console.WriteLine("");
-            }
-
-            Console.Write("ICR: ");
-            Console.WriteHex(icr);
-            Console.WriteLine("");
+            //Console.Write("ICR: ");
+            //Console.WriteHex(icr);
+            //Console.WriteLine("");
         }
 
 

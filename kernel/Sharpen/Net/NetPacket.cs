@@ -20,6 +20,7 @@ namespace Sharpen.Net
         public static unsafe NetPacketDesc *Alloc()
         {
             NetPacketDesc *desc = (NetPacketDesc*)Heap.Alloc(sizeof(NetPacketDesc));
+            Memory.Memset(desc->buffer, 0x00, 2048);
             desc->start = 256;
             desc->end = 256;
 
