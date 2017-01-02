@@ -6,6 +6,7 @@ namespace Sharpen.Arch
     public sealed class Paging
     {
         // TODO: (VERIFY THIS) set temp address to used in frames
+        // TODO: mutexes?
         
         // Last page entry in last table
         // TODO: update this, the real value we want doesn't work because of overflowing numbers, great!

@@ -36,10 +36,13 @@ namespace Sharpen.Mem
         public static void* CurrentEnd { get; private set; }
 
         // If we use the real heap or not
-        public static bool m_realHeap = false;
+        public static bool useRealHeap = false;
 
         // First block descriptor
         private static unsafe BlockDescriptor* firstDescriptor;
+
+        // Mutex
+        private static Mutex mutex;
 
         // Minimal amount of pages in a descriptor
         private const int MINIMALPAGES = 128;
@@ -58,6 +61,7 @@ namespace Sharpen.Mem
             Console.Write('\n');
 
             CurrentEnd = start;
+            mutex = new Mutex();
         }
 
         /// <summary>
@@ -66,7 +70,7 @@ namespace Sharpen.Mem
         public static void InitRealHeap()
         {
             firstDescriptor = createBlockDescriptor(MINIMALPAGES * 0x1000);
-            m_realHeap = true;
+            useRealHeap = true;
             Console.WriteLine("[HEAP] Initialized");
         }
 
@@ -212,8 +216,10 @@ namespace Sharpen.Mem
         /// <param name="size">The size</param>
         public static unsafe void* AlignedAlloc(int alignment, int size)
         {
-            if (m_realHeap)
+            if (useRealHeap)
             {
+                mutex.Lock();
+
                 // Find a descriptor that is big enough to hold the block header and its data
                 // We need to look for something that can hold an aligned size if alignment is requested
                 size += sizeof(Block);
@@ -341,6 +347,7 @@ namespace Sharpen.Mem
                     }
 
                     // Return block (skip header)
+                    mutex.Unlock();
                     return (void*)((int)currentBlock + sizeof(Block));
 
                 // Next block
