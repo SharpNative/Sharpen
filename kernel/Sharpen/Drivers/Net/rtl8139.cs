@@ -63,7 +63,7 @@ namespace Sharpen.Drivers.Net
         /// Initialization handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private static unsafe void initHandler(PCI.PciDevice dev)
+        private static unsafe void initHandler(PciDevice dev)
         {
             m_io_base = (ushort)(dev.BAR0.Address);
 
@@ -309,7 +309,7 @@ namespace Sharpen.Drivers.Net
         /// Exit handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private static void exitHandler(PCI.PciDevice dev)
+        private static void exitHandler(PciDevice dev)
         {
         }
 

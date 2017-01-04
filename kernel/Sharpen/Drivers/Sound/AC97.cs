@@ -33,7 +33,7 @@ namespace Sharpen.Drivers.Sound
         private const ushort SR_BCIS = (1 << 3);
         private const ushort SR_FIFOE = (1 << 4);
 
-        private static PCI.PciDevice m_dev;
+        private static PciDevice m_dev;
         private static ushort m_nambar;
         private static ushort m_nabmbar;
         private static ushort m_lvi;
@@ -51,7 +51,7 @@ namespace Sharpen.Drivers.Sound
         /// Driver initalization
         /// </summary>
         /// <param name="dev">PCI Device</param>
-        private static unsafe void InitHandler(PCI.PciDevice dev)
+        private static unsafe void InitHandler(PciDevice dev)
         {
             m_dev = dev;
             m_nambar = (ushort)dev.BAR0.Address;
@@ -149,7 +149,7 @@ namespace Sharpen.Drivers.Sound
         /// Called when the exit is called on the PCI
         /// </summary>
         /// <param name="dev">Reference to the device</param>
-        private static void ExitHander(PCI.PciDevice dev)
+        private static void ExitHander(PciDevice dev)
         {
 
         }

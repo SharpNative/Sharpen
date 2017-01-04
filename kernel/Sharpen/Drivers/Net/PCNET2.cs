@@ -41,7 +41,7 @@ namespace Sharpen.Drivers.Net
         private const ushort STATUS_MASK = 0x0FFF;
 
 
-        private static PCI.PciDevice m_dev;
+        private static PciDevice m_dev;
         private static ushort m_io_base;
         private static byte[] m_mac;
 
@@ -119,7 +119,7 @@ namespace Sharpen.Drivers.Net
             return PortIO.In32((ushort)(m_io_base + REG_RDP));
         }
 
-        private static unsafe void initHandler(PCI.PciDevice dev)
+        private static unsafe void initHandler(PciDevice dev)
         {
             buffer = new byte[2048];
             m_dev = dev;
@@ -266,7 +266,7 @@ namespace Sharpen.Drivers.Net
             }
         }
 
-        private static void exitHandler(PCI.PciDevice dev)
+        private static void exitHandler(PciDevice dev)
         {
 
         }

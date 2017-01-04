@@ -5,7 +5,7 @@ namespace Sharpen.Drivers.Other
 {
     public sealed class VboxDev
     {
-        private static PCI.PciDevice m_dev;
+        private static PciDevice m_dev;
         private static bool m_initalized;
 
         struct RequestHeader
@@ -78,7 +78,7 @@ namespace Sharpen.Drivers.Other
         /// Initialization handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private unsafe static void initHandler(PCI.PciDevice dev)
+        private unsafe static void initHandler(PciDevice dev)
         {
             m_dev = dev;
 
@@ -92,7 +92,7 @@ namespace Sharpen.Drivers.Other
         /// Exit handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private static void exitHander(PCI.PciDevice dev)
+        private static void exitHander(PciDevice dev)
         {
 
         }
