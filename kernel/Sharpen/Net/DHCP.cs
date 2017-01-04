@@ -142,10 +142,11 @@ namespace Sharpen.Net
 
         private static unsafe void PacketHandler(byte[] ip, ushort port, ushort destport, byte* buffer, uint size)
         {
+            
             // We need to do a size check?
 
             byte type = buffer[sizeof(DHCPBootstrapHeader) + 6];
-
+            
             switch (type)
             {
                 case DHCP_OFFER:
