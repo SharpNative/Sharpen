@@ -1,7 +1,27 @@
 ﻿using Sharpen.FileSystem;
+using static Sharpen.Arch.PCI;
 
 namespace Sharpen.Arch
 {
+
+    public class PciDevice
+    {
+        public ushort Bus;
+        public ushort Slot;
+        public ushort Function;
+
+        public byte classCode;
+        public byte SubClass;
+
+        public ushort Vendor;
+        public ushort Device;
+        public PciDriver Driver;
+        public PciBar BAR0;
+        public PciBar BAR1;
+
+        public byte Type;
+    }
+
     public struct PciBar
     {
         public ulong Size;
@@ -55,29 +75,16 @@ namespace Sharpen.Arch
             public PciDriverExit Exit;
         }
 
-        public struct PciDevice
-        {
-            public ushort Bus;
-            public ushort Slot;
-            public ushort Function;
-
-            public byte classCode;
-            public byte SubClass; 
-
-            public ushort Vendor;
-            public ushort Device;
-            public PciDriver Driver;
-            public PciBar BAR0;
-            public PciBar BAR1;
-
-            public byte Type;
-        }
-
         public unsafe delegate void PciDriverInit(PciDevice dev);
         public unsafe delegate void PciDriverExit(PciDevice dev);
 
         private static PciDevice[] m_devices;
         private static uint m_currentdevice = 0;
+
+        public static uint DeviceNum
+        {
+            get { return m_currentdevice; }
+        }
 
         /// <summary>
         /// Generates a PCI address
@@ -197,6 +204,8 @@ namespace Sharpen.Arch
         {
             return m_devices;
         }
+
+
 
         /// <summary>
         /// Register driver

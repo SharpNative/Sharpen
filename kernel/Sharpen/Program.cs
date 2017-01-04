@@ -11,6 +11,7 @@ using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.Task;
+using Sharpen.Utilities;
 
 namespace Sharpen
 {
@@ -62,6 +63,8 @@ namespace Sharpen
         private static void initPCIDevices()
         {
             PCI.Init();
+            PCIFS.Init();
+
             //AC97.Init();
             VboxDev.Init();
         }

@@ -203,7 +203,7 @@ namespace Sharpen.Drivers.Net
         }
 
 
-        private static unsafe void initHandler(PCI.PciDevice dev)
+        private static unsafe void initHandler(PciDevice dev)
         {
             m_register_base = (uint)dev.BAR0.Address;
             m_flash_base = (uint)dev.BAR1.Address;
@@ -439,7 +439,7 @@ namespace Sharpen.Drivers.Net
                 mac[i] = m_mac[i];
         }
 
-        private static void exitHandler(PCI.PciDevice dev)
+        private static void exitHandler(PciDevice dev)
         {
 
         }

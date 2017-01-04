@@ -13,7 +13,7 @@ namespace Sharpen.Drivers.Sound
         /// The initialization handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private static void initHandler(PCI.PciDevice dev)
+        private static void initHandler(PciDevice dev)
         {
         }
 
@@ -21,7 +21,7 @@ namespace Sharpen.Drivers.Sound
         /// The exit handler
         /// </summary>
         /// <param name="dev">This PCI device</param>
-        private static void exitHander(PCI.PciDevice dev)
+        private static void exitHander(PciDevice dev)
         {
 
         }
