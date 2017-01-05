@@ -36,7 +36,17 @@ namespace Sharpen.FileSystem
         /// <returns>The node</returns>
         private static unsafe Node findDirImpl(Node node, string name)
         {
-            return null;
+            uint key = (uint)GetKey(name);
+
+            object obj = m_dictionary.GetByKey(key);
+            if (obj == null)
+                return null;
+            
+
+            Node outNode = new Node();
+            outNode.Cookie = key;
+
+            return outNode;
         }
 
 
@@ -114,6 +124,28 @@ namespace Sharpen.FileSystem
 
             if (count != 2)
                 return -1;
+
+            int[] parts = new int[3];
+            
+            int offset = 0;
+            for(int j = 0; j < 3; j++)
+            {
+                int index = String.IndexOf(str, ":");
+                if (index == -1)
+                    index = String.Length(str) - offset;
+                
+                string part = String.SubString(str, offset, index);
+
+                parts[j] = int.Parse(part);
+
+
+                Console.WriteNum(parts[j]); ;
+                Console.WriteLine("");
+                Heap.Free(part);
+
+                offset += index + 1;
+            }
+
 
             return 0;
         }
