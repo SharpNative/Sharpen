@@ -11,7 +11,6 @@ using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.Task;
-using Sharpen.Utilities;
 
 namespace Sharpen
 {

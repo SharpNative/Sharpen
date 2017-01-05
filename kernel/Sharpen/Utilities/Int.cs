@@ -1,20 +1,18 @@
 ﻿using Sharpen.Mem;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Utilities
 {
     class Int
     {
+        public const int MinValue = -2147483648;
+        public const int MaxValue = 2147483647;
+
         /// <summary>
         /// Parse string to in
         /// </summary>
         /// <param name="value"></param>
         /// <returns>-1 when failed</returns>
-        public static unsafe int Parse(string value)
+        public static int Parse(string value)
         {
             int res = 0;
             int sign = 1;
@@ -41,40 +39,52 @@ namespace Sharpen.Utilities
         }
 
         /// <summary>
-        /// Int to string
-        /// 
-        /// NOTE: See todos
+        /// Converts an integer to a string
         /// </summary>
-        /// <param name="val"></param>
-        /// <returns></returns>
+        /// <param name="val">The integer to convert</param>
+        /// <returns>The string</returns>
         public static unsafe string ToString(int val)
         {
-            if(val == 0)
+            // This method fails for MinValue because of the sign inversion (overflow)
+            if (val == MinValue)
             {
-                return String.Clone("0");
+                return String.Clone("-2147483648");
             }
 
-            char[] characters = new char[10];
-            for (int j = 0; j < 10; j++)
-                characters[j] = (char)('0' + j);
+            char* buffer = (char*)Heap.Alloc(12);
+            int bufferOffset = 0;
 
-            char *buffer = (char *)Heap.Alloc(12);
-            buffer[11] = (char)0x00;
-
-            int i = 10;
-
-            while(i > 0 && val > 0)
+            // Sign
+            if (val < 0)
             {
-                // TODO: "0123456789"[val % 10]
-                buffer[i] = characters[val % 10];
+                bufferOffset = 1;
+                buffer[0] = '-';
+                val = -val;
+            }
+
+            // First calculate how long
+            int tempVal = val;
+            int offset = 10;
+            do
+            {
+                tempVal /= 10;
+                offset--;
+            } while (offset > 0 && tempVal > 0);
+
+            // End of string mark
+            buffer[10 - offset + bufferOffset] = '\0';
+
+            // Put the number in the buffer
+            int i = 10;
+            do
+            {
+                buffer[i - offset - 1 + bufferOffset] = "0123456789"[val % 10];
 
                 val /= 10;
                 i--;
-            }
+            } while (i > 0 && val > 0);
 
-            Heap.Free(characters);
-
-            return Util.CharPtrToString(buffer + i + 1);
+            return Util.CharPtrToString(buffer);
         }
     }
 }
