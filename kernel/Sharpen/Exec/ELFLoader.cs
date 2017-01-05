@@ -220,10 +220,10 @@ namespace Sharpen.Exec
             {
                 Paging.MapPage(newDirectory, (int)(physicalBase + j), (int)(virtAddress + j), pageFlags);
             }
-            
+
             // Schedule task
             Tasking.ScheduleTask(newTask);
-
+            
             CPU.STI();
             
             return newTask.PID;

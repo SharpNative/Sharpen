@@ -1,4 +1,6 @@
-﻿// #define HEAP_DEBUG
+﻿// These two flags are used for debugging
+// #define HEAP_DEBUG
+// #define HEAP_USE_MAGIC
 
 using Sharpen.Arch;
 using Sharpen.Utilities;
@@ -15,7 +17,7 @@ namespace Sharpen.Mem
             public Block* Prev;
             public Block* Next;
             public BlockDescriptor* Descriptor;
-#if HEAP_DEBUG
+#if HEAP_USE_MAGIC
             public uint Magic;
 #endif
         }
@@ -27,7 +29,7 @@ namespace Sharpen.Mem
             public BlockDescriptor* Next;
             public Block* First;
             public Block* FirstFree;
-#if HEAP_DEBUG
+#if HEAP_USE_MAGIC
             public uint Magic;
 #endif
         }
@@ -134,7 +136,7 @@ namespace Sharpen.Mem
             first->Size = size - sizeof(BlockDescriptor);
             first->Used = false;
             first->Descriptor = descriptor;
-#if HEAP_DEBUG
+#if HEAP_USE_MAGIC
             first->Magic = HEAP_MAGIC;
 #endif
 
@@ -143,7 +145,7 @@ namespace Sharpen.Mem
             descriptor->First = first;
             descriptor->FirstFree = first;
             descriptor->Next = null;
-#if HEAP_DEBUG
+#if HEAP_USE_MAGIC
             descriptor->Magic = HEAP_MAGIC;
 #endif
 
@@ -189,7 +191,7 @@ namespace Sharpen.Mem
             // Search for a big enough descriptor
             while (true)
             {
-#if HEAP_DEBUG
+#if HEAP_USE_MAGIC
                 if (descriptor->Magic != HEAP_MAGIC)
                     Panic.DoPanic("descriptor->magic != HEAP_MAGIC");
 #endif
@@ -305,7 +307,7 @@ namespace Sharpen.Mem
                             first->Next = currentBlock;
                             first->Size = gapSize;
                             first->Descriptor = descriptor;
-#if HEAP_DEBUG
+#if HEAP_USE_MAGIC
                             first->Magic = HEAP_MAGIC;
 #endif
                             currentBlock->Prev = first;
@@ -319,7 +321,7 @@ namespace Sharpen.Mem
                     currentBlock->Used = true;
                     currentBlock->Descriptor = descriptor;
                     currentBlock->Prev = previousBlock;
-#if HEAP_DEBUG
+#if HEAP_USE_MAGIC
                     currentBlock->Magic = HEAP_MAGIC;
 #endif
                     descriptor->FreeSpace -= size;
@@ -335,7 +337,7 @@ namespace Sharpen.Mem
                         afterBlock->Prev = currentBlock;
                         afterBlock->Descriptor = descriptor;
 
-#if HEAP_DEBUG
+#if HEAP_USE_MAGIC
                         afterBlock->Magic = HEAP_MAGIC;
 #endif
 
@@ -433,7 +435,7 @@ namespace Sharpen.Mem
             // Grab block (header is just before the data)
             Block* block = getBlockFromPtr(ptr);
 
-#if HEAP_DEBUG
+#if HEAP_USE_MAGIC
             if (block->Magic != HEAP_MAGIC)
             {
                 Panic.DoPanic("block->Magic != HEAP_MAGIC");
@@ -506,7 +508,7 @@ namespace Sharpen.Mem
             Console.Write(" i am=");
             Console.WriteHex((int)currentBlock);
 
-#if HEAP_DEBUG
+#if HEAP_USE_MAGIC
             Console.Write(" magic=");
             Console.WriteHex(currentBlock->Magic);
 #endif

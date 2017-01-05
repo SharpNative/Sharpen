@@ -171,7 +171,7 @@ namespace Sharpen.Arch
         public static unsafe void* MapToVirtual(PageDirectory* directory, int phys, int size, PageFlags flags)
         {
             int sizeAligned = (int)Align((uint)size) / 0x1000;
-            int free = bitmap.FindFirstFreeRange(size, true);
+            int free = bitmap.FindFirstFreeRange(sizeAligned, true);
             int virt = free * 0x1000;
 
             for (int i = 0; i < sizeAligned; i++)
@@ -305,7 +305,7 @@ namespace Sharpen.Arch
             int pageDirSizeAligned = (int)Align((uint)sizeof(PageDirectory));
 
             // One block for the page directory and the page tables
-            int allocated = (int)AllocateVirtual(pageDirSizeAligned + 1024 * sizeof(PageTable));
+            int allocated = (int)Heap.AlignedAlloc(0x1000, pageDirSizeAligned + 1024 * sizeof(PageTable));
             if (allocated == 0)
                 Panic.DoPanic("Couldn't clone page directory because there is no memory left");
 

@@ -99,11 +99,19 @@ namespace Sharpen.MultiTasking
             }
         }
         
+        /// <summary>
+        /// Stores the context of a task
+        /// </summary>
+        /// <param name="regsPtr">The pointer to registers</param>
         public void StoreContext(Regs* regsPtr)
         {
             Context.StoreContext(regsPtr);
         }
 
+        /// <summary>
+        /// Restores the context of a task
+        /// </summary>
+        /// <returns>The stack pointer</returns>
         public void* RestoreContext()
         {
             return Context.RestoreContext();
@@ -144,10 +152,10 @@ namespace Sharpen.MultiTasking
         {
             // TODO: more cleaning required
 
-            FileDescriptors.Cleanup();
-            Heap.Free(FileDescriptors);
+            //FileDescriptors.Cleanup();
+            //Heap.Free(FileDescriptors);
 
-            Context.Cleanup();
+            //Context.Cleanup();
         }
 
         /// <summary>
@@ -204,6 +212,10 @@ namespace Sharpen.MultiTasking
             return true;
         }
 
+        /// <summary>
+        /// Clones this task
+        /// </summary>
+        /// <returns>The clone</returns>
         public Task Clone()
         {
             Task newTask = new Task(Priority, SpawnFlags.NONE);

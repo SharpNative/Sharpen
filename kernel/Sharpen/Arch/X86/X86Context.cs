@@ -223,8 +223,7 @@ namespace Sharpen.Arch
             int pid = Tasking.Fork();
 
             // Complete fork
-            Task current = Tasking.CurrentTask;
-            X86Context currentContext = (X86Context)current.Context;
+            X86Context currentContext = (X86Context)Tasking.CurrentTask.Context;
             currentContext.completeFork(diffRegs, diffESP);
             
             return pid;
