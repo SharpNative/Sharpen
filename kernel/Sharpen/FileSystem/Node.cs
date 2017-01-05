@@ -18,6 +18,7 @@
         public FSFindDir FindDir;
         public FSReaddir ReadDir;
         public FSGetSize GetSize;
+        public FSIOCtl IOCtl;
         
         public unsafe delegate uint FSRead(Node node, uint offset, uint size, byte[] buffer);
         public unsafe delegate uint FSWrite(Node node, uint offset, uint size, byte[] buffer);
@@ -27,6 +28,7 @@
         public unsafe delegate Node FSFindDir(Node node, string name);
         public unsafe delegate DirEntry* FSReaddir(Node node, uint index);
         public unsafe delegate uint FSGetSize(Node node);
+        public unsafe delegate int FSIOCtl(Node node, int request, void* arg);
 
         /// <summary>
         /// Creates the stat structure
@@ -75,6 +77,7 @@
             clone.FindDir = FindDir;
             clone.ReadDir = ReadDir;
             clone.GetSize = GetSize;
+            clone.IOCtl = IOCtl;
             
             return clone;
         }

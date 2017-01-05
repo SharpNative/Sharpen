@@ -106,6 +106,22 @@ namespace Sharpen.FileSystem
         /// <returns>The node</returns>
         public static unsafe Node GetByPath(string path)
         {
+            // TODO: free in correct places
+            if (Tasking.CurrentTask.CurrentDirectory != null && !IsAbsolutePath(path))
+                path = String.Merge(Tasking.CurrentTask.CurrentDirectory, path);
+
+            path = ResolvePath(path);
+            Node node = GetByAbsolutePath(path);
+            return node;
+        }
+
+        /// <summary>
+        /// Get node by absolute path
+        /// </summary>
+        /// <param name="path">The absolute path</param>
+        /// <returns>The node</returns>
+        public static unsafe Node GetByAbsolutePath(string path)
+        {
             int index = String.IndexOf(path, "://");
             if (index == -1)
                 return null;
@@ -389,6 +405,23 @@ namespace Sharpen.FileSystem
                 return node.Size;
 
             return node.GetSize(node);
+        }
+
+        /// <summary>
+        /// Manipulates underlying parameters in files
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="request">The request</param>
+        /// <param name="arg">An optional argument</param>
+        /// <returns>The errorcode or return value from IOCtl</returns>
+        public static unsafe int IOCtl(Node node, int request, void* arg)
+        {
+            // TODO: handle general ioctl commands: FIOCLEX, FIONCLEX, FIONBIO, FIONREAD
+
+            if (node.IOCtl == null)
+                return 0;
+
+            return node.IOCtl(node, request, arg);
         }
     }
 }

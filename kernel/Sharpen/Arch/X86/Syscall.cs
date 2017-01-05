@@ -148,6 +148,26 @@ namespace Sharpen.Arch
                     ret = Syscalls.FTruncate(regsPtr->EBX, (uint)regsPtr->ECX);
                     break;
 
+                case Syscalls.SYS_DUP:
+                    ret = Syscalls.Dup(regsPtr->EBX);
+                    break;
+
+                case Syscalls.SYS_IOCTL:
+                    ret = Syscalls.IOCtl(regsPtr->EBX, regsPtr->ECX, (void*)regsPtr->EDX);
+                    break;
+
+                case Syscalls.SYS_MKDIR:
+                    ret = Syscalls.MkDir(Util.CharPtrToString((char*)regsPtr->EBX), regsPtr->ECX);
+                    break;
+
+                case Syscalls.SYS_RMDIR:
+                    ret = Syscalls.RmDir(Util.CharPtrToString((char*)regsPtr->EBX));
+                    break;
+
+                case Syscalls.SYS_UNLINK:
+                    ret = Syscalls.Unlink(Util.CharPtrToString((char*)regsPtr->EBX));
+                    break;
+
                 default:
                     Console.Write("Unhandled syscall ");
                     Console.WriteNum(function);

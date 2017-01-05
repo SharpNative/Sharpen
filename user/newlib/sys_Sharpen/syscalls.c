@@ -12,6 +12,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <setjmp.h>
+#include <stdarg.h>
 
 /* Cannot use printf here because it depends on other functions etc */
 #define UNIMPLEMENTED   {\
@@ -87,7 +88,7 @@ SYS3(write,          4, int, void*, int);
 SYS3(read,           5, int, void*, int);
 SYS2(open,           6, const char*, int);
 SYS1(close,          7, int);
-SYS3(seek,           8, int, int, int);
+SYS3(seek,           8, int, off_t, int);
 SYS2(fstat,          9, int, struct stat*);
 SYS2(stat,          10, const char*, struct stat*);
 SYS3(execve,        11, const char*, const char**, const char**);
@@ -107,7 +108,12 @@ SYS1(chdir,         24, const char*);
 SYS1(times,         25, struct tms*);
 SYS2(sleep,         26, uint32_t, uint32_t);
 SYS2(truncate,      27, const char*, off_t);
-SYS2(ftruncate,     28, int, off_t)
+SYS2(ftruncate,     28, int, off_t);
+SYS1(dup,           29, int);
+SYS3(ioctl,         30, int, int, void*);
+SYS2(mkdir,         31, const char*, mode_t);
+SYS1(rmdir,         32, const char*);
+SYS1(unlink,        33, const char*);
 
 // =================================== //
 // --- Implementations of methods  --- //
@@ -141,7 +147,7 @@ int gettimeofday(struct timeval* tv, void* tz)
 
 int lseek(int file, off_t offset, int whence)
 {
-    int ret = sys_seek(file, (int)offset, whence);
+    int ret = sys_seek(file, offset, whence);
     if(ret < 0)
     {
         errno = -ret;
@@ -154,6 +160,23 @@ int lseek(int file, off_t offset, int whence)
 int open(const char* name, int flags, ...)
 {
     int ret = sys_open(name, flags);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return ret;
+}
+
+int ioctl(int fd, int request, ...)
+{
+    va_list ap;
+    va_start(ap, request);
+    void* arg = va_arg(ap, void*);
+    va_end(ap);
+
+    int ret = sys_ioctl(fd, request, arg);
     if(ret < 0)
     {
         errno = -ret;
@@ -227,9 +250,38 @@ int fstat(int file, struct stat* st)
 
 int unlink(const char* name)
 {
-    UNIMPLEMENTED;
-    errno = ENOENT;
-    return -1;
+    int ret = sys_unlink(name);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return 0;
+}
+
+int rmdir(const char* name)
+{
+    int ret = sys_rmdir(name);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return 0;
+}
+
+int mkdir(const char* name, mode_t mode)
+{
+    int ret = sys_mkdir(name, mode);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return 0;
 }
 
 clock_t times(struct tms* buf)
@@ -446,6 +498,18 @@ int pipe(int pipefd[])
     }
 
     return 0;
+}
+
+int dup(int fd)
+{
+    int ret = sys_dup(fd);
+    if(ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
+
+    return ret;
 }
 
 int dup2(int oldfd, int newfd)

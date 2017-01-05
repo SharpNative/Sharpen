@@ -53,6 +53,21 @@ namespace Sharpen.MultiTasking
         }
 
         /// <summary>
+        /// Duplicates a file descriptor to the lowest unused file descriptor
+        /// </summary>
+        /// <param name="fd">The file descriptor to clone</param>
+        /// <returns>The cloned file descriptor</returns>
+        public int Dup(int fd)
+        {
+            if (fd < 0 || fd >= Capacity)
+                return -(int)ErrorCode.EBADF;
+
+            // Clone the new one, to the next available file descriptor
+            Node node = GetNode(fd).Clone();
+            return AddNode(node);
+        }
+
+        /// <summary>
         /// Replaces an old file descriptor with a new one
         /// </summary>
         /// <param name="oldfd">The old file descriptor</param>
@@ -69,8 +84,7 @@ namespace Sharpen.MultiTasking
                 VFS.Close(old);
 
             // Clone the new one, replacing the old one
-            Node newNode = Nodes[newfd];
-            Nodes[oldfd] = newNode.Clone();
+            Nodes[oldfd] = Nodes[newfd].Clone();
             return newfd;
         }
 

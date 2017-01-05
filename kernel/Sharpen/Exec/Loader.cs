@@ -18,7 +18,7 @@ namespace Sharpen.Exec
             if (argv == null)
                 Panic.DoPanic("argv == null");
 
-            Node node = VFS.GetByPath(path);
+            Node node = VFS.GetByAbsolutePath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
 

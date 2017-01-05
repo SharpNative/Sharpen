@@ -42,9 +42,14 @@ namespace Sharpen.Exec
         public const int SYS_SLEEP = 26;
         public const int SYS_TRUNCATE = 27;
         public const int SYS_FTRUNCATE = 28;
+        public const int SYS_DUP = 29;
+        public const int SYS_IOCTL = 30;
+        public const int SYS_MKDIR = 31;
+        public const int SYS_RMDIR = 32;
+        public const int SYS_UNLINK = 33;
 
         // Highest syscall number
-        public const int SYSCALL_MAX = 28;
+        public const int SYSCALL_MAX = 33;
 
         #endregion
 
@@ -163,10 +168,6 @@ namespace Sharpen.Exec
         /// <returns>The file descriptor ID</returns>
         public static int Open(string path, int flags)
         {
-            if (Tasking.CurrentTask.CurrentDirectory != null && !VFS.IsAbsolutePath(path))
-                path = String.Merge(Tasking.CurrentTask.CurrentDirectory, path);
-
-            path = VFS.ResolvePath(path);
             Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
@@ -245,7 +246,7 @@ namespace Sharpen.Exec
         /// <returns>The errorcode</returns>
         public static unsafe int Stat(string path, Stat* st)
         {
-            Node node = VFS.GetByPath(path);
+            Node node = VFS.GetByAbsolutePath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
 
@@ -416,6 +417,17 @@ namespace Sharpen.Exec
         }
 
         /// <summary>
+        /// Duplicates a file descriptor to the lowest unused file descriptor
+        /// </summary>
+        /// <param name="fd">The file descriptor to clone</param>
+        /// <returns>The cloned file descriptor</returns>
+        public static int Dup(int fd)
+        {
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+            return descriptors.Dup(fd);
+        }
+
+        /// <summary>
         /// Replaces an old file descriptor with a new one
         /// </summary>
         /// <param name="oldfd">The old file descriptor</param>
@@ -447,7 +459,7 @@ namespace Sharpen.Exec
             newDir = VFS.GetAbsolutePath(newDir);
 
             // Check if it's a directory and if it exists
-            Node node = VFS.GetByPath(newDir);
+            Node node = VFS.GetByAbsolutePath(newDir);
 
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
@@ -509,7 +521,7 @@ namespace Sharpen.Exec
         /// <returns>Errorcode</returns>
         public static int Truncate(string path, uint length)
         {
-            Node node = VFS.GetByPath(path);
+            Node node = VFS.GetByAbsolutePath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
 
@@ -533,6 +545,58 @@ namespace Sharpen.Exec
 
             VFS.Truncate(node, length);
             return 0;
+        }
+
+        /// <summary>
+        /// Manipulates underlying parameters in files
+        /// </summary>
+        /// <param name="fd">The file descriptor</param>
+        /// <param name="request">The request</param>
+        /// <param name="arg">An optional argument</param>
+        /// <returns>The errorcode or return value from IOCtl</returns>
+        public static unsafe int IOCtl(int fd, int request, void* arg)
+        {
+            FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+
+            Node node = descriptors.GetNode(fd);
+            if (node == null)
+                return -(int)ErrorCode.EBADF;
+
+            return VFS.IOCtl(node, request, arg);
+        }
+
+        /// <summary>
+        /// Creates a directory
+        /// </summary>
+        /// <param name="path">The path</param>
+        /// <param name="mode">The mode</param>
+        /// <returns>The errorcode</returns>
+        public static int MkDir(string path, int mode)
+        {
+            // TODO: implement (needs splitting the path and passing the directory name to the parent directory in VFS)
+            return -1;
+        }
+
+        /// <summary>
+        /// Removes a directory
+        /// </summary>
+        /// <param name="path">The path</param>
+        /// <returns>The errorcode</returns>
+        public static int RmDir(string path)
+        {
+            // TODO: implement (needs splitting the path and passing the directory name to the parent directory in VFS)
+            return -1;
+        }
+
+        /// <summary>
+        /// Removes a file
+        /// </summary>
+        /// <param name="path">The path</param>
+        /// <returns>The errorcode</returns>
+        public static int Unlink(string path)
+        {
+            // TODO: implement (needs splitting the path and passing the directory name to the parent directory in VFS)
+            return -1;
         }
     }
 }
