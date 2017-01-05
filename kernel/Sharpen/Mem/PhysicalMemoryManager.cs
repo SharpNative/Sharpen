@@ -6,7 +6,8 @@ namespace Sharpen.Mem
     class PhysicalMemoryManager
     {
         public static bool isInitialized = false;
-        private static BitArray m_bitmap;
+        private static BitArray bitmap;
+        private static Mutex mutex;
 
         /// <summary>
         /// Initializes the physical memory manager
@@ -15,12 +16,12 @@ namespace Sharpen.Mem
         public static unsafe void Init(uint memSize)
         {
             // Bit array to store which addresses are free
-            // One entry holds 0x1000 * 32 bytes
-            m_bitmap = new BitArray((int)(memSize * 1024 / 0x1000 / 32));
+            bitmap = new BitArray((int)(memSize * 1024 / 4 / 32));
+            mutex = new Mutex();
             uint aligned = Paging.Align((uint)Heap.CurrentEnd);
 
             Console.Write("[PMM] Bitmap at ");
-            Console.WriteHex((int)Utilities.Util.ObjectToVoidPtr(m_bitmap));
+            Console.WriteHex((int)Utilities.Util.ObjectToVoidPtr(bitmap));
             Console.Write(", heap at ");
             Console.WriteHex((int)Heap.CurrentEnd);
             Console.Write(", marking 0 - ");
@@ -35,10 +36,22 @@ namespace Sharpen.Mem
         /// Gets the first free
         /// </summary>
         /// <returns>The address</returns>
-        public static unsafe void* First()
+        public static unsafe void* FirstFree()
         {
-            int firstFree = m_bitmap.FindFirstFree(false);
+            mutex.Lock();
+            int firstFree = bitmap.FindFirstFree(false);
+            mutex.Unlock();
             return (void*)(firstFree * 0x1000);
+        }
+
+        /// <summary>
+        /// Checks if an address is in use or is free
+        /// </summary>
+        /// <param name="address">The address</param>
+        /// <returns>If the address is free</returns>
+        public static unsafe bool IsFree(void* address)
+        {
+            return !bitmap.IsBitSet((int)address / 0x1000);
         }
 
         /// <summary>
@@ -47,7 +60,24 @@ namespace Sharpen.Mem
         /// <returns>The address</returns>
         public static unsafe void* Alloc()
         {
-            int firstFree = m_bitmap.FindFirstFree(true);
+            mutex.Lock();
+            int firstFree = bitmap.FindFirstFree(true);
+            mutex.Unlock();
+            void* address = (void*)(firstFree * 0x1000);
+            return address;
+        }
+
+        /// <summary>
+        /// Allocates the first free range
+        /// </summary>
+        /// <param name="size">The size</param>
+        /// <returns>The start address</returns>
+        public static unsafe void* AllocRange(int size)
+        {
+            size = (int)Paging.Align((uint)size) / 0x1000;
+            mutex.Lock();
+            int firstFree = bitmap.FindFirstFreeRange(size, true);
+            mutex.Unlock();
             void* address = (void*)(firstFree * 0x1000);
             return address;
         }
@@ -61,8 +91,12 @@ namespace Sharpen.Mem
         {
             address = (int)Paging.Align((uint)address);
             size = Paging.Align(size);
+            mutex.Lock();
             for (int i = address; i < size; i += 0x1000)
-                Set(i);
+            {
+                bitmap.SetBit(i / 0x1000);
+            }
+            mutex.Unlock();
         }
 
         /// <summary>
@@ -71,7 +105,9 @@ namespace Sharpen.Mem
         /// <param name="address">The address</param>
         public static void Set(int address)
         {
-            m_bitmap.SetBit(address / 0x1000);
+            mutex.Lock();
+            bitmap.SetBit(address / 0x1000);
+            mutex.Unlock();
         }
 
         /// <summary>
@@ -81,7 +117,9 @@ namespace Sharpen.Mem
         public static unsafe void Free(void* address)
         {
             int addr = (int)address / 0x1000;
-            m_bitmap.ClearBit(addr);
+            mutex.Lock();
+            bitmap.ClearBit(addr);
+            mutex.Unlock();
         }
     }
 }

@@ -48,5 +48,33 @@
             else
                 return (int)num;
         }
+
+        /// <summary>
+        /// Returns the largest number of the two
+        /// </summary>
+        /// <param name="a">The first number</param>
+        /// <param name="b">The second number</param>
+        /// <returns>The largest number</returns>
+        public static int Max(int a, int b)
+        {
+            if (a > b)
+                return a;
+
+            return b;
+        }
+
+        /// <summary>
+        /// Returns the smallest number of the two
+        /// </summary>
+        /// <param name="a">The first number</param>
+        /// <param name="b">The second number</param>
+        /// <returns>The smallest number</returns>
+        public static int Min(int a, int b)
+        {
+            if (a < b)
+                return a;
+
+            return b;
+        }
     }
 }

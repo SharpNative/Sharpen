@@ -7,6 +7,8 @@ namespace Sharpen.Task
 {
     public class Tasking
     {
+        // TODO: mutexes (note that some code is guaranteed to run only in one place, so no mutexes there)
+
         private static bool taskingEnabled = false;
 
         private static List sleepingTasks;
@@ -34,10 +36,8 @@ namespace Sharpen.Task
             // Kernel task, the remaining data will be filled in when the first schedule happens
             // The Idle task has a low priority
             Task kernel = new Task(TaskPriority.LOW);
-            kernel.GID = 0;
-            kernel.UID = 0;
-            kernel.PageDir = Paging.KernelDirectory;
-            kernel.Next = null;
+            kernel.PageDirVirtual = Paging.KernelDirectory;
+            kernel.PageDirPhysical = Paging.KernelDirectory;
             kernel.FPUContext = Heap.AlignedAlloc(16, 512);
 
             KernelTask = kernel;
@@ -109,12 +109,12 @@ namespace Sharpen.Task
 
             // Set pointer and set remove flag
             previous.Next = current.Next;
-            current.Flags |= Task.TaskFlags.DESCHEDULED;
+            current.AddFlag(Task.TaskFlag.DESCHEDULED);
 
             // End of critical section
             CPU.STI();
 
-            // Wait for task switch if this current task is descheduled
+            // The task is descheduled, we need to wait until this task is removed, do task switch
             while (true)
                 ManualSchedule();
         }
@@ -222,7 +222,7 @@ namespace Sharpen.Task
             CPU.STI();
             CPU.HLT();
             CPU.CLI();
-            return (pid == CurrentTask.PID ? Task.NextPid - 1 : 0);
+            return (pid == CurrentTask.PID ? Task.NextPID - 1 : 0);
         }
 
         /// <summary>
@@ -261,7 +261,8 @@ namespace Sharpen.Task
             Memory.Memcpy(newTask.FPUContext, sourceTask.FPUContext, 512);
 
             // Paging
-            newTask.PageDir = Paging.CloneDirectory(sourceTask.PageDir);
+            newTask.PageDirVirtual = Paging.CloneDirectory(sourceTask.PageDirVirtual);
+            newTask.PageDirPhysical = newTask.PageDirVirtual->PhysicalDirectory;
 
             // Schedule
             ScheduleTask(newTask);
@@ -348,13 +349,13 @@ namespace Sharpen.Task
 
             // Switch to next task
             Task current = FindNextTask();
-            Paging.CurrentDirectory = current.PageDir;
+            Paging.SetPageDirectory(current.PageDirVirtual, current.PageDirPhysical);
             FPU.RestoreContext(current.FPUContext);
             GDT.TSS_Entry->ESP0 = (uint)current.KernelStack;
             CurrentTask = current;
 
             // Cleanup old task
-            if ((oldTask.Flags & Task.TaskFlags.DESCHEDULED) == Task.TaskFlags.DESCHEDULED)
+            if (oldTask.HasFlag(Task.TaskFlag.DESCHEDULED))
             {
                 oldTask.Cleanup();
             }

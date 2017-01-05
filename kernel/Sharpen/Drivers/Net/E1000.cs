@@ -239,7 +239,7 @@ namespace Sharpen.Drivers.Net
             }
             
 
-            m_register_base = (uint)Paging.MapAddress(Paging.KernelDirectory, (int)m_register_base, 20 * 0x1000, Paging.PageFlags.Writable | Paging.PageFlags.Present);
+            m_register_base = (uint)Paging.MapToVirtual(Paging.KernelDirectory, (int)m_register_base, 20 * 0x1000, Paging.PageFlags.Writable | Paging.PageFlags.Present);
 
             readMac();
 

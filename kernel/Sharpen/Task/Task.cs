@@ -10,23 +10,27 @@ namespace Sharpen.Task
         public const int USERSPACE_CS = 0x1B;
         public const int USERSPACE_DS = 0x23;
 
-        public enum TaskFlags
+        public enum TaskFlag
         {
             NOFLAGS = 0,
             DESCHEDULED = 1,
             SLEEPING = 2
         }
 
-        public int PID;
-        public int GID;
-        public int UID;
+        public int PID { get; set; }
+        public int GID { get; set; }
+        public int UID { get; set; }
 
         public FileDescriptors FileDescriptors { get; private set; }
         public string CurrentDirectory;
 
-        public TaskFlags Flags { get; set; }
+        private TaskFlag m_flags;
 
-        public Paging.PageDirectory* PageDir;
+        // It's not always the case we can access the PhysicalAddress field of a page directory
+        // because it may be unmapped, so we have a reference here
+        public Paging.PageDirectory* PageDirVirtual;
+        public Paging.PageDirectory* PageDirPhysical;
+
         public int* Stack;
         public int* StackStart;
         public int* KernelStack;
@@ -46,7 +50,7 @@ namespace Sharpen.Task
         private uint m_sleepUntilSubTicks;
 
         // PID counter
-        public static int NextPid = 0;
+        public static int NextPID = 0;
 
         /// <summary>
         /// Constructor of task
@@ -54,11 +58,39 @@ namespace Sharpen.Task
         /// <param name="priority">The priority of the task</param>
         public Task(TaskPriority priority)
         {
-            PID = NextPid++;
+            PID = NextPID++;
             FileDescriptors = new FileDescriptors();
 
             Priority = priority;
             TimeLeft = (int)priority;
+        }
+
+        /// <summary>
+        /// Checks if the task has a flag
+        /// </summary>
+        /// <param name="flag">The flag</param>
+        /// <returns>If it has the flag</returns>
+        public bool HasFlag(TaskFlag flag)
+        {
+            return ((m_flags & flag) == flag);
+        }
+
+        /// <summary>
+        /// Adds a flag to the task
+        /// </summary>
+        /// <param name="flag">The flag</param>
+        public void AddFlag(TaskFlag flag)
+        {
+            m_flags |= flag;
+        }
+
+        /// <summary>
+        /// Removes a flag from the task
+        /// </summary>
+        /// <param name="flag">The flag</param>
+        public void RemoveFlag(TaskFlag flag)
+        {
+            m_flags &= ~flag;
         }
 
         /// <summary>
@@ -67,9 +99,13 @@ namespace Sharpen.Task
         public void Cleanup()
         {
             // TODO: more cleaning required
+
             FileDescriptors.Cleanup();
+            Heap.Free(FileDescriptors);
+
             //Heap.Free(FPUContext);
             //Heap.Free(KernelStackStart);
+
             //Paging.FreeDirectory(PageDir);
         }
 
@@ -80,6 +116,7 @@ namespace Sharpen.Task
         public void SetFileDescriptors(FileDescriptors fileDescriptors)
         {
             FileDescriptors.Cleanup();
+            Heap.Free(FileDescriptors);
             FileDescriptors = fileDescriptors;
         }
 
@@ -91,7 +128,7 @@ namespace Sharpen.Task
         /// <returns>The amount of time the task still needs to sleep (only if interrupted)</returns>
         public uint SleepUntil(uint fullTicks, uint subTicks)
         {
-            Flags |= TaskFlags.SLEEPING;
+            m_flags |= TaskFlag.SLEEPING;
             m_sleepUntilFullTicks = fullTicks;
             m_sleepUntilSubTicks = subTicks;
             Tasking.AddToSleepingList(Tasking.CurrentTask);
@@ -106,20 +143,20 @@ namespace Sharpen.Task
         public bool IsSleeping()
         {
             // If the flag is not set, we know it's not sleeping
-            if ((Flags & TaskFlags.SLEEPING) != TaskFlags.SLEEPING)
+            if ((m_flags & TaskFlag.SLEEPING) != TaskFlag.SLEEPING)
                 return false;
 
             // If the full ticks are greater than the fullticks we needed to sleep until, we know we're done sleeping
             if (PIT.FullTicks > m_sleepUntilFullTicks)
             {
-                Flags &= ~TaskFlags.SLEEPING;
+                m_flags &= ~TaskFlag.SLEEPING;
                 return false;
             }
 
             // If the full ticks are the same, and the subticks are greater, we know we're done sleeping
             if (PIT.FullTicks == m_sleepUntilFullTicks && PIT.SubTicks > m_sleepUntilSubTicks)
             {
-                Flags &= ~TaskFlags.SLEEPING;
+                m_flags &= ~TaskFlag.SLEEPING;
                 return false;
             }
 

@@ -3,6 +3,7 @@
     public class BitArray
     {
         private int[] m_bitmap;
+
         private int m_N;
         private int m_leastClear = 0;
 
@@ -45,7 +46,7 @@
         /// Tests the bit k
         /// </summary>
         /// <param name="k">The bit number</param>
-        public bool TestBit(int k)
+        public bool IsBitSet(int k)
         {
             int bitmap = k >> 5;
             int index = k & (32 - 1);
@@ -53,8 +54,48 @@
         }
 
         /// <summary>
+        /// Finds free range and potentially set it
+        /// </summary>
+        /// <param name="size">The size of the range of free bits</param>
+        /// <param name="set">If it should also be set</param>
+        /// <returns></returns>
+        public int FindFirstFreeRange(int size, bool set)
+        {
+            int start = FindFirstFree();
+            
+            // We start with one because from a relative offset, bit zero is not set
+            int i = 1;
+            while (i < size)
+            {
+                // The current bit is set
+                if (IsBitSet(start + i))
+                {
+                    start++;
+                    i = 0;
+                }
+                // The current bit is not set
+                else
+                {
+                    i++;
+                }
+            }
+            
+            // Set it if needed
+            if (set)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    SetBit(start + j);
+                }
+            }
+
+            return start;
+        }
+
+        /// <summary>
         /// Finds the first free bit and potentially set it
         /// </summary>
+        /// <param name="size">The size of the range of free bits</param>
         /// <param name="set">If it should also be set</param>
         /// <returns></returns>
         public int FindFirstFree(bool set)
@@ -73,9 +114,9 @@
                     if ((bitmap & (1 << j)) == 0)
                     {
                         if (set)
-                            m_bitmap[i] |= 1 << j;
+                            m_bitmap[i] |= (1 << j);
 
-                        return i * 32 + j;
+                        return (i << 5) + j;
                     }
                 }
             }

@@ -5,17 +5,15 @@ namespace Sharpen.Arch
 {
     public sealed class Paging
     {
-        // TODO: (VERIFY THIS) set temp address to used in frames
         // TODO: mutexes?
-        
-        // Last page entry in last table
-        // TODO: update this, the real value we want doesn't work because of overflowing numbers, great!
-        private const uint TEMP_MAP_ADDRESS = 0x7FFFF000;//0xFFFFF000;
+
+        // Last page entry in last table is kept free (see mapTemporarily)
+        private const uint TEMP_MAP_ADDRESS = 0xFFFFF000;
 
         // Flags on a page
         public enum PageFlags
         {
-            Present = 1,
+            Present = (1 << 0x0),
             Writable = (1 << 0x1),
             UserMode = (1 << 0x2),
             NoCache = (1 << 0x4)
@@ -24,7 +22,7 @@ namespace Sharpen.Arch
         // Flags on a table
         public enum TableFlags
         {
-            Present = 1,
+            Present = (1 << 0x0),
             Writable = (1 << 0x1),
             UserMode = (1 << 0x2),
             WriteThrough = (1 << 0x3),
@@ -34,36 +32,26 @@ namespace Sharpen.Arch
 
         public unsafe struct PageTable
         {
-            public fixed int pages[1024];
+            public fixed int Pages[1024];
         }
 
         public unsafe struct PageDirectory
         {
-            public fixed int tables[1024];
+            public fixed int PhysicalTables[1024];
+            public fixed int VirtualTables[1024];
+            public PageDirectory* PhysicalDirectory;
         }
 
         // Kernel directory
         public static unsafe PageDirectory* KernelDirectory { get; private set; }
         
-        /// <summary>
-        /// The current paging directory
-        /// </summary>
-        public static unsafe PageDirectory* CurrentDirectory
-        {
-            get
-            {
-                return m_currentDirectory;
-            }
+        // The current page directory (virtual address)
+        public static unsafe PageDirectory* CurrentDirectory { get; private set; }
 
-            set
-            {
-                m_currentDirectory = value;
-                setDirectoryInternal(value);
-            }
-        }
+        // The current page directory (physical address)
+        public static unsafe PageDirectory* CurrentDirectoryPhysical { get; private set; }
 
-        private static BitArray m_bitmap;
-        private static unsafe PageDirectory* m_currentDirectory;
+        private static BitArray bitmap;
 
         #region Helpers
 
@@ -95,29 +83,27 @@ namespace Sharpen.Arch
         /// <param name="memSize">Memory size</param>
         public static unsafe void Init(uint memSize)
         {
-            // Flags for kernel pages
-            PageFlags flags = PageFlags.Present | PageFlags.Writable | PageFlags.UserMode;
+            // Flags
+            PageFlags kernelFlags = PageFlags.Present | PageFlags.Writable;
+            PageFlags userFlags = PageFlags.Present | PageFlags.Writable | PageFlags.UserMode;
 
             // Bit array to store which frames are free
-            // One entry holds 0x1000 * 32 bytes
-            m_bitmap = new BitArray((int)(memSize * 1024 / 0x1000 / 32));
+            bitmap = new BitArray((int)(memSize * 1024 / 4 / 32));
+            unchecked
+            {
+                SetFrame((int)TEMP_MAP_ADDRESS);
+            }
 
             // Create a new page directory for the kernel
-            KernelDirectory = CreateNewDirectoryPhysically(flags);
-            CurrentDirectory = KernelDirectory;
-
-            // Make the directory available
-            MapPage(KernelDirectory, (int)KernelDirectory, (int)KernelDirectory, flags);
-            for (int i = 0; i < 1024; i++)
-            {
-                MapPage(KernelDirectory, (int)(KernelDirectory->tables[i] & 0xFFFFF000), (int)(KernelDirectory->tables[i] & 0xFFFFF000), flags);
-            }
+            // Note: At this point, virtual address == physical address due to identity mapping
+            KernelDirectory = CreateNewDirectoryPhysically(userFlags);
+            SetPageDirectory(KernelDirectory, KernelDirectory);
 
             // Mark the used memory as used
             int address = 0;
-            while (address < (uint)PhysicalMemoryManager.First())
+            while (address < (int)PhysicalMemoryManager.FirstFree())
             {
-                MapPage(KernelDirectory, address, address, flags);
+                MapPage(KernelDirectory, address, address, kernelFlags);
                 SetFrame(address);
                 address += 0x1000;
             }
@@ -134,7 +120,8 @@ namespace Sharpen.Arch
         public static unsafe PageDirectory* CreateNewDirectoryPhysically(PageFlags flags)
         {
             // Allocate a new block of physical memory to store our physical page in
-            PageDirectory* directory = (PageDirectory*)PhysicalMemoryManager.Alloc();
+            PageDirectory* directory = (PageDirectory*)Heap.AlignedAlloc(0x1000, sizeof(PageDirectory));
+            directory->PhysicalDirectory = directory;
             if (directory == null)
                 Panic.DoPanic("directory == null");
 
@@ -147,7 +134,9 @@ namespace Sharpen.Arch
 
                 Memory.Memset(table, 0, sizeof(PageTable));
 
-                directory->tables[i] = (int)table | (int)flags;
+                // Note: At this point, virtual address == physical address due to identity mapping
+                directory->PhysicalTables[i] = (int)table | (int)flags;
+                directory->VirtualTables[i] = (int)table;
             }
 
             return directory;
@@ -165,24 +154,62 @@ namespace Sharpen.Arch
             // Get indices
             int pageIndex = virt / 0x1000;
             int tableIndex = pageIndex / 1024;
-            
-            // Set page
-            PageTable* table = (PageTable*)(directory->tables[tableIndex] & 0xFFFFF000);
-            table->pages[pageIndex & (1024 - 1)] = ToFrameAddress(phys) | (int)flags;
+
+            // Set page using its virtual address
+            PageTable* table = (PageTable*)directory->VirtualTables[tableIndex];
+            table->Pages[pageIndex & (1024 - 1)] = ToFrameAddress(phys) | (int)flags;
         }
 
-        public static unsafe void* MapAddress(PageDirectory* directory, int phys, int size, PageFlags flags)
+        /// <summary>
+        /// Maps a physical address (range) to a free virtual address (range)
+        /// </summary>
+        /// <param name="directory">The page directory</param>
+        /// <param name="phys">The physical address</param>
+        /// <param name="size">The size of the range</param>
+        /// <param name="flags">The flags</param>
+        /// <returns>The virtual address</returns>
+        public static unsafe void* MapToVirtual(PageDirectory* directory, int phys, int size, PageFlags flags)
         {
-            /*int free = m_bitmap.FindFirstFree(true);
-            int virt = free * 0x1000;
-            MapPage(directory, phys, virt, flags);
-            return (void*)virt;*/
-            // TODO
+            int sizeAligned = (int)Align((uint)size) / 0x1000;
+            for (int i = 0; i < size; i++)
+            {
+                if (!PhysicalMemoryManager.IsFree((void*)(phys + i * 0x1000)))
+                    Panic.DoPanic("Tried to map a physical address to virtual that's already used by the PMM!");
+            }
 
-            int virt = (int)(TEMP_MAP_ADDRESS - 0x1000 - 0x1000 * size);
-            for(int i = 0; i < size / 0x1000; i++)
-                MapPage(directory, phys + 0x1000 * i, virt + 0x1000 * i, flags);
+            int free = bitmap.FindFirstFreeRange(size, true);
+            int virt = free * 0x1000;
+
+            for (int i = 0; i < sizeAligned; i++)
+            {
+                int offset = i * 0x1000;
+                MapPage(directory, phys + offset, virt + offset, flags);
+            }
+
             return (void*)virt;
+        }
+
+        /// <summary>
+        /// Gets the physical address from a virtual address
+        /// </summary>
+        /// <param name="pageDir">The page directory to look into</param>
+        /// <param name="virt">The virtual address</param>
+        /// <returns>The physical address</returns>
+        public static unsafe void* GetPhysicalFromVirtual(PageDirectory* pageDir, void* virt)
+        {
+            // Get indices
+            int address = (int)virt;
+            int remaining = address % 0x1000;
+            int frame = address / 0x1000;
+
+            // Find corresponding table to the virtual address
+            PageTable* table = (PageTable*)pageDir->VirtualTables[frame / 1024];
+            if (table == null)
+                Panic.DoPanic("table == null");
+
+            // Calculate page
+            int page = table->Pages[frame & (1024 - 1)];
+            return (void*)(GetFrameAddress(page) + remaining);
         }
 
         /// <summary>
@@ -192,30 +219,7 @@ namespace Sharpen.Arch
         /// <returns>The physical address</returns>
         public static unsafe void* GetPhysicalFromVirtual(void* virt)
         {
-            // Get indices
-            int address = (int)virt;
-            int remaining = address % 0x1000;
-            int frame = address / 0x1000;
-
-            // Find corresponding table to the virtual address
-            PageTable* table = (PageTable*)(CurrentDirectory->tables[frame / 1024] & 0xFFFFF000);
-            if (table == null)
-                Panic.DoPanic("table == null");
-
-            // Calculate page
-            int page = table->pages[frame & (1024 - 1)];
-            return (void*)(GetFrameAddress(page) + remaining);
-        }
-
-        /// <summary>
-        /// Gets a page
-        /// </summary>
-        /// <param name="directory">The page directory</param>
-        /// <param name="address">The address</param>
-        /// <returns>The page</returns>
-        public static unsafe int GetPage(PageDirectory* directory, int address)
-        {
-            return directory->tables[address & (1024 - 1)];
+            return GetPhysicalFromVirtual(CurrentDirectory, virt);
         }
 
         /// <summary>
@@ -224,7 +228,7 @@ namespace Sharpen.Arch
         /// <param name="frame">Frame address</param>
         public static void SetFrame(int frame)
         {
-            m_bitmap.SetBit(frame / 0x1000);
+            bitmap.SetBit(frame / 0x1000);
         }
 
         /// <summary>
@@ -233,27 +237,7 @@ namespace Sharpen.Arch
         /// <param name="frame">Frame address</param>
         public static void ClearFrame(int frame)
         {
-            m_bitmap.ClearBit(frame / 0x1000);
-        }
-
-        /// <summary>
-        /// Allocates a free frame
-        /// </summary>
-        /// <returns>The free frame</returns>
-        public static unsafe int AllocateFrame()
-        {
-            int free = m_bitmap.FindFirstFree(true);
-            int address = free * 0x1000;
-            return address;
-        }
-
-        /// <summary>
-        /// Frees a frame
-        /// </summary>
-        /// <param name="page">The page</param>
-        public static unsafe void FreeFrame(int page)
-        {
-            ClearFrame(GetFrameAddress(page));
+            bitmap.ClearBit(frame / 0x1000);
         }
 
         /// <summary>
@@ -283,7 +267,7 @@ namespace Sharpen.Arch
             uint sizeAligned = Align((uint)size);
 
             // Allocate
-            int free = m_bitmap.FindFirstFree();
+            int free = bitmap.FindFirstFreeRange((int)(sizeAligned / 0x1000), true);
             int start = free * 0x1000;
             int address = start;
             int end = (int)(address + sizeAligned);
@@ -291,14 +275,10 @@ namespace Sharpen.Arch
             while (address < end)
             {
                 int phys = (int)PhysicalMemoryManager.Alloc();
-
                 MapPage(CurrentDirectory, phys, address, flags);
-                //MapPage(KernelDirectory, phys, address, flags);
-
-                SetFrame(address);
                 address += 0x1000;
             }
-
+            
             // Clear the data before returning it for safety
             Memory.Memset((void*)start, 0, size);
 
@@ -327,26 +307,37 @@ namespace Sharpen.Arch
         /// <returns>The cloned page directory</returns>
         public static unsafe PageDirectory* CloneDirectory(PageDirectory* source)
         {
-            // One block for the directory and its tables
-            int allocated = (int)Heap.AlignedAlloc(0x1000, sizeof(PageDirectory) + 1024 * sizeof(PageTable));
+            // Note: sizeof(PageDirectory) is not neccesarily a page
+            int pageDirSizeAligned = (int)Align((uint)sizeof(PageDirectory));
+
+            // One block for the page directory and the page tables
+            int allocated = (int)AllocateVirtual(pageDirSizeAligned + 1024 * sizeof(PageTable));
             if (allocated == 0)
-                Panic.DoPanic("Couldn't clone a new directory because there is no memory");
+                Panic.DoPanic("Couldn't clone page directory because there is no memory left");
+
+            int allocatedPhysical = (int)GetPhysicalFromVirtual((void*)allocated);
 
             PageDirectory* destination = (PageDirectory*)allocated;
+            destination->PhysicalDirectory = (PageDirectory*)allocatedPhysical;
             for (int i = 0; i < 1024; i++)
             {
-                int sourceTable = source->tables[i];
+                int sourceTable = source->VirtualTables[i];
                 if (sourceTable == 0)
                     Panic.DoPanic("sourceTable == 0?!");
 
-                // Get the pointer without the flags
-                PageTable* sourceTablePtr = (PageTable*)(sourceTable & 0xFFFFF000);
-                // Grab flags
-                int flags = sourceTable & 0xFFF;
+                // Get the pointer without the flags and the flags seperately
+                PageTable* sourceTablePtr = (PageTable*)sourceTable;
+                int flags = source->PhysicalTables[i] & 0xFFF;
 
-                PageTable* newTable = (PageTable*)(allocated + sizeof(PageDirectory) + i * sizeof(PageTable));
+                // Calculate addresses
+                int addressOffset = pageDirSizeAligned + i * sizeof(PageTable);
+                PageTable* newTable = (PageTable*)(allocated + addressOffset);
+                int newTablePhysical = allocatedPhysical + addressOffset;
+
+                // Copy table data and set pointers
                 Memory.Memcpy(newTable, sourceTablePtr, sizeof(PageTable));
-                destination->tables[i] = (int)newTable | flags;
+                destination->PhysicalTables[i] = newTablePhysical | flags;
+                destination->VirtualTables[i] = (int)newTable;
             }
 
             return destination;
@@ -358,9 +349,33 @@ namespace Sharpen.Arch
         /// <param name="directory">The directory</param>
         public static unsafe void FreeDirectory(PageDirectory* directory)
         {
+            if (directory == CurrentDirectory)
+                Panic.DoPanic("Tried to free the current page directory");
+
+            if (directory == KernelDirectory)
+                Panic.DoPanic("Tried to free the kernel page directory");
+
             // The directory was cloned, so it was allocated in one huge block
-            // TODO
-            //Heap.Free(directory);
+            Heap.Free(directory);
+        }
+
+        /// <summary>
+        /// Sets the page directory
+        /// </summary>
+        /// <param name="directoryVirtual">The virtual address of the page directory</param>
+        /// <param name="directoryPhysical">The physical address of the page directory</param>
+        public static unsafe void SetPageDirectory(PageDirectory* directoryVirtual, PageDirectory* directoryPhysical)
+        {
+            // Note: This is a way to solve the issue that a page directory is not available
+            //       in every other page directory (due to security).
+            //       So: upon a task switch, setting a directory physically works for the CPU
+            //       but we also need its virtual address.
+            //       Setting the virtual address with a getter and updating the CR3 with the physical address
+            //       also wont work, because it's not guaranteed you can read the page directory
+            //       as it may not be available in the current task.
+            CurrentDirectory = directoryVirtual;
+            CurrentDirectoryPhysical = directoryPhysical;
+            setDirectoryInternal(directoryPhysical);
         }
 
         /// <summary>

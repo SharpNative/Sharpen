@@ -256,7 +256,7 @@ namespace Sharpen.FileSystem
             // Absolute path
             else
             {
-                path = VFS.ResolvePath(path);
+                path = ResolvePath(path);
             }
 
             return path;

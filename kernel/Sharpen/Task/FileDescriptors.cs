@@ -62,7 +62,7 @@ namespace Sharpen.Task
         {
             if (oldfd < 0 || newfd < 0 || oldfd >= Capacity || newfd >= Capacity)
                 return -(int)ErrorCode.EBADF;
-            
+
             // If there is an old file descriptor node, close it
             Node old = GetNode(oldfd);
             if (old != null)
@@ -129,7 +129,15 @@ namespace Sharpen.Task
         /// </summary>
         public void Cleanup()
         {
-            // TODO
+            for (int i = 0; i < Used; i++)
+            {
+                Node node = GetNode(i);
+                if (node == null)
+                    continue;
+
+                VFS.Close(node);
+                //Heap.Free(node);
+            }
         }
 
         /// <summary>
@@ -146,9 +154,10 @@ namespace Sharpen.Task
             {
                 Node sourceNode = source.GetNode(i);
                 if (sourceNode != null)
+                {
                     Nodes[i] = sourceNode.Clone();
-                
-                Offsets[i] = source.GetOffset(i);
+                    Offsets[i] = source.GetOffset(i);
+                }
             }
         }
 
@@ -171,7 +180,8 @@ namespace Sharpen.Task
                 Memory.Memcpy(Util.ObjectToVoidPtr(newNodeArray), Util.ObjectToVoidPtr(Nodes), oldCap * sizeof(void*));
                 Memory.Memcpy(Util.ObjectToVoidPtr(newOffsetArray), Util.ObjectToVoidPtr(Offsets), oldCap * sizeof(uint));
 
-                // TODO: free old arrays
+                Heap.Free(Nodes);
+                Heap.Free(Offsets);
 
                 Nodes = newNodeArray;
                 Offsets = newOffsetArray;

@@ -58,18 +58,24 @@
         /// <returns>The clone</returns>
         public Node Clone()
         {
+            // We shouldn't copy the reference to the Open and Close method, because that's the task of the original node
             Node clone = new Node();
+
             clone.Size = Size;
             clone.Cookie = Cookie;
+            clone.Cookie2 = Cookie2;
+            clone.Cookie3 = Cookie3;
             clone.FileMode = FileMode;
+            clone.OpenFlags = OpenFlags;
             clone.Flags = Flags;
+            
             clone.Read = Read;
             clone.Write = Write;
-            clone.Open = Open;
-            clone.Close = Close;
+            clone.Truncate = Truncate;
             clone.FindDir = FindDir;
             clone.ReadDir = ReadDir;
             clone.GetSize = GetSize;
+            
             return clone;
         }
     }

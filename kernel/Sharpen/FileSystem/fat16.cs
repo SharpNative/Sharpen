@@ -194,7 +194,7 @@ namespace Sharpen.FileSystem
             node.Cookie3 = num;
 
             /**
-             * Is it a directory?
+             * Is it a file?
              */
             if ((dirEntry->Attribs & ATTRIB_SUBDIR) == 0)
             {

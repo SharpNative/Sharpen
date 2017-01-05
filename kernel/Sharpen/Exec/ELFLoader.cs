@@ -193,7 +193,7 @@ namespace Sharpen.Exec
                     Memory.Memcpy((void*)((uint)allocated + offset), (void*)((uint)elf + section->Offset), (int)section->Size);
                 }
             }
-
+            
             // Count arguments
             int argc = 0;
             while (argv[argc] != null)
@@ -207,17 +207,20 @@ namespace Sharpen.Exec
             CPU.CLI();
 
             Task.Task newTask = Tasking.CreateTask((void*)elf->Entry, TaskPriority.NORMAL, initialStack, 2, flags);
+            Heap.Free(initialStack);
 
             // Map memory
             Paging.PageDirectory* newDirectory = Paging.CloneDirectory(Paging.CurrentDirectory);
             Paging.PageFlags pageFlags = Paging.PageFlags.Present | Paging.PageFlags.Writable | Paging.PageFlags.UserMode;
+            int physicalBase = (int)Paging.GetPhysicalFromVirtual(allocated);
             for (uint j = 0; j < size; j += 0x1000)
             {
-                Paging.MapPage(newDirectory, (int)Paging.GetPhysicalFromVirtual((void*)((uint)allocated + j)), (int)(virtAddress + j), pageFlags);
+                Paging.MapPage(newDirectory, (int)(physicalBase + j), (int)(virtAddress + j), pageFlags);
             }
-
+            
             // Schedule task
-            newTask.PageDir = newDirectory;
+            newTask.PageDirVirtual = newDirectory;
+            newTask.PageDirPhysical = newDirectory->PhysicalDirectory;
             Tasking.ScheduleTask(newTask);
 
             CPU.STI();

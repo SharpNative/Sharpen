@@ -49,7 +49,6 @@ namespace Sharpen
 
             initStorage();
             initNetworking();
-            
             runUserspace();
 
             // Idle loop

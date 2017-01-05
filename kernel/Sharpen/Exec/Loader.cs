@@ -1,4 +1,5 @@
 ﻿using Sharpen.FileSystem;
+using Sharpen.Mem;
 using Sharpen.Task;
 
 namespace Sharpen.Exec
@@ -26,6 +27,7 @@ namespace Sharpen.Exec
             byte[] buffer = new byte[node.Size];
             if (buffer == null)
             {
+                Heap.Free(node);
                 VFS.Close(node);
                 return -(int)ErrorCode.ENOMEM;
             }
@@ -35,7 +37,10 @@ namespace Sharpen.Exec
             VFS.Close(node);
             
             // Pass execution to ELF loader
-            return ELFLoader.Execute(buffer, node.Size, argv, flags);
+            int status = ELFLoader.Execute(buffer, node.Size, argv, flags);
+            Heap.Free(buffer);
+            Heap.Free(node);
+            return status;
         }
     }
 }

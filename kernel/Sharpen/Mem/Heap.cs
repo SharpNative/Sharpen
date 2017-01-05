@@ -369,9 +369,18 @@ namespace Sharpen.Mem
             else
             {
                 if (alignment == 0x1000)
+                {
                     return KAlloc(size, true);
-                else
+                }
+                else if (alignment == 4)
+                {
                     return KAlloc(size, false);
+                }
+                else
+                {
+                    Panic.DoPanic("Unsupported alignment in early allocation");
+                    return null;
+                }
             }
         }
 
@@ -429,6 +438,8 @@ namespace Sharpen.Mem
             }
 #endif
 
+            mutex.Lock();
+
             // Not used anymore
             block->Used = false;
             block->Descriptor->FreeSpace += block->Size;
@@ -462,6 +473,8 @@ namespace Sharpen.Mem
                 if (block->Next != null)
                     block->Next->Prev = prev;
             }
+
+            mutex.Unlock();
         }
 
         /// <summary>
@@ -496,33 +509,7 @@ namespace Sharpen.Mem
 #endif
             Console.WriteLine("");
         }
-
-        /// <summary>
-        /// Dumps the data
-        /// </summary>
-        public static void Dump()
-        {
-            BlockDescriptor* descriptor = firstDescriptor;
-            Block* currentBlock = descriptor->First;
-
-            // Search in the descriptor
-            while (true)
-            {
-                dumpBlock(currentBlock);
-                // Keyboard.Getch();
-
-                currentBlock = currentBlock->Next;
-                if (currentBlock == null)
-                {
-                    descriptor = descriptor->Next;
-                    if (descriptor == null)
-                        return;
-
-                    return;
-                }
-            }
-        }
-
+        
         /// <summary>
         /// Temporary kernel memory allocation before a real heap is set up
         /// </summary>
@@ -532,24 +519,16 @@ namespace Sharpen.Mem
         public static unsafe void* KAlloc(int size, bool align)
         {
 #if HEAP_DEBUG
-            if (m_realHeap)
+            if (useRealHeap)
                 Panic.DoPanic("KAlloc has been called after real heap started!");
 #endif
 
             if (PhysicalMemoryManager.isInitialized)
             {
-                // Remaining count
-                uint count = Paging.Align((uint)size) / 0x1000 - 1;
-
-                void* a = PhysicalMemoryManager.Alloc();
-                for (int i = 0; i < count; i++)
-                    PhysicalMemoryManager.Alloc();
-
-                return a;
+                return PhysicalMemoryManager.AllocRange(size);
             }
             else
             {
-
                 uint address = (uint)CurrentEnd;
                 if (align)
                     address = Paging.Align(address);
