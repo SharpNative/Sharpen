@@ -171,12 +171,6 @@ namespace Sharpen.Arch
         public static unsafe void* MapToVirtual(PageDirectory* directory, int phys, int size, PageFlags flags)
         {
             int sizeAligned = (int)Align((uint)size) / 0x1000;
-            for (int i = 0; i < size; i++)
-            {
-                if (!PhysicalMemoryManager.IsFree((void*)(phys + i * 0x1000)))
-                    Panic.DoPanic("Tried to map a physical address to virtual that's already used by the PMM!");
-            }
-
             int free = bitmap.FindFirstFreeRange(size, true);
             int virt = free * 0x1000;
 

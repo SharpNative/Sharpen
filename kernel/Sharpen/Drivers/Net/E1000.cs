@@ -230,7 +230,7 @@ namespace Sharpen.Drivers.Net
             }
 
             /**
-             * Check if 32bit
+             * Check if there is a memory bar
              */
             if ((dev.BAR0.flags & PCI.BAR_IO) > 0)
             {
@@ -238,12 +238,10 @@ namespace Sharpen.Drivers.Net
                 return;
             }
             
-
             m_register_base = (uint)Paging.MapToVirtual(Paging.KernelDirectory, (int)m_register_base, 20 * 0x1000, Paging.PageFlags.Writable | Paging.PageFlags.Present);
 
             readMac();
-
-
+            
             IRQ.SetHandler(m_irq_num, handler);
 
 
