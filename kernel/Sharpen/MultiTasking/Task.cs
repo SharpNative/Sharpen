@@ -1,44 +1,55 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Mem;
+using Sharpen.Utilities;
 
-namespace Sharpen.Task
+namespace Sharpen.MultiTasking
 {
     public unsafe class Task
     {
-        public const int KERNEL_CS = 0x08;
-        public const int KERNEL_DS = 0x10;
-        public const int USERSPACE_CS = 0x1B;
-        public const int USERSPACE_DS = 0x23;
-
+        // Flags that a task can hold
         public enum TaskFlag
         {
-            NOFLAGS = 0,
             DESCHEDULED = 1,
             SLEEPING = 2
         }
 
-        public int PID { get; set; }
-        public int GID { get; set; }
-        public int UID { get; set; }
+        // Flags that can be used when a task spawns
+        public enum SpawnFlags
+        {
+            NONE = 0,
+            SWAP_PID = 1,
+            KERNEL_TASK = 2
+        }
+
+        public int PID { get; private set; }
+        public int GID { get; private set; }
+        public int UID { get; private set; }
 
         public FileDescriptors FileDescriptors { get; private set; }
-        public string CurrentDirectory;
+
+        // Current working directory
+        public string CurrentDirectory
+        {
+            get
+            {
+                return m_currentDirectory;
+            }
+
+            set
+            {
+                string old = m_currentDirectory;
+                m_currentDirectory = value;
+                Heap.Free(old);
+            }
+        }
 
         private TaskFlag m_flags;
+        private string m_currentDirectory;
 
-        // It's not always the case we can access the PhysicalAddress field of a page directory
-        // because it may be unmapped, so we have a reference here
-        public Paging.PageDirectory* PageDirVirtual;
-        public Paging.PageDirectory* PageDirPhysical;
+        // Context
+        public IContext Context { get; private set; }
 
-        public int* Stack;
-        public int* StackStart;
-        public int* KernelStack;
-        public int* KernelStackStart;
-        public void* FPUContext;
-        public void* DataEnd;
-        public Regs* SysRegs;
-
+        // Next task in the linked list
         public Task Next;
 
         // Priority times
@@ -51,18 +62,51 @@ namespace Sharpen.Task
 
         // PID counter
         public static int NextPID = 0;
-
+        
         /// <summary>
         /// Constructor of task
         /// </summary>
         /// <param name="priority">The priority of the task</param>
-        public Task(TaskPriority priority)
+        /// <param name="flags">The spawn flags</param>
+        public Task(TaskPriority priority, SpawnFlags flags)
         {
             PID = NextPID++;
             FileDescriptors = new FileDescriptors();
 
             Priority = priority;
             TimeLeft = (int)priority;
+
+            // Check spawn flags
+            if ((flags & SpawnFlags.SWAP_PID) == SpawnFlags.SWAP_PID)
+            {
+                int old = PID;
+                PID = Tasking.CurrentTask.PID;
+                Tasking.CurrentTask.PID = old;
+            }
+
+            // UID & GID
+            GID = Tasking.CurrentTask.GID;
+            UID = Tasking.CurrentTask.UID;
+
+            // Context
+            Context = new X86Context();
+
+            // FS related stuff
+            if ((flags & SpawnFlags.KERNEL_TASK) != SpawnFlags.KERNEL_TASK)
+            {
+                SetFileDescriptors(Tasking.CurrentTask.FileDescriptors.Clone());
+                CurrentDirectory = String.Clone(Tasking.CurrentTask.CurrentDirectory);
+            }
+        }
+        
+        public void StoreContext(Regs* regsPtr)
+        {
+            Context.StoreContext(regsPtr);
+        }
+
+        public void* RestoreContext()
+        {
+            return Context.RestoreContext();
         }
 
         /// <summary>
@@ -103,10 +147,7 @@ namespace Sharpen.Task
             FileDescriptors.Cleanup();
             Heap.Free(FileDescriptors);
 
-            //Heap.Free(FPUContext);
-            //Heap.Free(KernelStackStart);
-
-            //Paging.FreeDirectory(PageDir);
+            Context.Cleanup();
         }
 
         /// <summary>
@@ -161,6 +202,13 @@ namespace Sharpen.Task
             }
 
             return true;
+        }
+
+        public Task Clone()
+        {
+            Task newTask = new Task(Priority, SpawnFlags.NONE);
+            newTask.Context.CloneFrom(Context);
+            return newTask;
         }
     }
 }

@@ -2,13 +2,15 @@
 using Sharpen.Drivers.Power;
 using Sharpen.FileSystem;
 using Sharpen.Mem;
-using Sharpen.Task;
+using Sharpen.MultiTasking;
 using Sharpen.Utilities;
 
 namespace Sharpen.Exec
 {
     public class Syscalls
     {
+        // TODO: check for freeing
+
         #region Syscall numbers
 
         public const int SYS_EXIT = 0;
@@ -91,18 +93,8 @@ namespace Sharpen.Exec
         /// <returns>0 if we're child, PID of child if we're parent</returns>
         public static unsafe int Fork()
         {
-            // Note that kernel stack and user stack are different
-            Task.Task current = Tasking.CurrentTask;
-            int diffRegs = (int)current.SysRegs - (int)current.StackStart;
-            int diffESP = current.SysRegs->ESP - (int)current.StackStart;
-
-            int pid = Tasking.Fork();
-
-            // Update stack references within the stack itself
-            current = Tasking.CurrentTask;
-            current.SysRegs = (Regs*)((int)current.StackStart + diffRegs);
-            current.SysRegs->ESP = (int)current.StackStart + diffESP;
-
+            Task current = Tasking.CurrentTask;
+            int pid = current.Context.Fork();
             return pid;
         }
 
@@ -272,7 +264,7 @@ namespace Sharpen.Exec
         {
             // TODO: envp
             path = VFS.GetAbsolutePath(path);
-            int error = Loader.StartProcess(path, argv, Tasking.SpawnFlags.SWAP_PID);
+            int error = Loader.StartProcess(path, argv, Task.SpawnFlags.SWAP_PID);
             if (error < 0)
                 return error;
 
@@ -294,7 +286,7 @@ namespace Sharpen.Exec
         {
             // TODO: envp
             path = VFS.GetAbsolutePath(path);
-            int pid = Loader.StartProcess(path, argv, Tasking.SpawnFlags.NONE);
+            int pid = Loader.StartProcess(path, argv, Task.SpawnFlags.NONE);
             return pid;
         }
 

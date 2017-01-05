@@ -427,6 +427,9 @@ namespace Sharpen.Mem
         /// <param name="ptr">The pointer</param>
         public static unsafe void Free(void* ptr)
         {
+            if (ptr == null)
+                return;
+
             // Grab block (header is just before the data)
             Block* block = getBlockFromPtr(ptr);
 

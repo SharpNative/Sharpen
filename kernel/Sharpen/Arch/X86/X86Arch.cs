@@ -1,6 +1,6 @@
 ﻿namespace Sharpen.Arch
 {
-    class X86Arch
+    sealed class X86Arch
     {
         /// <summary>
         /// Initializes the specific x86 stuff

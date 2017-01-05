@@ -1,6 +1,6 @@
 ﻿using Sharpen.FileSystem;
 using Sharpen.Mem;
-using Sharpen.Task;
+using Sharpen.MultiTasking;
 
 namespace Sharpen.Exec
 {
@@ -13,7 +13,7 @@ namespace Sharpen.Exec
         /// <param name="argv">The arguments</param>
         /// <param name="flags">Spawn flags</param>
         /// <returns>Errorcode</returns>
-        public static int StartProcess(string path, string[] argv, Tasking.SpawnFlags flags)
+        public static int StartProcess(string path, string[] argv, Task.SpawnFlags flags)
         {
             if (argv == null)
                 Panic.DoPanic("argv == null");

@@ -1,4 +1,4 @@
-﻿using Sharpen.Task;
+﻿using Sharpen.MultiTasking;
 
 namespace Sharpen.Collections
 {

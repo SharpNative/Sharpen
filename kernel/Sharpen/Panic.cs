@@ -1,7 +1,7 @@
 ﻿// #define CLEAR_SCREEN
 
 using Sharpen.Arch;
-using Sharpen.Task;
+using Sharpen.MultiTasking;
 
 namespace Sharpen
 {

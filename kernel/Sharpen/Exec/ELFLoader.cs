@@ -1,6 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Mem;
-using Sharpen.Task;
+using Sharpen.MultiTasking;
 using Sharpen.Utilities;
 
 namespace Sharpen.Exec
@@ -157,7 +157,7 @@ namespace Sharpen.Exec
         /// <param name="argv">The arguments</param>
         /// <param name="flags">Spawn flags</param>
         /// <returns>The error code</returns>
-        public static unsafe int Execute(byte[] buffer, uint size, string[] argv, Tasking.SpawnFlags flags)
+        public static unsafe int Execute(byte[] buffer, uint size, string[] argv, Task.SpawnFlags flags)
         {
             ELF32* elf;
             fixed (byte* ptr = buffer)
@@ -203,14 +203,17 @@ namespace Sharpen.Exec
             int[] initialStack = new int[2];
             initialStack[0] = (int)Util.ObjectToVoidPtr(argv);
             initialStack[1] = argc;
-
+            
             CPU.CLI();
 
-            Task.Task newTask = Tasking.CreateTask((void*)elf->Entry, TaskPriority.NORMAL, initialStack, 2, flags);
+            // Create task
+            Task newTask = new Task(TaskPriority.NORMAL, flags);
+            X86Context context = (X86Context)newTask.Context;
+            context.CreateNewContext((void*)elf->Entry, 2, initialStack, false);
             Heap.Free(initialStack);
-
+            
             // Map memory
-            Paging.PageDirectory* newDirectory = Paging.CloneDirectory(Paging.CurrentDirectory);
+            Paging.PageDirectory* newDirectory = context.PageDirVirtual;
             Paging.PageFlags pageFlags = Paging.PageFlags.Present | Paging.PageFlags.Writable | Paging.PageFlags.UserMode;
             int physicalBase = (int)Paging.GetPhysicalFromVirtual(allocated);
             for (uint j = 0; j < size; j += 0x1000)
@@ -219,12 +222,10 @@ namespace Sharpen.Exec
             }
             
             // Schedule task
-            newTask.PageDirVirtual = newDirectory;
-            newTask.PageDirPhysical = newDirectory->PhysicalDirectory;
             Tasking.ScheduleTask(newTask);
 
             CPU.STI();
-
+            
             return newTask.PID;
         }
     }

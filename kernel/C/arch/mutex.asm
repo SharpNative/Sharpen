@@ -14,7 +14,7 @@ Sharpen_Mutex_InternalLock_1int32_t__:
     je .acquired
 
     ; Switch because we're waiting
-    call Sharpen_Task_Tasking_ManualSchedule_0
+    call Sharpen_MultiTasking_Tasking_ManualSchedule_0
 
     jmp .tryAcquiring
 .acquired:

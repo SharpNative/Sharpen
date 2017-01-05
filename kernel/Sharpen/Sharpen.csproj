@@ -51,14 +51,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Arch\CMOS.cs" />
-    <Compile Include="Arch\CPU.cs" />
-    <Compile Include="Arch\FPU.cs" />
-    <Compile Include="Arch\IDT.cs" />
-    <Compile Include="Arch\IRQ.cs" />
-    <Compile Include="Arch\ISR.cs" />
-    <Compile Include="Arch\V8086.cs" />
-    <Compile Include="Arch\X86Arch.cs" />
+    <Compile Include="Arch\X86\CMOS.cs" />
+    <Compile Include="Arch\X86\CPU.cs" />
+    <Compile Include="Arch\X86\FPU.cs" />
+    <Compile Include="Arch\IContext.cs" />
+    <Compile Include="Arch\X86\IDT.cs" />
+    <Compile Include="Arch\X86\IRQ.cs" />
+    <Compile Include="Arch\X86\ISR.cs" />
+    <Compile Include="Arch\X86\V8086.cs" />
+    <Compile Include="Arch\X86\X86Arch.cs" />
+    <Compile Include="Arch\X86\X86Context.cs" />
     <Compile Include="Collections\Queue.cs" />
     <Compile Include="Drivers\Net\E1000.cs" />
     <Compile Include="Drivers\Net\PCNet2.cs" />
@@ -98,14 +100,14 @@
     <Compile Include="Net\NetworkTools.cs" />
     <Compile Include="Net\UDP.cs" />
     <Compile Include="Net\UDPSocket.cs" />
-    <Compile Include="Task\FileDescriptors.cs" />
-    <Compile Include="Task\Task.cs" />
-    <Compile Include="Task\Tasking.cs" />
+    <Compile Include="MultiTasking\FileDescriptors.cs" />
+    <Compile Include="MultiTasking\Task.cs" />
+    <Compile Include="MultiTasking\Tasking.cs" />
     <Compile Include="Arch\PCI.cs" />
-    <Compile Include="Arch\PIC.cs" />
-    <Compile Include="Arch\PIT.cs" />
-    <Compile Include="Arch\Regs.cs" />
-    <Compile Include="Arch\Syscall.cs" />
+    <Compile Include="Arch\X86\PIC.cs" />
+    <Compile Include="Arch\X86\PIT.cs" />
+    <Compile Include="Arch\X86\Regs.cs" />
+    <Compile Include="Arch\X86\Syscall.cs" />
     <Compile Include="Utilities\Byte.cs" />
     <Compile Include="Drivers\Other\VboxDev.cs" />
     <Compile Include="Drivers\Other\VboxDevExtras.cs" />
@@ -121,7 +123,7 @@
     <Compile Include="FileSystem\Fat16.cs" />
     <Compile Include="Collections\LongIndex.cs" />
     <Compile Include="Console.cs" />
-    <Compile Include="Arch\GDT.cs" />
+    <Compile Include="Arch\X86\GDT.cs" />
     <Compile Include="Drivers\Block\ATA.cs" />
     <Compile Include="Drivers\Block\IDE_Device.cs" />
     <Compile Include="Drivers\Char\SerialPort.cs" />
@@ -140,13 +142,13 @@
     <Compile Include="Mem\Memory.cs" />
     <Compile Include="Multiboot.cs" />
     <Compile Include="Panic.cs" />
-    <Compile Include="Arch\PortIO.cs" />
-    <Compile Include="Arch\Paging.cs" />
+    <Compile Include="Arch\X86\PortIO.cs" />
+    <Compile Include="Arch\X86\Paging.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\Int.cs" />
     <Compile Include="Utilities\String.cs" />
-    <Compile Include="Task\TaskPriority.cs" />
+    <Compile Include="MultiTasking\TaskPriority.cs" />
     <Compile Include="Time.cs" />
     <Compile Include="Mutex.cs" />
     <Compile Include="Utilities\Util.cs" />

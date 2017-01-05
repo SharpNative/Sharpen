@@ -1,5 +1,5 @@
 ; Task scheduler
-extern Sharpen_Task_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
+extern Sharpen_MultiTasking_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
 ; PIT handler
 extern Sharpen_Arch_PIT_Handler_1struct_struct_Sharpen_Arch_Regs__
 ; Syscall handler
@@ -165,7 +165,7 @@ Sharpen_Arch_IDT_IRQ0_0:
     ; Call both the PIT handler and the task scheduler
     push esp
     call Sharpen_Arch_PIT_Handler_1struct_struct_Sharpen_Arch_Regs__
-    call Sharpen_Task_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
+    call Sharpen_MultiTasking_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
     mov esp, eax
 
     ; Acknowledge IRQ
@@ -183,8 +183,8 @@ Sharpen_Arch_IDT_IRQ0_0:
     iret
 
 ; Manual scheduler
-global Sharpen_Task_Tasking_ManualSchedule_0
-Sharpen_Task_Tasking_ManualSchedule_0:
+global Sharpen_MultiTasking_Tasking_ManualSchedule_0
+Sharpen_MultiTasking_Tasking_ManualSchedule_0:
     ; Setup fake interrupt stack frame
     pushfd
     push cs
@@ -208,7 +208,7 @@ Sharpen_Task_Tasking_ManualSchedule_0:
 
     ; Task scheduler
     push esp
-    call Sharpen_Task_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
+    call Sharpen_MultiTasking_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
     mov esp, eax
 
     ; Reload original segment

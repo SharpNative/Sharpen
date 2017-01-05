@@ -10,7 +10,7 @@ using Sharpen.FileSystem;
 using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Net;
-using Sharpen.Task;
+using Sharpen.MultiTasking;
 
 namespace Sharpen
 {
@@ -190,8 +190,8 @@ namespace Sharpen
             argv[0] = "C://exec/init";
             argv[1] = "C://exec/shell";
             argv[2] = null;
-
-            int error = Loader.StartProcess(argv[0], argv, Tasking.SpawnFlags.NONE);
+            
+            int error = Loader.StartProcess(argv[0], argv, Task.SpawnFlags.NONE);
             if (error < 0)
             {
                 Console.Write("Failed to start init process: 0x");

@@ -2,7 +2,7 @@
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
-namespace Sharpen.Task
+namespace Sharpen.MultiTasking
 {
     public unsafe class FileDescriptors
     {
@@ -136,7 +136,7 @@ namespace Sharpen.Task
                     continue;
 
                 VFS.Close(node);
-                //Heap.Free(node);
+                Heap.Free(node);
             }
         }
 

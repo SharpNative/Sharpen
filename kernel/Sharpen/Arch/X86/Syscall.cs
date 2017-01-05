@@ -1,7 +1,7 @@
 ﻿using Sharpen.Exec;
 using Sharpen.Utilities;
 using Sharpen.FileSystem;
-using Sharpen.Task;
+using Sharpen.MultiTasking;
 
 namespace Sharpen.Arch
 {
@@ -31,7 +31,7 @@ namespace Sharpen.Arch
             //    Console.WriteLine("");
             //}
             
-            Tasking.CurrentTask.SysRegs = regsPtr;
+            Tasking.CurrentTask.Context.UpdateSyscallRegs(regsPtr);
 
             int ret = 0;
             switch (function)
@@ -155,7 +155,7 @@ namespace Sharpen.Arch
                     break;
             }
 
-            Tasking.CurrentTask.SysRegs->EAX = ret;
+            Tasking.CurrentTask.Context.SetSysReturnValue(ret);
         }
     }
 }

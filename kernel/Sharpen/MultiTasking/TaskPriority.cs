@@ -1,4 +1,4 @@
-﻿namespace Sharpen.Task
+﻿namespace Sharpen.MultiTasking
 {
     public enum TaskPriority
     {

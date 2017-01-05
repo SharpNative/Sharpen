@@ -1,9 +1,7 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Collections;
-using Sharpen.Mem;
-using Sharpen.Utilities;
 
-namespace Sharpen.Task
+namespace Sharpen.MultiTasking
 {
     public class Tasking
     {
@@ -17,14 +15,7 @@ namespace Sharpen.Task
 
         public static Task KernelTask { get; private set; }
         public static Task CurrentTask { get; private set; }
-
-        public enum SpawnFlags
-        {
-            NONE = 0,
-            SWAP_PID = 1,
-            KERNEL_TASK = 2
-        }
-
+        
         /// <summary>
         /// Initializes tasking
         /// </summary>
@@ -35,19 +26,16 @@ namespace Sharpen.Task
 
             // Kernel task, the remaining data will be filled in when the first schedule happens
             // The Idle task has a low priority
-            Task kernel = new Task(TaskPriority.LOW);
-            kernel.PageDirVirtual = Paging.KernelDirectory;
-            kernel.PageDirPhysical = Paging.KernelDirectory;
-            kernel.FPUContext = Heap.AlignedAlloc(16, 512);
-
+            Task kernel = new Task(TaskPriority.LOW, Task.SpawnFlags.KERNEL_TASK);
+            kernel.Context.CreateKernelContext();
             KernelTask = kernel;
             CurrentTask = kernel;
-
+            
             // Enable interrupts, because we can now do multitasking
             taskingEnabled = true;
             CPU.STI();
             ManualSchedule();
-
+            
             Console.WriteLine("[Tasking] Initialized");
         }
 
@@ -141,76 +129,7 @@ namespace Sharpen.Task
             // End of critical section
             CPU.STI();
         }
-
-        /// <summary>
-        /// Adds a task
-        /// </summary>
-        /// <param name="eip">The initial EIP</param>
-        /// <param name="priority">The task priority</param>
-        /// <param name="initialStack">Initial stack</param>
-        /// <param name="initialStackSize">Initial stack size</param>
-        /// <param name="flags">Spawn flags</param>
-        public static unsafe Task CreateTask(void* eip, TaskPriority priority, int[] initialStack, int initialStackSize, SpawnFlags flags)
-        {
-            // Fill in data
-            Task newTask = new Task(priority);
-
-            if ((flags & SpawnFlags.SWAP_PID) == SpawnFlags.SWAP_PID)
-            {
-                int old = newTask.PID;
-                newTask.PID = CurrentTask.PID;
-                CurrentTask.PID = old;
-            }
-
-            newTask.GID = 0;
-            newTask.UID = 0;
-
-            // Stack
-            int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
-            newTask.StackStart = (int*)((int)stacks + 4096);
-            newTask.Stack = (int*)((int)newTask.StackStart + 8192);
-
-            // Copy initial stack
-            if (initialStackSize > 0)
-            {
-                int* stack = newTask.Stack;
-                for (int i = 0; i < initialStackSize; i++)
-                {
-                    *--stack = initialStack[i];
-                }
-                newTask.Stack = stack;
-            }
-
-            int cs = Task.USERSPACE_CS;
-            int ds = Task.USERSPACE_DS;
-            if ((flags & SpawnFlags.KERNEL_TASK) != SpawnFlags.KERNEL_TASK)
-            {
-                // FS related stuff
-                newTask.SetFileDescriptors(CurrentTask.FileDescriptors.Clone());
-                newTask.CurrentDirectory = String.Clone(CurrentTask.CurrentDirectory);
-            }
-            else
-            {
-                // Kernel descriptors
-                cs = Task.KERNEL_CS;
-                ds = Task.KERNEL_DS;
-            }
-
-            // Continue with stacks
-            newTask.Stack = writeSchedulerStack(newTask.Stack, cs, ds, eip);
-            newTask.KernelStackStart = stacks;
-            newTask.KernelStack = (int*)((int)newTask.KernelStackStart + 4096);
-
-            // Program data space end
-            newTask.DataEnd = null;
-
-            // FPU context
-            newTask.FPUContext = Heap.AlignedAlloc(16, 512);
-            FPU.StoreContext(newTask.FPUContext);
-
-            return newTask;
-        }
-
+        
         /// <summary>
         /// Forks the current task
         /// </summary>
@@ -224,50 +143,7 @@ namespace Sharpen.Task
             CPU.CLI();
             return (pid == CurrentTask.PID ? Task.NextPID - 1 : 0);
         }
-
-        /// <summary>
-        /// Clones a task and schedules it
-        /// </summary>
-        /// <param name="sourceTask">The task to clone</param>
-        private static unsafe void cloneTask(Task sourceTask)
-        {
-            // Fill in data
-            Task newTask = new Task(sourceTask.Priority);
-            newTask.GID = sourceTask.GID;
-            newTask.UID = sourceTask.UID;
-
-            // Stack
-            int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
-            newTask.StackStart = (int*)((int)stacks + 4096);
-            newTask.KernelStackStart = stacks;
-
-            Memory.Memcpy(newTask.KernelStackStart, sourceTask.KernelStackStart, 4096 + 8192);
-
-            int diffStack = (int)sourceTask.Stack - (int)sourceTask.StackStart;
-            int diffKernelStack = (int)sourceTask.KernelStack - (int)sourceTask.KernelStackStart;
-
-            newTask.Stack = (int*)((int)newTask.StackStart + diffStack);
-            newTask.KernelStack = (int*)((int)newTask.KernelStackStart + diffKernelStack);
-
-            // Program data space end
-            newTask.DataEnd = sourceTask.DataEnd;
-
-            // FS related stuff
-            newTask.SetFileDescriptors(sourceTask.FileDescriptors.Clone());
-            newTask.CurrentDirectory = String.Clone(sourceTask.CurrentDirectory);
-
-            // FPU context
-            newTask.FPUContext = Heap.AlignedAlloc(16, 512);
-            Memory.Memcpy(newTask.FPUContext, sourceTask.FPUContext, 512);
-
-            // Paging
-            newTask.PageDirVirtual = Paging.CloneDirectory(sourceTask.PageDirVirtual);
-            newTask.PageDirPhysical = newTask.PageDirVirtual->PhysicalDirectory;
-
-            // Schedule
-            ScheduleTask(newTask);
-        }
-
+        
         /// <summary>
         /// Finds the next task for the scheduler
         /// </summary>
@@ -343,15 +219,11 @@ namespace Sharpen.Task
 
             // Store old context
             Task oldTask = CurrentTask;
-            oldTask.Stack = (int*)regsPtr;
-            oldTask.KernelStack = (int*)GDT.TSS_Entry->ESP0;
-            FPU.StoreContext(oldTask.FPUContext);
+            oldTask.StoreContext(regsPtr);
 
             // Switch to next task
             Task current = FindNextTask();
-            Paging.SetPageDirectory(current.PageDirVirtual, current.PageDirPhysical);
-            FPU.RestoreContext(current.FPUContext);
-            GDT.TSS_Entry->ESP0 = (uint)current.KernelStack;
+            void* stack = current.RestoreContext();
             CurrentTask = current;
 
             // Cleanup old task
@@ -364,52 +236,13 @@ namespace Sharpen.Task
             // such as forking etc
             if (taskToClone != null)
             {
-                Task toClone = taskToClone;
+                Task newTask = taskToClone.Clone();
                 taskToClone = null;
-                cloneTask(toClone);
+                ScheduleTask(newTask);
             }
 
             // Return the next task context
-            return (Regs*)current.Stack;
-        }
-
-        /// <summary>
-        /// Writes a scheduler stack
-        /// </summary>
-        /// <param name="ptr">The pointer to the stack</param>
-        /// <param name="cs">The Code Segment</param>
-        /// <param name="ds">The Data Segment</param>
-        /// <param name="eip">The return EIP value</param>
-        /// <returns>The new pointer</returns>
-        private static unsafe int* writeSchedulerStack(int* ptr, int cs, int ds, void* eip)
-        {
-            int esp = (int)ptr;
-
-            // Data pushed by CPU
-            *--ptr = ds;        // Data Segment
-            *--ptr = esp;       // Old stack
-            *--ptr = 0x202;     // EFLAGS
-            *--ptr = cs;        // Code Segment
-            *--ptr = (int)eip;  // Initial EIP
-
-            // Pushed by pusha
-            *--ptr = 0;         // EAX
-            *--ptr = 0;         // ECX
-            *--ptr = 0;         // EDX
-            *--ptr = 0;         // EBX
-            --ptr;
-            *--ptr = 0;         // EBP
-            *--ptr = 0;         // ESI
-            *--ptr = 0;         // EDI
-
-            // Data segments
-            *--ptr = ds;        // DS
-            *--ptr = ds;        // ES
-            *--ptr = ds;        // FS
-            *--ptr = ds;        // GS
-
-            // New location of stack
-            return ptr;
+            return (Regs*)stack;
         }
 
         /// <summary>
