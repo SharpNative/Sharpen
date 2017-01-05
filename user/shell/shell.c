@@ -8,18 +8,21 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+/* Values */
+#define true (1)
+#define false (0)
+#define null ((void*) 0)
+
 /* Types */
 typedef void* action_t;
 typedef void* object_t;
+typedef int32_t bool_t;
+typedef char* string_t;
 
 /* Error messages */
 const static char* __ERROR_NULL_CALLED__ = "The program tried to call a method of an object that is null";
 
 char* get_current_dir_name(void);
-
-#define true (1)
-#define false (0)
-#define null NULL
 
 void fatal(const char* s)
 {

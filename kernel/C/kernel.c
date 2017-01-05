@@ -7,8 +7,10 @@
 #define null ((void*) 0)
 
 /* Types */
-typedef void* action_t;
-typedef void* object_t;
+typedef void*   action_t;
+typedef void*   object_t;
+typedef int32_t bool_t;
+typedef char* string_t;
 
 /* Macro to methods */
 #define malloc      Sharpen_Mem_Heap_Alloc_1int32_t_
@@ -37,13 +39,13 @@ static void* calloc(int nitems, int size)
 
 static void __abort(const char* function, int line, const char* msg)
 {
-    Sharpen_Console_Write_1char__("\tABORT\n");
-    Sharpen_Console_Write_1char__("\tFunction: ");
-    Sharpen_Console_Write_1char__((char*)function);
-    Sharpen_Console_Write_1char__(" | Line: ");
+    Sharpen_Console_Write_1string_t_("\tABORT\n");
+    Sharpen_Console_Write_1string_t_("\tFunction: ");
+    Sharpen_Console_Write_1string_t_((string_t)function);
+    Sharpen_Console_Write_1string_t_(" | Line: ");
     Sharpen_Console_WriteNum_1int32_t_(line);
     Sharpen_Console_Write_1char_('\n');
-    Sharpen_Panic_DoPanic_1char__((char*)msg);
+    Sharpen_Panic_DoPanic_1string_t_((string_t)msg);
 }
 
 inline char* Sharpen_Utilities_Util_CharPtrToString_1char__(char* ptr)
