@@ -15,7 +15,7 @@ typedef struct PCIFSInfo
 
     unsigned short Vendor;
     unsigned short Device;
-} __attribute__((packed)) pciInfo;
+} pciInfo;
 
 void print_device(char *name)
 {
