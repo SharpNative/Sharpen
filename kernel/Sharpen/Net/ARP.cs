@@ -48,7 +48,7 @@ namespace Sharpen.Net
             Network.RegisterHandler(0x0806, handler);
 
             // Max 20
-            m_arpTable = new ARPEntry[20];
+            m_arpTable = new ARPEntry[255];
         }
 
         /// <summary>
@@ -129,6 +129,8 @@ namespace Sharpen.Net
                 }
 
                 m_offset++;
+                
+                Console.WriteNum(m_offset);
             }
             else
             {
