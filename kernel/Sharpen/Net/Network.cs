@@ -118,11 +118,10 @@ namespace Sharpen.Net
             Console.WriteNum((int)size);
             Console.WriteLine(" bytes");
 #endif
-
+            
             if (m_dev.ID != 0 && m_dev.Transmit != null)
                 m_dev.Transmit(buffer, (uint)size);
-
-            Heap.Free(buffer);
+            //Heap.Free(buffer);
         }
 
         /// <summary>

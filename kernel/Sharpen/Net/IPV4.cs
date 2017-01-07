@@ -39,7 +39,7 @@ namespace Sharpen.Net
         /// </summary>
         public static unsafe void Init()
         {
-            m_handlers = new PackerHandler[255];
+            m_handlers = new PackerHandler[256];
             Network.RegisterHandler(0x0800, Handle);
         }
 
@@ -64,7 +64,7 @@ namespace Sharpen.Net
             {
                 ARP.FindOrAdd(ip, mac);
             }
-
+            
             ushort sz = (ushort)(Utilities.Byte.ReverseBytes(header->totalLength) - 20);
             
             m_handlers[proto]?.Invoke(ip, buffer + sizeof(IPV4Header), sz);

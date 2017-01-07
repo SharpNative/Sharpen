@@ -129,8 +129,6 @@ namespace Sharpen.Net
                 }
 
                 m_offset++;
-                
-                Console.WriteNum(m_offset);
             }
             else
             {

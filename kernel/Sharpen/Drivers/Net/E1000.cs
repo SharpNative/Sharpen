@@ -14,8 +14,8 @@ namespace Sharpen.Drivers.Net
 {
     unsafe class E1000
     {
-        private const ushort NUM_RX_DESCRIPTORS = 256;
-        private const ushort NUM_TX_DESCRIPTIORS = 256;
+        private const ushort NUM_RX_DESCRIPTORS = 16;
+        private const ushort NUM_TX_DESCRIPTIORS = 16;
 
         /**
         * Device ids
@@ -57,6 +57,7 @@ namespace Sharpen.Drivers.Net
         private const ushort REG_TCTL  = 0x0400;
 
         private static ushort REG_RD_EOP = (1 << 1);
+
 
         /**
          * EEP REQ bits
@@ -134,6 +135,7 @@ namespace Sharpen.Drivers.Net
         private static byte** m_tx_buffers;
         private static uint m_rx_next = 0;
         private static uint m_tx_next = 0;
+        private static byte[] m_packetBuffer;
 
         private static uint m_linkup = 0;
 
@@ -215,6 +217,7 @@ namespace Sharpen.Drivers.Net
             
             m_irq_num = (ushort)PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
 
+            m_packetBuffer = new byte[8500];
 
             ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
 
@@ -391,22 +394,21 @@ namespace Sharpen.Drivers.Net
         {
             while((m_rx_descs[m_rx_next].Status & REG_RD_EOP) > 0)
             {
-
                 uint cur = m_rx_next++;
-                if (m_rx_next > NUM_RX_DESCRIPTORS - 3)
+                if (m_rx_next >= NUM_RX_DESCRIPTORS)
                     m_rx_next = 0;
 
                 ushort len = m_rx_descs[cur].Length;
-
-                byte[] buf = new byte[len];
-                Memory.Memcpy(Util.ObjectToVoidPtr(buf), m_rx_buffers[cur], len);
                 
-                Network.QueueReceivePacket(buf, len);
+                Memory.Memset(Util.ObjectToVoidPtr(m_packetBuffer), 0x00, 8500);
+
+                Memory.Memcpy(Util.ObjectToVoidPtr(m_packetBuffer), m_rx_buffers[cur], len);
+                
+                Network.QueueReceivePacket(m_packetBuffer, len);
 
                 m_rx_descs[cur].Status = 0;
                 
-
-                *(uint*)(m_register_base + REG_RDT) = m_rx_next;
+                *(uint*)(m_register_base + REG_RDT) = cur;
             }
 
         }
