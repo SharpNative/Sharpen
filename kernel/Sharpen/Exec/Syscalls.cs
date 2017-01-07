@@ -9,8 +9,6 @@ namespace Sharpen.Exec
 {
     public class Syscalls
     {
-        // TODO: check for freeing
-
         #region Syscall numbers
 
         public const int SYS_EXIT = 0;
@@ -246,11 +244,12 @@ namespace Sharpen.Exec
         /// <returns>The errorcode</returns>
         public static unsafe int Stat(string path, Stat* st)
         {
-            Node node = VFS.GetByAbsolutePath(path);
+            Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
 
             node.Stat(st);
+            Heap.Free(node);
             return 0;
         }
 
@@ -264,8 +263,9 @@ namespace Sharpen.Exec
         public static int Execve(string path, string[] argv, string[] envp)
         {
             // TODO: envp
-            path = VFS.GetAbsolutePath(path);
+            path = VFS.CreateAbsolutePath(path);
             int error = Loader.StartProcess(path, argv, Task.SpawnFlags.SWAP_PID);
+            Heap.Free(path);
             if (error < 0)
                 return error;
 
@@ -286,8 +286,9 @@ namespace Sharpen.Exec
         public static int Run(string path, string[] argv, string[] envp)
         {
             // TODO: envp
-            path = VFS.GetAbsolutePath(path);
+            path = VFS.CreateAbsolutePath(path);
             int pid = Loader.StartProcess(path, argv, Task.SpawnFlags.NONE);
+            Heap.Free(path);
             return pid;
         }
 
@@ -356,6 +357,7 @@ namespace Sharpen.Exec
 
             Memory.Memcpy(entry, gotEntry, sizeof(DirEntry));
             Heap.Free(gotEntry);
+
             return 0;
         }
 
@@ -407,11 +409,16 @@ namespace Sharpen.Exec
             Node[] nodes = new Node[2];
             ErrorCode error = PipeFS.Create(nodes, 4096);
             if (error != ErrorCode.SUCCESS)
+            {
+                Heap.Free(nodes);
                 return -(int)error;
+            }
 
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
             pipefd[0] = descriptors.AddNode(nodes[0]);
             pipefd[1] = descriptors.AddNode(nodes[1]);
+
+            Heap.Free(nodes);
 
             return 0;
         }
@@ -456,22 +463,33 @@ namespace Sharpen.Exec
         /// <returns>Errorcode</returns>
         public static int ChDir(string newDir)
         {
-            newDir = VFS.GetAbsolutePath(newDir);
-
-            // Check if it's a directory and if it exists
+            newDir = VFS.CreateAbsolutePath(newDir);
             Node node = VFS.GetByAbsolutePath(newDir);
 
             if (node == null)
+            {
+                Heap.Free(newDir);
                 return -(int)ErrorCode.ENOENT;
+            }
 
             if (node.Flags != NodeFlags.DIRECTORY)
+            {
+                Heap.Free(newDir);
+                Heap.Free(node);
                 return -(int)ErrorCode.ENOTDIR;
+            }
+
+            Heap.Free(node);
 
             int len = String.Length(newDir);
 
             if (newDir[len - 1] != '/')
-                newDir = String.Merge(newDir, "/");
-
+            {
+                string old = newDir;
+                newDir = String.Merge(old, "/");
+                Heap.Free(old);
+            }
+            
             Tasking.CurrentTask.CurrentDirectory = newDir;
 
             return 0;
@@ -521,11 +539,12 @@ namespace Sharpen.Exec
         /// <returns>Errorcode</returns>
         public static int Truncate(string path, uint length)
         {
-            Node node = VFS.GetByAbsolutePath(path);
+            Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
 
             VFS.Truncate(node, length);
+            Heap.Free(node);
             return 0;
         }
 

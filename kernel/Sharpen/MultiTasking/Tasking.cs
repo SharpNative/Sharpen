@@ -98,7 +98,8 @@ namespace Sharpen.MultiTasking
             // Set pointer and set remove flag
             previous.Next = current.Next;
             current.AddFlag(Task.TaskFlag.DESCHEDULED);
-
+            current.TimeLeft = 1;
+            
             // End of critical section
             CPU.STI();
 
@@ -232,8 +233,7 @@ namespace Sharpen.MultiTasking
                 oldTask.Cleanup();
             }
 
-            // Context is stored, now we can manipulate it
-            // such as forking etc
+            // Check for cloning
             if (taskToClone != null)
             {
                 Task newTask = taskToClone.Clone();

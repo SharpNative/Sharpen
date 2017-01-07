@@ -10,7 +10,7 @@ namespace Sharpen.MultiTasking
         public enum TaskFlag
         {
             DESCHEDULED = 1,
-            SLEEPING = 2
+            SLEEPING = 2,
         }
 
         // Flags that can be used when a task spawns
@@ -151,11 +151,13 @@ namespace Sharpen.MultiTasking
         public void Cleanup()
         {
             // TODO: more cleaning required
+            
+            FileDescriptors.Cleanup();
+            Heap.Free(FileDescriptors);
+            Heap.Free(m_currentDirectory);
 
-            //FileDescriptors.Cleanup();
-            //Heap.Free(FileDescriptors);
-
-            //Context.Cleanup();
+            Context.Cleanup();
+            Heap.Free(Context);
         }
 
         /// <summary>

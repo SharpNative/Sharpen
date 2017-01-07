@@ -424,7 +424,7 @@ namespace Sharpen.Drivers.Block
         /// <returns>The amount of bytes written</returns>
         private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            // Only support sizes in magnitutes of 512
+            // Only support sizes in magnitudes of 512
             if (size % 512 != 0)
                 return 0;
 
@@ -443,7 +443,7 @@ namespace Sharpen.Drivers.Block
         /// <returns>The amount of bytes read</returns>
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            // Only support sizes in magnitutes of 512
+            // Only support sizes in magnitudes of 512
             if (size % 512 != 0)
                 return 0;
 

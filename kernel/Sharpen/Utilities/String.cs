@@ -100,8 +100,9 @@ namespace Sharpen.Utilities
         /// </summary>
         /// <param name="text">The string to search into</param>
         /// <param name="occurence">The string to search for</param>
+        /// <param name="offset">The offset in the string</param>
         /// <returns>The index of the occurrence</returns>
-        public static int IndexOf(string text, string occurence)
+        public static int IndexOf(string text, string occurence, int offset)
         {
             int found = -1;
             int foundCount = 0;
@@ -109,10 +110,10 @@ namespace Sharpen.Utilities
             int textLength = Length(text);
             int occurenceLength = Length(occurence);
 
-            if (textLength == 0 || occurenceLength == 0)
+            if (textLength == 0 || occurenceLength == 0 || offset >= textLength)
                 return -1;
 
-            for (int textIndex = 0; textIndex < textLength; textIndex++)
+            for (int textIndex = offset; textIndex < textLength; textIndex++)
             {
                 if (occurence[foundCount] == text[textIndex])
                 {
@@ -137,10 +138,21 @@ namespace Sharpen.Utilities
         }
 
         /// <summary>
+        /// IndexOf implementation
+        /// </summary>
+        /// <param name="text">The string to search into</param>
+        /// <param name="occurence">The string to search for</param>
+        /// <returns>The index of the occurrence</returns>
+        public static int IndexOf(string text, string occurence)
+        {
+            return IndexOf(text, occurence, 0);
+        }
+
+        /// <summary>
         /// Count number of occurences
         /// </summary>
-        /// <param name="str"></param>
-        /// <param name="occurence"></param>
+        /// <param name="str">The string</param>
+        /// <param name="occurence">The character to check for</param>
         /// <returns></returns>
         public static int Count(string str, char occurence)
         {
@@ -162,13 +174,12 @@ namespace Sharpen.Utilities
         public static unsafe string SubString(string str, int start, int count)
         {
             if (count <= 0)
-                return "";
+                return Clone("");
 
             int stringLength = Length(str);
-
             if (start > stringLength)
-                return "";
-            
+                return Clone("");
+
             char* ch = (char*)Heap.Alloc(count + 1);
             int j = 0;
 
@@ -209,31 +220,6 @@ namespace Sharpen.Utilities
         }
 
         /// <summary>
-        /// Merge 3 strings
-        /// </summary>
-        /// <param name="first">The first string</param>
-        /// <param name="second">The second string</param>
-        /// <param name="third">The third string</param>
-        /// <returns>The merged string</returns>
-        public static unsafe string Merge(string first, string second, string third)
-        {
-            int firstLength = Length(first);
-            int secondLength = Length(second);
-            int thirdLength = Length(third);
-
-            int totalLength = firstLength + secondLength + thirdLength;
-            char* outVal = (char*)Heap.Alloc(totalLength + 1);
-
-            Memory.Memcpy(outVal, Util.ObjectToVoidPtr(first), firstLength);
-            Memory.Memcpy((void*)((int)outVal + firstLength), Util.ObjectToVoidPtr(second), secondLength);
-            Memory.Memcpy((void*)((int)outVal + firstLength + secondLength), Util.ObjectToVoidPtr(third), thirdLength);
-
-            outVal[totalLength] = '\0';
-
-            return Util.CharPtrToString(outVal);
-        }
-
-        /// <summary>
         /// Checks if two string are equal
         /// </summary>
         /// <param name="one">First string</param>
@@ -241,9 +227,9 @@ namespace Sharpen.Utilities
         /// <returns>If the two string are equal</returns>
         public static unsafe bool Equals(string one, string two)
         {
-            fixed(char* onePtr = one)
+            fixed (char* onePtr = one)
             {
-                fixed(char* twoPtr = two)
+                fixed (char* twoPtr = two)
                 {
                     return Memory.Compare(onePtr, twoPtr, Length(one));
                 }

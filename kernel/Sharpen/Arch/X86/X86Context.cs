@@ -6,10 +6,13 @@ namespace Sharpen.Arch
     public unsafe class X86Context : IContext
     {
         // These can be found in the GDT
-        public const int KernelCS = 0x08;
-        public const int KernelDS = 0x10;
-        public const int UserspaceCS = 0x1B;
-        public const int UserspaceDS = 0x23;
+        private const int KernelCS = 0x08;
+        private const int KernelDS = 0x10;
+        private const int UserspaceCS = 0x1B;
+        private const int UserspaceDS = 0x23;
+
+        private const int KernelStackSize = 4 * 1024;
+        private const int UserStackSize = 16 * 1024;
 
         // It's not always the case we can access the PhysicalAddress field of a page directory
         // because it may be unmapped, so we have a reference here
@@ -28,9 +31,10 @@ namespace Sharpen.Arch
         /// </summary>
         public void Cleanup()
         {
-            // TODO
+            // TODO: find a good way to free the page directory
             Heap.Free(m_FPUContext);
             Heap.Free(m_kernelStackStart);
+            //Paging.FreeDirectory(PageDirVirtual);
         }
 
         /// <summary>
@@ -82,9 +86,9 @@ namespace Sharpen.Arch
         public void CreateNewContext(void* eip, int initialStackSize, int[] initialStack, bool kernelContext)
         {
             // Stack
-            int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
-            m_stackStart = (int*)((int)stacks + 4096);
-            m_stack = (int*)((int)m_stackStart + 8192);
+            int* stacks = (int*)Heap.AlignedAlloc(16, KernelStackSize + UserStackSize);
+            m_stackStart = (int*)((int)stacks + KernelStackSize);
+            m_stack = (int*)((int)m_stackStart + UserStackSize);
 
             // Copy initial stack
             if (initialStackSize > 0)
@@ -107,7 +111,7 @@ namespace Sharpen.Arch
             // Continue with stacks
             m_stack = writeSchedulerStack(m_stack, cs, ds, eip);
             m_kernelStackStart = stacks;
-            m_kernelStack = (int*)((int)m_kernelStackStart + 4096);
+            m_kernelStack = (int*)((int)m_kernelStackStart + KernelStackSize);
 
             // FPU context
             m_FPUContext = Heap.AlignedAlloc(16, 512);
@@ -150,11 +154,11 @@ namespace Sharpen.Arch
             X86Context source = (X86Context)context;
 
             // Stack
-            int* stacks = (int*)Heap.AlignedAlloc(16, 4096 + 8192);
-            m_stackStart = (int*)((int)stacks + 4096);
+            int* stacks = (int*)Heap.AlignedAlloc(16, KernelStackSize + UserStackSize);
+            m_stackStart = (int*)((int)stacks + KernelStackSize);
             m_kernelStackStart = stacks;
 
-            Memory.Memcpy(m_kernelStackStart, source.m_kernelStackStart, 4096 + 8192);
+            Memory.Memcpy(m_kernelStackStart, source.m_kernelStackStart, KernelStackSize + UserStackSize);
 
             int diffStack = (int)source.m_stack - (int)source.m_stackStart;
             int diffKernelStack = (int)source.m_kernelStack - (int)source.m_kernelStackStart;
