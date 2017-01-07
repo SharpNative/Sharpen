@@ -89,7 +89,7 @@ namespace Sharpen
         {
             ATA.Init();
 
-            Node hddNode = VFS.GetByAbsolutePath("devices://HDD0/");
+            Node hddNode = VFS.GetByAbsolutePath("devices://HDD0");
             Fat16.Init(hddNode, "C");
             Tasking.KernelTask.CurrentDirectory = "C://";
         }
