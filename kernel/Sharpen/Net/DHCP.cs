@@ -1,4 +1,5 @@
-﻿using Sharpen.Mem;
+﻿using Sharpen.Drivers.Char;
+using Sharpen.Mem;
 using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
@@ -74,7 +75,7 @@ namespace Sharpen.Net
             DHCPBootstrapHeader *header = (DHCPBootstrapHeader *)(packet->buffer + packet->start);
             Memory.Memset(header, 0, sizeof(DHCPBootstrapHeader));
 
-            header->Opcode = DHCP_REQUEST; // REQUEST
+            header->Opcode = 1; // REQUEST
             header->HardwareType = HARDTYPE_ETH; // Ethernet
             header->HardwareAddressLength = 6; // IPV4
             header->Hops = 0;
@@ -140,13 +141,39 @@ namespace Sharpen.Net
             Discover();
         }
 
+        private static unsafe byte FindMessageType(byte *buffer, uint maxsize)
+        {
+            int offset = sizeof(DHCPBootstrapHeader) + 4;
+
+            while(offset < maxsize)
+            {
+                
+                if(buffer[offset] == OPT_DHCP_MESSAGE_TYPE)
+                {
+                    return buffer[offset + 2];
+                }
+                else if(buffer[offset] == OPT_END)
+                {
+                    return 0xFF;
+                }
+                else
+                {
+                    offset += buffer[offset + 1] + 2;
+                }
+
+            }
+
+            return 0xFF;
+        }
+
         private static unsafe void PacketHandler(byte[] ip, ushort port, ushort destport, byte* buffer, uint size)
         {
-            
+
             // We need to do a size check?
 
-            byte type = buffer[sizeof(DHCPBootstrapHeader) + 6];
-            
+            byte type = FindMessageType(buffer, size);
+
+
             switch (type)
             {
                 case DHCP_OFFER:
@@ -158,15 +185,19 @@ namespace Sharpen.Net
                     break;
 
                 case DHCP_AK:
-                    handleAck(buffer);
+                    handleAck(buffer, size);
                     break;
             }
 
         }
 
-        private static unsafe void handleAck(byte* buffer)
+        private static unsafe void handleAck(byte* buffer, uint maxsize)
         {
             DHCPBootstrapHeader* header = (DHCPBootstrapHeader*)buffer;
+
+            // Do not send us anymore!
+            if (header->YourClientIP[0] == 0x00)
+                return;
 
             for (int i = 0; i < 4; i++)
             {
@@ -174,24 +205,18 @@ namespace Sharpen.Net
             }
 
 
-            int offset = sizeof(DHCPBootstrapHeader) + 7;
+            int offset = sizeof(DHCPBootstrapHeader) + 4;
             
-            // With sanity check
-            while(*(buffer + offset) != 255)
+
+            while (offset < maxsize && buffer[offset] != OPT_END)
             {
-                byte type = *(buffer + offset);
+                byte type = buffer[offset];
                 
                 switch (type)
                 {
                     case OPT_SERVER_ID:
                         for (int i = 0; i < 4; i++)
                             Network.Settings->ServerID[i] = buffer[offset + 2 + i];
-
-                        offset += 6;
-                        break;
-
-                    case OPT_LEASE_TIME:
-                        offset += 6;
                         break;
 
                     case OPT_ROUTER:
@@ -199,15 +224,11 @@ namespace Sharpen.Net
                             Network.Settings->Gateway[i] = buffer[offset + 2 + i];
 
                         Route.SetGateway(Util.PtrToArray(Network.Settings->Gateway));
-
-                        offset += 6;
                         break;
 
                     case OPT_SUBNET:
                         for (int i = 0; i < 4; i++)
                             Network.Settings->Subnet[i] = buffer[offset + 2 + i];
-
-                        offset += 6;
                         break;
 
                     case OPT_DNS:
@@ -216,27 +237,32 @@ namespace Sharpen.Net
 
                             for (int i = 0; i < 4; i++)
                                 Network.Settings->DNS1[i] = buffer[offset + 2 + i];
-
-                            offset += 6;
-
+                                
                             // More then 1 DNS?
                             if (len > 4)
                             {
                                 for (int i = 0; i < 4; i++)
-                                    Network.Settings->DNS2[i] = buffer[offset + i];
-
-                                offset += 4;
+                                    Network.Settings->DNS2[i] = buffer[offset + 4 + i];
                             }
 
 
                             break;
                         }
-
-                    default:
-                        offset++;
-                        break;
                 }
+                
+                offset += buffer[offset + 1] + 2;
+
             }
+
+            Console.Write("[DHCP] dhcp assigned us ip: ");
+            for (int i = 0; i < 3; i++)
+            {
+                Console.WriteNum(Network.Settings->IP[i]);
+                Console.Write('.');
+            }
+            Console.WriteNum(Network.Settings->IP[3]);
+            Console.WriteLine("");
+
         }
 
         private static unsafe void request(byte* buffer)
@@ -326,7 +352,7 @@ namespace Sharpen.Net
 
             NetPacketDesc* packet = NetPacket.Alloc();
 
-            addHeader(packet, xid, src, 1); // DHCP discover
+            addHeader(packet, xid, src, DHCP_DISCOVER); // DHCP discover
 
 
             // Client ID

@@ -24,6 +24,7 @@ namespace Sharpen.Drivers.Net
         private const ushort DEVID_EMU = 0x100E;
         private const ushort DEVID_I217 = 0x153A;
         private const ushort DEVID_82577LM = 0x10EA;
+        private const ushort DEVID_82545EM = 0x100F;
         private const ushort DEVID_82545EMA = 0x100;
         private const ushort DEVID_82545EMAF = 1011;
 
@@ -134,6 +135,8 @@ namespace Sharpen.Drivers.Net
         private static uint m_rx_next = 0;
         private static uint m_tx_next = 0;
 
+        private static uint m_linkup = 0;
+
         /**
          * RX_DESC
          */
@@ -216,18 +219,9 @@ namespace Sharpen.Drivers.Net
             ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
 
             cmd |= 0x04;
-
+            
             // Enable bus mastering
             PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, cmd);
-
-            /**
-             * Check if 32bit
-             */
-            if ((dev.BAR0.Address == 0x00))
-            {
-                Console.WriteLine("[E1000] No support for 64bit addressing!");
-                return;
-            }
 
             /**
              * Check if there is a memory bar
@@ -240,12 +234,18 @@ namespace Sharpen.Drivers.Net
             
             m_register_base = (uint)Paging.MapToVirtual(Paging.KernelDirectory, (int)m_register_base, 20 * 0x1000, Paging.PageFlags.Writable | Paging.PageFlags.Present);
 
-            readMac();
-            
+
             IRQ.SetHandler(m_irq_num, handler);
 
+            readMac();
+            
 
+            
             start();
+
+            Console.WriteLine("[E1000] Waiting for link to go up....");
+            while (m_linkup == 0)
+                CPU.HLT();
 
             // Register device as the main network device
             Network.NetDevice netDev = new Network.NetDevice();
@@ -258,25 +258,25 @@ namespace Sharpen.Drivers.Net
 
         private static unsafe void start()
         {
+            setInterruptMask();
             linkUp();
-
+            
             // Clearout multicast filter
             for(int i = 0; i < 0x80; i++)
             {
                 *(uint*)(m_register_base + REG_MULTICAST + (i * 4)) = 0;
             }
-
-            setInterruptMask();
+            
             rxInit();
             txInit();
         }
 
         private static unsafe void setInterruptMask()
         {
-            uint *ptr = (uint *)(m_register_base + REG_IMASK);
+            uint* ptr = (uint*)(m_register_base + REG_IMASK);
 
             *ptr = 0x1F6DC;
-            *ptr = 0xFF & ~4;
+            *ptr = 0xFF;
         }
 
         private static unsafe void linkUp()
@@ -331,7 +331,8 @@ namespace Sharpen.Drivers.Net
             
 
             uint index = m_tx_next++;
-            m_tx_next &= (NUM_TX_DESCRIPTIORS - 1);
+            if (m_tx_next > NUM_TX_DESCRIPTIORS - 3)
+                m_tx_next = 0;
             
             Memory.Memcpy(m_tx_buffers[index], bytes, (int)size);
 
@@ -379,7 +380,7 @@ namespace Sharpen.Drivers.Net
             // */
             *(uint*)(m_register_base + REG_TDLEN) = NUM_TX_DESCRIPTIORS * 16;
             *(uint*)(m_register_base + REG_TDH) = 0;
-            *(uint*)(m_register_base + REG_TDT) = NUM_TX_DESCRIPTIORS;
+            *(uint*)(m_register_base + REG_TDT) = NUM_TX_DESCRIPTIORS - 2;
             m_tx_next = 0x00;
 
             *(uint*)(m_register_base + REG_TCTL) = (1 << 1) | (1 << 3);
@@ -392,7 +393,8 @@ namespace Sharpen.Drivers.Net
             {
 
                 uint cur = m_rx_next++;
-                m_rx_next &= (NUM_RX_DESCRIPTORS - 1);
+                if (m_rx_next > NUM_RX_DESCRIPTORS - 3)
+                    m_rx_next = 0;
 
                 ushort len = m_rx_descs[cur].Length;
 
@@ -404,7 +406,7 @@ namespace Sharpen.Drivers.Net
                 m_rx_descs[cur].Status = 0;
                 
 
-                *(uint*)(m_register_base + REG_RDT) = 0;
+                *(uint*)(m_register_base + REG_RDT) = m_rx_next;
             }
 
         }
@@ -412,6 +414,12 @@ namespace Sharpen.Drivers.Net
         private static unsafe void handler(Regs* regsPtr)
         {
             uint icr = *(uint *)(m_register_base + REG_ICR);
+            
+            /**
+             * Link status change or transmit empty?
+             */
+            if ((icr & 0x4) > 0 || (icr & 0x80) > 0)
+                m_linkup = 1;
 
             if ((icr & REG_RXSEQ) > 0)
                 linkUp();
@@ -452,6 +460,7 @@ namespace Sharpen.Drivers.Net
             driver.Init = initHandler;
 
             PCI.RegisterDriver(MANUID_INTEL, DEVID_EMU, driver);
+            PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EM, driver);
             PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EMA, driver);
             PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EMAF, driver);
         }

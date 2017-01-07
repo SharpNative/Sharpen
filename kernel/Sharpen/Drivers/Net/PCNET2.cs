@@ -184,7 +184,7 @@ namespace Sharpen.Drivers.Net
             m_tx_descriptors[m_currentTransDesc].status = 0xA300;
             
             m_currentTransDesc++;
-            if (m_currentTransDesc == 30)
+            if (m_currentTransDesc == BUF_SIZE - 1)
                 m_currentTransDesc = 0;
         }
 
@@ -260,7 +260,7 @@ namespace Sharpen.Drivers.Net
 
                     a++;
                     m_currentRescDesc++;
-                    if (m_currentRescDesc >= BUF_SIZE)
+                    if (m_currentRescDesc >= BUF_SIZE - 1)
                         m_currentRescDesc = 0;
                 }
             }

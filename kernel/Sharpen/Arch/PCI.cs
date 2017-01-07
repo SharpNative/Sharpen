@@ -261,7 +261,8 @@ namespace Sharpen.Arch
         /// </summary>
         public static unsafe void Probe()
         {
-            checkBus(0);
+            for(byte i = 0; i < 5; i++)
+                checkBus(i);
 
             Console.Write("[PCI] ");
             Console.WriteNum((int)m_currentdevice - 1);
@@ -326,8 +327,12 @@ namespace Sharpen.Arch
             {
 
                 /**
-                 * We don't support this yet
+                 * We do support this, but we convert it to 32bit address (So we only take the low ones
                  */
+
+                ret.Address = (ulong)(address & ~0xF);
+                ret.Size = (ulong)(~(mask & ~0xF) + 1);
+                ret.flags = (byte)(address & 0xF);
 
                 return ret;
             }
