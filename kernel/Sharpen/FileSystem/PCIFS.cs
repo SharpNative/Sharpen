@@ -95,8 +95,7 @@ namespace Sharpen.FileSystem
                     continue;
 
                 long key = GenerateKey((byte)dev.Bus, (byte)dev.Slot, (byte)dev.Function);
-
-
+                
 
                 m_dictionary.Add(key, dev);
                 m_direntries.Add(GenerateNoteName(dev.Bus, dev.Slot, dev.Function));
@@ -112,6 +111,7 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         public static unsafe string GenerateNoteName(int bus, int slot, int function)
         {
+            
             string part1 = Int.ToString(bus);
             string part2 = Int.ToString(slot);
             string part3 = Int.ToString(function);
@@ -151,18 +151,20 @@ namespace Sharpen.FileSystem
             int offset = 0;
             for (int j = 0; j < 3; j++)
             {
-                int index = String.IndexOf(str, ":");
+                int index = String.IndexOf(str, ":", offset);
                 if (index == -1)
                     index = String.Length(str) - offset;
+                else
+                    index -= offset;
+
 
                 string part = String.SubString(str, offset, index);
-
+                
                 uint num = (uint)Int.Parse(part);
 
                 l |= num << shiftOffset;
 
                 shiftOffset -= 8;
-
 
                 Heap.Free(part);
 
