@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.Net
 {
+    /// <summary>
+    /// NOTE: Redo this driver and fix magic values and documentation
+    /// </summary>
     class rtl8139
     {
         private const ushort CONFIG_1 = 0x52;

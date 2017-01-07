@@ -96,14 +96,18 @@ namespace Sharpen.Net
 
             packet->end += (short)sizeof(DHCPBootstrapHeader);
 
-            // Default options
+            /**
+             * Default options
+             */
             byte* opt = (byte*)(packet->buffer + packet->end);
 
             uint* topt = (uint*)opt;
             *topt = Utilities.Byte.ReverseBytes(MAGISCH_KOEKJE); // 4 bytes!;
             opt += 4; // Another FOUR!
 
-            // Set message type
+            /**
+             * Set message type
+             */
             *opt++ = OPT_DHCP_MESSAGE_TYPE; // OPT_DHCP_MESSAGE_TYPE
             *opt++ = 1;
             *opt++ = messageType;
@@ -135,12 +139,20 @@ namespace Sharpen.Net
 
         public static unsafe void Init()
         {
-            // Bind UDP Port :)
+            /**
+             * Bind UDP Port :)
+             */
             UDP.Bind(68, PacketHandler);
 
             Discover();
         }
 
+        /// <summary>
+        /// Find message type from packet
+        /// </summary>
+        /// <param name="buffer">Packet pointer</param>
+        /// <param name="maxsize">Packet size</param>
+        /// <returns></returns>
         private static unsafe byte FindMessageType(byte *buffer, uint maxsize)
         {
             int offset = sizeof(DHCPBootstrapHeader) + 4;
@@ -166,10 +178,19 @@ namespace Sharpen.Net
             return 0xFF;
         }
 
+        /// <summary>
+        /// Packet handler
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="destport"></param>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
         private static unsafe void PacketHandler(byte[] ip, ushort port, ushort destport, byte* buffer, uint size)
         {
-
-            // We need to do a size check?
+            /**
+             * TODO: We need to do a size check?
+             */
 
             byte type = FindMessageType(buffer, size);
 
@@ -195,7 +216,9 @@ namespace Sharpen.Net
         {
             DHCPBootstrapHeader* header = (DHCPBootstrapHeader*)buffer;
 
-            // Do not send us anymore!
+            /**
+             * Do not send us anymore!
+             */
             if (header->YourClientIP[0] == 0x00)
                 return;
 
@@ -207,7 +230,9 @@ namespace Sharpen.Net
 
             int offset = sizeof(DHCPBootstrapHeader) + 4;
             
-
+            /**
+             * Loop through options
+             */
             while (offset < maxsize && buffer[offset] != OPT_END)
             {
                 byte type = buffer[offset];
@@ -265,13 +290,23 @@ namespace Sharpen.Net
 
         }
 
+        /// <summary>
+        /// Perform a DHCP request
+        /// </summary>
+        /// <param name="buffer">Old packet</param>
         private static unsafe void request(byte* buffer)
         {
             DHCPBootstrapHeader* header = (DHCPBootstrapHeader*)buffer;
             NetPacketDesc* packet = NetPacket.Alloc();
 
+            /**
+             * Write header to packet
+             */
             addHeader(packet, Utilities.Byte.ReverseBytes(header->TransactionID), new byte[4], DHCP_REQUEST);
             
+            /**
+             * Write our received ip
+             */
             byte* buf = (byte*)(packet->buffer + packet->end);
             *buf++ = OPT_REQ_IP;
             *buf++ = 4; // IP is 4 bytes
@@ -285,11 +320,13 @@ namespace Sharpen.Net
             if (hostnameLength > 0xFF)
                 hostnameLength = 0xFF;
 
+            /**
+             * Write our hostname
+             */
             buf = (byte*)(packet->buffer + packet->end);
             *buf++ = OPT_HOSTNAME;
             *buf++ = (byte)(hostnameLength & 0xFF);
-
-
+            
             for (int i = 0; i < hostnameLength; i++)
                 *buf++ = (byte)hostname[i];
 
@@ -297,7 +334,9 @@ namespace Sharpen.Net
 
             packet->end += 10;
 
-
+            /**
+             * Choose what we want to receive
+             */
             buf = (byte*)(packet->buffer + packet->end);
             *buf++ = OPT_PARAMETER_REQUEST; // OPT_PARAMETER_REQUEST
             *buf++ = 4; // Length of 4 :)
@@ -317,9 +356,15 @@ namespace Sharpen.Net
             NetPacket.Free(packet);
         }
 
+        /// <summary>
+        /// DHCP not acknowledge (nak) handler
+        /// </summary>
+        /// <param name="buffer"></param>
         private static unsafe void nak(byte* buffer)
         {
-            // TODO: We need to do this dynamic
+            /**
+             * TODO: We need to do this dynamic
+             */
 
             char* buf = (char*)(buffer + sizeof(DHCPBootstrapHeader) + 14);
 
@@ -332,7 +377,7 @@ namespace Sharpen.Net
         }
 
         /// <summary>
-        /// DHCP discover (test version)
+        /// DHCP discover
         /// </summary>
         public static unsafe void Discover()
         {
@@ -340,6 +385,9 @@ namespace Sharpen.Net
 
             Network.GetMac((byte *)Util.ObjectToVoidPtr(m_mac));
 
+            /**
+             * Get source and destination packets
+             */
             byte[] dest = new byte[4];
             for (int i = 0; i < 4; i++)
                 dest[i] = 0xFF;
@@ -352,10 +400,15 @@ namespace Sharpen.Net
 
             NetPacketDesc* packet = NetPacket.Alloc();
 
-            addHeader(packet, xid, src, DHCP_DISCOVER); // DHCP discover
+            /**
+             * Add DHCP discover header
+             */
+            addHeader(packet, xid, src, DHCP_DISCOVER); 
 
-
-            // Client ID
+            
+            /**
+             * Write what we send
+             */
             byte* buf = (byte*)(packet->buffer + packet->end);
             *buf++ = OPT_CLIENT_ID; // OPT_CLIENT_ID
             *buf++ = 7; // Length
@@ -364,6 +417,9 @@ namespace Sharpen.Net
             byte* mac = (byte*)Heap.Alloc(6);
             Network.GetMac(mac);
 
+            /**
+             * Write mac address to packet
+             */
             for (int i = 0; i < 6; i++)
                 *buf++ = mac[i];
 
@@ -371,14 +427,18 @@ namespace Sharpen.Net
             
             packet->end += 9;
 
-            // Request Empty IP
+            /**
+             * Request Empty IP (because we dont want a specific one)
+             */
             *buf++ = OPT_REQ_IP; // OPT_REG_IP
             *buf++ = 4;
 
             packet->end += 6;
 
 
-            // Specific options
+            /**
+             * Specify options
+             */
             buf = (byte *)(packet->buffer + packet->end);
             *buf++ = OPT_PARAMETER_REQUEST; // OPT_PARAMETER_REQUEST
             *buf++ = 4; // Length of 4 :)

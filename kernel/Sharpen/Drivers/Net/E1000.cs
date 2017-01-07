@@ -112,6 +112,19 @@ namespace Sharpen.Drivers.Net
         private const uint REG_RXT0  = (1 << 7);
 
         /**
+         * Receive descriptor cmd
+         */
+        private const byte REG_RCMD_EOP = (1 << 0);
+        private const byte REG_RCMD_IFCS = (1 << 1);
+        private const byte REG_RCMD_IC = (1 << 2);
+
+        /**
+         * Transmit control register
+         */
+        private const ushort REG_TCTL_EN = (1 << 1);
+        private const ushort REG_TCTL_PSP = (1 << 2);
+
+        /**
          * We should do this in the PCI driver!
          */
         private const ushort PCI_MEM = (1 << 0);
@@ -139,9 +152,9 @@ namespace Sharpen.Drivers.Net
 
         private static uint m_linkup = 0;
 
-        /**
-         * RX_DESC
-         */
+        /// <summary>
+        /// Receive descriptor
+        /// </summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct RX_DESC
         {
@@ -152,10 +165,10 @@ namespace Sharpen.Drivers.Net
             public byte Errors;
             public ushort Special;
         }
-
-        /*
-         * TX_DESC
-         */
+        
+        /// <summary>
+        /// Transmit descriptor
+        /// </summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct TX_DESC
         {
@@ -170,11 +183,11 @@ namespace Sharpen.Drivers.Net
 
         }
 
-        private unsafe static void detect_eeptype()
-        {
-
-        }
-
+        /// <summary>
+        /// Read from EEP
+        /// </summary>
+        /// <param name="adr">EEP address</param>
+        /// <returns></returns>
         private unsafe static ushort eepRead(uint adr)
         {
             /**
@@ -194,6 +207,9 @@ namespace Sharpen.Drivers.Net
             return (ushort)((*ptr >> 16) & 0xFFFF);
         }
 
+        /// <summary>
+        /// Read mac address from device
+        /// </summary>
         private static void readMac()
         {
             m_mac = new byte[6];
@@ -209,21 +225,27 @@ namespace Sharpen.Drivers.Net
             m_mac[5] = (byte)((tmp >> 8) & 0xFF);
         }
 
-
+        /// <summary>
+        /// PCI init handler
+        /// </summary>
+        /// <param name="dev"></param>
         private static unsafe void initHandler(PciDevice dev)
         {
             m_register_base = (uint)dev.BAR0.Address;
             m_flash_base = (uint)dev.BAR1.Address;
             
+            /**
+             * Read IRQ number
+             */
             m_irq_num = (ushort)PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
 
             m_packetBuffer = new byte[8500];
 
+            /**
+             * Enable bus mastering
+             */
             ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
-
             cmd |= 0x04;
-            
-            // Enable bus mastering
             PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, cmd);
 
             /**
@@ -235,22 +257,26 @@ namespace Sharpen.Drivers.Net
                 return;
             }
             
+            /**
+             * Map device
+             */
             m_register_base = (uint)Paging.MapToVirtual(Paging.KernelDirectory, (int)m_register_base, 20 * 0x1000, Paging.PageFlags.Writable | Paging.PageFlags.Present);
-
-
+            
             IRQ.SetHandler(m_irq_num, handler);
 
             readMac();
-            
-
-            
             start();
 
+            /**
+             * Waiting for link to go up
+             */
             Console.WriteLine("[E1000] Waiting for link to go up....");
             while (m_linkup == 0)
                 CPU.HLT();
 
-            // Register device as the main network device
+            /**
+             * Register device as the main network device
+             */
             Network.NetDevice netDev = new Network.NetDevice();
             netDev.ID = dev.Device;
             netDev.Transmit = Transmit;
@@ -259,6 +285,9 @@ namespace Sharpen.Drivers.Net
             Network.Set(netDev);
         }
 
+        /// <summary>
+        /// Start E1000
+        /// </summary>
         private static unsafe void start()
         {
             setInterruptMask();
@@ -274,6 +303,11 @@ namespace Sharpen.Drivers.Net
             txInit();
         }
 
+        /// <summary>
+        /// Set interrupt mask
+        /// 
+        /// TODO: clean up this code
+        /// </summary>
         private static unsafe void setInterruptMask()
         {
             uint* ptr = (uint*)(m_register_base + REG_IMASK);
@@ -282,19 +316,22 @@ namespace Sharpen.Drivers.Net
             *ptr = 0xFF;
         }
 
+        /// <summary>
+        /// Set link up
+        /// </summary>
         private static unsafe void linkUp()
         {
-            uint *ptr = (uint *)(m_register_base + REG_CTRL);
 
-            uint val = *ptr;
-            *ptr = val | REG_CTRL_SLU;
-
+            *(uint*)(m_register_base + REG_CTRL) = val | REG_CTRL_SLU;
         }
 
+        /// <summary>
+        /// Initalize RXs
+        /// </summary>
         private static unsafe void rxInit()
         {
             /**
-             * Alloc RX descs
+             * Allocate receive descriptors
              */
             m_rx_descs = (RX_DESC*)Heap.AlignedAlloc(16, NUM_RX_DESCRIPTORS * sizeof(RX_DESC));
             m_rx_buffers = (byte**)Heap.Alloc(NUM_RX_DESCRIPTORS * sizeof(byte*));
@@ -308,25 +345,35 @@ namespace Sharpen.Drivers.Net
             }
 
             /**
-             * Set address
+             * Set rx address to device
              */
             *(uint*)(m_register_base + REG_RDBAL) = (uint)Paging.GetPhysicalFromVirtual(m_rx_descs);
             *(uint*)(m_register_base + REG_RDBAH) = 0;
 
-            ///**
-            // * Setup total length
-            // */
+            /**
+            * Setup total length
+            */
             *(uint*)(m_register_base + REG_RDLEN) = NUM_RX_DESCRIPTORS * 16;
             *(uint*)(m_register_base + REG_RDH) = 0;
             *(uint*)(m_register_base + REG_RDT) = NUM_RX_DESCRIPTORS;
+
+
+            /**
+             * Ensure rx next is 0
+             */
             m_rx_next = 0x00;
 
+            /**
+             * Setup read control register
+             */
             *(uint*)(m_register_base + REG_RCTL) = REG_RCTL_BSEX | REG_RCTL_BSECRC | REG_RCT_BAM | REG_RCT_LPE | 0 << 8 | 0 << 4 | 0 << 3 | (1 << 1) | REG_RCT_SBP | ( 2 << 16);
         }
-
-
-        private static int a = 0;
-
+        
+        /// <summary>
+        /// Transmit packet
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="size"></param>
         public static unsafe void Transmit(byte* bytes, uint size)
         {
             if (size > 8000)
@@ -343,7 +390,7 @@ namespace Sharpen.Drivers.Net
             m_tx_descs[index].Address = (uint)Paging.GetPhysicalFromVirtual(m_tx_buffers[index]);
             m_tx_descs[index].Length = (ushort)size;
             m_tx_descs[index].CSO = 0;
-            m_tx_descs[index].CMD = (1 << 3) | (1 << 1) | (1 << 0);
+            m_tx_descs[index].CMD = REG_RCMD_EOP | REG_RCMD_IC | REG_RCMD_IFCS;
             m_tx_descs[index].STA = 0;
             m_tx_descs[index].CSO = 0;
             m_tx_descs[index].Special = 0;
@@ -351,11 +398,14 @@ namespace Sharpen.Drivers.Net
             *(uint*)(m_register_base + REG_TDT) = m_tx_next;
         }
 
+        /// <summary>
+        /// Initalize TX
+        /// </summary>
         private static unsafe void txInit()
         {
 
             /**
-             * Alloc TX descs
+             * Allocate transmit descriptors
              */
             m_tx_descs = (TX_DESC*)Heap.AlignedAlloc(16, NUM_TX_DESCRIPTIORS * sizeof(TX_DESC));
             m_tx_buffers = (byte**)Heap.Alloc(NUM_TX_DESCRIPTIORS * sizeof(byte*));
@@ -373,23 +423,33 @@ namespace Sharpen.Drivers.Net
             }
 
             /**
-             * Set address
+             * Set tx address to device
              */
             *(uint*)(m_register_base + REG_TDBAL) = (uint)Paging.GetPhysicalFromVirtual(m_tx_descs);
             *(uint*)(m_register_base + REG_TDBAH) = 0;
 
-            ///**
-            // * Setup total length
-            // */
+            /**
+             * Setup total length
+             */
             *(uint*)(m_register_base + REG_TDLEN) = NUM_TX_DESCRIPTIORS * 16;
             *(uint*)(m_register_base + REG_TDH) = 0;
             *(uint*)(m_register_base + REG_TDT) = NUM_TX_DESCRIPTIORS - 2;
+
+            /**
+             * Ensure tx next is 0
+             */
             m_tx_next = 0x00;
 
-            *(uint*)(m_register_base + REG_TCTL) = (1 << 1) | (1 << 3);
+            /**
+             * Setup transmit control register
+             */
+            *(uint*)(m_register_base + REG_TCTL) = REG_TCTL_EN | REG_TCTL_PSP;
 
         }
 
+        /// <summary>
+        /// Handle packet reception
+        /// </summary>
         private static void receive()
         {
             while((m_rx_descs[m_rx_next].Status & REG_RD_EOP) > 0)
@@ -413,24 +473,31 @@ namespace Sharpen.Drivers.Net
 
         }
 
+        /// <summary>
+        /// Handle interrupt
+        /// </summary>
+        /// <param name="regsPtr"></param>
         private static unsafe void handler(Regs* regsPtr)
         {
+            /**
+             * Read Interrupt control state
+             */
             uint icr = *(uint *)(m_register_base + REG_ICR);
             
             /**
-             * Link status change or transmit empty?
+             * Link status change or transmit empty? then say link is up!
              */
             if ((icr & 0x4) > 0 || (icr & 0x80) > 0)
                 m_linkup = 1;
-
+            
             if ((icr & REG_RXSEQ) > 0)
                 linkUp();
-
+            
+            /**
+             * Dit we receive a packet
+             */
             if ((icr & REG_RXT0) > 0)
             {
-                /**
-                 * Receive packet!
-                 */
                 receive();
             }
 
@@ -442,7 +509,10 @@ namespace Sharpen.Drivers.Net
             //Console.WriteLine("");
         }
 
-
+        /// <summary>
+        /// Get mac address implementation
+        /// </summary>
+        /// <param name="mac">Pointer to write mac address to</param>
         private static unsafe void GetMac(byte* mac)
         {
             for (int i = 0; i < 6; i++)
@@ -454,6 +524,9 @@ namespace Sharpen.Drivers.Net
 
         }
 
+        /// <summary>
+        /// Register driver
+        /// </summary>
         public static void Init()
         {
             PCI.PciDriver driver = new PCI.PciDriver();

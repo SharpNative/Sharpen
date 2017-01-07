@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
-
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe struct UDPHeader
     {
@@ -25,7 +24,7 @@ namespace Sharpen.Net
     /// </summary>
     class UDP
     {
-        private const byte PROTOCOL_UDP = 17;
+        private const byte PROTOCOL_UDP = 0x11;
 
         // TODO: find better way to handle this, this is wasted space
         private static UDPPacketHandler[] m_handlers;
@@ -47,7 +46,7 @@ namespace Sharpen.Net
             m_handlers = new UDPPacketHandler[65536];
             m_sockets = new UDPSocket[65536];
 
-            IPV4.RegisterHandler(0x11, handler);
+            IPV4.RegisterHandler(PROTOCOL_UDP, handler);
 
 #if UDP_DEBUG
             Console.WriteLine("[UDP] Registered handler on 0x11");
@@ -193,7 +192,9 @@ namespace Sharpen.Net
         /// <param name="size">Data size</param>
         public static unsafe void Send(byte[] destMac, byte[] destIP, ushort srcPort, ushort DestPort, byte[] data, int size)
         {
-            // No support for packets over 1500 bytes
+            /**
+             * No support for packets over 1500 bytes
+             */
             if (size >= 1500)
                 return;
 
@@ -218,7 +219,9 @@ namespace Sharpen.Net
         /// <param name="DestPort">Destination port</param>
         public static unsafe void Send(NetPacketDesc *packet, byte[] destIP, ushort srcPort, ushort DestPort)
         {
-            // No support for packets over 1500 bytes
+            /**
+             * No support for packets over 1500 bytes
+             */
             if (packet->end - packet->start >= 1500)
                 return;
             addHeader(packet, destIP, srcPort, DestPort);

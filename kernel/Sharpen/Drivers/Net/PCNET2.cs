@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.Net
 {
+    /// <summary>
+    /// TODO: Fix magic values and documentation
+    /// </summary>
     class PCNet2
     {
         private const ushort BUF_SIZE = 256;
@@ -127,21 +130,29 @@ namespace Sharpen.Drivers.Net
 
             FixCommand();
             
-            // Read the current MAC
+            /**
+             * Read current mac
+             */
             ReadMac();
-
-            // Do a software reset because we want 32bitjes :)
+            
+            /**
+             * Do a software reset because we want 32bitjes :)
+             */
             SoftwareReset();
 
-            writeCSR(0, 0x04); // STOP
-
-            // Initialize buffers
+            writeCSR(0, 0x04);
+            
+            /**
+             * Initalize buffers
+             */
             InitBuffers();
             
             InitCard();
 
+            /**
+             * Read and set interrupt
+             */
             int interrupt = (PCI.PCIReadWord(dev, 0x3C) & 0xFF);
-
             IRQ.SetHandler(interrupt, handler);
 
 
@@ -154,7 +165,9 @@ namespace Sharpen.Drivers.Net
             writeCSR(0, 0x42);
 
 
-            // Register device as the main network device
+            /**
+             * Register device as the main network device
+             */
             Network.NetDevice netDev = new Network.NetDevice();
             netDev.ID = dev.Device;
             netDev.Transmit = Transmit;
