@@ -156,7 +156,10 @@ namespace Sharpen.FileSystem
             if (addedSlash)
                 Heap.Free(path);
 
-            return lastNode;
+            if (lastNode == mp.Node)
+                return lastNode.Clone();
+            else
+                return lastNode;
         }
 
         /// <summary>
