@@ -11,6 +11,7 @@ using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.MultiTasking;
+using Sharpen.Utilities;
 
 namespace Sharpen
 {
@@ -97,7 +98,7 @@ namespace Sharpen
         /// <summary>
         /// Initializes networking
         /// </summary>
-        private static void initNetworking()
+        private static unsafe void initNetworking()
         {
             // Networking
             Network.Init();

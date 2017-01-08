@@ -1,14 +1,11 @@
-﻿using Sharpen.Mem;
+﻿using Sharpen.Arch;
+using Sharpen.Lib;
+using Sharpen.Mem;
 using Sharpen.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
-    class TCP
+    unsafe class TCP
     {
         private const byte PROTOCOL_TCP = 6;
 
@@ -19,39 +16,34 @@ namespace Sharpen.Net
         private const byte FLAG_ACK = (1 << 4);
         private const byte FLAG_URG = (1 << 5);
 
-        struct TCPHeader
-        {
-            public ushort SourcePort; // 2 
-            public ushort DestPort; // 4
-            public uint Sequence;  // 8
-            public uint Acknowledge; // 12
-            public byte Length; // 13
-            public byte Flags; // 14
-            public ushort WindowSize; // 16
-            public ushort Checksum; // 18
-            public ushort Urgent; // 20 / 4 = 5
-        }
 
-        unsafe struct TCPChecksum
-        {
-            public fixed byte SrcIP[4];
-            public fixed byte DstIP[4];
-            public byte Reserved;
-            public byte Protocol;
-            public ushort Length;
-        }
+        private static ushort m_portOffset = 49100;
+
+        private static TCPConnection*[] m_connections;
 
         /// <summary>
         /// Initializes TCP
         /// </summary>
         public static unsafe void Init()
         {
-            IPV4.RegisterHandler(PROTOCOL_TCP, handler);
-            
+            m_connections = new TCPConnection*[65536];
+            Memory.Memset(Util.ObjectToVoidPtr(m_connections), 0x00, sizeof(TCPConnection*) * 65536);
 
+            IPV4.RegisterHandler(PROTOCOL_TCP, handler);
         }
 
-        private static unsafe TCPHeader* addHeader(NetPacketDesc* packet, ushort srcPort, ushort dstPort, byte flags, ushort seqNum, uint ackNum, ushort winSize)
+        /// <summary>
+        /// Add header to packet
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="srcPort"></param>
+        /// <param name="dstPort"></param>
+        /// <param name="flags"></param>
+        /// <param name="seqNum"></param>
+        /// <param name="ackNum"></param>
+        /// <param name="winSize"></param>
+        /// <returns></returns>
+        private static unsafe TCPHeader* addHeader(NetPacketDesc* packet, ushort srcPort, ushort dstPort, byte flags, uint seqNum, uint ackNum, ushort winSize)
         {
             packet->start -= (short)sizeof(TCPHeader);
 
@@ -62,14 +54,23 @@ namespace Sharpen.Net
             header->Flags = flags;
             header->Urgent = 0;
             header->WindowSize = Utilities.Byte.ReverseBytes(winSize);
-            header->Acknowledge = Utilities.Byte.ReverseBytes(ackNum);
-            header->Sequence = Utilities.Byte.ReverseBytes(seqNum);
+            header->Acknowledge = ackNum;
+            header->Sequence = seqNum;
             header->Checksum = 0;
 
             return header;
         }
 
-        private static unsafe bool FinishHeader(NetPacketDesc* packet, TCPHeader *header, byte[] sourceIp, int packetLength)
+        /// <summary>
+        /// Finish header and create checksum
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="header"></param>
+        /// <param name="sourceIp"></param>
+        /// <param name="packetLength"></param>
+        /// <param name="dataLength"></param>
+        /// <returns></returns>
+        private static unsafe bool FinishHeader(NetPacketDesc* packet, TCPHeader *header, byte[] sourceIp, int packetLength, int dataLength)
         {
             // Welp!
             if (packetLength % 4 != 0)
@@ -91,16 +92,28 @@ namespace Sharpen.Net
 
             checksumHeader->Protocol = PROTOCOL_TCP;
             checksumHeader->Reserved = 0;
-            checksumHeader->Length = Utilities.Byte.ReverseBytes((ushort)packetLength);
+            checksumHeader->Length = Utilities.Byte.ReverseBytes((ushort)((ushort)packetLength + dataLength));
 
             byte* ptr = (byte*)(packet->buffer + packet->start - sizeof(TCPChecksum));
 
-            header->Checksum = NetworkTools.Checksum(ptr, size);
+            header->Checksum = NetworkTools.Checksum(ptr, size + dataLength);
 
             return true;
         }
 
-        private static unsafe bool SendPacket(byte[] sourceIp, uint acknumb, ushort srcPort, ushort destPort, byte flags, byte *data, int count)
+        /// <summary>
+        /// Send packet to TCP
+        /// </summary>
+        /// <param name="destIP"></param>
+        /// <param name="seqNum"></param>
+        /// <param name="acknumb"></param>
+        /// <param name="srcPort"></param>
+        /// <param name="destPort"></param>
+        /// <param name="flags"></param>
+        /// <param name="data"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        private static unsafe bool SendPacket(byte[] destIP, uint seqNum, uint acknumb, ushort srcPort, ushort destPort, byte flags, byte *data, int count)
         {
             NetPacketDesc* packet = NetPacket.Alloc();
             
@@ -112,16 +125,26 @@ namespace Sharpen.Net
                 packet->end += (short)count;
             }
 
-            TCPHeader* outHeader = addHeader(packet, srcPort, destPort, FLAG_SYN | FLAG_ACK, 0, acknumb, 8192);
+            TCPHeader* outHeader = addHeader(packet, srcPort, destPort, flags, seqNum, acknumb, 8192);
 
-            FinishHeader(packet, outHeader, sourceIp, sizeof(TCPHeader) + count);
+            FinishHeader(packet, outHeader, destIP, sizeof(TCPHeader), count);
 
-            IPV4.Send(packet, sourceIp, PROTOCOL_TCP);
+            IPV4.Send(packet, destIP, PROTOCOL_TCP);
 
             NetPacket.Free(packet);
 
             return true;
         }
+
+        /// <summary>
+        /// Get random port :)
+        /// </summary>
+        /// <returns></returns>
+        public static ushort RequestPort()
+        {
+            return m_portOffset++;
+        }
+
 
         /// <summary>
         /// UDP packet handler
@@ -131,18 +154,159 @@ namespace Sharpen.Net
         /// <param name="size">Packet size</param>
         private static unsafe void handler(byte[] sourceIp, byte* buffer, uint size)
         {
-            TCPHeader* header = (TCPHeader*)buffer;
 
-            ushort source = Utilities.Byte.ReverseBytes(header->SourcePort);
+            TCPHeader* header = (TCPHeader*)buffer;
+            
             ushort dest = Utilities.Byte.ReverseBytes(header->DestPort);
             
-            int length = (header->Length >> 4) * 8;
+            if(m_connections[dest] != null)
+            {
+                handleConnection(m_connections[dest], buffer, size);
+            }
+        }
 
-            byte* data = (byte*)Heap.Alloc(length);
-            Memory.Memcpy(data, buffer + 20, length - 20);
+        /// <summary>
+        /// Handle connection
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        private static unsafe void handleConnection(TCPConnection *connection, byte* buffer, uint size)
+        {
+
+            switch(connection->State)
+            {
+                case 0:
+                        Acknowledge(connection, buffer, size);
+                    break;
+
+                case 1:
+                        HandleReceive(connection, buffer, size);
+                    break;
+
+            }
+        }
+
+        /// <summary>
+        /// Acknowledge
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        private static unsafe void Acknowledge(TCPConnection* connection, byte* buffer, uint size)
+        {
+
+            TCPHeader* header = (TCPHeader*)buffer;
+
+            /**
+             * Do we need to ACK or SYN|ACK
+             */
+            if (!connection->InComing && (header->Flags & FLAG_SYN | FLAG_ACK) > 0)
+            {
+                connection->SequenceNumber = Byte.ReverseBytes(Byte.ReverseBytes(connection->SequenceNumber) + 1);
+
+                connection->State = 1;
+
+                connection->AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1);
+
+                SendPacket(Util.PtrToArray(connection->IP), connection->SequenceNumber, Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1), connection->InPort, connection->DestPort, FLAG_ACK, null, 0);
+            }
+        }
+
+        /// <summary>
+        /// Handle packet receiption
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        private static unsafe void HandleReceive(TCPConnection* connection, byte* buffer, uint size)
+        {
+            TCPHeader* header = (TCPHeader*)buffer;
+
+            if((header->Flags & FLAG_PSH) > 0)
+            {
+                Console.WriteLine("I has data:");
+
+                int sizePacket = (int)size - sizeof(TCPHeader);
+
+                for (int i = 0; i < sizePacket; i++)
+                    Console.Write((char)buffer[sizeof(TCPHeader) + i]);
+                Console.WriteLine("\n");
+
+                connection->AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + (uint)sizePacket);
+
+                SendPacket(Util.PtrToArray(connection->IP), connection->SequenceNumber, connection->AcknowledgeNumber, connection->InPort, connection->DestPort, FLAG_ACK, null, 0);
+            }
+            else if((header->Flags & FLAG_RST) > 0)
+            {
+                connection->State = 0xFF;
+
+                // Clear connection!
+            }
+
+        }
+
+        /// <summary>
+        /// Send packet on connection
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        public static unsafe void Send(TCPConnection *connection, byte *buffer, uint size)
+        {
+            connection->SequenceNumber = connection->NextSequenceNumber;
+            connection->NextSequenceNumber = connection->SequenceNumber + size;
 
 
-            SendPacket(sourceIp, Utilities.Byte.ReverseBytes(header->Sequence) + 1, dest, source, FLAG_ACK | FLAG_SYN, data, length);
+            SendPacket(Util.PtrToArray(connection->IP), connection->SequenceNumber, connection->AcknowledgeNumber, connection->InPort, connection->DestPort, FLAG_PSH | FLAG_ACK, buffer, (int)size);
+        }
+
+        /// <summary>
+        /// Connection to IP
+        /// </summary>
+        /// <param name="ip">IP</param>
+        /// <param name="port">Port</param>
+        /// <returns></returns>
+        public static unsafe TCPConnection* Connect(byte[] ip, ushort port)
+        {
+            ushort inPort = RequestPort();
+            int startSeq = Random.Rand();
+
+
+            if (!ARP.IpExists(ip))
+            {
+
+                byte[] mac = new byte[6];
+                for (int i = 0; i < 6; i++)
+                    mac[i] = 0xFF;
+
+                ARP.ArpSend(ARP.OP_REQUEST, mac, ip);
+                
+                /**
+                 * Todo: free mac
+                 */
+            }
+
+            while (!ARP.IpExists(ip))
+                CPU.HLT();
+
+            TCPConnection* ptr = (TCPConnection*)Heap.Alloc(sizeof(TCPConnection));
+            ptr->DestPort = port;
+            ptr->InPort = inPort;
+            ptr->State = 0;
+            ptr->InComing = false;
+            ptr->XID = Random.Rand();
+            ptr->SequenceNumber = (uint)startSeq;
+            ptr->NextSequenceNumber = (uint)Byte.ReverseBytes(Byte.ReverseBytes(ptr->SequenceNumber) + 1);
+
+            for (int i = 0; i < 4; i++)
+                ptr->IP[i] = ip[i];
+
+            m_connections[inPort] = ptr;
+            
+            SendPacket(ip, (uint)startSeq, 0, inPort, port, FLAG_SYN, null, 0);
+
+            return ptr;
         }
     }
 }

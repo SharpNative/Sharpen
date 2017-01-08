@@ -16,6 +16,7 @@ namespace Sharpen.Collections
         private uint m_length;
         private bool Working = false;
 
+
         public uint Length
         {
             get { return m_length; }

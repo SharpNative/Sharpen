@@ -83,7 +83,7 @@
     <Compile Include="Lib\Random.cs" />
     <Compile Include="Net\Route.cs" />
     <Compile Include="Net\TCP.cs" />
-    <Compile Include="Net\TCPSocket.cs" />
+    <Compile Include="Net\TCPExtras.cs" />
     <Compile Include="Net\UDPBindSocketDevice.cs" />
     <Compile Include="Net\UDPSocketDevice.cs" />
     <Compile Include="Net\UDPFS.cs" />

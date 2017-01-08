@@ -322,7 +322,7 @@ namespace Sharpen.Drivers.Net
         private static unsafe void linkUp()
         {
 
-            *(uint*)(m_register_base + REG_CTRL) = val | REG_CTRL_SLU;
+            *(uint*)(m_register_base + REG_CTRL) = *(uint*)(m_register_base + REG_CTRL) | REG_CTRL_SLU;
         }
 
         /// <summary>
