@@ -1,4 +1,5 @@
-﻿using Sharpen.Mem;
+﻿using Sharpen.Collections;
+using Sharpen.Mem;
 using Sharpen.MultiTasking;
 
 namespace Sharpen.Arch
@@ -26,15 +27,35 @@ namespace Sharpen.Arch
         private void* m_FPUContext;
         private Regs* m_sysRegs;
 
+        private List m_virtualAddresses;
+
+        /// <summary>
+        /// Creates a new blank context
+        /// </summary>
+        public X86Context()
+        {
+            m_virtualAddresses = new List();
+        }
+
         /// <summary>
         /// Cleans up the context
         /// </summary>
         public void Cleanup()
         {
-            // TODO: find a good way to free the page directory
             Heap.Free(m_FPUContext);
             Heap.Free(m_kernelStackStart);
-            //Paging.FreeDirectory(PageDirVirtual);
+
+            int count = m_virtualAddresses.Count;
+            for (int i = 0; i < count; i++)
+            {
+                VirtualAddressRange range = (VirtualAddressRange)m_virtualAddresses.Item[i];
+                range.Dispose();
+            }
+
+            m_virtualAddresses.Dispose();
+            Heap.Free(m_virtualAddresses);
+            
+            Paging.FreeDirectory(PageDirVirtual);
         }
 
         /// <summary>
@@ -231,6 +252,42 @@ namespace Sharpen.Arch
             currentContext.completeFork(diffRegs, diffESP);
             
             return pid;
+        }
+
+        /// <summary>
+        /// Increases the virtual address data space
+        /// </summary>
+        /// <param name="size">The size to increase with</param>
+        /// <returns>The old end</returns>
+        public unsafe void* Sbrk(int size)
+        {
+            VirtualAddressRange range = new VirtualAddressRange(size);
+            m_virtualAddresses.Add(range);
+            return range.Address;
+        }
+    }
+    
+    unsafe class VirtualAddressRange
+    {
+        public void* Address { get; private set; }
+        public int Size { get; private set; }
+
+        /// <summary>
+        /// Creates a new range for virtual address
+        /// </summary>
+        /// <param name="size">The size of the range</param>
+        public VirtualAddressRange(int size)
+        {
+            Address = Paging.AllocateVirtual(size);
+            Size = size;
+        }
+
+        /// <summary>
+        /// Gives the range back to the system
+        /// </summary>
+        public void Dispose()
+        {
+            Paging.FreeVirtual(Address, Size);
         }
     }
 }

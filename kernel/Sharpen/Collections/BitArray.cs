@@ -43,6 +43,17 @@
         }
 
         /// <summary>
+        /// Clears the range of bits
+        /// </summary>
+        /// <param name="k">The starting bit</param>
+        /// <param name="size">The size of the range</param>
+        public void ClearRange(int k, int size)
+        {
+            for (int i = k; i < k + size; i++)
+                ClearBit(i);
+        }
+
+        /// <summary>
         /// Tests the bit k
         /// </summary>
         /// <param name="k">The bit number</param>
@@ -97,7 +108,7 @@
         /// </summary>
         /// <param name="size">The size of the range of free bits</param>
         /// <param name="set">If it should also be set</param>
-        /// <returns></returns>
+        /// <returns>The index of the first free bit</returns>
         public int FindFirstFree(bool set)
         {
             for (int i = m_leastClear; i < m_N; i++)
@@ -127,7 +138,7 @@
         /// <summary>
         /// Finds the first free bit
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The index of the first free bit</returns>
         public int FindFirstFree()
         {
             return FindFirstFree(false);

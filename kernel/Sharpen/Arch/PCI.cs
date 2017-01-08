@@ -30,7 +30,7 @@ namespace Sharpen.Arch
     }
 
 
-    unsafe class PCI
+    public unsafe class PCI
     {
         public const ushort COMMAND = 0x04;
 
@@ -281,7 +281,7 @@ namespace Sharpen.Arch
         public static void Init()
         {
             m_devices = new PciDevice[300];
-            Probe();
+            //Probe();
         }
 
         public static uint PciGetMask(ushort bus, ushort slot, ushort function, uint index)

@@ -211,7 +211,8 @@ namespace Sharpen.Exec
             X86Context context = (X86Context)newTask.Context;
             context.CreateNewContext((void*)elf->Entry, 2, initialStack, false);
             Heap.Free(initialStack);
-            
+            newTask.AddUsedAddress(allocated);
+
             // Map memory
             Paging.PageDirectory* newDirectory = context.PageDirVirtual;
             Paging.PageFlags pageFlags = Paging.PageFlags.Present | Paging.PageFlags.Writable | Paging.PageFlags.UserMode;

@@ -85,9 +85,7 @@ namespace Sharpen.Exec
         /// <returns>The previous data space end</returns>
         public static unsafe void* Sbrk(int increase)
         {
-            // TODO: free this when the task ends
-            void* c = Paging.AllocateVirtual(increase);
-            return c;
+            return Tasking.CurrentTask.Context.Sbrk(increase);
         }
 
         /// <summary>

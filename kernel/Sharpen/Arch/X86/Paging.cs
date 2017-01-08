@@ -13,6 +13,7 @@ namespace Sharpen.Arch
         // Flags on a page
         public enum PageFlags
         {
+            None = 0,
             Present = (1 << 0x0),
             Writable = (1 << 0x1),
             UserMode = (1 << 0x2),
@@ -22,6 +23,7 @@ namespace Sharpen.Arch
         // Flags on a table
         public enum TableFlags
         {
+            None = 0,
             Present = (1 << 0x0),
             Writable = (1 << 0x1),
             UserMode = (1 << 0x2),
@@ -44,7 +46,7 @@ namespace Sharpen.Arch
 
         // Kernel directory
         public static unsafe PageDirectory* KernelDirectory { get; private set; }
-        
+
         // The current page directory (virtual address)
         public static unsafe PageDirectory* CurrentDirectory { get; private set; }
 
@@ -141,11 +143,11 @@ namespace Sharpen.Arch
 
             return directory;
         }
-
+        
         /// <summary>
         /// Maps a page in a directory
         /// </summary>
-        /// <param name="directory">The paging directory</param>
+        /// <param name="directory">The page directory</param>
         /// <param name="phys">The physical address</param>
         /// <param name="virt">The virtual address</param>
         /// <param name="flags">The flags</param>
@@ -159,7 +161,7 @@ namespace Sharpen.Arch
             PageTable* table = (PageTable*)directory->VirtualTables[tableIndex];
             table->Pages[pageIndex & (1024 - 1)] = ToFrameAddress(phys) | (int)flags;
         }
-
+        
         /// <summary>
         /// Maps a physical address (range) to a free virtual address (range)
         /// </summary>
@@ -251,7 +253,7 @@ namespace Sharpen.Arch
         }
 
         /// <summary>
-        /// Allocates a block of virtual memory
+        /// Allocates a virtual address range
         /// </summary>
         /// <param name="size">The size</param>
         /// <returns>The pointer to the block</returns>
@@ -270,13 +272,38 @@ namespace Sharpen.Arch
             {
                 int phys = (int)PhysicalMemoryManager.Alloc();
                 MapPage(CurrentDirectory, phys, address, flags);
+                MapPage(KernelDirectory, phys, address, flags);
                 address += 0x1000;
             }
-            
+
             // Clear the data before returning it for safety
             Memory.Memset((void*)start, 0, size);
 
             return (void*)start;
+        }
+
+        /// <summary>
+        /// Frees an allocate virtual address range
+        /// </summary>
+        /// <param name="address">The starting address</param>
+        /// <param name="size">The size</param>
+        public static unsafe void FreeVirtual(void* address, int size)
+        {
+            // Page align size
+            uint sizeAligned = Align((uint)size);
+            int start = (int)address / 0x1000;
+            int addressStart = (int)address;
+            int addressEnd = addressStart + (int)sizeAligned;
+
+            // Free virtual memory
+            bitmap.ClearRange(start, (int)(sizeAligned / 0x1000));
+
+            // Free physical memory
+            for (int i = addressStart; i < addressEnd; i += 0x1000)
+            {
+                void* phys = GetPhysicalFromVirtual((void*)i);
+                PhysicalMemoryManager.Free(phys);
+            }
         }
 
         /// <summary>
@@ -305,7 +332,7 @@ namespace Sharpen.Arch
             int pageDirSizeAligned = (int)Align((uint)sizeof(PageDirectory));
 
             // One block for the page directory and the page tables
-            int allocated = (int)Heap.AlignedAlloc(0x1000, pageDirSizeAligned + 1024 * sizeof(PageTable));
+            int allocated = (int)AllocateVirtual(pageDirSizeAligned + 1024 * sizeof(PageTable));
             if (allocated == 0)
                 Panic.DoPanic("Couldn't clone page directory because there is no memory left");
 
@@ -350,7 +377,12 @@ namespace Sharpen.Arch
                 Panic.DoPanic("Tried to free the kernel page directory");
 
             // The directory was cloned, so it was allocated in one huge block
-            Heap.Free(directory);
+            PageDirectory* virt = CurrentDirectory;
+            PageDirectory* phys = CurrentDirectoryPhysical;
+            SetPageDirectory(KernelDirectory, KernelDirectory);
+            int pageDirSizeAligned = (int)Align((uint)sizeof(PageDirectory));
+            FreeVirtual(directory, pageDirSizeAligned + 1024 * sizeof(PageTable));
+            SetPageDirectory(virt, phys);
         }
 
         /// <summary>

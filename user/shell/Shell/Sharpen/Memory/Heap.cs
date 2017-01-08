@@ -14,5 +14,11 @@
         /// </summary>
         /// <param name="ptr">The pointer of the memory block</param>
         public static extern void Free(void* ptr);
+
+        /// <summary>
+        /// Frees an object
+        /// </summary>
+        /// <param name="obj">The object</param>
+        public static extern void Free(object obj);
     }
 }

@@ -87,6 +87,15 @@ namespace Sharpen.Collections
         }
 
         /// <summary>
+        /// Called when the object needs to cleanup its memory
+        /// </summary>
+        public void Dispose()
+        {
+            Heap.Free(Item);
+            Item = null;
+        }
+
+        /// <summary>
         /// Removes all the items
         /// </summary>
         public unsafe void Clear()

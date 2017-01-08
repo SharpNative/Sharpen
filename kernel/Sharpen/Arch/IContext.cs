@@ -56,5 +56,12 @@
         /// </summary>
         /// <returns>The new PID or zero</returns>
         int Fork();
+
+        /// <summary>
+        /// Increases the virtual address data space
+        /// </summary>
+        /// <param name="size">The size to increase with</param>
+        /// <returns>The old end</returns>
+        unsafe void* Sbrk(int size);
     }
 }

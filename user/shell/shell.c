@@ -54,11 +54,11 @@ void Shell_Sharpen_Memory_Mem_Memset_3void__int32_t_int32_t_(void* ptr, int32_t 
 int main(int argc, char* argv[])
 {
     init();
-    Shell_Program_Main_1char___((void*)argv);
+    Shell_Program_Main_1string_t__((char**)argv);
     return 0;
 }
 
-void Sharpen_IO_Console_Write_1char__(char* str)
+void Sharpen_IO_Console_Write_1string_t_(string_t str)
 {
     printf("%s", str);
     fflush(stdout);
@@ -77,7 +77,7 @@ char Sharpen_IO_Console_ReadChar_0(void)
 
 int run(char*, char**, char**);
 
-int32_t Sharpen_Process_internalRun_2char__char___(char* path, char** args)
+int32_t Sharpen_Process_internalRun_2string_t_string_t__(string_t path, string_t* args)
 {
     return run(path, args, NULL);
 }
@@ -105,11 +105,16 @@ void* Sharpen_Memory_Heap_Alloc_1int32_t_(int32_t size)
 
 void Sharpen_Memory_Heap_Free_1void__(void* ptr)
 {
-    return free(ptr);
+    free(ptr);
+}
+
+void Sharpen_Memory_Heap_Free_1object_t_(object_t obj)
+{
+    free(obj);
 }
 
 
-void* Sharpen_IO_Directory_OpenInternal_1char__(char* path)
+void* Sharpen_IO_Directory_OpenInternal_1string_t_(string_t path)
 {
     return opendir(path);
 }
@@ -128,12 +133,12 @@ void Sharpen_IO_Directory_CloseInternal_1void__(void* instance)
 }
 
 
-int32_t Sharpen_IO_Directory_SetCurrentDirectory_1char__(char* path)
+int32_t Sharpen_IO_Directory_SetCurrentDirectory_1string_t_(string_t path)
 {
     return (chdir(path) == 0) ? 1 : 0;
 }
 
-char* Sharpen_IO_Directory_GetCurrentDirectory_0(void)
+string_t Sharpen_IO_Directory_GetCurrentDirectory_0(void)
 {
     return get_current_dir_name();
 }

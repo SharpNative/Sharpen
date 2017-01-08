@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Collections;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -49,6 +50,9 @@ namespace Sharpen.MultiTasking
         // Context
         public IContext Context { get; private set; }
 
+        // Used addresses that need cleanup when ending the task
+        private List m_usedAddresses;
+
         // Next task in the linked list
         public Task Next;
 
@@ -97,6 +101,9 @@ namespace Sharpen.MultiTasking
                 SetFileDescriptors(Tasking.CurrentTask.FileDescriptors.Clone());
                 CurrentDirectory = String.Clone(Tasking.CurrentTask.CurrentDirectory);
             }
+
+            // List of addresses that need to be freed
+            m_usedAddresses = new List();
         }
         
         /// <summary>
@@ -150,14 +157,28 @@ namespace Sharpen.MultiTasking
         /// </summary>
         public void Cleanup()
         {
-            // TODO: more cleaning required
-            
+            int count = m_usedAddresses.Count;
+            for (int i = 0; i < count; i++)
+            {
+                Heap.Free(m_usedAddresses.Item[i]);
+            }
+            Heap.Free(m_usedAddresses);
+
             FileDescriptors.Cleanup();
             Heap.Free(FileDescriptors);
             Heap.Free(m_currentDirectory);
 
             Context.Cleanup();
             Heap.Free(Context);
+        }
+
+        /// <summary>
+        /// Adds a used address to be freed when the task cleans up
+        /// </summary>
+        /// <param name="address">The address</param>
+        public void AddUsedAddress(void* address)
+        {
+            m_usedAddresses.Add(Util.VoidPtrToObject(address));
         }
 
         /// <summary>

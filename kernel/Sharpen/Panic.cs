@@ -40,7 +40,7 @@ namespace Sharpen
             Console.WriteLine("                        |_|               ");
             Console.WriteLine("");
 #endif
-
+            
             // Message
             Console.Write("\tMessage: ");
             Console.WriteLine(str);

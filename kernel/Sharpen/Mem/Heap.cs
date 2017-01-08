@@ -85,14 +85,7 @@ namespace Sharpen.Mem
         {
             // Calculate the required amount of pages (round up to nearest page)
             int required = (int)Paging.Align((uint)size) / 0x1000;
-
-            // Round up to the next minimal pages count (based on power of twos)
-            int power = 1;
-            while (power < required)
-                power *= 2;
-
-            required = power;
-
+            
 #if HEAP_DEBUG
             Console.Write("[HEAP] Required page count: ");
             Console.WriteNum(required);
@@ -123,6 +116,8 @@ namespace Sharpen.Mem
 #if HEAP_DEBUG
             Console.Write("[HEAP] New descriptor is at 0x");
             Console.WriteHex((long)descriptor);
+            Console.Write(", physical: 0x");
+            Console.WriteHex((long)Paging.GetPhysicalFromVirtual(descriptor));
             Console.Write('\n');
 #endif
 

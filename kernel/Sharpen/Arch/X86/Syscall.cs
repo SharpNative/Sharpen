@@ -174,7 +174,7 @@ namespace Sharpen.Arch
                     Console.WriteLine("");
                     break;
             }
-
+            
             Tasking.CurrentTask.Context.SetSysReturnValue(ret);
         }
     }

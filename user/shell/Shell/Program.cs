@@ -21,7 +21,7 @@ namespace Shell
 
             int ret = Process.Run(total_string, argv, argc);
 
-            Heap.Free(Util.ObjectToVoidPtr(total_string));
+            Heap.Free(total_string);
 
             return ret;
         }
@@ -35,9 +35,10 @@ namespace Shell
             Console.WriteLine("Project Sharpen");
             Console.WriteLine("(c) 2016 SharpNative\n");
 
+            string currentDir = Directory.GetCurrentDirectory();
             while (true)
             {
-                Console.Write(Directory.GetCurrentDirectory());
+                Console.Write(currentDir);
                 Console.Write("> ");
 
                 string read = Console.ReadLine();
@@ -48,7 +49,10 @@ namespace Shell
 
                 string command = String.SubString(read, 0, offsetToSpace);
                 if (command == null)
+                {
+                    Heap.Free(read);
                     continue;
+                }
 
                 string[] argv = null;
                 int argc = 1;
@@ -86,6 +90,7 @@ namespace Shell
 
                     // Add null to end arguments
                     argv[i] = null;
+                    Heap.Free(argumentStart);
                 }
 
                 if (String.Equals(command, "cd"))
@@ -100,12 +105,17 @@ namespace Shell
                         {
                             Console.WriteLine("cd: Couldn't change the directory");
                         }
+                        else
+                        {
+                            currentDir = Directory.GetCurrentDirectory();
+                            Heap.Free(currentDir);
+                        }
                     }
                 }
                 else if (String.Equals(command, "dir"))
                 {
-                    Directory dir = Directory.Open(Directory.GetCurrentDirectory());
-                    
+                    Directory dir = Directory.Open(currentDir);
+
                     uint i = 0;
                     while (true)
                     {
@@ -144,6 +154,14 @@ namespace Shell
                     // Wait until exit to return to prompt
                     Process.WaitForExit(ret);
                 }
+
+                // Note: command is in the first entry of argv
+                for (int i = 0; i < argc; i++)
+                {
+                    Heap.Free(argv[i]);
+                }
+                Heap.Free(read);
+                Heap.Free(argv);
             }
         }
     }

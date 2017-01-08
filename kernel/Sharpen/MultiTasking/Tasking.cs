@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Collections;
+using Sharpen.Mem;
 
 namespace Sharpen.MultiTasking
 {
@@ -206,7 +207,7 @@ namespace Sharpen.MultiTasking
 
             return next;
         }
-
+        
         /// <summary>
         /// Scheduler
         /// </summary>
@@ -231,6 +232,7 @@ namespace Sharpen.MultiTasking
             if (oldTask.HasFlag(Task.TaskFlag.DESCHEDULED))
             {
                 oldTask.Cleanup();
+                Heap.Free(oldTask);
             }
 
             // Check for cloning
