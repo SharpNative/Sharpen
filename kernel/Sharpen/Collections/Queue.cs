@@ -1,5 +1,4 @@
-﻿using Sharpen.Arch;
-using Sharpen.Mem;
+﻿using Sharpen.Mem;
 
 namespace Sharpen.Collections
 {
@@ -13,62 +12,76 @@ namespace Sharpen.Collections
 
         private stackNode* m_next;
         private stackNode* m_last;
-        private uint m_length;
-        private bool Working = false;
 
+        private Mutex m_mutex;
 
-        public uint Length
-        {
-            get { return m_length; }
-        }
+        public uint Length { get; private set; }
 
+        /// <summary>
+        /// Queue
+        /// </summary>
         public Queue()
         {
             m_last = m_next = null;
-            m_length = 0;
         }
 
+        /// <summary>
+        /// Returns if the queue is empty
+        /// </summary>
+        /// <returns>If it's empty</returns>
         public bool IsEmpty()
         {
-            return m_length == 0;
+            return (Length == 0);
         }
 
-        public void Push(void *value)
+        /// <summary>
+        /// Pushes a new value onto the queue
+        /// </summary>
+        /// <param name="value">The value</param>
+        public void Push(void* value)
         {
-            if (m_length == 0)
-                m_last = null;
-
             stackNode* node = (stackNode*)Heap.Alloc(sizeof(stackNode));
             node->Value = value;
+
+            m_mutex.Lock();
+
+            if (Length == 0)
+                m_last = null;
+
             node->Next = m_last;
 
             m_last = node;
 
-            m_length++;
+            Length++;
             if (m_next == null)
                 m_next = m_last;
+
+            m_mutex.Unlock();
         }
 
-        public unsafe void *Pop()
+        /// <summary>
+        /// Pops a value from the queue
+        /// </summary>
+        /// <returns>The value</returns>
+        public unsafe void* Pop()
         {
-            CPU.CLI();
-            
-            if (m_next == null || m_length == 0)
+            m_mutex.Lock();
+
+            if (m_next == null || Length == 0)
             {
-                Working = false;
-                CPU.STI();
+                m_mutex.Unlock();
                 return null;
             }
-            
+
             stackNode* node = m_next;
             m_next = node->Next;
             void* ret = node->Value;
-            
-            Heap.Free(node);
-            
-            m_length--;
 
-            CPU.STI();
+            Heap.Free(node);
+
+            Length--;
+
+            m_mutex.Unlock();
 
             return ret;
         }
