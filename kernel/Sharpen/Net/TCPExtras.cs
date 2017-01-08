@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sharpen.Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +7,21 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
+    enum TCPConnectionState
+    {
+        WAITING_FOR_ACK = 0,
+        ACKNOWLEDGE = 1,
+        SYNC_ACK = 3,
+        LISTEN = 0xFE,
+        CLOSED = 0xFF
+    }
+
+    enum TCPConnectionType
+    {
+        CONNECTION = 0,
+        CHILD_CONNECTION = 1
+    }
+
     struct TCPHeader
     {
         public ushort SourcePort; // 2 
@@ -28,20 +44,43 @@ namespace Sharpen.Net
         public ushort Length;
     }
 
-    unsafe struct TCPConnection
+    class TCPConnection
     {
-        public fixed byte IP[4];
+        public byte[] IP;
         public ushort InPort;
         public ushort DestPort;
 
-        public uint State;
+        public TCPConnectionState State;
         public bool InComing;
 
         public uint SequenceNumber;
         public uint NextSequenceNumber;
 
+        public Dictionary Clients;
+
+        public TCPConnectionType Type;
+
+        public TCPConnection BaseConnection;
+
+        public Queue ReceiveQueue; 
+
         public uint AcknowledgeNumber;
 
-        public int XID;
+        public long XID;
+    }
+
+    unsafe struct TCPPacketDescriptor
+    {
+        public TCPPacketDescriptorTypes Type;
+        public int Size;
+        public long xid;
+        public byte* Data;
+    }
+
+    enum TCPPacketDescriptorTypes
+    {
+        ACCEPT = 0,
+        RECEIVE = 1,
+        RESET = 2
     }
 }
