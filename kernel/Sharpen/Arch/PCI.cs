@@ -1,9 +1,5 @@
-﻿using Sharpen.FileSystem;
-using static Sharpen.Arch.PCI;
-
-namespace Sharpen.Arch
+﻿namespace Sharpen.Arch
 {
-
     public class PciDevice
     {
         public ushort Bus;
@@ -15,7 +11,7 @@ namespace Sharpen.Arch
 
         public ushort Vendor;
         public ushort Device;
-        public PciDriver Driver;
+        public PCI.PciDriver Driver;
         public PciBar BAR0;
         public PciBar BAR1;
 
@@ -43,22 +39,22 @@ namespace Sharpen.Arch
         /**
          * Config registers
          */
-        public const ushort CONFIG_VENDOR_ID   = 0x00;
-        public const ushort CONFIG_DEVICE_ID   = 0x02;
-        public const ushort CONFIG_COMMAND     = 0x04;
-        public const ushort CONFIG_STATUS      = 0x06;
-        public const ushort CONFIG_REV_ID      = 0x08;
-        public const ushort CONFIG_PROG_INTF   = 0x09;
-        public const ushort CONFIG_SUB_CLASS   = 0x0A;
-        public const ushort CONFIG_CLASS_CODE  = 0x0B;
-        public const ushort CONFIG_CACHE_SIZE  = 0x0C;
-        public const ushort CONFIG_LETENCY     = 0x0D;
+        public const ushort CONFIG_VENDOR_ID = 0x00;
+        public const ushort CONFIG_DEVICE_ID = 0x02;
+        public const ushort CONFIG_COMMAND = 0x04;
+        public const ushort CONFIG_STATUS = 0x06;
+        public const ushort CONFIG_REV_ID = 0x08;
+        public const ushort CONFIG_PROG_INTF = 0x09;
+        public const ushort CONFIG_SUB_CLASS = 0x0A;
+        public const ushort CONFIG_CLASS_CODE = 0x0B;
+        public const ushort CONFIG_CACHE_SIZE = 0x0C;
+        public const ushort CONFIG_LETENCY = 0x0D;
         public const ushort CONFIG_HEADER_TYPE = 0x0E;
-        public const ushort CONFIG_BIST        = 0x0F;
+        public const ushort CONFIG_BIST = 0x0F;
 
-        public const ushort BAR_IO        = 0x01;
-        public const ushort BAR_LOWMEM    = 0x02;
-        public const ushort BAR_64        = 0x04;
+        public const ushort BAR_IO = 0x01;
+        public const ushort BAR_LOWMEM = 0x02;
+        public const ushort BAR_64 = 0x04;
 
         public const ushort BAR0 = 0x10;
         public const ushort BAR1 = 0x14;
@@ -78,7 +74,8 @@ namespace Sharpen.Arch
         public unsafe delegate void PciDriverInit(PciDevice dev);
         public unsafe delegate void PciDriverExit(PciDevice dev);
 
-        private static PciDevice[] m_devices;
+        public static PciDevice[] Devices { get; private set; }
+
         private static uint m_currentdevice = 0;
 
         public static uint DeviceNum
@@ -96,7 +93,7 @@ namespace Sharpen.Arch
         /// <returns>Generates the address</returns>
         private static uint generateAddress(uint lbus, uint lslot, uint lfun, uint offset)
         {
-            return lbus << 16 | lslot << 11 | lfun << 8 | (offset & 0xFC) | 0x80000000;
+            return (lbus << 16 | lslot << 11 | lfun << 8 | (offset & 0xFC) | 0x80000000);
         }
 
         /// <summary>
@@ -196,16 +193,8 @@ namespace Sharpen.Arch
         /// <returns>Vendor ID</returns>
         private static ushort GetVendorID(ushort bus, ushort device, ushort function)
         {
-             return ReadWord(bus, device, function, 0);
+            return ReadWord(bus, device, function, 0);
         }
-
-
-        public static PciDevice[] GetDevices()
-        {
-            return m_devices;
-        }
-
-
 
         /// <summary>
         /// Register driver
@@ -219,7 +208,7 @@ namespace Sharpen.Arch
 
             for (int i = 0; i < m_currentdevice; i++)
             {
-                if (m_devices[i].Vendor == vendorID && m_devices[i].Device == deviceID)
+                if (Devices[i].Vendor == vendorID && Devices[i].Device == deviceID)
                 {
                     foundIndex = i;
                     break;
@@ -228,7 +217,6 @@ namespace Sharpen.Arch
 
             if (foundIndex == -1)
                 return;
-            
 
             Console.Write("[PCI] Registered driver for ");
             Console.WriteHex(vendorID);
@@ -237,8 +225,8 @@ namespace Sharpen.Arch
             Console.Write(" Name: ");
             Console.WriteLine(driver.Name);
 
-            m_devices[foundIndex].Driver = driver;
-            driver.Init(m_devices[foundIndex]);
+            Devices[foundIndex].Driver = driver;
+            driver.Init(Devices[foundIndex]);
         }
 
         /// <summary>
@@ -249,9 +237,9 @@ namespace Sharpen.Arch
             for (int i = 0; i < m_currentdevice; i++)
             {
                 Console.Write("Device ");
-                Console.WriteHex(m_devices[i].Vendor);
+                Console.WriteHex(Devices[i].Vendor);
                 Console.Write(":");
-                Console.WriteHex(m_devices[i].Device);
+                Console.WriteHex(Devices[i].Device);
                 Console.WriteLine("");
             }
         }
@@ -261,18 +249,12 @@ namespace Sharpen.Arch
         /// </summary>
         public static unsafe void Probe()
         {
-            for(byte i = 0; i < 5; i++)
+            for (byte i = 0; i < 5; i++)
                 checkBus(i);
 
             Console.Write("[PCI] ");
             Console.WriteNum((int)m_currentdevice - 1);
             Console.WriteLine(" devices detected");
-        }
-        
-
-        private static Node findDirImpl(Node node, string name)
-        {
-            return null;
         }
 
         /// <summary>
@@ -280,10 +262,18 @@ namespace Sharpen.Arch
         /// </summary>
         public static void Init()
         {
-            m_devices = new PciDevice[300];
+            Devices = new PciDevice[300];
             Probe();
         }
 
+        /// <summary>
+        /// Gets PCI mask
+        /// </summary>
+        /// <param name="bus">Bus</param>
+        /// <param name="slot">Slot</param>
+        /// <param name="function">Function</param>
+        /// <param name="index">Index</param>
+        /// <returns>Mask</returns>
         public static uint PciGetMask(ushort bus, ushort slot, ushort function, uint index)
         {
             ushort reg = (ushort)(BAR0 + (index * sizeof(uint)));
@@ -340,8 +330,8 @@ namespace Sharpen.Arch
             {
 
                 ret.Address = (ushort)(address & ~0x3);
-                ret.Size    = (ushort)(~(mask & ~0x3) + 1);
-                ret.flags   = (byte)(address & 0x3);
+                ret.Size = (ushort)(~(mask & ~0x3) + 1);
+                ret.flags = (byte)(address & 0x3);
             }
             else
             {
@@ -359,6 +349,7 @@ namespace Sharpen.Arch
         /// </summary>
         /// <param name="bus">The bus</param>
         /// <param name="device">The device</param>
+        /// <param name="function">The function</param>
         private static void checkDevice(byte bus, byte device, ushort function)
         {
             ushort vendorID = GetVendorID(bus, device, function);
@@ -381,8 +372,8 @@ namespace Sharpen.Arch
             dev.Type = (byte)PCIRead(bus, device, function, CONFIG_HEADER_TYPE, 1);
             dev.classCode = (byte)PCIRead(bus, device, function, CONFIG_CLASS_CODE, 1);
             dev.SubClass = (byte)PCIRead(bus, device, function, CONFIG_SUB_CLASS, 1);
-            
-            m_devices[m_currentdevice++] = dev;
+
+            Devices[m_currentdevice++] = dev;
         }
 
         #endregion

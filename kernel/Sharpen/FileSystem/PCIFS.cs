@@ -11,11 +11,13 @@ namespace Sharpen.FileSystem
         private static List m_direntries;
         private static Node m_currentNode;
 
+        /// <summary>
+        /// Initializes PCI FS
+        /// </summary>
         public static unsafe void Init()
         {
             LoadDevices();
-
-
+            
             MountPoint mp = new MountPoint();
             mp.Name = "pci";
             m_currentNode = new Node();
@@ -41,8 +43,7 @@ namespace Sharpen.FileSystem
             object obj = m_dictionary.GetByKey(key);
             if (obj == null)
                 return null;
-
-
+            
             Node outNode = new Node();
             outNode.Cookie = key;
             outNode.Flags = NodeFlags.DIRECTORY;
@@ -51,8 +52,7 @@ namespace Sharpen.FileSystem
 
             return outNode;
         }
-
-
+        
         /// <summary>
         /// FS readdir
         /// </summary>
@@ -89,29 +89,26 @@ namespace Sharpen.FileSystem
 
             for (int i = 0; i < PCI.DeviceNum; i++)
             {
-                PciDevice dev = PCI.GetDevices()[i];
-
+                PciDevice dev = PCI.Devices[i];
                 if (dev == null)
                     continue;
 
                 long key = GenerateKey((byte)dev.Bus, (byte)dev.Slot, (byte)dev.Function);
                 
-
                 m_dictionary.Add(key, dev);
-                m_direntries.Add(GenerateNoteName(dev.Bus, dev.Slot, dev.Function));
+                m_direntries.Add(GenerateNodeName(dev.Bus, dev.Slot, dev.Function));
             }
         }
 
         /// <summary>
         /// Generate note name from bus/slot/function
         /// </summary>
-        /// <param name="bus"></param>
-        /// <param name="slot"></param>
-        /// <param name="function"></param>
-        /// <returns></returns>
-        public static unsafe string GenerateNoteName(int bus, int slot, int function)
+        /// <param name="bus">The bus</param>
+        /// <param name="slot">The slot</param>
+        /// <param name="function">The function</param>
+        /// <returns>The node name</returns>
+        public static unsafe string GenerateNodeName(int bus, int slot, int function)
         {
-            
             string part1 = Int.ToString(bus);
             string part2 = Int.ToString(slot);
             string part3 = Int.ToString(function);
@@ -126,9 +123,11 @@ namespace Sharpen.FileSystem
             ptr[x++] = ':';
             for (int j = 0; j < String.Length(part3); j++)
                 ptr[x++] = part3[j];
-            ptr[x] = (char)0x00;
+            ptr[x] = '\0';
 
-            // NOTE: MEMLEAK
+            Heap.Free(part1);
+            Heap.Free(part2);
+            Heap.Free(part3);
 
             return Util.CharPtrToString(ptr);
         }
@@ -287,7 +286,5 @@ namespace Sharpen.FileSystem
 
             return size;
         }
-
-
     }
 }
