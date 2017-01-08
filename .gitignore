@@ -218,6 +218,7 @@ kernel/C/build
 kernel/C/kernel
 
 */*/output.c
+output.c
 
 tools
 bochsrc.bxrc
