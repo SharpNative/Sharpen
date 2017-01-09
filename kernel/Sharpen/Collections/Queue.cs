@@ -23,6 +23,7 @@ namespace Sharpen.Collections
         public Queue()
         {
             m_last = m_next = null;
+            m_mutex = new Mutex();
         }
 
         /// <summary>
@@ -44,7 +45,7 @@ namespace Sharpen.Collections
             node->Value = value;
 
             m_mutex.Lock();
-
+            
             if (Length == 0)
                 m_last = null;
 
@@ -66,7 +67,7 @@ namespace Sharpen.Collections
         public unsafe void* Pop()
         {
             m_mutex.Lock();
-
+            
             if (m_next == null || Length == 0)
             {
                 m_mutex.Unlock();

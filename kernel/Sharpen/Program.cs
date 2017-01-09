@@ -118,6 +118,66 @@ namespace Sharpen
             TCP.Init();
             ARP.Init();
             DHCP.Init();
+
+            //byte[] buf = new byte[4];
+            //buf[0] = 192;
+            //buf[1] = 168;
+            //buf[2] = 1;
+            //buf[3] = 186;
+
+            //TCPConnection con = TCP.Bind(80);
+
+            //TCPPacketDescriptor* ptr;
+            //while (true)
+            //{
+            //    ptr = TCP.Read(con);
+
+            //    if(ptr == null)
+            //    {
+            //        continue;
+            //    }
+
+            //    if (ptr->Type == TCPPacketDescriptorTypes.ACCEPT)
+            //    {
+            //        Console.Write("New connection from: ");
+            //        for (int i = 0; i < 3; i++)
+            //        {
+            //            Console.WriteNum(ptr->Data[i]);
+            //            Console.Write('.');
+            //        }
+            //        Console.WriteNum(ptr->Data[3]);
+            //        Console.Write(" with XID: ");
+            //        Console.WriteHex(ptr->xid);
+            //        Console.WriteLine("");
+
+
+            //        //Heap.Free(ptr);
+            //    }
+            //    else if (ptr->Type == TCPPacketDescriptorTypes.RECEIVE)
+            //    {
+            //        Console.Write("New data from XID: ");
+            //        Console.WriteHex(ptr->xid);
+            //        Console.WriteLine("");
+
+            //        for (int i = 0; i < ptr->Size; i++)
+            //            Console.Write((char)ptr->Data[i]);
+            //        Console.WriteLine("");
+
+
+            //        //Heap.Free(ptr);
+            //    }
+            //    else if (ptr->Type == TCPPacketDescriptorTypes.RESET)
+            //    {
+            //        Console.Write("RESET from XID: ");
+            //        Console.WriteHex(ptr->xid);
+            //        Console.WriteLine("");
+            //    }
+            //}
+
+            //Console.WriteLine("EXIT");
+            //for (;;) ;
+
+            //TCP.Free(con);
         }
 
         /// <summary>

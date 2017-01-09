@@ -69,10 +69,12 @@ namespace Sharpen.Net
             Memory.Memset(Settings, 0, sizeof(NetworkSettings));
 
             m_recPacketQueue = new Queue();
-            
-            //Task.Task newTask = Tasking.CreateTask(Util.MethodToPtr(handlePackets), TaskPriority.NORMAL, null, 0, Tasking.SpawnFlags.KERNEL_TASK);
-            //newTask.PageDir = Paging.KernelDirectory;
-            //Tasking.ScheduleTask(newTask);
+
+            Task tsk = new Task(TaskPriority.HIGH, Task.SpawnFlags.KERNEL_TASK);
+            X86Context context = (X86Context)tsk.Context;
+            context.CreateNewContext(Util.MethodToPtr(handlePackets), 0, null, true);
+
+            Tasking.ScheduleTask(tsk);
         }
 
         public static void RegisterHandler(ushort protocol, PackerHandler handler)
@@ -141,13 +143,14 @@ namespace Sharpen.Net
         /// <param name="size"></param>
         public static unsafe void QueueReceivePacket(byte[] buffer, int size)
         {
-            //NetRecBuffer* netBuf = (NetRecBuffer*)Heap.Alloc(sizeof(NetRecBuffer));
-            //netBuf->Size = size;
-            //netBuf->Buffer = (byte*)Heap.Alloc(size);
-            //Memory.Memcpy(netBuf->Buffer, Util.ObjectToVoidPtr(buffer), size);
+            NetRecBuffer* netBuf = (NetRecBuffer*)Heap.Alloc(sizeof(NetRecBuffer));
+            netBuf->Size = size;
+            netBuf->Buffer = (byte*)Heap.Alloc(size);
+            Memory.Memcpy(netBuf->Buffer, Util.ObjectToVoidPtr(buffer), size);
 
-            //m_recPacketQueue.Push(netBuf);
-            handlePacket(buffer, size);
+            m_recPacketQueue.Push(netBuf);
+
+            //handlePacket(buffer, size);
         }
 
         /// <summary>
@@ -157,16 +160,22 @@ namespace Sharpen.Net
         {
             while(true)
             {
-                NetRecBuffer* buffer = (NetRecBuffer *)m_recPacketQueue.Pop();
-                if (buffer == null)
-                {
-                    continue;
-                }
+                //while (m_recPacketQueue.IsEmpty())
+                //    CPU.HLT();
 
-                //handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
+                //NetRecBuffer* buffer = (NetRecBuffer *)m_recPacketQueue.Pop();
+                //if (buffer == null)
+                //{
+                //    continue;
+                //}
 
-                Heap.Free(buffer->Buffer);
-                Heap.Free(buffer);
+
+                ////handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
+
+                //Heap.Free(buffer->Buffer);
+                //Heap.Free(buffer);
+
+                CPU.HLT();
             }
         }
 
