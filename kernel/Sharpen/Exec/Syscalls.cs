@@ -55,6 +55,7 @@ namespace Sharpen.Exec
 
         private const int WNOHANG = 1;
         private const int O_NONBLOCK = 0x4000;
+        private const int MAX_PATH = 4096;
 
         #endregion
 
@@ -94,9 +95,7 @@ namespace Sharpen.Exec
         /// <returns>0 if we're child, PID of child if we're parent</returns>
         public static unsafe int Fork()
         {
-            Task current = Tasking.CurrentTask;
-            int pid = current.Context.Fork();
-            return pid;
+            return Tasking.CurrentTask.Fork();
         }
 
         /// <summary>
@@ -501,6 +500,9 @@ namespace Sharpen.Exec
         /// <returns>Errorcode</returns>
         public static unsafe int GetCWD(char* destination, int size)
         {
+            if (size > MAX_PATH)
+                size = MAX_PATH;
+
             fixed (char* ptr = Tasking.CurrentTask.CurrentDirectory)
             {
                 Memory.Memcpy(destination, ptr, size);
@@ -519,14 +521,13 @@ namespace Sharpen.Exec
         {
             // 1,000,000 usec = 1 second
             // 1,000,000 usec = PIT.Frequency subticks
-            
             uint fullTicks = PIT.FullTicks + seconds;
             uint subTicks = PIT.SubTicks + (PIT.Frequency * usec / 1000000);
             fullTicks += subTicks / PIT.Frequency;
             subTicks %= PIT.Frequency;
 
             // Update task as paused task
-            return (int)Tasking.CurrentTask.SleepUntil(fullTicks, subTicks);
+            return (int)Tasking.CurrentTask.CurrentThread.SleepUntil(fullTicks, subTicks);
         }
 
         /// <summary>

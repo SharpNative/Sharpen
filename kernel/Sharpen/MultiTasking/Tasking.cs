@@ -1,5 +1,4 @@
 ﻿using Sharpen.Arch;
-using Sharpen.Collections;
 using Sharpen.Mem;
 
 namespace Sharpen.MultiTasking
@@ -7,48 +6,33 @@ namespace Sharpen.MultiTasking
     public class Tasking
     {
         // TODO: mutexes (note that some code is guaranteed to run only in one place, so no mutexes there)
-
-        private static bool taskingEnabled = false;
-
-        private static List sleepingTasks;
-
-        private static Task taskToClone = null;
+        
+        private static Thread threadToClone = null;
 
         public static Task KernelTask { get; private set; }
         public static Task CurrentTask { get; private set; }
-        
+
         /// <summary>
         /// Initializes tasking
         /// </summary>
         public static unsafe void Init()
         {
-            // Keeps track of which tasks need to wake up
-            sleepingTasks = new List();
+            // Kernel task
+            // Note: The remaining data will be filled in when the first task switch happens
+            Task kernel = new Task(TaskPriority.NORMAL, Task.SpawnFlags.KERNEL_TASK);
+            kernel.Context.CreateNewContext(true);
+            kernel.AddThread(new Thread());
 
-            // Kernel task, the remaining data will be filled in when the first schedule happens
-            // The Idle task has a low priority
-            Task kernel = new Task(TaskPriority.LOW, Task.SpawnFlags.KERNEL_TASK);
-            kernel.Context.CreateKernelContext();
             KernelTask = kernel;
             CurrentTask = kernel;
-            
+            kernel.NextTask = kernel;
+
             // Enable interrupts, because we can now do multitasking
-            taskingEnabled = true;
             CPU.STI();
             ManualSchedule();
-            
             Console.WriteLine("[Tasking] Initialized");
         }
-
-        /// <summary>
-        /// Adds a task to the sleeping list
-        /// </summary>
-        /// <param name="task">The task</param>
-        public static void AddToSleepingList(Task task)
-        {
-            sleepingTasks.Add(task);
-        }
-
+        
         /// <summary>
         /// Gets a task by its PID
         /// </summary>
@@ -65,8 +49,8 @@ namespace Sharpen.MultiTasking
 
                 // Get next if it exists, if we still haven't found
                 // it means there is no such task
-                current = current.Next;
-                if (current == null)
+                current = current.NextTask;
+                if (current == KernelTask)
                     return null;
             }
         }
@@ -88,8 +72,8 @@ namespace Sharpen.MultiTasking
                 // Get next if it exists, if we still haven't found
                 // it means there is no such task
                 previous = current;
-                current = current.Next;
-                if (current == null)
+                current = current.NextTask;
+                if (current == KernelTask)
                     return;
             }
 
@@ -97,10 +81,10 @@ namespace Sharpen.MultiTasking
             CPU.CLI();
 
             // Set pointer and set remove flag
-            previous.Next = current.Next;
+            previous.NextTask = current.NextTask;
             current.AddFlag(Task.TaskFlag.DESCHEDULED);
             current.TimeLeft = 1;
-            
+
             // End of critical section
             CPU.STI();
 
@@ -117,62 +101,41 @@ namespace Sharpen.MultiTasking
         {
             // Find the last task
             Task current = CurrentTask;
-            while (current.Next != null)
+            while (current.NextTask != KernelTask)
             {
-                current = current.Next;
+                current = current.NextTask;
             }
 
             // Critical section, a task switch may not occur now
             CPU.CLI();
 
             // Add
-            current.Next = task;
+            current.NextTask = task;
+            task.NextTask = KernelTask;
 
             // End of critical section
             CPU.STI();
         }
-        
+
         /// <summary>
         /// Forks the current task
         /// </summary>
         /// <returns>0 if child, PID if parent</returns>
-        public static int Fork()
+        public static int SetForkingThread(Thread thread)
         {
-            int pid = CurrentTask.PID;
-            taskToClone = CurrentTask;
-            CPU.STI();
-            CPU.HLT();
-            CPU.CLI();
+            int pid = thread.OwningTask.PID;
+            threadToClone = thread;
+            ManualSchedule();
             return (pid == CurrentTask.PID ? Task.NextPID - 1 : 0);
         }
-        
+
         /// <summary>
-        /// Finds the next task for the scheduler
+        /// Gets the next task for the scheduler
         /// </summary>
         /// <returns>The next task</returns>
-        public static unsafe Task FindNextTask()
+        public static Task GetNextTask()
         {
             Task current = CurrentTask;
-            Task next = null;
-
-            // Check if there are tasks that need to wake up
-            int sleeping = sleepingTasks.Count;
-            if (sleeping > 0)
-            {
-                for (int i = sleeping - 1; i >= 0; i--)
-                {
-                    Task task = (Task)sleepingTasks.Item[i];
-                    if (!task.IsSleeping())
-                    {
-                        sleepingTasks.RemoveAt(i);
-                        next = task;
-                    }
-                }
-            }
-
-            // If a task has woke up, switch to that task
-            if (next != null)
-                return next;
 
             // Only keep going with this task if we're not sleeping
             if (!current.IsSleeping())
@@ -186,61 +149,55 @@ namespace Sharpen.MultiTasking
                 current.TimeLeft = (int)current.Priority;
             }
 
-            // Get the next task to switch to and if there is no next task, go to the kernel task
-            next = current.Next;
-            if (next == null)
-                return KernelTask;
-
-            // Skip until a non-sleeping task has been found
+            // Sleeping
+            Task next = current.NextTask;
             while (next.IsSleeping())
             {
-                // Get next task
-                next = next.Next;
-
-                // No next task? Go the the Kernel Idle task
-                if (next == null)
-                {
-                    next = KernelTask;
+                next.AwakeThreads();
+                if (!next.IsSleeping())
                     break;
-                }
+                next = next.NextTask;
             }
 
+            // Get the next task
             return next;
         }
-        
+
         /// <summary>
         /// Scheduler
         /// </summary>
-        /// <param name="regsPtr">Pointer to registers</param>
-        /// <returns>Pointer to registers</returns>
+        /// <param name="regsPtr">Old stack</param>
+        /// <returns>New stack</returns>
         private static unsafe Regs* scheduler(Regs* regsPtr)
         {
-            // Only do this if tasking is enabled
-            if (!taskingEnabled)
-                return regsPtr;
-
-            // Store old context
             Task oldTask = CurrentTask;
-            oldTask.StoreContext(regsPtr);
+            oldTask.StoreThreadContext(regsPtr);
+            oldTask.SwitchToNextThread();
 
-            // Switch to next task
-            Task current = FindNextTask();
-            void* stack = current.RestoreContext();
-            CurrentTask = current;
+            Task nextTask = GetNextTask();
+
+            if (oldTask != nextTask)
+            {
+                nextTask.PrepareContext();
+            }
+
+            void* stack = nextTask.RestoreThreadContext();
+            CurrentTask = nextTask;
+
+            // Check for cloning
+            if (threadToClone != null)
+            {
+                Task newTask = threadToClone.OwningTask.Clone();
+                newTask.AddThread(threadToClone.Clone());
+                threadToClone = null;
+                ScheduleTask(newTask);
+            }
 
             // Cleanup old task
             if (oldTask.HasFlag(Task.TaskFlag.DESCHEDULED))
             {
                 oldTask.Cleanup();
                 Heap.Free(oldTask);
-            }
-
-            // Check for cloning
-            if (taskToClone != null)
-            {
-                Task newTask = taskToClone.Clone();
-                taskToClone = null;
-                ScheduleTask(newTask);
             }
 
             // Return the next task context

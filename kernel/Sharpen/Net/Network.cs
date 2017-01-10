@@ -70,11 +70,10 @@ namespace Sharpen.Net
 
             m_recPacketQueue = new Queue();
 
-            Task tsk = new Task(TaskPriority.HIGH, Task.SpawnFlags.KERNEL_TASK);
-            X86Context context = (X86Context)tsk.Context;
-            context.CreateNewContext(Util.MethodToPtr(handlePackets), 0, null, true);
-
-            Tasking.ScheduleTask(tsk);
+            // TODO
+            Thread packetHandler = new Thread();
+            packetHandler.Context.CreateNewContext(Util.MethodToPtr(handlePackets), 0, null, true);
+            Tasking.KernelTask.AddThread(packetHandler);
         }
 
         public static void RegisterHandler(ushort protocol, PackerHandler handler)
@@ -160,22 +159,20 @@ namespace Sharpen.Net
         {
             while(true)
             {
-                //while (m_recPacketQueue.IsEmpty())
-                //    CPU.HLT();
+                while (m_recPacketQueue.IsEmpty())
+                    CPU.HLT();
 
-                //NetRecBuffer* buffer = (NetRecBuffer *)m_recPacketQueue.Pop();
-                //if (buffer == null)
-                //{
-                //    continue;
-                //}
+                NetRecBuffer* buffer = (NetRecBuffer *)m_recPacketQueue.Pop();
+                if (buffer == null)
+                {
+                    continue;
+                }
 
 
-                ////handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
+                //handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
 
-                //Heap.Free(buffer->Buffer);
-                //Heap.Free(buffer);
-
-                CPU.HLT();
+                Heap.Free(buffer->Buffer);
+                Heap.Free(buffer);
             }
         }
 

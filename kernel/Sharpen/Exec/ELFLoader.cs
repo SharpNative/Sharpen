@@ -205,28 +205,33 @@ namespace Sharpen.Exec
             initialStack[1] = argc;
             
             CPU.CLI();
-
+            
             // Create task
             Task newTask = new Task(TaskPriority.NORMAL, flags);
             X86Context context = (X86Context)newTask.Context;
-            context.CreateNewContext((void*)elf->Entry, 2, initialStack, false);
+            context.CreateNewContext(false);
+
+            Thread thread = new Thread();
+            thread.Context.CreateNewContext((void*)elf->Entry, 2, initialStack, false);
+            newTask.AddThread(thread);
+
             Heap.Free(initialStack);
             newTask.AddUsedAddress(allocated);
 
             // Map memory
             Paging.PageDirectory* newDirectory = context.PageDirVirtual;
             Paging.PageFlags pageFlags = Paging.PageFlags.Present | Paging.PageFlags.Writable | Paging.PageFlags.UserMode;
-            int physicalBase = (int)Paging.GetPhysicalFromVirtual(allocated);
             for (uint j = 0; j < size; j += 0x1000)
             {
-                Paging.MapPage(newDirectory, (int)(physicalBase + j), (int)(virtAddress + j), pageFlags);
+                // Note: the physical memory is not always a continuous block
+                Paging.MapPage(newDirectory, (int)Paging.GetPhysicalFromVirtual((void*)((int)allocated + j)), (int)(virtAddress + j), pageFlags);
             }
 
             // Schedule task
             Tasking.ScheduleTask(newTask);
             
             CPU.STI();
-            
+
             return newTask.PID;
         }
     }

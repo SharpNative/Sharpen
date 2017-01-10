@@ -51,16 +51,18 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="MultiTasking\IThreadContext.cs" />
     <Compile Include="Arch\X86\CMOS.cs" />
     <Compile Include="Arch\X86\CPU.cs" />
     <Compile Include="Arch\X86\FPU.cs" />
-    <Compile Include="Arch\IContext.cs" />
+    <Compile Include="MultiTasking\IContext.cs" />
     <Compile Include="Arch\X86\IDT.cs" />
     <Compile Include="Arch\X86\IRQ.cs" />
     <Compile Include="Arch\X86\ISR.cs" />
     <Compile Include="Arch\X86\V8086.cs" />
     <Compile Include="Arch\X86\X86Arch.cs" />
     <Compile Include="Arch\X86\X86Context.cs" />
+    <Compile Include="Arch\X86\X86ThreadContext.cs" />
     <Compile Include="Collections\Queue.cs" />
     <Compile Include="Drivers\Net\E1000.cs" />
     <Compile Include="Drivers\Net\PCNet2.cs" />
@@ -81,6 +83,7 @@
     <Compile Include="FileSystem\STDOUT.cs" />
     <Compile Include="Lib\Math.cs" />
     <Compile Include="Lib\Random.cs" />
+    <Compile Include="MultiTasking\Thread.cs" />
     <Compile Include="Net\Route.cs" />
     <Compile Include="Net\TCP.cs" />
     <Compile Include="Net\TCPExtras.cs" />

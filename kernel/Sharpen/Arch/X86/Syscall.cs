@@ -26,12 +26,14 @@ namespace Sharpen.Arch
 
             //if (function != 0x0D && function != 0x09 && function != 0x16)
             //{
-            //    Console.Write("syscall func: ");
+            //    Console.Write("[SYSCALL] pid: ");
+            //    Console.WriteNum(Tasking.CurrentTask.PID);
+            //    Console.Write(" func: ");
             //    Console.WriteNum(function);
             //    Console.WriteLine("");
             //}
             
-            Tasking.CurrentTask.Context.UpdateSyscallRegs(regsPtr);
+            Tasking.CurrentTask.CurrentThread.Context.UpdateSyscallRegs(regsPtr);
 
             int ret = 0;
             switch (function)
@@ -174,8 +176,8 @@ namespace Sharpen.Arch
                     Console.WriteLine("");
                     break;
             }
-            
-            Tasking.CurrentTask.Context.SetSysReturnValue(ret);
+
+            Tasking.CurrentTask.CurrentThread.Context.SetSysReturnValue(ret);
         }
     }
 }
