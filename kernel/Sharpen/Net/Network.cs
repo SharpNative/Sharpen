@@ -148,8 +148,6 @@ namespace Sharpen.Net
             Memory.Memcpy(netBuf->Buffer, Util.ObjectToVoidPtr(buffer), size);
 
             m_recPacketQueue.Push(netBuf);
-
-            //handlePacket(buffer, size);
         }
 
         /// <summary>
@@ -167,9 +165,8 @@ namespace Sharpen.Net
                 {
                     continue;
                 }
-
-
-                //handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
+                
+                handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
 
                 Heap.Free(buffer->Buffer);
                 Heap.Free(buffer);
