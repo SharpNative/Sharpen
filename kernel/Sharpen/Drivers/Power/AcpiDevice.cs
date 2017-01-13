@@ -1,10 +1,6 @@
 ﻿using Sharpen.FileSystem;
 using Sharpen.Mem;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Sharpen.Utilities;
 
 namespace Sharpen.Drivers.Power
 {
@@ -65,20 +61,19 @@ namespace Sharpen.Drivers.Power
         private static unsafe Node findDirImpl(Node node, string name)
         {
             uint functionID = 0;
-
-            // TODO: Why doesnt this work?
-            //if (String.Equals(name, "info"))
-            //{
-            //    functionID = 1;
-            //}
-            //else if (String.Equals(name, "reboot"))
-            //{
-            //    functionID = 2;
-            //}
-            //else if (String.Equals(name, "shutdown"))
-            //{
-            //    functionID = 3;
-            //}
+            
+            if (String.Equals(name, "info"))
+            {
+                functionID = 1;
+            }
+            else if (String.Equals(name, "reboot"))
+            {
+                functionID = 2;
+            }
+            else if (String.Equals(name, "shutdown"))
+            {
+                functionID = 3;
+            }
 
             if (functionID == 0)
                 return null;
