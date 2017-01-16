@@ -10,9 +10,12 @@
         /// <summary>
         /// Initializes a bit array with N integers
         /// </summary>
-        /// <param name="N">The amount of integers (or N*32 = amount of bits)</param>
+        /// <param name="N">The amount of bits</param>
         public unsafe BitArray(int N)
         {
+            // Every entry can hold 32 bits
+            N = ((N - 1) / 32) + 1;
+
             m_bitmap = new int[N];
             m_N = N;
         }
@@ -23,9 +26,9 @@
         /// <param name="k">The bit number</param>
         public void SetBit(int k)
         {
-            int bitmap = k >> 5;
+            int bitmap = k / 32;
             int index = k & (32 - 1);
-            m_bitmap[bitmap] |= 1 << index;
+            m_bitmap[bitmap] |= (1 << index);
         }
 
         /// <summary>
@@ -34,7 +37,7 @@
         /// <param name="k">The bit number</param>
         public void ClearBit(int k)
         {
-            int bitmap = k >> 5;
+            int bitmap = k / 32;
             int index = k & (32 - 1);
             m_bitmap[bitmap] &= ~(1 << index);
 
@@ -59,7 +62,7 @@
         /// <param name="k">The bit number</param>
         public bool IsBitSet(int k)
         {
-            int bitmap = k >> 5;
+            int bitmap = k / 32;
             int index = k & (32 - 1);
             return ((m_bitmap[bitmap] & (1 << index)) > 0);
         }
@@ -73,7 +76,7 @@
         public int FindFirstFreeRange(int size, bool set)
         {
             int start = FindFirstFree();
-            
+
             // We start with one because from a relative offset, bit zero is not set
             int i = 1;
             while (i < size)
@@ -90,7 +93,7 @@
                     i++;
                 }
             }
-            
+
             // Set it if needed
             if (set)
             {

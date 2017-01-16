@@ -6,12 +6,12 @@ namespace Sharpen.Collections
     {
         private unsafe struct stackNode
         {
-            public stackNode* Next;
+            public stackNode* Previous;
             public void* Value;
         }
 
-        private stackNode* m_next;
-        private stackNode* m_last;
+        private stackNode* m_head;
+        private stackNode* m_tail;
 
         private Mutex m_mutex;
 
@@ -22,7 +22,7 @@ namespace Sharpen.Collections
         /// </summary>
         public Queue()
         {
-            m_last = m_next = null;
+            m_tail = m_head = null;
             m_mutex = new Mutex();
         }
 
@@ -32,7 +32,10 @@ namespace Sharpen.Collections
         /// <returns>If it's empty</returns>
         public bool IsEmpty()
         {
-            return (Length == 0);
+            m_mutex.Lock();
+            bool ret = (Length == 0);
+            m_mutex.Unlock();
+            return ret;
         }
 
         /// <summary>
@@ -43,19 +46,21 @@ namespace Sharpen.Collections
         {
             stackNode* node = (stackNode*)Heap.Alloc(sizeof(stackNode));
             node->Value = value;
+            node->Previous = null;
 
             m_mutex.Lock();
-            
+
             if (Length == 0)
-                m_last = null;
+            {
+                m_head = node;
+            }
+            else
+            {
+                m_tail->Previous = node;
+            }
 
-            node->Next = m_last;
-
-            m_last = node;
-
+            m_tail = node;
             Length++;
-            if (m_next == null)
-                m_next = m_last;
 
             m_mutex.Unlock();
         }
@@ -67,17 +72,16 @@ namespace Sharpen.Collections
         public unsafe void* Pop()
         {
             m_mutex.Lock();
-            
-            if (m_next == null || Length == 0)
+
+            if (Length == 0)
             {
                 m_mutex.Unlock();
                 return null;
             }
 
-            stackNode* node = m_next;
-            m_next = node->Next;
+            stackNode* node = m_head;
             void* ret = node->Value;
-
+            m_head = m_head->Previous;
             Heap.Free(node);
 
             Length--;
