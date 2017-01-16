@@ -2,9 +2,9 @@
 {
     public class PciDevice
     {
-        public ushort Bus;
-        public ushort Slot;
-        public ushort Function;
+        public byte Bus;
+        public byte Slot;
+        public byte Function;
 
         public byte classCode;
         public byte SubClass;
@@ -274,7 +274,7 @@
         /// <param name="function">Function</param>
         /// <param name="index">Index</param>
         /// <returns>Mask</returns>
-        public static uint PciGetMask(ushort bus, ushort slot, ushort function, uint index)
+        public static uint PciGetMask(byte bus, byte slot, byte function, uint index)
         {
             ushort reg = (ushort)(BAR0 + (index * sizeof(uint)));
 
@@ -297,7 +297,7 @@
                 uint headerType = PCIRead(bus, device, 0, CONFIG_HEADER_TYPE, 1);
                 uint functionCount = (uint)(((headerType & CONFIG_HEADER_MUTLI_FUNC) > 0) ? 8 : 1);
 
-                for (ushort i = 0; i < functionCount; i++)
+                for (byte i = 0; i < functionCount; i++)
                     checkDevice(bus, device, i);
             }
         }
@@ -350,7 +350,7 @@
         /// <param name="bus">The bus</param>
         /// <param name="device">The device</param>
         /// <param name="function">The function</param>
-        private static void checkDevice(byte bus, byte device, ushort function)
+        private static void checkDevice(byte bus, byte device, byte function)
         {
             ushort vendorID = GetVendorID(bus, device, function);
             if (vendorID == 0xFFFF)
