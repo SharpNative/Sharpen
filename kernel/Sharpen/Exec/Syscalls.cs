@@ -191,7 +191,7 @@ namespace Sharpen.Exec
         /// <param name="offset">The offset</param>
         /// <param name="whence">The direction</param>
         /// <returns>The new offset from the beginning of the file in bytes</returns>
-        public static int Seek(int descriptor, uint offset, FileWhence whence)
+        public static int Seek(int descriptor, int offset, FileWhence whence)
         {
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
 
@@ -202,14 +202,26 @@ namespace Sharpen.Exec
             uint currentOffset = descriptors.GetOffset(descriptor);
 
             if (whence == FileWhence.SEEK_CUR)
-                currentOffset += offset;
+            {
+                currentOffset = (uint)(currentOffset + offset);
+            }
             else if (whence == FileWhence.SEEK_SET)
-                currentOffset = offset;
+            {
+                if (offset < 0)
+                    currentOffset = 0;
+                else
+                    currentOffset = (uint)offset;
+            }
             else if (whence == FileWhence.SEEK_END)
-                currentOffset = node.Size - offset;
+            {
+                if (offset > 0)
+                    currentOffset = node.Size;
+                else
+                    currentOffset = (uint)(node.Size + offset);
+            }
             else
                 return -(int)ErrorCode.EINVAL;
-
+            
             descriptors.SetOffset(descriptor, currentOffset);
 
             return (int)currentOffset;

@@ -24,14 +24,14 @@ namespace Sharpen.Arch
                 return;
             }
 
-            //if (function != 0x0D && function != 0x09 && function != 0x16)
-            //{
-            //    Console.Write("[SYSCALL] pid: ");
-            //    Console.WriteNum(Tasking.CurrentTask.PID);
-            //    Console.Write(" func: ");
-            //    Console.WriteNum(function);
-            //    Console.WriteLine("");
-            //}
+            /*if (function != 0x0D && function != 0x09 && function != 0x16 && function != 0x4 && function != 0x5)
+            {
+                Console.Write("[SYSCALL] pid: ");
+                Console.WriteNum(Tasking.CurrentTask.PID);
+                Console.Write(" func: ");
+                Console.WriteNum(function);
+                Console.WriteLine("");
+            }*/
             
             Tasking.CurrentTask.CurrentThread.Context.UpdateSyscallRegs(regsPtr);
 
@@ -71,7 +71,7 @@ namespace Sharpen.Arch
                     break;
 
                 case Syscalls.SYS_SEEK:
-                    ret = Syscalls.Seek(regsPtr->EBX, (uint)regsPtr->ECX, (FileWhence)regsPtr->EDX);
+                    ret = Syscalls.Seek(regsPtr->EBX, regsPtr->ECX, (FileWhence)regsPtr->EDX);
                     break;
 
                 case Syscalls.SYS_FSTAT:

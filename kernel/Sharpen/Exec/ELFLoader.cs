@@ -165,7 +165,7 @@ namespace Sharpen.Exec
 
             if (!isValidELF(elf))
                 return -(int)ErrorCode.EINVAL;
-
+            
             // Get program header
             ProgramHeader* programHeader = (ProgramHeader*)((int)elf + elf->PhOff);
             uint virtAddress = programHeader->VirtAddress;
@@ -205,19 +205,19 @@ namespace Sharpen.Exec
             initialStack[1] = argc;
             
             CPU.CLI();
-            
+
             // Create task
             Task newTask = new Task(TaskPriority.NORMAL, flags);
             X86Context context = (X86Context)newTask.Context;
             context.CreateNewContext(false);
-
+            
             Thread thread = new Thread();
             thread.Context.CreateNewContext((void*)elf->Entry, 2, initialStack, false);
             newTask.AddThread(thread);
 
             Heap.Free(initialStack);
             newTask.AddUsedAddress(allocated);
-
+            
             // Map memory
             Paging.PageDirectory* newDirectory = context.PageDirVirtual;
             Paging.PageFlags pageFlags = Paging.PageFlags.Present | Paging.PageFlags.Writable | Paging.PageFlags.UserMode;
@@ -226,7 +226,7 @@ namespace Sharpen.Exec
                 // Note: the physical memory is not always a continuous block
                 Paging.MapPage(newDirectory, (int)Paging.GetPhysicalFromVirtual((void*)((int)allocated + j)), (int)(virtAddress + j), pageFlags);
             }
-
+            
             // Schedule task
             Tasking.ScheduleTask(newTask);
             

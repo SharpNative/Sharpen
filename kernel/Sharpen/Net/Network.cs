@@ -1,18 +1,16 @@
-﻿//#define NETWORK_DEBUG
+﻿// #define NETWORK_DEBUG
 
 using Sharpen.Arch;
 using Sharpen.Collections;
-using Sharpen.FileSystem;
 using Sharpen.Mem;
 using Sharpen.MultiTasking;
 using Sharpen.Utilities;
 
 namespace Sharpen.Net
-{ 
+{
 
     public unsafe class Network
     {
-
         /// <summary>
         /// Network device struct
         /// </summary>
@@ -30,35 +28,38 @@ namespace Sharpen.Net
         }
 
         // Network packet type handler
-        public unsafe delegate void PackerHandler(byte[] srcMac, byte *buffer, uint size);
+        public unsafe delegate void PackerHandler(byte[] srcMac, byte* buffer, uint size);
 
         /// <summary>
         /// Transmit packet
         /// </summary>
         /// <param name="bytes"></param>
         /// <param name="size"></param>
-        public unsafe delegate void TransmitAction(byte *bytes, uint size);
-        
+        public unsafe delegate void TransmitAction(byte* bytes, uint size);
+
         /// <summary>
         /// Get mac address
         /// </summary>
         /// <param name="mac">6 byte struct to read the mac address in</param>
-        public unsafe delegate void GetMACAction(byte *mac);
+        public unsafe delegate void GetMACAction(byte* mac);
 
         private static Queue m_recPacketQueue;
 
         private static NetDevice m_dev;
 
-        public static NetworkSettings *Settings { get; private set; }
+        public static NetworkSettings* Settings { get; private set; }
 
         private static PackerHandler[] m_handlers;
-        
+
 
         public static NetDevice Device
         {
             get { return m_dev; }
         }
 
+        /// <summary>
+        /// Initializes the main networking
+        /// </summary>
         public static void Init()
         {
             m_dev.ID = 0;
@@ -70,12 +71,16 @@ namespace Sharpen.Net
 
             m_recPacketQueue = new Queue();
 
-            // TODO
             Thread packetHandler = new Thread();
             packetHandler.Context.CreateNewContext(Util.MethodToPtr(handlePackets), 0, null, true);
             Tasking.KernelTask.AddThread(packetHandler);
         }
 
+        /// <summary>
+        /// Registers a handler for a protocol
+        /// </summary>
+        /// <param name="protocol">The protocol</param>
+        /// <param name="handler">The handler</param>
         public static void RegisterHandler(ushort protocol, PackerHandler handler)
         {
 #if NETWORK_DEBUG
@@ -105,23 +110,30 @@ namespace Sharpen.Net
         /// </summary>
         /// <param name="bytes">byte buffer</param>
         /// <param name="size">packet size</param>
-        public static unsafe void Transmit (NetPacketDesc* packet)
+        public static unsafe void Transmit(NetPacketDesc* packet)
         {
             int size = packet->end - packet->start;
+            if (size < 0)
+                return;
             
-            byte* buffer = (byte *)Heap.Alloc(size);
+            byte* buffer = (byte*)Heap.Alloc(size);
+            if (buffer == null)
+                return;
+
             Memory.Memcpy(buffer, packet->buffer + packet->start, size);
 
             // LOGIC
 
 #if NETWORK_DEBUG
             Console.Write("[NET] Transmit packet with ");
-            Console.WriteNum((int)size);
+            Console.WriteNum(size);
             Console.WriteLine(" bytes");
 #endif
-            
+
             if (m_dev.ID != 0 && m_dev.Transmit != null)
                 m_dev.Transmit(buffer, (uint)size);
+
+            // TODO: why is this disabled?
             //Heap.Free(buffer);
         }
 
@@ -138,13 +150,30 @@ namespace Sharpen.Net
         /// <summary>
         /// Add packet for handling
         /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="size"></param>
+        /// <param name="buffer">The packet buffer</param>
+        /// <param name="size">The packet buffer size</param>
         public static unsafe void QueueReceivePacket(byte[] buffer, int size)
         {
             NetRecBuffer* netBuf = (NetRecBuffer*)Heap.Alloc(sizeof(NetRecBuffer));
+            if (netBuf == null)
+            {
+#if NETWORK_DEBUG
+                Console.WriteLine("[NET] netBuf = null");
+#endif
+                return;
+            }
+
             netBuf->Size = size;
             netBuf->Buffer = (byte*)Heap.Alloc(size);
+            if (netBuf->Buffer == null)
+            {
+#if NETWORK_DEBUG
+                Console.WriteLine("[NET] netbuf->buffer == null");
+#endif
+                Heap.Free(netBuf);
+                return;
+            }
+
             Memory.Memcpy(netBuf->Buffer, Util.ObjectToVoidPtr(buffer), size);
 
             m_recPacketQueue.Push(netBuf);
@@ -155,17 +184,20 @@ namespace Sharpen.Net
         /// </summary>
         private static unsafe void handlePackets()
         {
-            while(true)
+            while (true)
             {
                 while (m_recPacketQueue.IsEmpty())
                     CPU.HLT();
 
-                NetRecBuffer* buffer = (NetRecBuffer *)m_recPacketQueue.Pop();
+                NetRecBuffer* buffer = (NetRecBuffer*)m_recPacketQueue.Pop();
+#if NETWORK_DEBUG
                 if (buffer == null)
                 {
+                    Console.WriteLine("[NET] buffer == null?!");
                     continue;
                 }
-                
+#endif
+
                 handlePacket(Util.PtrToArray(buffer->Buffer), buffer->Size);
 
                 Heap.Free(buffer->Buffer);
@@ -183,11 +215,10 @@ namespace Sharpen.Net
             byte* bufPtr = (byte*)Util.ObjectToVoidPtr(buffer);
             //Console.WriteLine("HANDLING");
             EthernetHeader* header = (EthernetHeader*)bufPtr;
-            
-            ushort proto = Byte.ReverseBytes(header->Protocol);
-            
-            m_handlers[proto]?.Invoke(Util.PtrToArray(header->Source), bufPtr + sizeof(EthernetHeader), (uint)size);
 
+            ushort proto = Byte.ReverseBytes(header->Protocol);
+
+            m_handlers[proto]?.Invoke(Util.PtrToArray(header->Source), bufPtr + sizeof(EthernetHeader), (uint)size);
         }
 
         /// <summary>
@@ -196,7 +227,7 @@ namespace Sharpen.Net
         /// <returns></returns>
         public static string GetHostName()
         {
-            return String.Clone("SHARPEN");  
+            return String.Clone("SHARPEN");
         }
     }
 }

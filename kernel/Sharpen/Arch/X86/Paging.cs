@@ -6,10 +6,7 @@ namespace Sharpen.Arch
     public sealed class Paging
     {
         // TODO: mutexes?
-
-        // Last page entry in last table is kept free (see mapTemporarily)
-        private const uint TEMP_MAP_ADDRESS = 0xFFFFF000;
-
+        
         // Flags on a page
         public enum PageFlags
         {
@@ -82,26 +79,21 @@ namespace Sharpen.Arch
         /// <summary>
         /// Initializes paging
         /// </summary>
-        /// <param name="memSize">Memory size</param>
-        public static unsafe void Init(uint memSize)
+        public static unsafe void Init()
         {
             // Flags
             PageFlags kernelFlags = PageFlags.Present | PageFlags.Writable;
             PageFlags userFlags = PageFlags.Present | PageFlags.Writable | PageFlags.UserMode;
 
             // Bit array to store which frames are free
-            bitmap = new BitArray((int)(memSize * 1024 / 4 / 32));
-            unchecked
-            {
-                SetFrame((int)TEMP_MAP_ADDRESS);
-            }
-
+            bitmap = new BitArray(4096 * 1024 / 4);
+            
             // Create a new page directory for the kernel
             // Note: At this point, virtual address == physical address due to identity mapping
             KernelDirectory = CreateNewDirectoryPhysically(userFlags);
             SetPageDirectory(KernelDirectory, KernelDirectory);
 
-            // Mark the used memory as used
+            // Identity map
             int address = 0;
             while (address < (int)PhysicalMemoryManager.FirstFree())
             {
@@ -207,7 +199,7 @@ namespace Sharpen.Arch
             int page = table->Pages[frame & (1024 - 1)];
             return (void*)(GetFrameAddress(page) + remaining);
         }
-
+        
         /// <summary>
         /// Gets the physical address from a virtual address
         /// </summary>
@@ -281,7 +273,7 @@ namespace Sharpen.Arch
 
             return (void*)start;
         }
-
+        
         /// <summary>
         /// Frees an allocate virtual address range
         /// </summary>
@@ -305,22 +297,7 @@ namespace Sharpen.Arch
                 PhysicalMemoryManager.Free(phys);
             }
         }
-
-        /// <summary>
-        /// Temporarily map an address to make it available (mapped to TEMP_MAP_ADDRESS)
-        /// </summary>
-        /// <param name="address">The address to make available</param>
-        private static unsafe void mapTemporarily(void* address)
-        {
-            // To access memory that has not been mapped already
-            // (because of situations like cloning page directories)
-            // we can keep one entry free to temporarily map an address in kernelspace
-            // See https://github.com/littleosbook/littleosbook/blob/master/page_frame_allocation.md for a more detailed explanation
-
-            PageFlags flags = PageFlags.Present | PageFlags.Writable;
-            MapPage(KernelDirectory, (int)address, (int)(void*)TEMP_MAP_ADDRESS, flags);
-        }
-
+        
         /// <summary>
         /// Clones a page directory and its tables
         /// </summary>
@@ -335,11 +312,9 @@ namespace Sharpen.Arch
             int allocated = (int)AllocateVirtual(pageDirSizeAligned + 1024 * sizeof(PageTable));
             if (allocated == 0)
                 Panic.DoPanic("Couldn't clone page directory because there is no memory left");
-
-            int allocatedPhysical = (int)GetPhysicalFromVirtual((void*)allocated);
-
+            
             PageDirectory* destination = (PageDirectory*)allocated;
-            destination->PhysicalDirectory = (PageDirectory*)allocatedPhysical;
+            destination->PhysicalDirectory = (PageDirectory*)GetPhysicalFromVirtual((void*)allocated);
             for (int i = 0; i < 1024; i++)
             {
                 int sourceTable = source->VirtualTables[i];
@@ -353,7 +328,7 @@ namespace Sharpen.Arch
                 // Calculate addresses
                 int addressOffset = pageDirSizeAligned + i * sizeof(PageTable);
                 PageTable* newTable = (PageTable*)(allocated + addressOffset);
-                int newTablePhysical = allocatedPhysical + addressOffset;
+                int newTablePhysical = (int)GetPhysicalFromVirtual(newTable);
 
                 // Copy table data and set pointers
                 Memory.Memcpy(newTable, sourceTablePtr, sizeof(PageTable));
@@ -392,13 +367,16 @@ namespace Sharpen.Arch
         /// <param name="directoryPhysical">The physical address of the page directory</param>
         public static unsafe void SetPageDirectory(PageDirectory* directoryVirtual, PageDirectory* directoryPhysical)
         {
-            // Note: This is a way to solve the issue that a page directory is not available
-            //       in every other page directory (due to security).
-            //       So: upon a task switch, setting a directory physically works for the CPU
-            //       but we also need its virtual address.
-            //       Setting the virtual address with a getter and updating the CR3 with the physical address
-            //       also wont work, because it's not guaranteed you can read the page directory
-            //       as it may not be available in the current task.
+            /** 
+             * Note: This is a way to solve the issue that a page directory is not available
+             * in every other page directory (due to security).
+             * So: upon a task switch, setting a directory physically works for the CPU
+             * but we also need its virtual address.
+             * Setting the virtual address with a getter and updating the CR3 with the physical address
+             * also wont work, because it's not guaranteed you can read the page directory
+             * as it may not be available in the current task.
+            **/
+
             CurrentDirectory = directoryVirtual;
             CurrentDirectoryPhysical = directoryPhysical;
             setDirectoryInternal(directoryPhysical);

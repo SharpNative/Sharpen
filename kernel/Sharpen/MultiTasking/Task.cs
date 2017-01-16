@@ -156,6 +156,7 @@ namespace Sharpen.MultiTasking
             {
                 Heap.Free(m_usedAddresses.Item[i]);
             }
+            m_usedAddresses.Dispose();
             Heap.Free(m_usedAddresses);
 
             // Filesystem stuff

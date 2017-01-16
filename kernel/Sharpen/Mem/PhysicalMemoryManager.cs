@@ -16,7 +16,7 @@ namespace Sharpen.Mem
         public static unsafe void Init(uint memSize)
         {
             // Bit array to store which addresses are free
-            bitmap = new BitArray((int)(memSize * 1024 / 4 / 32));
+            bitmap = new BitArray((int)(memSize * 1024 / 4));
             mutex = new Mutex();
             uint aligned = Paging.Align((uint)Heap.CurrentEnd);
 

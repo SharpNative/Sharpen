@@ -11,7 +11,6 @@ using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.MultiTasking;
-using Sharpen.Utilities;
 
 namespace Sharpen
 {
@@ -186,7 +185,7 @@ namespace Sharpen
         private static void initMemory()
         {
             PhysicalMemoryManager.Init(m_memSize);
-            Paging.Init(m_memSize);
+            Paging.Init();
             Heap.InitRealHeap();
         }
 
@@ -200,7 +199,7 @@ namespace Sharpen
             // We require to be booted by a multiboot compliant bootloader
             if (magic != Multiboot.Magic)
             {
-                Panic.DoPanic("Not booted by a multiboot compliant bootloader");
+                Panic.DoPanic("Not booted by a multiboot bootloader");
             }
 
             // Bring the header to a safe location
@@ -218,7 +217,7 @@ namespace Sharpen
             {
                 uint modsCount = m_mbootHeader.ModsCount;
 
-                Console.Write("[Multiboot] Detected - Modules: ");
+                Console.Write("[Multiboot] Modules: ");
                 Console.WriteNum((int)modsCount);
                 Console.Write('\n');
 
@@ -227,8 +226,7 @@ namespace Sharpen
                     Multiboot.Module** mods = (Multiboot.Module**)m_mbootHeader.ModsAddr;
                     Multiboot.Module module = *mods[i];
 
-                    // Check if the end is bigger
-                    // If it's bigger, set the new end
+                    // Move the heap end
                     if ((int)module.End > (int)heapStart)
                     {
                         heapStart = module.End;
@@ -237,7 +235,7 @@ namespace Sharpen
             }
             else
             {
-                Console.WriteLine("[Multiboot] Detected - No modules");
+                Console.WriteLine("[Multiboot] No modules");
             }
         }
 
