@@ -15,6 +15,7 @@ namespace Sharpen.FileSystem
 
         public byte classCode;
         public byte SubClass;
+        public byte ProgIntf;
 
         public ushort Vendor;
         public ushort Device;

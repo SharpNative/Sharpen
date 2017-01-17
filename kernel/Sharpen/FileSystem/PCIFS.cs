@@ -273,6 +273,7 @@ namespace Sharpen.FileSystem
 
             info->classCode = dev.classCode;
             info->SubClass = dev.SubClass;
+            info->ProgIntf = dev.ProgIntf;
 
             info->Vendor = dev.Vendor;
             info->Device = dev.Device;

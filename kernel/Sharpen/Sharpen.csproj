@@ -51,7 +51,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Arch\PciClassCodes.cs" />
     <Compile Include="Collections\LongList.cs" />
+    <Compile Include="Drivers\USB\UHCI.cs" />
     <Compile Include="MultiTasking\IThreadContext.cs" />
     <Compile Include="Arch\X86\CMOS.cs" />
     <Compile Include="Arch\X86\CPU.cs" />
@@ -70,7 +72,6 @@
     <Compile Include="Drivers\Net\rtl8139.cs" />
     <Compile Include="Drivers\Power\AcpiDevice.cs" />
     <Compile Include="Drivers\Power\AcpiHelper.cs" />
-    <Compile Include="Drivers\USB\UHCI.cs" />
     <Compile Include="ErrorCode.cs" />
     <Compile Include="Exec\ELFLoader.cs" />
     <Compile Include="Exec\Loader.cs" />

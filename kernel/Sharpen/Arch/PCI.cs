@@ -8,12 +8,18 @@
 
         public byte classCode;
         public byte SubClass;
+        public byte ProgIntf;
+        public int CombinedClass;
 
         public ushort Vendor;
         public ushort Device;
         public PCI.PciDriver Driver;
         public PciBar BAR0;
         public PciBar BAR1;
+        public PciBar BAR2;
+        public PciBar BAR3;
+        public PciBar BAR4;
+        public PciBar BAR5;
 
         public byte Type;
     }
@@ -240,6 +246,10 @@
                 Console.WriteHex(Devices[i].Vendor);
                 Console.Write(":");
                 Console.WriteHex(Devices[i].Device);
+                Console.Write(":");
+                Console.WriteHex(Devices[i].CombinedClass);
+                Console.Write(":");
+                Console.WriteHex(Devices[i].ProgIntf);
                 Console.WriteLine("");
             }
         }
@@ -369,9 +379,15 @@
             dev.Vendor = vendorID;
             dev.BAR0 = GetBar(bus, device, function, BAR0);
             dev.BAR1 = GetBar(bus, device, function, BAR1);
+            dev.BAR2 = GetBar(bus, device, function, BAR2);
+            dev.BAR3 = GetBar(bus, device, function, BAR3);
+            dev.BAR4 = GetBar(bus, device, function, BAR4);
+            dev.BAR5 = GetBar(bus, device, function, BAR5);
             dev.Type = (byte)PCIRead(bus, device, function, CONFIG_HEADER_TYPE, 1);
             dev.classCode = (byte)PCIRead(bus, device, function, CONFIG_CLASS_CODE, 1);
             dev.SubClass = (byte)PCIRead(bus, device, function, CONFIG_SUB_CLASS, 1);
+            dev.ProgIntf = (byte)PCIRead(bus, device, function, CONFIG_PROG_INTF, 1);
+            dev.CombinedClass = dev.classCode << 8 | dev.SubClass;
 
             Devices[m_currentdevice++] = dev;
         }
