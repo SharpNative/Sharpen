@@ -45,7 +45,7 @@ namespace Sharpen
             Keyboard.Init();
 
             Tasking.Init();
-
+            
             initStorage();
             initNetworking();
             runUserspace();
@@ -221,15 +221,15 @@ namespace Sharpen
                 Console.WriteNum((int)modsCount);
                 Console.Write('\n');
 
+                Multiboot.Module** mods = (Multiboot.Module**)m_mbootHeader.ModsAddr;
                 for (int i = 0; i < modsCount; i++)
                 {
-                    Multiboot.Module** mods = (Multiboot.Module**)m_mbootHeader.ModsAddr;
-                    Multiboot.Module module = *mods[i];
+                    Multiboot.Module* module = mods[i];
 
                     // Move the heap end
-                    if ((int)module.End > (int)heapStart)
+                    if ((int)module->End > (int)heapStart)
                     {
-                        heapStart = module.End;
+                        heapStart = module->End;
                     }
                 }
             }
