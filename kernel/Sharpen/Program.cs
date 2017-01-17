@@ -102,21 +102,23 @@ namespace Sharpen
             // Networking
             Network.Init();
             Route.Init();
-
-            // Layer 1 - drivers
-            E1000.Init();
-            PCNet2.Init();
-            rtl8139.Init();
-
-            // Layer 2 - Networking protocols
+            
+            // Networking protocols
             IPV4.Init();
             ICMP.Init();
-
-            // Layer 3 - Transport protocols
+            
+            // Transport protocols
             UDP.Init();
             TCP.Init();
             ARP.Init();
             DHCP.Init();
+            
+            // Network drivers
+            E1000.Init();
+            PCNet2.Init();
+            rtl8139.Init();
+
+            DHCP.Discover();
 
             //byte[] buf = new byte[4];
             //buf[0] = 192;
@@ -184,7 +186,7 @@ namespace Sharpen
         /// </summary>
         private static void initMemory()
         {
-            PhysicalMemoryManager.Init(m_memSize);
+            PhysicalMemoryManager.Init();
             Paging.Init();
             Heap.InitRealHeap();
         }

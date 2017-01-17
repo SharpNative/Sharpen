@@ -143,8 +143,6 @@ namespace Sharpen.Net
              * Bind UDP Port :)
              */
             UDP.Bind(68, PacketHandler);
-
-            Discover();
         }
 
         /// <summary>

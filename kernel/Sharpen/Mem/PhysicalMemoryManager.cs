@@ -3,20 +3,20 @@ using Sharpen.Collections;
 
 namespace Sharpen.Mem
 {
-    class PhysicalMemoryManager
+    public sealed class PhysicalMemoryManager
     {
-        public static bool isInitialized = false;
+        public static bool IsInitialized { get; private set; }
+
         private static BitArray bitmap;
         private static Mutex mutex;
 
         /// <summary>
         /// Initializes the physical memory manager
         /// </summary>
-        /// <param name="memSize">Memory size</param>
-        public static unsafe void Init(uint memSize)
+        public static unsafe void Init()
         {
             // Bit array to store which addresses are free
-            bitmap = new BitArray((int)(memSize * 1024 / 4));
+            bitmap = new BitArray(4096 * 1024 / 4);
             mutex = new Mutex();
             uint aligned = Paging.Align((uint)Heap.CurrentEnd);
 
@@ -29,7 +29,7 @@ namespace Sharpen.Mem
             Console.WriteLine("");
 
             Set(0, aligned);
-            isInitialized = true;
+            IsInitialized = true;
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Sharpen.Mem
         /// <returns>If the address is free</returns>
         public static unsafe bool IsFree(void* address)
         {
-            return !bitmap.IsBitSet((int)address / 0x1000);
+            return !bitmap.IsBitSet((int)((uint)address / 0x1000));
         }
 
         /// <summary>
@@ -89,12 +89,12 @@ namespace Sharpen.Mem
         /// <param name="size">The size of the range</param>
         public static void Set(int address, uint size)
         {
-            address = (int)Paging.Align((uint)address);
+            uint start = Paging.Align((uint)address);
             size = Paging.Align(size);
             mutex.Lock();
-            for (int i = address; i < size; i += 0x1000)
+            for (uint i = start; i < size; i += 0x1000)
             {
-                bitmap.SetBit(i / 0x1000);
+                bitmap.SetBit((int)(i / 0x1000));
             }
             mutex.Unlock();
         }
@@ -106,7 +106,8 @@ namespace Sharpen.Mem
         public static void Set(int address)
         {
             mutex.Lock();
-            bitmap.SetBit(address / 0x1000);
+            uint bit = (uint)address / 0x1000;
+            bitmap.SetBit((int)bit);
             mutex.Unlock();
         }
 
@@ -116,9 +117,9 @@ namespace Sharpen.Mem
         /// <param name="address">The address</param>
         public static unsafe void Free(void* address)
         {
-            int addr = (int)address / 0x1000;
+            uint bit = (uint)address / 0x1000;
             mutex.Lock();
-            bitmap.ClearBit(addr);
+            bitmap.ClearBit((int)bit);
             mutex.Unlock();
         }
     }
