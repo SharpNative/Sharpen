@@ -5,21 +5,24 @@ namespace Sharpen.Collections
 {
     public class List
     {
-        private const int DEFAULT_CAP = 4;
-        private int m_currentCap = DEFAULT_CAP;
+        private const int DefaultCapacity = 8;
 
+        private int m_currentCap = DefaultCapacity;
+
+        private Mutex m_mutex;
+        
         // Array of items
         public object[] Item { get; private set; }
 
         /// <summary>
         /// The amount of items currently in the list
         /// </summary>
-        public int Count { get; private set; } = 0;
+        public int Count { get; private set; }
 
         /// <summary>
         /// The current capacity before a resize is required
         /// </summary>
-        public unsafe int Capacity
+        public int Capacity
         {
             get
             {
@@ -28,10 +31,10 @@ namespace Sharpen.Collections
 
             set
             {
-                object[] newArray = new object[value];
-                Memory.Memcpy(Util.ObjectToVoidPtr(newArray), Util.ObjectToVoidPtr(Item), m_currentCap * sizeof(void*));
-                Item = newArray;
+                m_mutex.Lock();
+                resize(value);
                 m_currentCap = value;
+                m_mutex.Unlock();
             }
         }
 
@@ -41,15 +44,30 @@ namespace Sharpen.Collections
         public List()
         {
             Item = new object[m_currentCap];
+            m_mutex = new Mutex();
+        }
+
+        /// <summary>
+        /// Resizes to the new capacity
+        /// </summary>
+        /// <param name="newCapacity">The new capacity</param>
+        private unsafe void resize(int newCapacity)
+        {
+            object[] newArray = new object[newCapacity];
+            int length = (newCapacity < m_currentCap) ? newCapacity : m_currentCap;
+            CopyTo(0, newArray, 0, length);
+            object[] oldArray = Item;
+            Item = newArray;
+            Heap.Free(oldArray);
         }
 
         /// <summary>
         /// Ensures there is enough capacity to hold the elements
         /// </summary>
         /// <param name="required">How much capacity is required</param>
-        private void EnsureCapacity(int required)
+        private void ensureCapacity(int required)
         {
-            if (required < m_currentCap)
+            if (Item == null || required < m_currentCap)
                 return;
             
             Capacity *= 2;
@@ -61,8 +79,13 @@ namespace Sharpen.Collections
         /// <param name="o">The object</param>
         public void Add(object o)
         {
-            EnsureCapacity(Count + 1);
+            if (Item == null)
+                return;
+            
+            ensureCapacity(Count + 1);
+            m_mutex.Lock();
             Item[Count++] = o;
+            m_mutex.Unlock();
         }
 
         /// <summary>
@@ -72,9 +95,14 @@ namespace Sharpen.Collections
         public unsafe void RemoveAt(int index)
         {
             // Check if inside bounds
-            if (index >= Count)
+            if (index < 0 || index >= Count)
                 return;
 
+            if (Item == null)
+                return;
+
+            m_mutex.Lock();
+            
             // Copy
             int destination = (int)Util.ObjectToVoidPtr(Item) + (index * sizeof(void*));
             int source = (int)Util.ObjectToVoidPtr(Item) + ((index + 1) * sizeof(void*));
@@ -82,8 +110,10 @@ namespace Sharpen.Collections
             
             // Decrease capacity if the list has enough free space
             Count--;
-            if (Count * DEFAULT_CAP < Capacity && Capacity > DEFAULT_CAP)
+            if (Count * DefaultCapacity < Capacity && Capacity > DefaultCapacity)
                 Capacity /= 2;
+
+            m_mutex.Unlock();
         }
 
         /// <summary>
@@ -92,7 +122,9 @@ namespace Sharpen.Collections
         public void Dispose()
         {
             Heap.Free(Item);
+            Heap.Free(m_mutex);
             Item = null;
+            m_mutex = null;
         }
 
         /// <summary>
@@ -100,8 +132,13 @@ namespace Sharpen.Collections
         /// </summary>
         public unsafe void Clear()
         {
+            if (Item == null)
+                return;
+
+            m_mutex.Lock();
             Memory.Memset(Util.ObjectToVoidPtr(Item), 0, m_currentCap * sizeof(void*));
             Count = 0;
+            m_mutex.Unlock();
         }
 
         /// <summary>
@@ -111,12 +148,17 @@ namespace Sharpen.Collections
         /// <returns>Of the list contains the item</returns>
         public bool Contains(object item)
         {
+            m_mutex.Lock();
             for (int i = 0; i < Count; i++)
             {
                 if (Item[i] == item)
+                {
+                    m_mutex.Unlock();
                     return true;
+                }
             }
 
+            m_mutex.Unlock();
             return false;
         }
 
@@ -148,6 +190,9 @@ namespace Sharpen.Collections
         /// <param name="count">The count of how much to copy</param>
         public unsafe void CopyTo(int index, object[] array, int arrayIndex, int count)
         {
+            if (Item == null)
+                return;
+
             int destination = (int)Util.ObjectToVoidPtr(array) + (sizeof(void*) * arrayIndex);
             int source = (int)Util.ObjectToVoidPtr(Item) + (sizeof(void*) * index);
             Memory.Memcpy((void*)destination, (void*)source, count);
@@ -181,12 +226,17 @@ namespace Sharpen.Collections
         /// <returns>-1 if not found, the index if found</returns>
         public int IndexOf(object item, int index, int count)
         {
+            m_mutex.Lock();
             for (int i = index; i < Count && i < count + index; i++)
             {
                 if (Item[i] == item)
+                {
+                    m_mutex.Unlock();
                     return i;
+                }
             }
 
+            m_mutex.Unlock();
             return -1;
         }
 
@@ -218,12 +268,17 @@ namespace Sharpen.Collections
         /// <returns>-1 if not found, the index if found</returns>
         public int LastIndexOf(object item, int index, int count)
         {
+            m_mutex.Lock();
             for (int i = index; i >= 0 && i - index < count; i--)
             {
                 if (Item[i] == item)
+                {
+                    m_mutex.Unlock();
                     return i;
+                }
             }
 
+            m_mutex.Unlock();
             return -1;
         }
     }

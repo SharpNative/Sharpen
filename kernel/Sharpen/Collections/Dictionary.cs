@@ -2,16 +2,19 @@
 {
     class Dictionary
     {
-        private LongIndex m_index = new LongIndex();
+        private LongList m_index = new LongList();
         private List m_values = new List();
+        private Mutex m_mutex = new Mutex();
 
         /// <summary>
         /// Clears the dictionary
         /// </summary>
         public void Clear()
         {
+            m_mutex.Lock();
             m_index.Clear();
             m_values.Clear();
+            m_mutex.Unlock();
         }
 
         /// <summary>
@@ -33,7 +36,10 @@
             if (index < 0 || index >= m_values.Count)
                 return null;
 
-            return m_values.Item[index];
+            m_mutex.Lock();
+            object ret = m_values.Item[index];
+            m_mutex.Unlock();
+            return ret;
         }
 
         /// <summary>
@@ -45,11 +51,13 @@
         {
             int index = m_index.IndexOf(key);
 
+            m_mutex.Lock();
             if (index == -1)
             {
                 m_index.Add(key);
                 m_values.Add(val);
             }
+            m_mutex.Unlock();
         }
 
         /// <summary>
@@ -61,8 +69,10 @@
             if (index < 0 || index >= m_index.Count)
                 return;
 
+            m_mutex.Lock();
             m_index.RemoveAt(index);
             m_values.RemoveAt(index);
+            m_mutex.Unlock();
         }
 
         /// <summary>

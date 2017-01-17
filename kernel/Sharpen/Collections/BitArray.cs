@@ -1,11 +1,15 @@
-﻿namespace Sharpen.Collections
+﻿using Sharpen.Mem;
+
+namespace Sharpen.Collections
 {
     public class BitArray
     {
         private int[] m_bitmap;
 
+        private Mutex m_mutex;
+
         private int m_N;
-        private int m_leastClear = 0;
+        private int m_leastClear;
 
         /// <summary>
         /// Initializes a bit array with N integers
@@ -17,7 +21,19 @@
             N = ((N - 1) / 32) + 1;
 
             m_bitmap = new int[N];
+            m_mutex = new Mutex();
             m_N = N;
+        }
+
+        /// <summary>
+        /// Disposes the BitArray
+        /// </summary>
+        public void Dispose()
+        {
+            Heap.Free(m_bitmap);
+            Heap.Free(m_mutex);
+            m_bitmap = null;
+            m_mutex = null;
         }
 
         /// <summary>
@@ -28,7 +44,9 @@
         {
             int bitmap = k / 32;
             int index = k & (32 - 1);
+            m_mutex.Lock();
             m_bitmap[bitmap] |= (1 << index);
+            m_mutex.Unlock();
         }
 
         /// <summary>
@@ -39,10 +57,14 @@
         {
             int bitmap = k / 32;
             int index = k & (32 - 1);
-            m_bitmap[bitmap] &= ~(1 << index);
 
+            m_mutex.Lock();
+
+            m_bitmap[bitmap] &= ~(1 << index);
             if (bitmap < m_leastClear)
                 m_leastClear = bitmap;
+
+            m_mutex.Unlock();
         }
 
         /// <summary>
@@ -114,6 +136,7 @@
         /// <returns>The index of the first free bit</returns>
         public int FindFirstFree(bool set)
         {
+            m_mutex.Lock();
             for (int i = m_leastClear; i < m_N; i++)
             {
                 int bitmap = m_bitmap[i];
@@ -130,11 +153,13 @@
                         if (set)
                             m_bitmap[i] |= (1 << j);
 
+                        m_mutex.Unlock();
                         return (i << 5) + j;
                     }
                 }
             }
 
+            m_mutex.Unlock();
             return -1;
         }
 
