@@ -165,12 +165,12 @@ namespace Sharpen.Exec
 
             if (!isValidELF(elf))
                 return -(int)ErrorCode.EINVAL;
-            
+
             // Get program header
             ProgramHeader* programHeader = (ProgramHeader*)((int)elf + elf->PhOff);
             uint virtAddress = programHeader->VirtAddress;
             void* allocated = Heap.AlignedAlloc(0x1000, (int)size);
-            
+
             // Loop through every section
             for (uint i = 0; i < elf->ShNum; i++)
             {
@@ -193,22 +193,29 @@ namespace Sharpen.Exec
                     Memory.Memcpy((void*)((uint)allocated + offset), (void*)((uint)elf + section->Offset), (int)section->Size);
                 }
             }
-            
+
             // Count arguments
             int argc = 0;
             while (argv[argc] != null)
                 argc++;
 
+            // Make sure arguments are safe by copying them
+            string[] argvClone = new string[argc + 1];
+            for (int i = 0; i < argc; i++)
+            {
+                argvClone[i] = String.Clone(argv[i]);
+            }
+
             // Stack
             int[] initialStack = new int[2];
-            initialStack[0] = (int)Util.ObjectToVoidPtr(argv);
+            initialStack[0] = (int)Util.ObjectToVoidPtr(argvClone);
             initialStack[1] = argc;
-            
+
             // Create thread
             Thread thread = new Thread();
             thread.Context.CreateNewContext((void*)elf->Entry, 2, initialStack, false);
             Heap.Free(initialStack);
-            
+
             CPU.CLI();
 
             // Create task
@@ -217,6 +224,13 @@ namespace Sharpen.Exec
             context.CreateNewContext(false);
             newTask.AddThread(thread);
             newTask.AddUsedAddress(allocated);
+
+            // Argv clone freeing
+            newTask.AddUsedAddress(Util.ObjectToVoidPtr(argvClone));
+            for (int i = 0; i < argc; i++)
+            {
+                newTask.AddUsedAddress(Util.ObjectToVoidPtr(argvClone[i]));
+            }
             
             // Map memory
             Paging.PageDirectory* newDirectory = context.PageDirVirtual;
@@ -226,10 +240,10 @@ namespace Sharpen.Exec
                 // Note: the physical memory is not always a continuous block
                 Paging.MapPage(newDirectory, (int)Paging.GetPhysicalFromVirtual((void*)((int)allocated + j)), (int)(virtAddress + j), pageFlags);
             }
-            
+
             // Schedule task
             Tasking.ScheduleTask(newTask);
-            
+
             CPU.STI();
 
             return newTask.PID;

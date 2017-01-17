@@ -259,6 +259,8 @@ namespace Sharpen
                 Console.WriteHex(-error);
                 Console.Write('\n');
             }
+
+            Heap.Free(argv);
         }
     }
 }
