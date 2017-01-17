@@ -111,7 +111,7 @@ namespace Sharpen.Mem
         }
 
         /// <summary>
-        /// Frees a chunk of memory
+        /// Frees a block of memory
         /// </summary>
         /// <param name="address">The address</param>
         public static unsafe void Free(void* address)

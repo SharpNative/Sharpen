@@ -48,7 +48,7 @@ namespace Sharpen
             if (Tasking.CurrentTask != null)
             {
                 Console.Write("\tPID: ");
-                Console.WriteHex(Tasking.CurrentTask.PID);
+                Console.WriteNum(Tasking.CurrentTask.PID);
             }
 
             if (regsPtr != null)

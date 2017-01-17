@@ -5,8 +5,6 @@ namespace Sharpen.MultiTasking
 {
     public class Tasking
     {
-        // TODO: mutexes (note that some code is guaranteed to run only in one place, so no mutexes there)
-        
         private static Thread threadToClone = null;
 
         public static Task KernelTask { get; private set; }

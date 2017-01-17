@@ -51,6 +51,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Collections\LongList.cs" />
     <Compile Include="MultiTasking\IThreadContext.cs" />
     <Compile Include="Arch\X86\CMOS.cs" />
     <Compile Include="Arch\X86\CPU.cs" />
@@ -125,7 +126,6 @@
     <Compile Include="FileSystem\DirEntry.cs" />
     <Compile Include="Collections\Dictionary.cs" />
     <Compile Include="FileSystem\Fat16.cs" />
-    <Compile Include="Collections\LongIndex.cs" />
     <Compile Include="Console.cs" />
     <Compile Include="Arch\X86\GDT.cs" />
     <Compile Include="Drivers\Block\ATA.cs" />

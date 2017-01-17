@@ -5,8 +5,6 @@ namespace Sharpen.Arch
 {
     public sealed class Paging
     {
-        // TODO: mutexes?
-        
         // Flags on a page
         public enum PageFlags
         {
@@ -87,19 +85,18 @@ namespace Sharpen.Arch
 
             // Bit array to store which frames are free
             bitmap = new BitArray(4096 * 1024 / 4);
-            
+
             // Create a new page directory for the kernel
             // Note: At this point, virtual address == physical address due to identity mapping
             KernelDirectory = CreateNewDirectoryPhysically(userFlags);
             SetPageDirectory(KernelDirectory, KernelDirectory);
 
             // Identity map
-            int address = 0;
-            while (address < (int)PhysicalMemoryManager.FirstFree())
+            int end = (int)PhysicalMemoryManager.FirstFree();
+            for (int address = 0; address < end; address += 0x1000)
             {
                 MapPage(KernelDirectory, address, address, kernelFlags);
-                SetFrame(address);
-                address += 0x1000;
+                bitmap.SetBit(address / 0x1000);
             }
 
             // Enable paging
@@ -135,7 +132,7 @@ namespace Sharpen.Arch
 
             return directory;
         }
-        
+
         /// <summary>
         /// Maps a page in a directory
         /// </summary>
@@ -153,7 +150,7 @@ namespace Sharpen.Arch
             PageTable* table = (PageTable*)directory->VirtualTables[tableIndex];
             table->Pages[pageIndex & (1024 - 1)] = ToFrameAddress(phys) | (int)flags;
         }
-        
+
         /// <summary>
         /// Maps a physical address (range) to a free virtual address (range)
         /// </summary>
@@ -199,7 +196,7 @@ namespace Sharpen.Arch
             int page = table->Pages[frame & (1024 - 1)];
             return (void*)(GetFrameAddress(page) + remaining);
         }
-        
+
         /// <summary>
         /// Gets the physical address from a virtual address
         /// </summary>
@@ -208,24 +205,6 @@ namespace Sharpen.Arch
         public static unsafe void* GetPhysicalFromVirtual(void* virt)
         {
             return GetPhysicalFromVirtual(CurrentDirectory, virt);
-        }
-
-        /// <summary>
-        /// Sets the frame
-        /// </summary>
-        /// <param name="frame">Frame address</param>
-        public static void SetFrame(int frame)
-        {
-            bitmap.SetBit(frame / 0x1000);
-        }
-
-        /// <summary>
-        /// Clears the frame
-        /// </summary>
-        /// <param name="frame">Frame address</param>
-        public static void ClearFrame(int frame)
-        {
-            bitmap.ClearBit(frame / 0x1000);
         }
 
         /// <summary>
@@ -257,15 +236,13 @@ namespace Sharpen.Arch
             // Allocate
             int free = bitmap.FindFirstFreeRange((int)(sizeAligned / 0x1000), true);
             int start = free * 0x1000;
-            int address = start;
-            int end = (int)(address + sizeAligned);
+            int end = (int)(start + sizeAligned);
             PageFlags flags = PageFlags.Present | PageFlags.Writable | PageFlags.UserMode;
-            while (address < end)
+            for (int address = start; address < end; address += 0x1000)
             {
                 int phys = (int)PhysicalMemoryManager.Alloc();
-                MapPage(CurrentDirectory, phys, address, flags);
                 MapPage(KernelDirectory, phys, address, flags);
-                address += 0x1000;
+                MapPage(CurrentDirectory, phys, address, flags);
             }
 
             // Clear the data before returning it for safety
@@ -273,7 +250,7 @@ namespace Sharpen.Arch
 
             return (void*)start;
         }
-        
+
         /// <summary>
         /// Frees an allocate virtual address range
         /// </summary>
@@ -287,17 +264,17 @@ namespace Sharpen.Arch
             int addressStart = (int)address;
             int addressEnd = addressStart + (int)sizeAligned;
 
-            // Free virtual memory
-            bitmap.ClearRange(start, (int)(sizeAligned / 0x1000));
-
             // Free physical memory
             for (int i = addressStart; i < addressEnd; i += 0x1000)
             {
                 void* phys = GetPhysicalFromVirtual((void*)i);
                 PhysicalMemoryManager.Free(phys);
             }
+
+            // Free virtual memory
+            bitmap.ClearRange(start, (int)(sizeAligned / 0x1000));
         }
-        
+
         /// <summary>
         /// Clones a page directory and its tables
         /// </summary>
@@ -309,10 +286,10 @@ namespace Sharpen.Arch
             int pageDirSizeAligned = (int)Align((uint)sizeof(PageDirectory));
 
             // One block for the page directory and the page tables
-            int allocated = (int)AllocateVirtual(pageDirSizeAligned + 1024 * sizeof(PageTable));
+            int allocated = (int)Heap.AlignedAlloc(0x1000, pageDirSizeAligned + 1024 * sizeof(PageTable));
             if (allocated == 0)
                 Panic.DoPanic("Couldn't clone page directory because there is no memory left");
-            
+
             PageDirectory* destination = (PageDirectory*)allocated;
             destination->PhysicalDirectory = (PageDirectory*)GetPhysicalFromVirtual((void*)allocated);
             for (int i = 0; i < 1024; i++)
@@ -356,7 +333,7 @@ namespace Sharpen.Arch
             PageDirectory* phys = CurrentDirectoryPhysical;
             SetPageDirectory(KernelDirectory, KernelDirectory);
             int pageDirSizeAligned = (int)Align((uint)sizeof(PageDirectory));
-            FreeVirtual(directory, pageDirSizeAligned + 1024 * sizeof(PageTable));
+            Heap.Free(directory);
             SetPageDirectory(virt, phys);
         }
 

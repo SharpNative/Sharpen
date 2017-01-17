@@ -47,7 +47,7 @@ namespace Sharpen.Mem
         private static Mutex mutex;
 
         // Minimal amount of pages in a descriptor
-        private const int MINIMALPAGES = 128;
+        private const int MINIMALPAGES = 80;
 
         // Heap magic (DEBUG)
         private const uint HEAP_MAGIC = 0xDEADBEEF;
@@ -213,6 +213,14 @@ namespace Sharpen.Mem
         /// <param name="size">The size</param>
         public static unsafe void* AlignedAlloc(int alignment, int size)
         {
+#if HEAP_DEBUG
+            if (size <= 0)
+                Panic.DoPanic("[HEAP] size <= 0");
+
+            if (alignment <= 0)
+                Panic.DoPanic("[HEAP] alignment <= 0");
+#endif
+
             if (useRealHeap)
             {
                 mutex.Lock();
@@ -233,7 +241,7 @@ namespace Sharpen.Mem
                 BlockDescriptor* descriptor = getSufficientDescriptor(null, size);
 
                 if (descriptor == null)
-                    Panic.DoPanic("descriptor == null");
+                    Panic.DoPanic("[HEAP] descriptor == null");
                 
                 retry:
 
@@ -375,7 +383,7 @@ namespace Sharpen.Mem
                 }
                 else
                 {
-                    Panic.DoPanic("Unsupported alignment in early allocation");
+                    Panic.DoPanic("[HEAP] Unsupported alignment in early allocation");
                     return null;
                 }
             }
@@ -398,6 +406,10 @@ namespace Sharpen.Mem
         private static unsafe Block* getBlockFromPtr(void* ptr)
         {
             Block* block = (Block*)((int)ptr - sizeof(Block));
+#if HEAP_USE_MAGIC
+            if (block->Magic != HEAP_MAGIC)
+                Panic.DoPanic("[HEAP] block->Magic != HEAP_MAGIC");
+#endif
             return block;
         }
 
@@ -411,8 +423,9 @@ namespace Sharpen.Mem
         {
             Block* block = getBlockFromPtr(ptr);
 
+            int size = (block->Size < newSize) ? block->Size : newSize;
             void* newPtr = AlignedAlloc(4, newSize);
-            Memory.Memcpy(newPtr, ptr, block->Size);
+            Memory.Memcpy(newPtr, ptr, size);
             Free(ptr);
 
             return newPtr;
@@ -427,16 +440,7 @@ namespace Sharpen.Mem
             if (ptr == null)
                 return;
 
-            // Grab block (header is just before the data)
             Block* block = getBlockFromPtr(ptr);
-
-#if HEAP_USE_MAGIC
-            if (block->Magic != HEAP_MAGIC)
-            {
-                Panic.DoPanic("block->Magic != HEAP_MAGIC");
-                return;
-            }
-#endif
 
             mutex.Lock();
 
@@ -485,30 +489,6 @@ namespace Sharpen.Mem
         {
             Free(Util.ObjectToVoidPtr(ptr));
         }
-
-        /// <summary>
-        /// Dumps a block
-        /// </summary>
-        /// <param name="currentBlock">The block</param>
-        private static unsafe void dumpBlock(Block* currentBlock)
-        {
-            Console.Write("Block: size=");
-            Console.WriteHex(currentBlock->Size);
-            Console.Write(" used:");
-            Console.Write((currentBlock->Used ? "yes" : "no"));
-            Console.Write(" prev=");
-            Console.WriteHex((int)currentBlock->Prev);
-            Console.Write(" next=");
-            Console.WriteHex((int)currentBlock->Next);
-            Console.Write(" i am=");
-            Console.WriteHex((int)currentBlock);
-
-#if HEAP_USE_MAGIC
-            Console.Write(" magic=");
-            Console.WriteHex(currentBlock->Magic);
-#endif
-            Console.WriteLine("");
-        }
         
         /// <summary>
         /// Temporary kernel memory allocation before a real heap is set up
@@ -520,7 +500,7 @@ namespace Sharpen.Mem
         {
 #if HEAP_DEBUG
             if (useRealHeap)
-                Panic.DoPanic("KAlloc has been called after real heap started!");
+                Panic.DoPanic("[HEAP] KAlloc has been called after real heap started!");
 #endif
 
             if (PhysicalMemoryManager.isInitialized)

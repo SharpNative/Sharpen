@@ -5,7 +5,7 @@ using Sharpen.Utilities;
 
 namespace Sharpen.MultiTasking
 {
-    public unsafe class Task
+    public class Task
     {
         // Flags that a task can hold
         public enum TaskFlag
@@ -182,7 +182,7 @@ namespace Sharpen.MultiTasking
         /// Adds a used address to be freed when the task cleans up
         /// </summary>
         /// <param name="address">The address</param>
-        public void AddUsedAddress(void* address)
+        public unsafe void AddUsedAddress(void* address)
         {
             m_usedAddresses.Add(Util.VoidPtrToObject(address));
         }
@@ -230,7 +230,7 @@ namespace Sharpen.MultiTasking
         /// Stores the current thread context
         /// </summary>
         /// <param name="currentStack">The current stack</param>
-        public void StoreThreadContext(void* currentStack)
+        public unsafe void StoreThreadContext(void* currentStack)
         {
             CurrentThread.Context.StoreContext(currentStack);
         }
@@ -239,7 +239,7 @@ namespace Sharpen.MultiTasking
         /// Restores a previous thread context
         /// </summary>
         /// <returns>The previous stack</returns>
-        public void* RestoreThreadContext()
+        public unsafe void* RestoreThreadContext()
         {
             return CurrentThread.Context.RestoreContext();
         }

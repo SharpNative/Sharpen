@@ -26,9 +26,9 @@ namespace Sharpen.Arch
 
             /*if (function != 0x0D && function != 0x09 && function != 0x16 && function != 0x4 && function != 0x5)
             {
-                Console.Write("[SYSCALL] pid: ");
+                Console.Write("[SYSCALL] PID: ");
                 Console.WriteNum(Tasking.CurrentTask.PID);
-                Console.Write(" func: ");
+                Console.Write(" function: ");
                 Console.WriteNum(function);
                 Console.WriteLine("");
             }*/

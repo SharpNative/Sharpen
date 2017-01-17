@@ -33,7 +33,7 @@
         public static void SendEOI(byte irq)
         {
             // Slave EOI if irq belongs to slave
-            if(irq >= 8)
+            if (irq >= 8)
                 PortIO.Out8(SLAVE_PIC_CMD, PIC_EOI);
 
             // EOI to master

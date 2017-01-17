@@ -170,7 +170,7 @@ namespace Sharpen.Exec
             ProgramHeader* programHeader = (ProgramHeader*)((int)elf + elf->PhOff);
             uint virtAddress = programHeader->VirtAddress;
             void* allocated = Heap.AlignedAlloc(0x1000, (int)size);
-
+            
             // Loop through every section
             for (uint i = 0; i < elf->ShNum; i++)
             {
@@ -204,18 +204,18 @@ namespace Sharpen.Exec
             initialStack[0] = (int)Util.ObjectToVoidPtr(argv);
             initialStack[1] = argc;
             
+            // Create thread
+            Thread thread = new Thread();
+            thread.Context.CreateNewContext((void*)elf->Entry, 2, initialStack, false);
+            Heap.Free(initialStack);
+            
             CPU.CLI();
 
             // Create task
             Task newTask = new Task(TaskPriority.NORMAL, flags);
             X86Context context = (X86Context)newTask.Context;
             context.CreateNewContext(false);
-            
-            Thread thread = new Thread();
-            thread.Context.CreateNewContext((void*)elf->Entry, 2, initialStack, false);
             newTask.AddThread(thread);
-
-            Heap.Free(initialStack);
             newTask.AddUsedAddress(allocated);
             
             // Map memory
