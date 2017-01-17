@@ -185,7 +185,7 @@ namespace Sharpen.FileSystem
             // Loop through the slashes
             int offset = index + 3;
             int destOffset = index + 3;
-            int[] partOffsets = new int[parts];
+            int[] partOffsets = new int[parts + 1];
             partOffsets[0] = destOffset;
             int partIndex = 0;
             while (parts > 0)
@@ -217,7 +217,7 @@ namespace Sharpen.FileSystem
                 partOffsets[partIndex] = destOffset;
                 parts--;
             }
-
+            
             // Add null character
             ptr[destOffset] = '\0';
 
