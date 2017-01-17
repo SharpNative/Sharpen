@@ -1,16 +1,13 @@
 #include <stdint.h>
 
 /* Values */
-#define true (1)
-#define false (0)
 #define NULL ((void*) 0)
-#define null ((void*) 0)
 
 /* Types */
 typedef void*   action_t;
 typedef void*   object_t;
 typedef int32_t bool_t;
-typedef char* string_t;
+typedef char*   string_t;
 
 /* Macro to methods */
 #define malloc      Sharpen_Mem_Heap_Alloc_1int32_t_
