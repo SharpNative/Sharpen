@@ -1,15 +1,10 @@
 ﻿using Sharpen.Mem;
 using Sharpen.Utilities;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
     class NetworkTools
     {
-
         /// <summary>
         /// Generate WEB checksum
         /// </summary>
@@ -29,54 +24,42 @@ namespace Sharpen.Net
 
             if (len > 0)
             {
-                byte* pa = (byte*)p;
-                sum += *pa;
+                sum += *(byte*)p;
             }
-
 
             sum = (sum & 0xffff) + (sum >> 16);
             sum += (sum >> 16);
 
             return (ushort)~sum;
         }
-        
+
+        /// <summary>
+        /// Converts a string to an IP address
+        /// </summary>
+        /// <param name="ipIn">The IP address string</param>
+        /// <returns>The IP address</returns>
         public static unsafe byte[] StringToIp(string ipIn)
         {
             int num = String.Count(ipIn, '.');
-
             if (num != 3)
                 return null;
 
             byte[] ip = new byte[4];
 
-            int index = String.IndexOf(ipIn, ".");
-            string part = String.SubString(ipIn, 0, index);
-            string remaning = String.SubString(ipIn, index + 1, String.Length(ipIn) - index + 1);
-
-            int i = 0; 
-            while(i < 4)
+            int previousIndex = 0;
+            int length = String.Length(ipIn);
+            for (int i = 1; i <= 4; i++)
             {
-                ip[i] = (byte)Int.Parse(part);
+                int currentIndex = String.IndexOf(ipIn, ".", previousIndex) + 1;
+                if (currentIndex == 0)
+                    currentIndex = length + 1;
 
-                Heap.Free(Util.ObjectToVoidPtr(part));
+                string part = String.SubString(ipIn, previousIndex, currentIndex - previousIndex - 1);
 
-                index = String.IndexOf(remaning, ".");
-                if (i == 2)
-                    index = String.Length(remaning);
-                else if(index == -1)
-                {
-                    break;
-                }
+                previousIndex = currentIndex;
+                ip[i - 1] = (byte)Int.Parse(part);
 
-                part = String.SubString(remaning, 0, index);
-
-
-                char* oldRemaning = (char*)Util.ObjectToVoidPtr(remaning);
-                remaning = String.SubString(remaning, index + 1, String.Length(remaning) - index + 1);
-
-                Heap.Free(oldRemaning);
-
-                i++;
+                Heap.Free(part);
             }
 
             return ip;
