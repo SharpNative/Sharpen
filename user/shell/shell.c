@@ -8,11 +8,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-/* Values */
-#define true (1)
-#define false (0)
-#define null ((void*) 0)
-
 /* Types */
 typedef void* action_t;
 typedef void* object_t;
