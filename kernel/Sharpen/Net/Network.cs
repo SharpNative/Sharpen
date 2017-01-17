@@ -1,4 +1,4 @@
-﻿// #define NETWORK_DEBUG
+﻿ #define NETWORK_DEBUG
 
 using Sharpen.Arch;
 using Sharpen.Collections;
@@ -133,8 +133,7 @@ namespace Sharpen.Net
             if (m_dev.ID != 0 && m_dev.Transmit != null)
                 m_dev.Transmit(buffer, (uint)size);
 
-            // TODO: why is this disabled?
-            //Heap.Free(buffer);
+            Heap.Free(buffer);
         }
 
         /// <summary>
@@ -175,7 +174,7 @@ namespace Sharpen.Net
             }
 
             Memory.Memcpy(netBuf->Buffer, Util.ObjectToVoidPtr(buffer), size);
-
+            
             m_recPacketQueue.Push(netBuf);
         }
 

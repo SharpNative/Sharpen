@@ -460,8 +460,6 @@ namespace Sharpen.Drivers.Net
 
                 ushort len = m_rx_descs[cur].Length;
                 
-                Memory.Memset(Util.ObjectToVoidPtr(m_packetBuffer), 0x00, 8500);
-
                 Memory.Memcpy(Util.ObjectToVoidPtr(m_packetBuffer), m_rx_buffers[cur], len);
                 
                 Network.QueueReceivePacket(m_packetBuffer, len);
