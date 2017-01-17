@@ -12,6 +12,7 @@ typedef struct PCIFSInfo
 
     unsigned char ClassCode;
     unsigned char SubClass;
+    unsigned char ProgIntf;
 
     unsigned short Vendor;
     unsigned short Device;
@@ -30,7 +31,7 @@ void print_device(char *name)
 
     pciInfo *info = (pciInfo *)pciinfo;
 
-    printf("|\t%02d\t|\t%02d\t|\t%02d\t|\t%04x\t|\t%04x\t|\t%02x\t|\t\t%02x\t\t|\n", info->Bus, info->Slot, info->Function, info->Vendor, info->Device, info->ClassCode, info->SubClass);
+    printf("|\t%02d\t|\t%02d\t|\t%02d\t|\t%04x\t|\t%04x\t|\t%02x\t|\t%02x\t|\t%02x\t|\n", info->Bus, info->Slot, info->Function, info->Vendor, info->Device, info->ClassCode, info->SubClass, info->ProgIntf);
 
     fclose(fp);
 }
@@ -40,15 +41,15 @@ int main(int argc, char* argv[])
     DIR *dir;
     struct dirent *ent;
     if ((dir = opendir ("pci://")) != NULL) {
-        printf("|-------|-------|-------|-----------|-----------|-------|---------------|\n");
-        printf("|  BUS  |  SLOT |  FUNC |   VENDOR  |   DEVICE  | CLASS |    SUBCLASS   |\n");
-        printf("|-------|-------|-------|-----------|-----------|-------|---------------|\n");
+        printf("|-------|-------|-------|-----------|-----------|-------|-------|-------|\n");
+        printf("|  BUS  |  SLOT |  FUNC |   VENDOR  |   DEVICE  | CLASS |  SUB  | INTF  |\n");
+        printf("|-------|-------|-------|-----------|-----------|-------|-------|-------|\n");
         /* print all the files and directories within directory */
         while ((ent = readdir (dir)) != NULL) {
             print_device(ent->d_name);
         }
         closedir (dir);
-        printf("|-------|-------|-------|-----------|-----------|-------|---------------|\n");
+        printf("|-------|-------|-------|-----------|-----------|-------|-------|-------|\n");
     } else {
 
         return -1;
