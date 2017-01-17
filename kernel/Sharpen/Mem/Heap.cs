@@ -112,7 +112,7 @@ namespace Sharpen.Mem
             // Allocate descriptor
             size = getRequiredPageCount(size) * 0x1000;
             BlockDescriptor* descriptor = (BlockDescriptor*)Paging.AllocateVirtual(size);
-
+            
 #if HEAP_DEBUG
             Console.Write("[HEAP] New descriptor is at 0x");
             Console.WriteHex((long)descriptor);
@@ -150,7 +150,7 @@ namespace Sharpen.Mem
         /// <summary>
         /// Dumps a table of the descriptors
         /// </summary>
-        private static unsafe void dumpDescriptors()
+        public static unsafe void DumpDescriptors()
         {
             BlockDescriptor* descriptor = firstDescriptor;
 
@@ -254,6 +254,11 @@ namespace Sharpen.Mem
                     // Can fit in here
                     if (currentBlock->Used || currentBlock->Size < size)
                         goto nextBlock;
+
+#if HEAP_USE_MAGIC
+                    if (currentBlock->Magic != HEAP_MAGIC)
+                        Panic.DoPanic("currentBlock->Magic != HEAP_MAGIC");
+#endif
                     
                     // Check if this block data would be aligned
                     int currentData = (int)currentBlock + sizeof(Block);
@@ -503,7 +508,7 @@ namespace Sharpen.Mem
                 Panic.DoPanic("[HEAP] KAlloc has been called after real heap started!");
 #endif
 
-            if (PhysicalMemoryManager.isInitialized)
+            if (PhysicalMemoryManager.IsInitialized)
             {
                 return PhysicalMemoryManager.AllocRange(size);
             }

@@ -12,7 +12,7 @@ namespace Sharpen.Collections
         private int m_leastClear;
 
         /// <summary>
-        /// Initializes a bit array with N integers
+        /// Initializes a bit array with N bits
         /// </summary>
         /// <param name="N">The amount of bits</param>
         public unsafe BitArray(int N)
@@ -44,6 +44,7 @@ namespace Sharpen.Collections
         {
             int bitmap = k / 32;
             int index = k & (32 - 1);
+            
             m_mutex.Lock();
             m_bitmap[bitmap] |= (1 << index);
             m_mutex.Unlock();
@@ -94,7 +95,7 @@ namespace Sharpen.Collections
         /// </summary>
         /// <param name="size">The size of the range of free bits</param>
         /// <param name="set">If it should also be set</param>
-        /// <returns></returns>
+        /// <returns>The index of the first free bit for a range</returns>
         public int FindFirstFreeRange(int size, bool set)
         {
             int start = FindFirstFree();

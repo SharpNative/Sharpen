@@ -145,7 +145,7 @@ namespace Sharpen.Arch
             // Get indices
             int pageIndex = virt / 0x1000;
             int tableIndex = pageIndex / 1024;
-
+            
             // Set page using its virtual address
             PageTable* table = (PageTable*)directory->VirtualTables[tableIndex];
             table->Pages[pageIndex & (1024 - 1)] = ToFrameAddress(phys) | (int)flags;
@@ -164,11 +164,16 @@ namespace Sharpen.Arch
             int sizeAligned = (int)Align((uint)size) / 0x1000;
             int free = bitmap.FindFirstFreeRange(sizeAligned, true);
             int virt = free * 0x1000;
-
+            
             for (int i = 0; i < sizeAligned; i++)
             {
                 int offset = i * 0x1000;
+
+                if (!PhysicalMemoryManager.IsFree((void*)(phys + offset)))
+                    Panic.DoPanic("Physical address is already in use!");
+                
                 MapPage(directory, phys + offset, virt + offset, flags);
+                PhysicalMemoryManager.Set(phys + offset);
             }
 
             return (void*)virt;
@@ -250,7 +255,7 @@ namespace Sharpen.Arch
 
             return (void*)start;
         }
-
+        
         /// <summary>
         /// Frees an allocate virtual address range
         /// </summary>
@@ -327,12 +332,11 @@ namespace Sharpen.Arch
 
             if (directory == KernelDirectory)
                 Panic.DoPanic("Tried to free the kernel page directory");
-
+            
             // The directory was cloned, so it was allocated in one huge block
             PageDirectory* virt = CurrentDirectory;
             PageDirectory* phys = CurrentDirectoryPhysical;
             SetPageDirectory(KernelDirectory, KernelDirectory);
-            int pageDirSizeAligned = (int)Align((uint)sizeof(PageDirectory));
             Heap.Free(directory);
             SetPageDirectory(virt, phys);
         }
