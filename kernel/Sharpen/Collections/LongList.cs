@@ -195,7 +195,7 @@ namespace Sharpen.Collections
 
             int destination = (int)Util.ObjectToVoidPtr(array) + (sizeof(long) * arrayIndex);
             int source = (int)Util.ObjectToVoidPtr(Item) + (sizeof(long) * index);
-            Memory.Memcpy((void*)destination, (void*)source, count);
+            Memory.Memcpy((void*)destination, (void*)source, sizeof(long) * count);
         }
 
         /// <summary>
