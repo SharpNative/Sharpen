@@ -315,6 +315,22 @@ namespace Sharpen.Net
                 }
             }
 
+            /**
+             * We REALLY do need to make connection states!
+             */
+            else if ((header->Flags & FLAG_ACK) > 0 && (header->Flags & FLAG_FIN) > 0)
+            {
+                connection.AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1);
+
+                SendPacket(connection.IP, connection.SequenceNumber, Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1), connection.InPort, connection.DestPort, FLAG_ACK, null, 0);
+            }
+            else if ((header->Flags & FLAG_ACK) > 0)
+            {
+                connection.AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1);
+
+                SendPacket(connection.IP, connection.SequenceNumber, 0x00, connection.InPort, connection.DestPort, FLAG_FIN, null, 0);
+            }
+
         }
         
         /// <summary>
@@ -344,6 +360,24 @@ namespace Sharpen.Net
 
 
             SendPacket(connection.IP, connection.SequenceNumber, connection.AcknowledgeNumber, connection.InPort, connection.DestPort, FLAG_PSH | FLAG_ACK, buffer, (int)size);
+        }
+
+        /// <summary>
+        /// Send packet on XID connection
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        public static unsafe void Send(TCPConnection baseConnection, long xid, byte* buffer, uint size)
+        {
+            TCPConnection connection = (TCPConnection)baseConnection.Clients.GetByKey(xid);
+            if (connection == null)
+                return;
+            
+
+            SendPacket(connection.IP, connection.SequenceNumber, connection.AcknowledgeNumber, connection.InPort, connection.DestPort, FLAG_PSH | FLAG_ACK, buffer, (int)size);
+            connection.SequenceNumber = Byte.ReverseBytes(Byte.ReverseBytes(connection.SequenceNumber) + size);
+
         }
 
         /// <summary>

@@ -11,6 +11,7 @@ using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.MultiTasking;
+using Sharpen.Utilities;
 
 namespace Sharpen
 {
@@ -119,13 +120,7 @@ namespace Sharpen
             rtl8139.Init();
 
             DHCP.Discover();
-
-            //byte[] buf = new byte[4];
-            //buf[0] = 192;
-            //buf[1] = 168;
-            //buf[2] = 1;
-            //buf[3] = 186;
-
+            
             //TCPConnection con = TCP.Bind(80);
 
             //TCPPacketDescriptor* ptr;
@@ -133,7 +128,7 @@ namespace Sharpen
             //{
             //    ptr = TCP.Read(con);
 
-            //    if(ptr == null)
+            //    if (ptr == null)
             //    {
             //        continue;
             //    }
@@ -152,7 +147,7 @@ namespace Sharpen
             //        Console.WriteLine("");
 
 
-            //        //Heap.Free(ptr);
+            //        Heap.Free(ptr);
             //    }
             //    else if (ptr->Type == TCPPacketDescriptorTypes.RECEIVE)
             //    {
@@ -164,14 +159,19 @@ namespace Sharpen
             //            Console.Write((char)ptr->Data[i]);
             //        Console.WriteLine("");
 
+            //        string httpResp = "HTTP/1.1 200 OK\r\nDate: Fri, 13 May 2005 05:51:12 GMT\r\nServer: Sharpen :)\r\nLast-Modified: Fri, 13 May 2005 05:25:02 GMT\r\nAccept-Ranges: bytes\r\nContent-Length: 8\r\nKeep-Alive: timeout = 15, max = 100\r\nConnection: close\r\nContent-Type: text/html\r\nTrololol";
 
-            //        //Heap.Free(ptr);
+            //        TCP.Send(con, ptr->xid, (byte *)Util.ObjectToVoidPtr(httpResp), (uint)String.Length(httpResp));
+
+            //        Heap.Free(ptr);
             //    }
             //    else if (ptr->Type == TCPPacketDescriptorTypes.RESET)
             //    {
             //        Console.Write("RESET from XID: ");
             //        Console.WriteHex(ptr->xid);
             //        Console.WriteLine("");
+
+            //        Heap.Free(ptr);
             //    }
             //}
 
