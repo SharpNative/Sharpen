@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sharpen.Arch;
+using System;
 
 namespace Sharpen.Utilities
 {
@@ -52,5 +53,41 @@ namespace Sharpen.Utilities
         /// <param name="method">The method</param>
         /// <returns>The pointer</returns>
         public static unsafe extern void* MethodToPtr(Action method);
+
+        /// <summary>
+        /// Prints a stack trace
+        /// </summary>
+        /// <param name="maxFrames">Maximum amount of frames to display</param>
+        public static unsafe void PrintStackTrace(int maxFrames)
+        {
+            Console.WriteLine("\nStacktrace:");
+            int* ebp = (int*)((int)&maxFrames - 2 * sizeof(int));
+            for (int frame = 0; frame < maxFrames; frame++)
+            {
+                int eip = ebp[1];
+
+                // No caller on the stack
+                if (eip == 0)
+                    break;
+
+                void* addressOffset = null;
+                string name = SymbolTable.FindSymbolName((void*)eip, &addressOffset);
+
+                // Unwind previous stack frame
+                ebp = (int*)ebp[0];
+                void* testAddress = Paging.GetPhysicalFromVirtual((void*)ebp);
+                if (testAddress == null)
+                    break;
+
+                // Display symbol and offset
+                Console.Write('\t');
+                Console.Write(name);
+                Console.Write("+");
+                Console.WriteHex((int)addressOffset);
+                Console.Write(" (");
+                Console.WriteHex(eip);
+                Console.WriteLine(")");
+            }
+        }
     }
 }

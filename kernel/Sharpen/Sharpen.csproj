@@ -114,6 +114,7 @@
     <Compile Include="Arch\X86\PIT.cs" />
     <Compile Include="Arch\X86\Regs.cs" />
     <Compile Include="Arch\X86\Syscall.cs" />
+    <Compile Include="SymbolTable.cs" />
     <Compile Include="Utilities\Byte.cs" />
     <Compile Include="Drivers\Other\VboxDev.cs" />
     <Compile Include="Drivers\Other\VboxDevExtras.cs" />

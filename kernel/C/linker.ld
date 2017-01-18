@@ -19,10 +19,12 @@ SECTIONS
     {
         data = .;
         *(.data)
+        *(.kernelsymbols)
+        PROVIDE(kernelsymbols = .);
         . = ALIGN(4096);
     }
 
-    /** Statically defined uninitialized values */
+    /* Statically defined uninitialized values */
     .bss : AT(phys + (bss - code))
     {
         bss = .;

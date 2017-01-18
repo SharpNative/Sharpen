@@ -46,7 +46,7 @@ namespace Sharpen
             Keyboard.Init();
 
             Tasking.Init();
-            
+
             initStorage();
             initNetworking();
             runUserspace();
@@ -103,24 +103,24 @@ namespace Sharpen
             // Networking
             Network.Init();
             Route.Init();
-            
+
             // Networking protocols
             IPV4.Init();
             ICMP.Init();
-            
+
             // Transport protocols
             UDP.Init();
             TCP.Init();
             ARP.Init();
             DHCP.Init();
-            
+
             // Network drivers
             E1000.Init();
             PCNet2.Init();
             rtl8139.Init();
 
             DHCP.Discover();
-            
+
             //TCPConnection con = TCP.Bind(80);
 
             //TCPPacketDescriptor* ptr;

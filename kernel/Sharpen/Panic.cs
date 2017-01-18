@@ -1,7 +1,8 @@
-﻿// #define CLEAR_SCREEN
+﻿#define CLEAR_SCREEN
 
 using Sharpen.Arch;
 using Sharpen.MultiTasking;
+using Sharpen.Utilities;
 
 namespace Sharpen
 {
@@ -42,13 +43,14 @@ namespace Sharpen
 #endif
             
             // Message
-            Console.Write("\tMessage: ");
             Console.WriteLine(str);
 
             if (Tasking.CurrentTask != null)
             {
                 Console.Write("\tPID: ");
                 Console.WriteNum(Tasking.CurrentTask.PID);
+                Console.Write("\tTID: ");
+                Console.WriteNum(Tasking.CurrentTask.CurrentThread.TID);
             }
 
             if (regsPtr != null)
@@ -96,7 +98,10 @@ namespace Sharpen
                 Console.WriteHex(Paging.ReadCR2() & 0xFFFFFFFF);
                 Console.Write("  EFlags ");
                 Console.WriteHex(regsPtr->EFlags & 0xFFFFFFFF);
+                Console.Write('\n');
             }
+
+            Util.PrintStackTrace(10);
 
             // HALT
             CPU.HLT();

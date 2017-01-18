@@ -132,12 +132,35 @@ namespace Sharpen.Arch.X86
             // FPU context
             m_FPUContext = Heap.AlignedAlloc(16, 512);
             Memory.Memcpy(m_FPUContext, source.m_FPUContext, 512);
-
+            
             // Update stack references within the system stack itself
             int diffRegs = (int)source.m_sysRegs - (int)source.m_stackStart;
             int diffESP = source.m_sysRegs->ESP - (int)source.m_stackStart;
             m_sysRegs = (Regs*)((int)m_stackStart + diffRegs);
             m_sysRegs->ESP = (int)m_stackStart + diffESP;
+            
+            // Data pushed by CPU
+            *--m_stack = UserspaceDS;       // Data Segment
+            *--m_stack = m_sysRegs->ESP;    // Old stack
+            *--m_stack = 0x202;             // EFLAGS
+            *--m_stack = UserspaceCS;       // Code Segment
+            *--m_stack = m_sysRegs->EIP;    // Initial EIP
+
+            // Pushed by pusha
+            *--m_stack = 0;                 // EAX (return value)
+            *--m_stack = m_sysRegs->ECX;    // ECX
+            *--m_stack = m_sysRegs->EDX;    // EDX
+            *--m_stack = m_sysRegs->EBX;    // EBX
+             --m_stack;
+            *--m_stack = m_sysRegs->EBP;    // EBP
+            *--m_stack = m_sysRegs->ESI;    // ESI
+            *--m_stack = m_sysRegs->EDI;    // EDI
+
+            // Data segments
+            *--m_stack = UserspaceDS;       // DS
+            *--m_stack = UserspaceDS;       // ES
+            *--m_stack = UserspaceDS;       // FS
+            *--m_stack = UserspaceDS;       // GS
         }
 
         /// <summary>

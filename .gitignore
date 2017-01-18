@@ -216,6 +216,7 @@ ModelManifest.xml
 
 kernel/C/build
 kernel/C/kernel
+kernel/C/symbols.asm
 
 */*/output.c
 output.c
