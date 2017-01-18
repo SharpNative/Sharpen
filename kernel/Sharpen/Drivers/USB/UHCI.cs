@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Mem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.USB
 {
-    class UHCI
+    unsafe class UHCI
     {
         const ushort REG_USBCMD    = 0x00;
         const ushort REG_USBSTS    = 0x02;
@@ -32,6 +33,13 @@ namespace Sharpen.Drivers.USB
         const ushort PORTSC_RESET               = (1 << 9);
         const ushort PORTSC_SUSPEND             = (1 << 12);
 
+        const ushort FL_TERMINATE = (1 << 0);
+        const ushort FL_QUEUEHEAD = (1 << 1);
+
+        const ushort TD_TERMINATE = (1 << 0);
+        const ushort TD_QUEUEHEAD = (1 << 1);
+        const ushort TD_DEPTHSEL  = (1 << 2);
+
         const ushort USBCMD_RS = (1 << 0);
         const ushort USBCMD_HCRESET = (1 << 1);
         const ushort USBCMD_GRESET = (1 << 2);
@@ -41,10 +49,26 @@ namespace Sharpen.Drivers.USB
         const ushort USBCMD_CF = (1 << 6);
         const ushort USBCMD_MAXP = (1 << 7);
 
+        private static int *m_frameList;
+
+        struct UHCITransmitDescriptor
+        {
+            public int Link;
+            public int Control;
+            public int Token;
+            public int BufferPointer;
+        }
+
+        struct UHCIQueueHead
+        {
+            public int Head;
+            public int Element;
+        }
+
         /// <summary>
         /// 
         /// </summary>
-        public static void Init()
+        public static unsafe void Init()
         {
             PciDevice dev = findEHCIDevice();
 
@@ -60,15 +84,27 @@ namespace Sharpen.Drivers.USB
 
             Console.WriteLine("[UHCI] Initalize");
 
+            m_frameList = (int *)Heap.AlignedAlloc(0x1000, sizeof(int) * 1024);
+            
+            for(int i = 0; i < 1024; i++)
+                m_frameList[i] = FL_TERMINATE;
+
             /**
              * Initalize framelist
              */
             PortIO.Out16((ushort)(m_ioBase + REG_FRNUM), 0);
+            PortIO.Out32((ushort)(m_ioBase + REG_FRBASEADD), (uint)Paging.GetPhysicalFromVirtual(m_frameList));
+            PortIO.Out8(((ushort)(m_ioBase + REG_SOFMOD)), 0x40); // Ensure default value of 64 (aka cycle time of 12000)
 
             /**
              * We are going to poll!
              */
             PortIO.Out16((ushort)(m_ioBase + REG_USBINTR), 0x00);
+
+            /**
+             * Clear any pending statusses
+             */
+            PortIO.Out16((ushort)(m_ioBase + REG_USBSTS), 0xFFFF);
 
             /**
              * Enable device
@@ -178,24 +214,17 @@ namespace Sharpen.Drivers.USB
 
                 ushort status = PortIO.In16((ushort)(m_ioBase + port));
 
-                bool lowSpeed = ((status & PORTSC_LOW_SPEED) > 0);
-
                 /**
-                 * Port enabled?
+                 * Is the port even connected?
                  */
-                if((status & PORTSC_CUR_STAT) > 0)
-                {
-                    Console.Write("[UHCI] port ");
-                    Console.WriteNum(i);
-                    Console.Write(" connect with ");
-                    Console.WriteLine(lowSpeed ? "low speed" : "high speed");
-                }
-                else
-                {
-                    Console.Write("[UHCI] port ");
-                    Console.WriteNum(i);
-                    Console.WriteLine(" disconnected");
-                }
+                if ((status & PORTSC_CUR_STAT) == 0)
+                    continue;
+
+                bool lowSpeed = ((status & PORTSC_LOW_SPEED) > 0);
+                
+                /**
+                 * TODO: Handle connected device!
+                 */
             }
         }
 

@@ -12,6 +12,7 @@ using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.MultiTasking;
 using Sharpen.Utilities;
+using Sharpen.Drivers.USB;
 
 namespace Sharpen
 {
@@ -44,6 +45,8 @@ namespace Sharpen
 
             initPCIDevices();
             Keyboard.Init();
+
+            initUSB();
 
             Tasking.Init();
 
@@ -93,6 +96,11 @@ namespace Sharpen
             Node hddNode = VFS.GetByAbsolutePath("devices://HDD0");
             Fat16.Init(hddNode, "C");
             Tasking.KernelTask.CurrentDirectory = "C://";
+        }
+
+        private static void initUSB()
+        {
+            UHCI.Init();
         }
 
         /// <summary>
