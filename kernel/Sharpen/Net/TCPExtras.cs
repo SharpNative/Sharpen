@@ -9,11 +9,17 @@ namespace Sharpen.Net
 {
     enum TCPConnectionState
     {
-        WAITING_FOR_ACK = 0,
-        ACKNOWLEDGE = 1,
-        SYNC_ACK = 3,
-        LISTEN = 0xFE,
-        CLOSED = 0xFF
+        CLOSED,
+        LISTEN,
+        SYN_SENT,
+        SYN_RECEIVED,
+        ESTABLISHED,
+        CLOSE_WAIT,
+        LAST_ACK,
+        FIN_WAIT1,
+        FIN_WAIT2,
+        CLOSING,
+        TIME_WAIT
     }
 
     enum TCPConnectionType
@@ -79,8 +85,9 @@ namespace Sharpen.Net
 
     enum TCPPacketDescriptorTypes
     {
-        ACCEPT = 0,
-        RECEIVE = 1,
-        RESET = 2
+        ACCEPT,
+        RECEIVE,
+        RESET,
+        CLOSE
     }
 }

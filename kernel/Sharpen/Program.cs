@@ -154,6 +154,7 @@ namespace Sharpen
             //        Console.WriteHex(ptr->xid);
             //        Console.WriteLine("");
 
+            //        TCP.Close(con, ptr->xid);
 
             //        Heap.Free(ptr);
             //    }
@@ -169,13 +170,21 @@ namespace Sharpen
 
             //        string httpResp = "HTTP/1.1 200 OK\r\nDate: Fri, 13 May 2005 05:51:12 GMT\r\nServer: Sharpen :)\r\nLast-Modified: Fri, 13 May 2005 05:25:02 GMT\r\nAccept-Ranges: bytes\r\nContent-Length: 8\r\nKeep-Alive: timeout = 15, max = 100\r\nConnection: close\r\nContent-Type: text/html\r\nTrololol";
 
-            //        TCP.Send(con, ptr->xid, (byte *)Util.ObjectToVoidPtr(httpResp), (uint)String.Length(httpResp));
+            //        TCP.Send(con, ptr->xid, (byte*)Util.ObjectToVoidPtr(httpResp), (uint)String.Length(httpResp));
 
             //        Heap.Free(ptr);
             //    }
             //    else if (ptr->Type == TCPPacketDescriptorTypes.RESET)
             //    {
             //        Console.Write("RESET from XID: ");
+            //        Console.WriteHex(ptr->xid);
+            //        Console.WriteLine("");
+
+            //        Heap.Free(ptr);
+            //    }
+            //    else if (ptr->Type == TCPPacketDescriptorTypes.CLOSE)
+            //    {
+            //        Console.Write("CLOSE from XID: ");
             //        Console.WriteHex(ptr->xid);
             //        Console.WriteLine("");
 
