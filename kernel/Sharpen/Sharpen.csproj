@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="Arch\PciClassCodes.cs" />
     <Compile Include="Collections\LongList.cs" />
+    <Compile Include="Drivers\Block\AHCI.cs" />
     <Compile Include="Drivers\USB\UHCI.cs" />
     <Compile Include="MultiTasking\IThreadContext.cs" />
     <Compile Include="Arch\X86\CMOS.cs" />

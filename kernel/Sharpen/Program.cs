@@ -91,6 +91,7 @@ namespace Sharpen
         /// </summary>
         private static void initStorage()
         {
+            AHCI.Init();
             ATA.Init();
 
             Node hddNode = VFS.GetByAbsolutePath("devices://HDD0");
@@ -154,7 +155,6 @@ namespace Sharpen
             //        Console.WriteHex(ptr->xid);
             //        Console.WriteLine("");
 
-            //        TCP.Close(con, ptr->xid);
 
             //        Heap.Free(ptr);
             //    }
@@ -164,13 +164,21 @@ namespace Sharpen
             //        Console.WriteHex(ptr->xid);
             //        Console.WriteLine("");
 
-            //        for (int i = 0; i < ptr->Size; i++)
-            //            Console.Write((char)ptr->Data[i]);
-            //        Console.WriteLine("");
+            //        string message = "<html><title>Van Sharpen</title><body>Wij serveren dit van sharpen naar Dossche</body></html>";
 
-            //        string httpResp = "HTTP/1.1 200 OK\r\nDate: Fri, 13 May 2005 05:51:12 GMT\r\nServer: Sharpen :)\r\nLast-Modified: Fri, 13 May 2005 05:25:02 GMT\r\nAccept-Ranges: bytes\r\nContent-Length: 8\r\nKeep-Alive: timeout = 15, max = 100\r\nConnection: close\r\nContent-Type: text/html\r\nTrololol";
+            //        string httpResp = "HTTP/1.1 200 OK\r\nDate: Fri, 13 May 2005 05:51:12 GMT\r\nServer: Sharpen :)\r\nLast-Modified: Fri, 13 May 2005 05:25:02 GMT\r\nAccept-Ranges: bytes\r\nContent-Length: ";
+                    
+            //        string count = Int.ToString(String.Length(message));
 
-            //        TCP.Send(con, ptr->xid, (byte*)Util.ObjectToVoidPtr(httpResp), (uint)String.Length(httpResp));
+
+            //        httpResp = String.Merge(httpResp, count);
+            //        httpResp = String.Merge(httpResp, "\r\nKeep-Alive: timeout = 15, max = 100\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n");
+
+            //        string finalResp = String.Merge(httpResp, message);
+                    
+            //        TCP.Send(con, ptr->xid, (byte*)Util.ObjectToVoidPtr(finalResp), (uint)String.Length(finalResp));
+
+            //        TCP.Close(con, ptr->xid);
 
             //        Heap.Free(ptr);
             //    }

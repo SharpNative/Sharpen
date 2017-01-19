@@ -247,8 +247,10 @@
                 Console.Write(":");
                 Console.WriteHex(Devices[i].Device);
                 Console.Write(":");
-                Console.WriteHex(Devices[i].CombinedClass);
+                Console.WriteHex(Devices[i].classCode);
                 Console.Write(":");
+                Console.WriteHex(Devices[i].SubClass);
+                Console.Write(".");
                 Console.WriteHex(Devices[i].ProgIntf);
                 Console.WriteLine("");
             }

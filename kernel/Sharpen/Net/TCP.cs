@@ -389,7 +389,7 @@ namespace Sharpen.Net
 
                 con.AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1);
 
-                SendPacket(con.IP, con.SequenceNumber, con.AcknowledgeNumber con.InPort, con.DestPort, FLAG_ACK, null, 0);
+                SendPacket(con.IP, con.SequenceNumber, con.AcknowledgeNumber, con.InPort, con.DestPort, FLAG_ACK, null, 0);
 
                 setConnectionForWait(con);
 
@@ -558,6 +558,35 @@ namespace Sharpen.Net
 
                 SendPacket(connection.IP, connection.SequenceNumber, 0x00, connection.InPort, connection.DestPort, FLAG_FIN, null, 0);
             }
+            if ((header->Flags & FLAG_PSH) > 0)
+            {
+                int sizePacket = (int)size - sizeof(TCPHeader);
+
+                /**
+                 * Push packet in Queue
+                 */
+                TCPPacketDescriptor* buf = (TCPPacketDescriptor*)Heap.Alloc(sizeof(TCPPacketDescriptor));
+                buf->Size = sizePacket;
+                buf->Type = TCPPacketDescriptorTypes.RECEIVE;
+                buf->Data = (byte*)Heap.Alloc(sizePacket);
+                buf->xid = connection.XID;
+                Memory.Memcpy(buf->Data, buffer + sizeof(TCPHeader), sizePacket);
+
+                Queue queue = connection.ReceiveQueue;
+
+                /**
+                 * Is this a connection or a member?
+                 */
+                if (connection.Type != TCPConnectionType.CONNECTION)
+                    queue = connection.BaseConnection.ReceiveQueue;
+
+                queue.Push(buf);
+
+
+                connection.AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + (uint)sizePacket);
+
+                SendPacket(connection.IP, connection.SequenceNumber, connection.AcknowledgeNumber, connection.InPort, connection.DestPort, FLAG_ACK, null, 0);
+            }
             else
             {
 
@@ -657,11 +686,9 @@ namespace Sharpen.Net
         /// <param name="size"></param>
         public static unsafe void Send(TCPConnection connection, byte* buffer, uint size)
         {
-            connection.SequenceNumber = connection.NextSequenceNumber;
-            connection.NextSequenceNumber = connection.SequenceNumber + size;
-
-
             SendPacket(connection.IP, connection.SequenceNumber, connection.AcknowledgeNumber, connection.InPort, connection.DestPort, FLAG_PSH | FLAG_ACK, buffer, (int)size);
+            connection.SequenceNumber = Byte.ReverseBytes(Byte.ReverseBytes(connection.SequenceNumber) + size);
+
         }
 
 
@@ -672,7 +699,7 @@ namespace Sharpen.Net
         /// <param name="connection"></param>
         public static unsafe void Close(TCPConnection connection)
         {
-            connection.State = TCPConnectionState.CLOSING;
+            connection.State = TCPConnectionState.FIN_WAIT1;
 
             SendPacket(connection.IP, connection.SequenceNumber, connection.AcknowledgeNumber, connection.InPort, connection.DestPort, FLAG_FIN | FLAG_ACK, null, 0);
         }
@@ -714,86 +741,7 @@ namespace Sharpen.Net
         }
 
         #endregion
-
-        #region Obsolete methods (to be removed)
-        /// <summary>
-        /// Handle packet receiption
-        /// </summary>
-        /// <param name="connection"></param>
-        /// <param name="buffer"></param>
-        /// <param name="size"></param>
-        //private static unsafe void HandleReceive(TCPConnection connection, byte* buffer, uint size)
-        //{
-        //    TCPHeader* header = (TCPHeader*)buffer;
-
-        //    if((header->Flags & FLAG_PSH) > 0)
-        //    {
-        //        int sizePacket = (int)size - sizeof(TCPHeader);
-                
-        //        /**
-        //         * Push packet in Queue
-        //         */
-        //        TCPPacketDescriptor* buf = (TCPPacketDescriptor *)Heap.Alloc(sizeof(TCPPacketDescriptor));
-        //        buf->Size = sizePacket;
-        //        buf->Type = TCPPacketDescriptorTypes.RECEIVE;
-        //        buf->Data = (byte*)Heap.Alloc(sizePacket);
-        //        buf->xid = connection.XID;
-        //        Memory.Memcpy(buf->Data, buffer + sizeof(TCPHeader), sizePacket);
-                
-        //        Queue queue = connection.ReceiveQueue;
-
-        //        /**
-        //         * Is this a connection or a member?
-        //         */
-        //        if (connection.Type != TCPConnectionType.CONNECTION)
-        //            queue = connection.BaseConnection.ReceiveQueue;
-
-        //        queue.Push(buf);
-
-
-        //        connection.AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + (uint)sizePacket);
-
-        //        SendPacket(connection.IP, connection.SequenceNumber, connection.AcknowledgeNumber, connection.InPort, connection.DestPort, FLAG_ACK, null, 0);
-        //    }
-        //    else if((header->Flags & FLAG_RST) > 0)
-        //    {
-        //        connection.State = TCPConnectionState.CLOSED;
-
-        //        if(connection.Type == TCPConnectionType.CONNECTION)
-        //            m_connections[connection.InPort] = null;
-        //        else
-        //        {
-        //            /**
-        //             * We need to remove the key here!
-        //             */
-
-        //            /**
-        //             * put RESET in QUEUE
-        //             */
-        //            TCPPacketDescriptor* buf = (TCPPacketDescriptor*)Heap.Alloc(sizeof(TCPPacketDescriptor));
-        //            buf->Size = 0;
-        //            buf->Type = TCPPacketDescriptorTypes.RESET;
-        //            buf->Data = null;
-        //            buf->xid = connection.XID;
-
-        //            connection.BaseConnection.ReceiveQueue.Push(buf);
-        //        }
-        //    }
-
-        //    /**
-        //     * We REALLY do need to make connection states!
-        //     */
-        //    else if ((header->Flags & FLAG_ACK) > 0 && (header->Flags & FLAG_FIN) > 0)
-        //    {
-        //        connection.AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1);
-
-        //        SendPacket(connection.IP, connection.SequenceNumber, connection.AcknowledgeNumber, connection.InPort, connection.DestPort, FLAG_ACK, null, 0);
-        //    }
-
-        //}
-
-        #endregion
-
+        
         #region helper methods
 
         /// <summary>
