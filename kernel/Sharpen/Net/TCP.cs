@@ -189,7 +189,8 @@ namespace Sharpen.Net
         /// <param name="size"></param>
         private static unsafe void handleConnection(TCPConnection connection, byte[] sourceIP, byte* buffer, uint size)
         {
-
+            TCPHeader* header = (TCPHeader *)buffer;
+            
             switch(connection.State)
             {
 
@@ -258,7 +259,7 @@ namespace Sharpen.Net
         {
             TCPHeader* header = (TCPHeader*)buffer;
 
-            if ((header->Flags & (FLAG_SYN | FLAG_ACK)) > 0)
+            if ((header->Flags & (FLAG_SYN | FLAG_ACK)) == (FLAG_SYN | FLAG_ACK))
             {
                 con.SequenceNumber = Byte.ReverseBytes(Byte.ReverseBytes(con.SequenceNumber) + 1);
 
@@ -459,7 +460,11 @@ namespace Sharpen.Net
                  * We only handle SYN packets here!
                  */
                 if ((header->Flags & FLAG_SYN) == 0)
+                {
+                    Close(connection);
+
                     return;
+                }
 
                 /**
                  * Add connection to clients list
@@ -533,15 +538,15 @@ namespace Sharpen.Net
              *   - PUSH
              *   - FIN
              */
-
-            
-            if ((header->Flags & (FLAG_FIN | FLAG_ACK)) > 0)
+             
+            if ((header->Flags & (FLAG_FIN | FLAG_ACK)) == (FLAG_FIN | FLAG_ACK))
             {
                 connection.AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1);
 
                 SendPacket(connection.IP, connection.SequenceNumber, Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1), connection.InPort, connection.DestPort, FLAG_ACK, null, 0);
-
+                
                 setConnectionForWait(connection);
+
             }
             else if ((header->Flags & FLAG_FIN) > 0)
             {
@@ -642,7 +647,6 @@ namespace Sharpen.Net
 
         private static void setConnectionForWait(TCPConnection connection)
         {
-
             connection.State = TCPConnectionState.TIME_WAIT;
 
             if (connection.Type == TCPConnectionType.CONNECTION)
@@ -671,6 +675,7 @@ namespace Sharpen.Net
                 buf->xid = connection.XID;
 
                 connection.BaseConnection.ReceiveQueue.Push(buf);
+                connection.BaseConnection.Clients.Remove(connection.XID);
             }
         }
 
@@ -759,11 +764,7 @@ namespace Sharpen.Net
         }
 
         #endregion
-
-
-
         
-
         /// <summary>
         /// Bind to IP
         /// </summary>

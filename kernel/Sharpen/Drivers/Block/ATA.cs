@@ -9,8 +9,8 @@ namespace Sharpen.Drivers.Block
     {
         #region ATA data
 
-        public const ushort ATA_PRIMARY_IO = 0x1F0;
-        public const ushort ATA_SECONDARY_IO = 0x170;
+        public static ushort ATA_PRIMARY_IO = 0x1F0;
+        public static ushort ATA_SECONDARY_IO = 0x170;
 
         public const byte ATA_PRIMARY = 0x00;
         public const byte ATA_SECONDARY = 0x01;
@@ -390,6 +390,13 @@ namespace Sharpen.Drivers.Block
         /// </summary>
         public static unsafe void Init()
         {
+            PciDevice pciDev = findIDEDevice();
+            if (pciDev == null)
+                return;
+
+            ATA_PRIMARY_IO = (ushort)((pciDev.BAR0.Address == 0x00 || pciDev.BAR0.Address == 0x01) ? 0x1F0 : pciDev.BAR0.Address);
+            ATA_SECONDARY_IO = (ushort)((pciDev.BAR2.Address == 0x00 || pciDev.BAR2.Address == 0x01) ? 0x1F0 : pciDev.BAR2.Address);
+            
             Devices = new IDE_Device[4];
             probe();
 
@@ -450,6 +457,24 @@ namespace Sharpen.Drivers.Block
             uint inSize = size / 512;
 
             return (uint)ReadSector(node.Cookie, offset, (byte)inSize, buffer);
+        }
+
+
+
+        private static PciDevice findIDEDevice()
+        {
+            /**
+             * Note: this cycles through PCI devices!
+             */
+            for (int i = 0; i < PCI.DeviceNum; i++)
+            {
+                PciDevice dev = PCI.Devices[i];
+
+                if (dev.CombinedClass == 0x0101)
+                    return dev;
+            }
+
+            return null;
         }
     }
 }

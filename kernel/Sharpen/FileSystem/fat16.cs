@@ -85,7 +85,7 @@ namespace Sharpen.FileSystem
             byte[] firstSector = new byte[512];
             firstSector[0x00] = 0xFF;
             dev.Read(dev, 0, 512, firstSector);
-
+            
 
             // Get partition type from first entry
             // Detect if FAT16
