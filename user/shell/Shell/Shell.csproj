@@ -54,6 +54,7 @@
     <Compile Include="Sharpen\Process.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Sharpen\Utilities\Array.cs" />
     <Compile Include="Sharpen\Utilities\String.cs" />
     <Compile Include="Sharpen\Utilities\Util.cs" />
   </ItemGroup>

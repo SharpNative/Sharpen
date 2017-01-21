@@ -7,21 +7,42 @@ namespace Shell
 {
     class Program
     {
-
         /// <summary>
         /// Try find program in C://exec and run it
         /// </summary>
         /// <param name="name">The program name</param>
         /// <param name="argv">Arguments</param>
         /// <param name="argc">Argument length</param>
-        /// <returns></returns>
-        private unsafe static int TryRunFromExecDir(string name, string[] argv, int argc)
+        /// <returns>PID</returns>
+        private unsafe static int tryRunFromExecDir(string name, string[] argv, int argc)
         {
-            string total_string = String.Merge("C://exec/", name);
+            string totalString = String.Merge("C://exec/", name);
+            int ret = Process.Run(totalString, argv, argc);
+            Heap.Free(totalString);
+            return ret;
+        }
 
-            int ret = Process.Run(total_string, argv, argc);
+        /// <summary>
+        /// Tries to start a process
+        /// </summary>
+        /// <param name="command">The program name</param>
+        /// <param name="name">The program name</param>
+        /// <param name="argv">Arguments</param>
+        /// <param name="argc">Argument length</param>
+        /// <returns>PID</returns>
+        private static int tryStartProcess(string command, string[] argv, int argc)
+        {
+            int ret = Process.Run(command, argv, argc);
+            if (ret < 0)
+            {
+                ret = tryRunFromExecDir(command, argv, argc);
 
-            Heap.Free(total_string);
+                if (ret < 0)
+                {
+                    Console.Write(command);
+                    Console.WriteLine(": Bad command or filename");
+                }
+            }
 
             return ret;
         }
@@ -136,22 +157,24 @@ namespace Shell
                 {
                     Process.Exit(0);
                 }
+                else if (String.Equals(command, "background"))
+                {
+                    // Try to start a process without waiting until exit
+                    string[] offsetArgv = (string[])Array.CreateSubArray(argv, 1, argc - 1);
+
+                    int ret = tryStartProcess(offsetArgv[0], offsetArgv, argc - 1);
+                    if (ret > 0)
+                    {
+                        Console.Write("Process started in background with PID ");
+                        Console.Write(ret);
+                    }
+                    Console.Write('\n');
+                    Heap.Free(offsetArgv);
+                }
                 else
                 {
-                    // Try to start a process
-                    int ret = Process.Run(command, argv, argc);
-                    if (ret < 0)
-                    {
-                        ret = TryRunFromExecDir(command, argv, argc);
-
-                        if (ret < 0)
-                        {
-                            Console.Write(command);
-                            Console.WriteLine(": Bad command or filename");
-                        }
-                    }
-
-                    // Wait until exit to return to prompt
+                    // Try to start a process and wait until exit to return to prompt
+                    int ret = tryStartProcess(command, argv, argc);
                     Process.WaitForExit(ret);
                 }
 
