@@ -47,7 +47,7 @@ namespace Sharpen.Mem
         private static Mutex mutex;
 
         // Minimal amount of pages in a descriptor
-        private const int MINIMALPAGES = 80;
+        private const int MINIMALPAGES = 100;
 
         // Heap magic (DEBUG)
         private const uint HEAP_MAGIC = 0xDEADBEEF;
@@ -85,7 +85,7 @@ namespace Sharpen.Mem
         {
             // Calculate the required amount of pages (round up to nearest page)
             int required = (int)Paging.Align((uint)size) / 0x1000;
-            
+
 #if HEAP_DEBUG
             Console.Write("[HEAP] Required page count: ");
             Console.WriteNum(required);
@@ -112,7 +112,7 @@ namespace Sharpen.Mem
             // Allocate descriptor
             size = getRequiredPageCount(size) * 0x1000;
             BlockDescriptor* descriptor = (BlockDescriptor*)Paging.AllocateVirtual(size);
-            
+
 #if HEAP_DEBUG
             Console.Write("[HEAP] New descriptor is at 0x");
             Console.WriteHex((long)descriptor);
@@ -150,7 +150,7 @@ namespace Sharpen.Mem
         /// <summary>
         /// Dumps a table of the descriptors
         /// </summary>
-        public static unsafe void DumpDescriptors()
+        private static unsafe void dumpDescriptors()
         {
             BlockDescriptor* descriptor = firstDescriptor;
 
@@ -242,7 +242,7 @@ namespace Sharpen.Mem
 
                 if (descriptor == null)
                     Panic.DoPanic("[HEAP] descriptor == null");
-                
+
                 retry:
 
                 currentBlock = descriptor->FirstFree;
@@ -259,7 +259,7 @@ namespace Sharpen.Mem
                     if (currentBlock->Magic != HEAP_MAGIC)
                         Panic.DoPanic("currentBlock->Magic != HEAP_MAGIC");
 #endif
-                    
+
                     // Check if this block data would be aligned
                     int currentData = (int)currentBlock + sizeof(Block);
                     int remainder = currentData % alignment;
@@ -303,10 +303,10 @@ namespace Sharpen.Mem
                             if (currentBlock->Used)
                                 descriptor->FreeSpace -= gapSize;
                         }
-                        // This is the first block that was moved
+                        // There's space left to move this block and let the first block point to the new one
                         else if (gapSize >= sizeof(Block))
                         {
-                            // Update header
+                            // Update first block
                             Block* first = descriptor->First;
                             descriptor->FreeSpace -= gapSize;
 
@@ -320,6 +320,13 @@ namespace Sharpen.Mem
 #endif
                             currentBlock->Prev = first;
                         }
+                        // This is the first block that was moved
+                        else
+                        {
+                            // Update header
+                            descriptor->First = currentBlock;
+                            descriptor->FirstFree = currentBlock;
+                        }
                     }
 
                     // Calculate leftover part for the next block
@@ -332,6 +339,8 @@ namespace Sharpen.Mem
 #if HEAP_USE_MAGIC
                     currentBlock->Magic = HEAP_MAGIC;
 #endif
+
+                    // Update descriptor
                     descriptor->FreeSpace -= size;
 
                     // If we have something left over, create a new block
@@ -354,6 +363,10 @@ namespace Sharpen.Mem
 
                         currentBlock->Next = afterBlock;
                         currentBlock->Size = size;
+
+                        // Update descriptor
+                        if ((int)currentBlock < (int)descriptor->FirstFree)
+                            descriptor->FirstFree = currentBlock;
                     }
 
                     // Return block (skip header)
@@ -494,7 +507,7 @@ namespace Sharpen.Mem
         {
             Free(Util.ObjectToVoidPtr(ptr));
         }
-        
+
         /// <summary>
         /// Temporary kernel memory allocation before a real heap is set up
         /// </summary>

@@ -110,7 +110,7 @@ namespace Sharpen.Collections
             
             // Decrease capacity if the list has enough free space
             Count--;
-            if (Count * DefaultCapacity < Capacity && Capacity > DefaultCapacity)
+            if (Count < Capacity && Capacity > DefaultCapacity)
                 Capacity /= 2;
 
             m_mutex.Unlock();
