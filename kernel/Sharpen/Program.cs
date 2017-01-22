@@ -173,7 +173,7 @@ namespace Sharpen
 
 
             //        httpResp = String.Merge(httpResp, count);
-            //        httpResp = String.Merge(httpResp, "\r\nKeep-Alive: timeout = 15, max = 100\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n");
+            //        httpResp = String.Merge(httpResp, "\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n");
 
             //        string finalResp = String.Merge(httpResp, message);
 

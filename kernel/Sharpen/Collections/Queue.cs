@@ -90,5 +90,23 @@ namespace Sharpen.Collections
 
             return ret;
         }
+
+        public unsafe void* Peek()
+        {
+            m_mutex.Lock();
+
+            if (Length == 0)
+            {
+                m_mutex.Unlock();
+                return null;
+            }
+
+            stackNode* node = m_head;
+            void* ret = node->Value;
+            
+            m_mutex.Unlock();
+
+            return ret;
+        }
     }
 }

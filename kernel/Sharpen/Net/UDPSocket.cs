@@ -1,4 +1,5 @@
-﻿using Sharpen.Mem;
+﻿using Sharpen.Collections;
+using Sharpen.Mem;
 using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
@@ -10,13 +11,11 @@ namespace Sharpen.Net
 {
     class UDPSocket
     {
-        private const ushort BACKLOG = 20;
 
         private unsafe struct UDPBacklogEntry
         {
             public fixed byte Buffer[2048];
             public uint Size;
-            public bool InUse;
             public fixed byte IP[4];
         }
 
@@ -26,7 +25,7 @@ namespace Sharpen.Net
             public uint Size;
         }
 
-        private UDPBacklogEntry[] m_packets;
+        private Queue m_queue;
 
         private ushort m_sourcePort;
         private ushort m_targetPort;
@@ -65,9 +64,7 @@ namespace Sharpen.Net
             
             m_connected = true;
 
-            m_packets = new UDPBacklogEntry[BACKLOG];
-            for (int i = 0; i < BACKLOG; i++)
-                m_packets[i].InUse = false;
+            m_queue = new Queue();
 
             m_targetPort = port;
 
@@ -96,10 +93,8 @@ namespace Sharpen.Net
             m_ipSpecified = false;
             m_connected = true;
 
-            m_packets = new UDPBacklogEntry[BACKLOG];
-            for (int i = 0; i < BACKLOG; i++)
-                m_packets[i].InUse = false;
-            
+            m_queue = new Queue();
+
             return true;
         }
 
@@ -114,36 +109,19 @@ namespace Sharpen.Net
             if (size == 0)
                 return;
             
-            int i = 0;
+            UDPBacklogEntry *entry = (UDPBacklogEntry*)Heap.Alloc(sizeof(UDPBacklogEntry));
 
-            while (i < BACKLOG)
-            {
+            if (size >= 2048)
+                size = 2048;
 
-                if( ! m_packets[i].InUse)
-                {
-                    if (size >= 2048)
-                        size = 2048;
+            Memory.Memset(entry->Buffer, 0, 2048);
+            Memory.Memcpy(entry->Buffer, buffer, (int)size);
 
-                    m_packets[i].Size = size;
-                    fixed(byte *ptr = m_packets[i].Buffer)
-                    {
-                        Memory.Memset(ptr, 0, 2048);
-                        Memory.Memcpy(ptr, buffer, (int)size);
-                    }
+            entry->Size = size;
+            
+            Memory.Memcpy(entry->IP, Util.ObjectToVoidPtr(ip), 4);
 
-                    m_packets[i].InUse = true;
-                    
-                    fixed (byte* ptr = m_packets[i].IP)
-                    {
-                        Memory.Memcpy(ptr, Util.ObjectToVoidPtr(ip), 4);
-                    }
-
-
-                    break;
-                }
-
-                i++;
-            }
+            m_queue.Push(entry);
         }
 
         /// <summary>
@@ -158,35 +136,17 @@ namespace Sharpen.Net
             if (!m_ipSpecified)
                 return 0;
 
-            if (GetSize() == 0)
+            UDPBacklogEntry* entry = (UDPBacklogEntry*)m_queue.Pop();
+
+            if (entry == null)
                 return 0;
+
+
+            if (size > entry->Size)
+                size = entry->Size;
             
-            bool found = false;
-
-            int i = 0;
-            while (i < BACKLOG)
-            {
-                if (m_packets[i].InUse)
-                {
-
-                    if (size > m_packets[i].Size)
-                        size = m_packets[i].Size;
-
-                    fixed(byte *ptr = m_packets[i].Buffer)
-                    {
-                        for (int j = 0; j < size; j++)
-                            buffer[j] = ptr[j];
-                    }
-
-
-                    m_packets[i].InUse = false;
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-                return 0;
+            for (int j = 0; j < size; j++)
+                buffer[j] = entry->Buffer[j];
 
             return size;
         }
@@ -204,44 +164,26 @@ namespace Sharpen.Net
             if (size < 6)
                 return 0;
 
-            if (GetSize() == 0)
+            UDPBacklogEntry* entry = (UDPBacklogEntry*)m_queue.Pop();
+
+            if (entry == null)
                 return 0;
 
-            bool found = false;
+            if (size > entry->Size + sizeof(UDPPacketHeader))
+                size = entry->Size + (uint)sizeof(UDPPacketHeader);
 
-            int i = 0;
-            while (i < BACKLOG)
-            {
-                if (m_packets[i].InUse)
-                {
+            uint offset = (uint)sizeof(UDPPacketHeader);
+            uint sizeData = size - offset;
 
-                    if (size > m_packets[i].Size + sizeof(UDPPacketHeader))
-                        size = m_packets[i].Size + (uint)sizeof(UDPPacketHeader);
+            UDPPacketHeader* packet = (UDPPacketHeader*)buffer;
+            packet->Size = sizeData;
 
-                    uint offset = (uint)sizeof(UDPPacketHeader);
-                    uint sizeData = size - offset;
-                    
-                    UDPPacketHeader* packet = (UDPPacketHeader*)buffer;
-                    packet->Size = sizeData;
+            
+            Memory.Memcpy(packet->IP, entry->IP, 4);
 
-
-                    fixed(byte *ptr = m_packets[i].IP)
-                        Memory.Memcpy(packet->IP, ptr, 4);
-
-                    if(sizeData > 0)
-                        fixed (byte* ptr = m_packets[i].Buffer)
-                            Memory.Memcpy(buffer + offset, ptr, (int)sizeData);
-                    
-                    m_packets[i].InUse = false;
-
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-                return 0;
-
+            if (sizeData > 0)
+                Memory.Memcpy(buffer + offset, entry->Buffer, (int)sizeData);
+            
             return size;
         }
 
@@ -299,22 +241,14 @@ namespace Sharpen.Net
         /// Get size
         /// </summary>
         /// <returns></returns>
-        public uint GetSize()
+        public unsafe uint GetSize()
         {
             if (!m_connected)
                 return 0;
+            
+            UDPBacklogEntry* entry = (UDPBacklogEntry*)m_queue.Peek();
 
-            int i = 0;
-            while (i < BACKLOG)
-            {
-
-                if (m_packets[i].InUse)
-                    return m_packets[i].Size;
-
-                i++;
-            }
-
-            return 0;
+            return entry->Size;
         }
 
         /// <summary>

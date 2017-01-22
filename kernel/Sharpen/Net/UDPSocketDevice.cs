@@ -1,4 +1,5 @@
-﻿using Sharpen.FileSystem;
+﻿using Sharpen.Collections;
+using Sharpen.FileSystem;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -6,18 +7,11 @@ namespace Sharpen.Net
 {
     class UDPSocketDevice
     {
-        private struct UDPSocketItem
-        {
-            public UDPSocket Socket;
-            public bool InUse;
-        }
 
         private static uint i = 0;
-        private static UDPSocketItem[] m_list;
 
         public static void Init()
         {
-            m_list = new UDPSocketItem[30];
         }
 
         public static unsafe Node Open(string name)
@@ -33,8 +27,8 @@ namespace Sharpen.Net
             int port = Int.Parse(portText);
             if (port == -1)
             {
-                Heap.Free((void*)Util.ObjectToVoidPtr(portText));
-                Heap.Free((void*)Util.ObjectToVoidPtr(ip));
+                Heap.Free(portText);
+                Heap.Free(ip);
 
                 return null;
             }
@@ -44,34 +38,31 @@ namespace Sharpen.Net
 
             if(!found)
             {
-                Heap.Free((void*)Util.ObjectToVoidPtr(portText));
-                Heap.Free((void*)Util.ObjectToVoidPtr(ip));
+                Heap.Free(portText);
+                Heap.Free(ip);
 
                 return null;
             }
-
-            uint index = i++;
-
-            m_list[index].InUse = true;
-            m_list[index].Socket = sock;
+            
 
             Node node = new Node();
             node.Flags = NodeFlags.FILE;
-            node.Cookie = index;
+            node.Cookie = (uint)Util.ObjectToVoidPtr(sock);
             node.Read = readImpl;
             node.Write = writeImpl;
             node.GetSize = getSize;
             node.Close = close;
 
-            Heap.Free((void *)Util.ObjectToVoidPtr(portText));
-            Heap.Free((void*)Util.ObjectToVoidPtr(ip));
+            Heap.Free(portText);
+            Heap.Free(ip);
 
             return node;
         }
 
         private static unsafe uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            UDPSocket sock = m_list[node.Cookie].Socket;
+            UDPSocket sock = (UDPSocket)Util.VoidPtrToObject((void *)node.Cookie);
+            
             uint ret = 0;
             if(sock != null)
                 ret = sock.Read((byte*)Util.ObjectToVoidPtr(buffer), size);
@@ -81,28 +72,31 @@ namespace Sharpen.Net
 
         private static unsafe uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            UDPSocket sock = m_list[node.Cookie].Socket;
+            UDPSocket sock = (UDPSocket)Util.VoidPtrToObject((void*)node.Cookie);
+
             if (sock != null)
                 sock.Send((byte *)Util.ObjectToVoidPtr(buffer), size);
 
             return size;
         }
 
-        private static uint getSize(Node node)
+        private static unsafe uint getSize(Node node)
         {
-            UDPSocket sock = m_list[node.Cookie].Socket;
+            UDPSocket sock = (UDPSocket)Util.VoidPtrToObject((void*)node.Cookie);
+
             if (sock != null)
-                return m_list[node.Cookie].Socket.GetSize();
+                return sock.GetSize();
 
             return 0;
         }
 
-        private static void close(Node node)
+        private static unsafe void close(Node node)
         {
-            UDPSocket sock = m_list[node.Cookie].Socket;
+            UDPSocket sock = (UDPSocket)Util.VoidPtrToObject((void*)node.Cookie);
+
             sock.Close();
-            m_list[node.Cookie].InUse = false;
-            // TODO: free socket?
+
+            Heap.Free(sock);
         }
     }
 }

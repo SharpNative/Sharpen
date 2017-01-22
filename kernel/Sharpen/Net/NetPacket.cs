@@ -12,7 +12,7 @@ namespace Sharpen.Net
     {
         public short start;
         public short end;
-        public fixed byte buffer[2048];
+        public fixed byte buffer[4096];
     }
 
     class NetPacket
@@ -20,7 +20,7 @@ namespace Sharpen.Net
         public static unsafe NetPacketDesc *Alloc()
         {
             NetPacketDesc *desc = (NetPacketDesc*)Heap.Alloc(sizeof(NetPacketDesc));
-            Memory.Memset(desc->buffer, 0x00, 2048);
+            Memory.Memset(desc->buffer, 0x00, 4096);
             desc->start = 256;
             desc->end = 256;
 
