@@ -24,6 +24,8 @@ namespace Sharpen.MultiTasking
         public int PID { get; private set; }
         public int GID { get; private set; }
         public int UID { get; private set; }
+        public string Name { get; set; }
+        public string CMDLine { get; set; }
 
         public FileDescriptors FileDescriptors { get; private set; }
 
@@ -59,6 +61,10 @@ namespace Sharpen.MultiTasking
         public TaskPriority Priority { get; private set; }
         public int TimeLeft { get; set; }
 
+        // Uptime
+        public uint Uptime { get { return PIT.FullTicks - m_launchTime; } }
+        private uint m_launchTime;
+
         // PID counter
         public static int NextPID = 0;
 
@@ -89,9 +95,12 @@ namespace Sharpen.MultiTasking
                 Tasking.CurrentTask.PID = old;
             }
 
-            // UID & GID
+            // Other data
             GID = Tasking.CurrentTask.GID;
             UID = Tasking.CurrentTask.UID;
+            m_launchTime = PIT.FullTicks;
+            Name = "Nameless";
+            CMDLine = "";
 
             // Context
             Context = new X86Context();
@@ -177,7 +186,7 @@ namespace Sharpen.MultiTasking
         {
             return (SleepingThreadCount == ThreadCount);
         }
-        
+
         /// <summary>
         /// Adds a used address to be freed when the task cleans up
         /// </summary>
@@ -185,6 +194,15 @@ namespace Sharpen.MultiTasking
         public unsafe void AddUsedAddress(void* address)
         {
             m_usedAddresses.Add(Util.VoidPtrToObject(address));
+        }
+
+        /// <summary>
+        /// Adds a used address to be freed when the task cleans up
+        /// </summary>
+        /// <param name="address">The address</param>
+        public void AddUsedAddress(object address)
+        {
+            m_usedAddresses.Add(address);
         }
 
         /// <summary>

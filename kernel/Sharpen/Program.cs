@@ -84,6 +84,7 @@ namespace Sharpen
             SerialPort.Init();
             PipeFS.Init();
             NetFS.Init();
+            ProcFS.Init();
         }
 
         /// <summary>
