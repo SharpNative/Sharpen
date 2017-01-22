@@ -31,7 +31,7 @@ namespace Sharpen
         /// <param name="end">The end address of the kernel</param>
         public static unsafe void KernelMain(Multiboot.Header* header, uint magic, uint end)
         {
-            void* heapStart = (void*)end;
+            heapStart = (void*)end;
             Console.Clear();
 
             processMultiboot(header, magic);
@@ -100,6 +100,9 @@ namespace Sharpen
             Tasking.KernelTask.CurrentDirectory = "C://";
         }
 
+        /// <summary>
+        /// Initializes USB
+        /// </summary>
         private static void initUSB()
         {
             UHCI.Init();
