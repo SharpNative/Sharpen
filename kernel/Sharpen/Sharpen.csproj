@@ -87,6 +87,8 @@
     <Compile Include="Lib\Math.cs" />
     <Compile Include="Lib\Random.cs" />
     <Compile Include="MultiTasking\Thread.cs" />
+    <Compile Include="Net\DNS.cs" />
+    <Compile Include="Net\DNSExtras.cs" />
     <Compile Include="Net\Route.cs" />
     <Compile Include="Net\TCP.cs" />
     <Compile Include="Net\TCPExtras.cs" />
