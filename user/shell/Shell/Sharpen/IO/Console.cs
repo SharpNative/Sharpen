@@ -84,5 +84,30 @@ namespace Sharpen.IO
                 }
             }
         }
+
+        /// <summary>
+        /// Writes an integer to the screen
+        /// </summary>
+        /// <param name="num">The number</param>
+        public static void Write(int num)
+        {
+            if (num == 0)
+            {
+                Write('0');
+                return;
+            }
+
+            if (num < 0)
+            {
+                Write('-');
+                num = -num;
+            }
+
+            int a = num % 10;
+            if (num >= 10)
+                Write(num / 10);
+
+            Write((char)('0' + a));
+        }
     }
 }

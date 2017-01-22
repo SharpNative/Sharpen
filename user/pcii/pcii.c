@@ -4,7 +4,7 @@
 #include <dirent.h>
 #include <string.h>
 
-typedef struct PCIFSInfo
+typedef struct
 {
     unsigned short Bus;
     unsigned short Slot;
@@ -16,22 +16,20 @@ typedef struct PCIFSInfo
 
     unsigned short Vendor;
     unsigned short Device;
-} pciInfo;
+} PCIFSInfo;
 
-void print_device(char *name)
+void print_device(char* name)
 {
-    unsigned char pciinfo[sizeof(pciInfo)];
+    PCIFSInfo info;
     char totalPath[30];
 
     sprintf(totalPath, "pci://%s/info", name);
 
     FILE *fp = fopen(totalPath, "r");
 
-    fread(pciinfo, sizeof(char), sizeof(pciInfo), fp);
+    fread(&info, 1, sizeof(PCIFSInfo), fp);
 
-    pciInfo *info = (pciInfo *)pciinfo;
-
-    printf("|\t%02d\t|\t%02d\t|\t%02d\t|\t%04x\t|\t%04x\t|\t%02x\t|\t%02x\t|\t%02x\t|\n", info->Bus, info->Slot, info->Function, info->Vendor, info->Device, info->ClassCode, info->SubClass, info->ProgIntf);
+    printf("|\t%02d\t|\t%02d\t|\t%02d\t|\t%04x\t|\t%04x\t|\t%02x\t|\t%02x\t|\t%02x\t|\n", info.Bus, info.Slot, info.Function, info.Vendor, info.Device, info.ClassCode, info.SubClass, info.ProgIntf);
 
     fclose(fp);
 }

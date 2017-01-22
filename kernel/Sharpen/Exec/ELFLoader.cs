@@ -225,11 +225,16 @@ namespace Sharpen.Exec
             newTask.AddThread(thread);
             newTask.AddUsedAddress(allocated);
 
+            // Task info
+            newTask.Name = argvClone[0];
+            newTask.CMDLine = Array.Join(argvClone, argc, " ");
+            newTask.AddUsedAddress(newTask.CMDLine);
+
             // Argv clone freeing
-            newTask.AddUsedAddress(Util.ObjectToVoidPtr(argvClone));
+            newTask.AddUsedAddress(argvClone);
             for (int i = 0; i < argc; i++)
             {
-                newTask.AddUsedAddress(Util.ObjectToVoidPtr(argvClone[i]));
+                newTask.AddUsedAddress(argvClone[i]);
             }
             
             // Map memory

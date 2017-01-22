@@ -150,7 +150,7 @@ namespace Sharpen.Drivers.Net
         private static uint m_tx_next = 0;
         private static byte[] m_packetBuffer;
 
-        private static uint m_linkup = 0;
+        private static volatile uint m_linkup = 0;
 
         /// <summary>
         /// Receive descriptor

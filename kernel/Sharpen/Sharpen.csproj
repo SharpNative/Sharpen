@@ -89,6 +89,7 @@
     <Compile Include="MultiTasking\Thread.cs" />
     <Compile Include="Net\DNS.cs" />
     <Compile Include="Net\DNSExtras.cs" />
+    <Compile Include="FileSystem\ProcFS.cs" />
     <Compile Include="Net\Route.cs" />
     <Compile Include="Net\TCP.cs" />
     <Compile Include="Net\TCPExtras.cs" />
@@ -118,6 +119,7 @@
     <Compile Include="Arch\X86\Regs.cs" />
     <Compile Include="Arch\X86\Syscall.cs" />
     <Compile Include="SymbolTable.cs" />
+    <Compile Include="Utilities\Array.cs" />
     <Compile Include="Utilities\Byte.cs" />
     <Compile Include="Drivers\Other\VboxDev.cs" />
     <Compile Include="Drivers\Other\VboxDevExtras.cs" />

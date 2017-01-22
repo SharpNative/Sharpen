@@ -20,6 +20,8 @@ namespace Sharpen.MultiTasking
             Task kernel = new Task(TaskPriority.NORMAL, Task.SpawnFlags.KERNEL_TASK);
             kernel.Context.CreateNewContext(true);
             kernel.AddThread(new Thread());
+            kernel.Name = "Kernel";
+            kernel.CMDLine = "kernel";
 
             KernelTask = kernel;
             CurrentTask = kernel;
