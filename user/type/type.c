@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAXBUFLEN 5000
+#define MAXBUFLEN 4096
 
 int main(int argc, char* argv[])
 {
@@ -28,56 +28,42 @@ int main(int argc, char* argv[])
     if(fp == NULL)
     {
         printf("File does not exists\n");
-
         return 0;
     }
 
     char *source = NULL;
-
-     if (fp != NULL) {
-
-        if (fseek(fp, 0L, SEEK_END) == 0) {
-
-            if(bufsize == -1)
-            {
-                bufsize = ftell(fp);
-                if (bufsize == -1) { 
-                    printf("Cannot read file\n");
-                    fclose(fp);
-
-                    return 0;
-                }
-            }
-
-            if (fseek(fp, 0L, SEEK_SET) != 0) 
-            {
+    if (fseek(fp, 0L, SEEK_END) == 0)
+    {
+        if(bufsize == -1)
+        {
+            bufsize = ftell(fp);
+            if (bufsize == -1) { 
                 printf("Cannot read file\n");
-
                 fclose(fp);
 
                 return 0;
             }
-
-            source = malloc(sizeof(char) * (bufsize + 1));
-
-            bufsize = (int)bufsize;
-
-            size_t newLen = fread(source, sizeof(char), bufsize, fp);
-            if (newLen == 0) {
-                printf("Cannot read file\n");
-            } else {
-                source[++newLen] = '\0';
-            }
         }
-        fclose(fp);
+
+        if (fseek(fp, 0L, SEEK_SET) != 0) 
+        {
+            printf("Cannot read file\n");
+            fclose(fp);
+            return 0;
+        }
+
+        source = malloc(sizeof(char) * (bufsize + 1));
+
+        size_t newLen = fread(source, sizeof(char), bufsize, fp);
+        if (newLen == 0) {
+            printf("Cannot read file\n");
+        } else {
+            source[++newLen] = '\0';
+        }
     }
 
-    printf("%s", source);
-    fflush(stdout);
-
-    printf("\n");
-
+    printf("%s\n", source);
     free(source);
-
+    fclose(fp);
     return 0;
 }

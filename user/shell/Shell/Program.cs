@@ -128,8 +128,8 @@ namespace Shell
                         }
                         else
                         {
-                            currentDir = Directory.GetCurrentDirectory();
                             Heap.Free(currentDir);
+                            currentDir = Directory.GetCurrentDirectory();
                         }
                     }
                 }
