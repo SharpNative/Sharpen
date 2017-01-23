@@ -57,7 +57,6 @@ namespace Sharpen.Net
         public ushort DestPort;
 
         public TCPConnectionState State;
-        public bool InComing;
 
         public uint SequenceNumber;
         public uint NextSequenceNumber;

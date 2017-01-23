@@ -109,10 +109,12 @@ namespace Sharpen.Net
         public static void Free(TCPConnection con)
         {
             Close(con);
-
+            
+            
             if (con.Clients != null)
                 Heap.Free(con.Clients);
 
+            
             Heap.Free(con.IP);
             Heap.Free(con);
         }
@@ -467,13 +469,12 @@ namespace Sharpen.Net
                  * Add connection to clients list
                  */
                 clientConnection = new TCPConnection();
-
-                clientConnection.InComing = true;
+                
                 clientConnection.XID = id;
                 clientConnection.InPort = connection.InPort;
                 clientConnection.DestPort = Byte.ReverseBytes(header->SourcePort);
                 clientConnection.SequenceNumber = (uint)Random.Rand();
-                clientConnection.NextSequenceNumber = connection.SequenceNumber + 1;
+
                 clientConnection.State = TCPConnectionState.SYN_RECEIVED;
                 clientConnection.IP = new byte[4];
                 for (int i = 0; i < 4; i++)
@@ -570,9 +571,9 @@ namespace Sharpen.Net
                 TCPPacketDescriptor* buf = (TCPPacketDescriptor*)Heap.Alloc(sizeof(TCPPacketDescriptor));
                 buf->Size = sizePacket;
                 buf->Type = TCPPacketDescriptorTypes.RECEIVE;
-                buf->Data = (byte*)Heap.Alloc(sizePacket);
+                buf->Data = (byte*)Heap.Alloc(1);
                 buf->xid = connection.XID;
-                Memory.Memcpy(buf->Data, buffer + sizeof(TCPHeader), sizePacket);
+                //Memory.Memcpy(buf->Data, buffer + sizeof(TCPHeader), sizePacket);
 
                 Queue queue = connection.ReceiveQueue;
 
@@ -754,9 +755,10 @@ namespace Sharpen.Net
         public unsafe static TCPPacketDescriptor *Read(TCPConnection con)
         {
             Queue queue = con.ReceiveQueue;
+            /*while (queue.IsEmpty())
+                Tasking.ManualSchedule();*/
             while (queue.IsEmpty())
-                Tasking.ManualSchedule();
-
+                CPU.HLT();
             return (TCPPacketDescriptor *)con.ReceiveQueue.Pop();
         }
 
@@ -809,14 +811,15 @@ namespace Sharpen.Net
                  */
             }
 
+            /*while (!ARP.IpExists(ip))
+                Tasking.ManualSchedule();*/
             while (!ARP.IpExists(ip))
-                Tasking.ManualSchedule();
+                CPU.HLT();
 
-            TCPConnection con = new TCPConnection();
+                TCPConnection con = new TCPConnection();
             con.DestPort = port;
             con.InPort = inPort;
             con.State = TCPConnectionState.CLOSED;
-            con.InComing = false;
             con.XID = Random.Rand();
             con.SequenceNumber = (uint)startSeq;
             con.NextSequenceNumber = Byte.ReverseBytes(Byte.ReverseBytes(con.SequenceNumber) + 1);
