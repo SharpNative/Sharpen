@@ -106,9 +106,9 @@ namespace Sharpen.Drivers.Char
 
             Device device = new Device();
             device.Name = "keyboard";
-            device.node = new Node();
-            device.node.Read = readImpl;
-            device.node.GetSize = getSizeImpl;
+            device.Node = new Node();
+            device.Node.Read = readImpl;
+            device.Node.GetSize = getSizeImpl;
 
             DevFS.RegisterDevice(device);
         }

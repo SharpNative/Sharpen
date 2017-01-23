@@ -3,7 +3,6 @@
     public class Device
     {
         public string Name;
-
-        public Node node;
+        public Node Node;
     }
 }

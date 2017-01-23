@@ -3,12 +3,7 @@ using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.MultiTasking;
 using Sharpen.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.Net
 {
@@ -202,7 +197,7 @@ namespace Sharpen.Drivers.Net
              * Wait till done
              */
             while ((*ptr & REG_EERD_DONE) == 0)
-                CPU.HLT();
+                Tasking.ManualSchedule();
 
             return (ushort)((*ptr >> 16) & 0xFFFF);
         }

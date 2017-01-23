@@ -9,8 +9,8 @@
         {
             Device device = new Device();
             device.Name = "stdout";
-            device.node = new Node();
-            device.node.Write = writeImpl;
+            device.Node = new Node();
+            device.Node.Write = writeImpl;
 
             DevFS.RegisterDevice(device);
         }

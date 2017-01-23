@@ -1,12 +1,7 @@
-﻿using Sharpen.Drivers.Char;
-using Sharpen.Mem;
+﻿using Sharpen.Mem;
 using Sharpen.Utilities;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
@@ -85,14 +80,8 @@ namespace Sharpen.Net
 
             for (int i = 0; i < 4; i++)
                 header->ClientIP[i] = clientIP[i];
-
-            byte* mac = (byte*)Heap.Alloc(6);
-            Network.GetMac(mac);
-
-            for (int i = 0; i < 6; i++)
-                header->ClientMac[i] = mac[i];
-
-            Heap.Free(mac);
+            
+            Network.GetMac(header->ClientMac);
 
             packet->end += (short)sizeof(DHCPBootstrapHeader);
 

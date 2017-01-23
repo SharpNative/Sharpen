@@ -1,29 +1,26 @@
 ﻿using Sharpen.FileSystem;
+using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Utilities;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
     class NetworkInfoFS
     {
-
+        /// <summary>
+        /// Initializes the networking info filesystem module
+        /// </summary>
         public static unsafe void Init()
         {
-
             Device dev = new Device();
             dev.Name = "info";
-            dev.node = new Node();
-            dev.node.FindDir = findDirImpl;
-            dev.node.ReadDir = readDirImpl;
-            dev.node.Flags = NodeFlags.DIRECTORY;
-            
+            dev.Node = new Node();
+            dev.Node.FindDir = findDirImpl;
+            dev.Node.ReadDir = readDirImpl;
+            dev.Node.Flags = NodeFlags.DIRECTORY;
+
             NetFS.RegisterDevice(dev);
         }
-
 
         /// <summary>
         /// FS finddir
@@ -43,7 +40,7 @@ namespace Sharpen.Net
                 return byID(3);
             else if (String.Equals(name, "ns2"))
                 return byID(4);
-            
+
             return null;
         }
 
@@ -57,57 +54,47 @@ namespace Sharpen.Net
         /// <returns>The amount of bytes read</returns>
         private static unsafe uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            uint read = 0;
+            byte* sourceBuffer = null;
 
-            // ip
-            if(node.Cookie == 0)
+            switch (node.Cookie)
             {
-                for(int i = 0; i < size && i < 4; i++)
-                {
-                    buffer[i] = Network.Settings->IP[i];
-                    read++;
-                }
+                // IP
+                case 0:
+                    sourceBuffer = Network.Settings->IP;
+                    break;
+
+                // Subnet
+                case 1:
+                    sourceBuffer = Network.Settings->Subnet;
+                    break;
+
+                // Gateway
+                case 2:
+                    sourceBuffer = Network.Settings->Gateway;
+                    break;
+
+                // NS1
+                case 3:
+                    sourceBuffer = Network.Settings->DNS1;
+                    break;
+
+                // NS2
+                case 4:
+                    sourceBuffer = Network.Settings->DNS2;
+                    break;
             }
-            // subnet
-            else if (node.Cookie == 1)
-            {
-                for (int i = 0; i < size && i < 4; i++)
-                {
-                    buffer[i] = Network.Settings->Subnet[i];
-                    read++;
-                }
-            }
-            // gateway
-            else if (node.Cookie == 2)
-            {
-                for (int i = 0; i < size && i < 4; i++)
-                {
-                    buffer[i] = Network.Settings->Gateway[i];
-                    read++;
-                }
-            }
-            // ns1
-            else if (node.Cookie == 3)
-            {
-                for (int i = 0; i < size && i < 4; i++)
-                {
-                    buffer[i] = Network.Settings->DNS1[i];
-                    read++;
-                }
-            }
-            // ns2
-            else if (node.Cookie == 4)
-            {
-                for (int i = 0; i < size && i < 4; i++)
-                {
-                    buffer[i] = Network.Settings->DNS2[i];
-                    read++;
-                }
-            }
-            
-            return read;
+
+            int read = Math.Min((int)size, 4);
+            Memory.Memcpy(Util.ObjectToVoidPtr(buffer), sourceBuffer, read);
+
+            return (uint)read;
         }
 
+        /// <summary>
+        /// Creates a node by its ID
+        /// </summary>
+        /// <param name="id">The ID</param>
+        /// <returns>The node</returns>
         private static unsafe Node byID(uint id)
         {
             Node node = new Node();
@@ -118,6 +105,11 @@ namespace Sharpen.Net
             return node;
         }
 
+        /// <summary>
+        /// Creates a directory entry by its name
+        /// </summary>
+        /// <param name="str">The name</param>
+        /// <returns>The entry</returns>
         private static unsafe DirEntry* makeByName(string str)
         {
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));

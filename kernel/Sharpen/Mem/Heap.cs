@@ -1,5 +1,6 @@
 ﻿// These two flags are used for debugging
 // #define HEAP_DEBUG
+// #define HEAP_DEBUG_DESCRIPTOR
 // #define HEAP_USE_MAGIC
 
 using Sharpen.Arch;
@@ -86,7 +87,7 @@ namespace Sharpen.Mem
             // Calculate the required amount of pages (round up to nearest page)
             int required = (int)Paging.Align((uint)size) / 0x1000;
 
-#if HEAP_DEBUG
+#if HEAP_DEBUG_DESCRIPTOR
             Console.Write("[HEAP] Required page count: ");
             Console.WriteNum(required);
             Console.Write('\n');
@@ -102,7 +103,7 @@ namespace Sharpen.Mem
         /// <returns>The block descriptor</returns>
         private static unsafe BlockDescriptor* createBlockDescriptor(int size)
         {
-#if HEAP_DEBUG
+#if HEAP_DEBUG_DESCRIPTOR
             Console.WriteLine("[HEAP] Creating a new block descriptor");
 #endif
 
@@ -113,7 +114,7 @@ namespace Sharpen.Mem
             size = getRequiredPageCount(size) * 0x1000;
             BlockDescriptor* descriptor = (BlockDescriptor*)Paging.AllocateVirtual(size);
 
-#if HEAP_DEBUG
+#if HEAP_DEBUG_DESCRIPTOR
             Console.Write("[HEAP] New descriptor is at 0x");
             Console.WriteHex((long)descriptor);
             Console.Write(", physical: 0x");
@@ -455,10 +456,17 @@ namespace Sharpen.Mem
         /// <param name="ptr">The pointer</param>
         public static unsafe void Free(void* ptr)
         {
+#if HEAP_DEBUG
             if (ptr == null)
-                return;
+                Panic.DoPanic("[HEAP] Free(null)");
+#endif
 
             Block* block = getBlockFromPtr(ptr);
+
+#if HEAP_DEBUG
+            if (!block->Used)
+                Panic.DoPanic("Tried to free a block that was already freed");
+#endif
 
             mutex.Lock();
 

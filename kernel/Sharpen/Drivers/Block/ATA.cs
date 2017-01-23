@@ -412,10 +412,10 @@ namespace Sharpen.Drivers.Block
                 name[2] = 'D';
                 name[3] = (char)('0' + i);
                 dev.Name = Util.CharPtrToString(name);
-                dev.node.Cookie = i; // Disk ID
-                dev.node = new Node();
-                dev.node.Read = readImpl;
-                dev.node.Write = writeImpl;
+                dev.Node.Cookie = i; // Disk ID
+                dev.Node = new Node();
+                dev.Node.Read = readImpl;
+                dev.Node.Write = writeImpl;
 
                 DevFS.RegisterDevice(dev);
             }

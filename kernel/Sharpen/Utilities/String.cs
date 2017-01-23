@@ -255,5 +255,19 @@ namespace Sharpen.Utilities
         {
             return (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
         }
+
+        /// <summary>
+        /// An implementation of the sdbm string hashing algorithm
+        /// </summary>
+        /// <param name="str">The string</param>
+        /// <returns>The hashcode</returns>
+        public static uint GetHashCode(string str)
+        {
+            uint hash = 0;
+            for (int i = 0; str[i] != '\0'; i++)
+                hash = str[i] + (hash << 6) + (hash << 16) - hash;
+
+            return hash;
+        }
     }
 }

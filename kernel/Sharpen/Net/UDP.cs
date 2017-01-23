@@ -1,12 +1,10 @@
-﻿using Sharpen.Mem;
+﻿// #define UDP_DEBUG
+// #define UDP_DEBUG_PACKETS
+
+using Sharpen.Mem;
 using Sharpen.Utilities;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-
 
 namespace Sharpen.Net
 {
@@ -29,6 +27,8 @@ namespace Sharpen.Net
         // TODO: find better way to handle this, this is wasted space
         private static UDPPacketHandler[] m_handlers;
         private static UDPSocket[] m_sockets;
+
+        private static ushort m_portOffset = 49100;
 
         /// <summary>
         /// UDP packet handler
@@ -69,25 +69,35 @@ namespace Sharpen.Net
             m_handlers[port] = handler;
         }
 
+        /// <summary>
+        /// Binds a UDP socket on a free port
+        /// </summary>
+        /// <param name="socket">The socket</param>
         public static unsafe void BindSocketRequest(UDPSocket socket)
         {
-            ushort port = UDP.RequestPort();
+            ushort port = RequestPort();
 
             socket.SourcePort = port;
 
             BindSocket(socket);
-
         }
 
+        /// <summary>
+        /// Binds a UDP socket
+        /// </summary>
+        /// <param name="socket">The socket</param>
         public static unsafe void BindSocket(UDPSocket socket)
         {
             ushort port = socket.SourcePort;
-            
+
             m_handlers[port] = socketHandler;
             m_sockets[port] = socket;
         }
 
-
+        /// <summary>
+        /// Unbinds a UDP socket
+        /// </summary>
+        /// <param name="socket">The socket</param>
         public static unsafe void UnBindSocket(UDPSocket socket)
         {
             m_handlers[socket.SourcePort] = null;
@@ -96,6 +106,14 @@ namespace Sharpen.Net
             socket.SourcePort = 0;
         }
 
+        /// <summary>
+        /// Handles UDP socket incoming data
+        /// </summary>
+        /// <param name="ip">The source IP</param>
+        /// <param name="sourcePort">The source port</param>
+        /// <param name="destPort">The destination port</param>
+        /// <param name="buffer">The buffer</param>
+        /// <param name="size">The size to read</param>
         public static unsafe void socketHandler(byte[] ip, ushort sourcePort, ushort destPort, byte* buffer, uint size)
         {
             UDPSocket sock = m_sockets[destPort];
@@ -120,12 +138,10 @@ namespace Sharpen.Net
             m_handlers[port] = null;
         }
 
-        private static ushort m_portOffset = 49100;
-
         /// <summary>
         /// Get random port :)
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A random free port</returns>
         public static ushort RequestPort()
         {
             return m_portOffset++;
@@ -137,26 +153,24 @@ namespace Sharpen.Net
         /// <param name="xid">Identification ID</param>
         /// <param name="buffer">Buffer pointer</param>
         /// <param name="size">Packet size</param>
-        private static unsafe void handler(byte[] sourceIp, byte *buffer, uint size)
+        private static unsafe void handler(byte[] sourceIp, byte* buffer, uint size)
         {
-
             UDPHeader* header = (UDPHeader*)buffer;
 
-            ushort destPort = (ushort)Utilities.Byte.ReverseBytes(header->DestinationPort);
-            ushort sourcePort = (ushort)Utilities.Byte.ReverseBytes(header->SourcePort);
+            ushort destPort = Utilities.Byte.ReverseBytes(header->DestinationPort);
+            ushort sourcePort = Utilities.Byte.ReverseBytes(header->SourcePort);
 
 #if UDP_DEBUG_PACKETS
-
             Console.Write("[UDP] Receive from ");
             Console.WriteNum(sourcePort);
             Console.Write(" to ");
             Console.WriteNum(destPort);
             Console.WriteLine("");
 #endif
-            
-            m_handlers[destPort]?.Invoke(sourceIp, sourcePort, destPort, buffer + sizeof(UDPHeader), (uint)(Utilities.Byte.ReverseBytes(header->Length) - 8));
+
+            m_handlers[destPort]?.Invoke(sourceIp, sourcePort, destPort, buffer + sizeof(UDPHeader), (uint)(Utilities.Byte.ReverseBytes(header->Length) - sizeof(UDPHeader)));
         }
-        
+
         /// <summary>
         /// Add UDP header to packet
         /// </summary>
@@ -164,13 +178,12 @@ namespace Sharpen.Net
         /// <param name="destIP">Destination IP</param>
         /// <param name="sourcePort">Source port</param>
         /// <param name="DestinationPort">Destination port</param>
-        /// <returns></returns>
-        private static unsafe UDPHeader* addHeader(NetPacketDesc *packet, byte[] destIP, UInt16 sourcePort, UInt16 DestinationPort)
+        /// <returns>The pointer to the header</returns>
+        private static unsafe UDPHeader* addHeader(NetPacketDesc* packet, byte[] destIP, UInt16 sourcePort, UInt16 DestinationPort)
         {
             packet->start -= (short)sizeof(UDPHeader);
 
             UDPHeader* header = (UDPHeader*)(packet->buffer + packet->start);
-
 
             header->SourcePort = Utilities.Byte.ReverseBytes(sourcePort);
             header->DestinationPort = Utilities.Byte.ReverseBytes(DestinationPort);
@@ -217,7 +230,7 @@ namespace Sharpen.Net
         /// <param name="destIP">Destination IP</param>
         /// <param name="srcPort">Source port</param>
         /// <param name="DestPort">Destination port</param>
-        public static unsafe void Send(NetPacketDesc *packet, byte[] destIP, ushort srcPort, ushort DestPort)
+        public static unsafe void Send(NetPacketDesc* packet, byte[] destIP, ushort srcPort, ushort DestPort)
         {
             /**
              * No support for packets over 1500 bytes

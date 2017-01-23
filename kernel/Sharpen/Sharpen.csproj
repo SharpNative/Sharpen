@@ -52,6 +52,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Arch\PciClassCodes.cs" />
+    <Compile Include="Collections\Bucket.cs" />
+    <Compile Include="Collections\StringDictionary.cs" />
     <Compile Include="Collections\LongList.cs" />
     <Compile Include="Drivers\Block\AHCI.cs" />
     <Compile Include="Drivers\USB\UHCI.cs" />

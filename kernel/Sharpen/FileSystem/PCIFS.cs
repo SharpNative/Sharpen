@@ -93,7 +93,7 @@ namespace Sharpen.FileSystem
                 if (dev == null)
                     continue;
 
-                long key = GenerateKey((byte)dev.Bus, (byte)dev.Slot, (byte)dev.Function);
+                long key = GenerateKey(dev.Bus, dev.Slot, dev.Function);
                 
                 m_dictionary.Add(key, dev);
                 m_direntries.Add(GenerateNodeName(dev.Bus, dev.Slot, dev.Function));

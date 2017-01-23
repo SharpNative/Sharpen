@@ -5,21 +5,16 @@ namespace Sharpen.FileSystem
 {
     public class DevFS
     {
-        private static Dictionary m_devices;
+        private static StringDictionary m_devices;
         private static Node m_currentNode;
-
-        public static int Count
-        {
-                get { return m_devices.Count(); }
-        }
 
         /// <summary>
         /// Initializes DevFS
         /// </summary>
         public unsafe static void Init()
         {
-            m_devices = new Dictionary();
-
+            m_devices = new StringDictionary(5);
+            
             MountPoint mp = new MountPoint();
             mp.Name = "devices";
             m_currentNode = new Node();
@@ -33,35 +28,12 @@ namespace Sharpen.FileSystem
         }
 
         /// <summary>
-        /// Generate hash from string
-        /// </summary>
-        /// <param name="inVal">Name to get hash from</param>
-        /// <returns>The hash</returns>
-        public static long GenerateHash(string inVal)
-        {
-            long hash = 0;
-
-            // There can be 8 chars before the NULL-character
-            for (int i = 0; i <= 8; i++)
-            {
-                char c = inVal[i];
-                if (c == '\0')
-                    break;
-
-                hash <<= 3;
-                hash |= c;
-            }
-
-            return hash;
-        }
-
-        /// <summary>
         /// Register device in devices
         /// </summary>
         /// <param name="dev">The device</param>
         public unsafe static void RegisterDevice(Device dev)
         {
-            m_devices.Add(GenerateHash(dev.Name), dev);
+            m_devices.Add(dev.Name, dev);
         }
 
         /// <summary>
@@ -72,13 +44,11 @@ namespace Sharpen.FileSystem
         /// <returns>The node</returns>
         private static unsafe Node findDirImpl(Node node, string name)
         {
-            long hash = GenerateHash(name);
-            
-            Device dev = (Device)m_devices.GetByKey(hash);
+            Device dev = (Device)m_devices.Get(name);
             if (dev == null)
                 return null;
 
-            return dev.node;
+            return dev.Node;
         }
 
         /// <summary>
@@ -89,7 +59,7 @@ namespace Sharpen.FileSystem
         /// <returns>The directory entry</returns>
         private static unsafe DirEntry* readDirImpl(Node node, uint index)
         {
-            if (index >= m_devices.Count())
+            if (index >= m_devices.Count)
                 return null;
 
             Device dev = (Device)m_devices.GetAt((int)index);

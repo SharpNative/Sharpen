@@ -1,10 +1,4 @@
 ﻿using Sharpen.Mem;
-using Sharpen.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
@@ -17,9 +11,13 @@ namespace Sharpen.Net
 
     class NetPacket
     {
-        public static unsafe NetPacketDesc *Alloc()
+        /// <summary>
+        /// Allocates a new network packet descriptor
+        /// </summary>
+        /// <returns>New network packet descriptor</returns>
+        public static unsafe NetPacketDesc* Alloc()
         {
-            NetPacketDesc *desc = (NetPacketDesc*)Heap.Alloc(sizeof(NetPacketDesc));
+            NetPacketDesc* desc = (NetPacketDesc*)Heap.Alloc(sizeof(NetPacketDesc));
             Memory.Memset(desc->buffer, 0x00, 4096);
             desc->start = 256;
             desc->end = 256;
@@ -27,7 +25,11 @@ namespace Sharpen.Net
             return desc;
         }
 
-        public static unsafe void Free(NetPacketDesc *packet)
+        /// <summary>
+        /// Frees a network packet descriptor
+        /// </summary>
+        /// <param name="packet">The network packet descriptor</param>
+        public static unsafe void Free(NetPacketDesc* packet)
         {
             Heap.Free(packet);
         }

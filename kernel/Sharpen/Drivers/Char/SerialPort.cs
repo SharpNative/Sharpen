@@ -31,13 +31,13 @@ namespace Sharpen.Drivers.Char
             
             Device dev = new Device();
             dev.Name = comports[num].Name;
-            dev.node = new Node();
+            dev.Node = new Node();
             
-            dev.node.Cookie = (uint)num;
-            dev.node.Flags = NodeFlags.FILE;
-            dev.node.Write = writeImpl;
-            dev.node.Read = readImpl;
-            dev.node.GetSize = getSizeImpl;
+            dev.Node.Cookie = (uint)num;
+            dev.Node.Flags = NodeFlags.FILE;
+            dev.Node.Write = writeImpl;
+            dev.Node.Read = readImpl;
+            dev.Node.GetSize = getSizeImpl;
 
             DevFS.RegisterDevice(dev);
         }

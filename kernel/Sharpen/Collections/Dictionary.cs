@@ -2,10 +2,12 @@
 {
     class Dictionary
     {
+        // TODO: add buckets (?)
+
         private LongList m_index = new LongList();
         private List m_values = new List();
         private Mutex m_mutex = new Mutex();
-
+        
         /// <summary>
         /// Clears the dictionary
         /// </summary>

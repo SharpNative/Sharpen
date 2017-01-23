@@ -21,10 +21,10 @@ namespace Sharpen.Drivers.Power
         {
             Device device = new Device();
             device.Name = "ACPI";
-            device.node = new Node();
-            device.node.Flags = NodeFlags.DIRECTORY | NodeFlags.DEVICE;
-            device.node.FindDir = findDirImpl;
-            device.node.ReadDir = readDirImpl;
+            device.Node = new Node();
+            device.Node.Flags = NodeFlags.DIRECTORY | NodeFlags.DEVICE;
+            device.Node.FindDir = findDirImpl;
+            device.Node.ReadDir = readDirImpl;
 
             DevFS.RegisterDevice(device);
 

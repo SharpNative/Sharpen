@@ -5,15 +5,17 @@ namespace Sharpen.Net
 {
     class ARPFS
     {
+        /// <summary>
+        /// Initializes the ARP filesystem in NetFS
+        /// </summary>
         public static unsafe void Init()
         {
-
             Device dev = new Device();
             dev.Name = "arp";
-            dev.node = new Node();
-            dev.node.FindDir = findDirImpl;
-            dev.node.ReadDir = readDirImpl;
-            dev.node.Flags = NodeFlags.DIRECTORY;
+            dev.Node = new Node();
+            dev.Node.FindDir = findDirImpl;
+            dev.Node.ReadDir = readDirImpl;
+            dev.Node.Flags = NodeFlags.DIRECTORY;
 
             NetFS.RegisterDevice(dev);
         }
@@ -42,6 +44,7 @@ namespace Sharpen.Net
                     mac[i] = 0xFF;
 
                 ARP.ArpSend(ARP.OP_REQUEST, mac, ip);
+                Heap.Free(mac);
 
                 return null;
             }

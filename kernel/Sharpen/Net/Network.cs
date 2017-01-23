@@ -1,6 +1,5 @@
-﻿ //#define NETWORK_DEBUG
+﻿// #define NETWORK_DEBUG
 
-using Sharpen.Arch;
 using Sharpen.Collections;
 using Sharpen.Mem;
 using Sharpen.MultiTasking;
@@ -8,7 +7,6 @@ using Sharpen.Utilities;
 
 namespace Sharpen.Net
 {
-
     public unsafe class Network
     {
         /// <summary>
@@ -27,20 +25,25 @@ namespace Sharpen.Net
             public byte* Buffer;
         }
 
-        // Network packet type handler
+        /// <summary>
+        /// Packet handler
+        /// </summary>
+        /// <param name="srcMac">The source MAC address</param>
+        /// <param name="buffer">The buffer</param>
+        /// <param name="size">The size of the buffer</param>
         public unsafe delegate void PackerHandler(byte[] srcMac, byte* buffer, uint size);
 
         /// <summary>
         /// Transmit packet
         /// </summary>
-        /// <param name="bytes"></param>
-        /// <param name="size"></param>
-        public unsafe delegate void TransmitAction(byte* bytes, uint size);
+        /// <param name="buffer">The buffer</param>
+        /// <param name="size">The size of the buffer</param>
+        public unsafe delegate void TransmitAction(byte* buffer, uint size);
 
         /// <summary>
         /// Get mac address
         /// </summary>
-        /// <param name="mac">6 byte struct to read the mac address in</param>
+        /// <param name="mac">6 byte buffer to put the MAC address in</param>
         public unsafe delegate void GetMACAction(byte* mac);
 
         private static Queue m_recPacketQueue;
@@ -186,7 +189,7 @@ namespace Sharpen.Net
             while (true)
             {
                 while (m_recPacketQueue.IsEmpty())
-                    CPU.HLT();
+                    Tasking.ManualSchedule();
 
                 NetRecBuffer* buffer = (NetRecBuffer*)m_recPacketQueue.Pop();
 #if NETWORK_DEBUG
@@ -212,7 +215,7 @@ namespace Sharpen.Net
         private static unsafe void handlePacket(byte[] buffer, int size)
         {
             byte* bufPtr = (byte*)Util.ObjectToVoidPtr(buffer);
-            //Console.WriteLine("HANDLING");
+
             EthernetHeader* header = (EthernetHeader*)bufPtr;
 
             ushort proto = Byte.ReverseBytes(header->Protocol);

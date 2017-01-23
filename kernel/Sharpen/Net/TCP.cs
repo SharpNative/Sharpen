@@ -2,6 +2,7 @@
 using Sharpen.Collections;
 using Sharpen.Lib;
 using Sharpen.Mem;
+using Sharpen.MultiTasking;
 using Sharpen.Utilities;
 
 namespace Sharpen.Net
@@ -49,11 +50,11 @@ namespace Sharpen.Net
 
             // Generate stub header
             TCPHeader* header = (TCPHeader*)(packet->buffer + packet->start);
-            header->SourcePort = Utilities.Byte.ReverseBytes(srcPort);
-            header->DestPort = Utilities.Byte.ReverseBytes(dstPort);
+            header->SourcePort = Byte.ReverseBytes(srcPort);
+            header->DestPort = Byte.ReverseBytes(dstPort);
             header->Flags = flags;
             header->Urgent = 0;
-            header->WindowSize = Utilities.Byte.ReverseBytes(winSize);
+            header->WindowSize = Byte.ReverseBytes(winSize);
             header->Acknowledge = ackNum;
             header->Sequence = seqNum;
             header->Checksum = 0;
@@ -92,9 +93,9 @@ namespace Sharpen.Net
 
             checksumHeader->Protocol = PROTOCOL_TCP;
             checksumHeader->Reserved = 0;
-            checksumHeader->Length = Utilities.Byte.ReverseBytes((ushort)((ushort)packetLength + dataLength));
+            checksumHeader->Length = Byte.ReverseBytes((ushort)((ushort)packetLength + dataLength));
 
-            byte* ptr = (byte*)(packet->buffer + packet->start - sizeof(TCPChecksum));
+            byte* ptr = packet->buffer + packet->start - sizeof(TCPChecksum);
 
             header->Checksum = NetworkTools.Checksum(ptr, size + dataLength);
 
@@ -170,10 +171,9 @@ namespace Sharpen.Net
         /// <param name="size">Packet size</param>
         private static unsafe void handler(byte[] sourceIp, byte* buffer, uint size)
         {
-
             TCPHeader* header = (TCPHeader*)buffer;
             
-            ushort dest = Utilities.Byte.ReverseBytes(header->DestPort);
+            ushort dest = Byte.ReverseBytes(header->DestPort);
             
             if(m_connections[dest] != null)
             {
@@ -189,11 +189,8 @@ namespace Sharpen.Net
         /// <param name="size"></param>
         private static unsafe void handleConnection(TCPConnection connection, byte[] sourceIP, byte* buffer, uint size)
         {
-            TCPHeader* header = (TCPHeader *)buffer;
-            
             switch(connection.State)
             {
-
                 case TCPConnectionState.CLOSED:
                     ClosedHandler(connection);
                     break;
@@ -758,7 +755,7 @@ namespace Sharpen.Net
         {
             Queue queue = con.ReceiveQueue;
             while (queue.IsEmpty())
-                CPU.HLT();
+                Tasking.ManualSchedule();
 
             return (TCPPacketDescriptor *)con.ReceiveQueue.Pop();
         }
@@ -778,9 +775,9 @@ namespace Sharpen.Net
             TCPConnection ptr = new TCPConnection();
             ptr.InPort = port;
             ptr.State = TCPConnectionState.LISTEN;
-            ptr.Clients = new Collections.Dictionary();
+            ptr.Clients = new Dictionary();
             ptr.Type = TCPConnectionType.CONNECTION;
-            ptr.ReceiveQueue = new Collections.Queue();
+            ptr.ReceiveQueue = new Queue();
 
             m_connections[port] = ptr;
 
@@ -801,7 +798,6 @@ namespace Sharpen.Net
 
             if (!ARP.IpExists(ip))
             {
-
                 byte[] mac = new byte[6];
                 for (int i = 0; i < 6; i++)
                     mac[i] = 0xFF;
@@ -814,7 +810,7 @@ namespace Sharpen.Net
             }
 
             while (!ARP.IpExists(ip))
-                CPU.HLT();
+                Tasking.ManualSchedule();
 
             TCPConnection con = new TCPConnection();
             con.DestPort = port;
@@ -823,9 +819,9 @@ namespace Sharpen.Net
             con.InComing = false;
             con.XID = Random.Rand();
             con.SequenceNumber = (uint)startSeq;
-            con.NextSequenceNumber = (uint)Byte.ReverseBytes(Byte.ReverseBytes(con.SequenceNumber) + 1);
+            con.NextSequenceNumber = Byte.ReverseBytes(Byte.ReverseBytes(con.SequenceNumber) + 1);
             con.Type = TCPConnectionType.CONNECTION;
-            con.ReceiveQueue = new Collections.Queue();
+            con.ReceiveQueue = new Queue();
 
             for (int i = 0; i < 4; i++)
                 con.IP[i] = ip[i];
@@ -833,9 +829,7 @@ namespace Sharpen.Net
             m_connections[inPort] = con;
 
             handleConnection(con, null, null, 0);
-
-
-
+            
             return con;
         }
     }

@@ -41,7 +41,8 @@ namespace Sharpen.MultiTasking
             {
                 string old = m_currentDirectory;
                 m_currentDirectory = value;
-                Heap.Free(old);
+                if (old != null)
+                    Heap.Free(old);
             }
         }
 

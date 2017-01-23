@@ -46,8 +46,8 @@ namespace Sharpen.Lib
         {
             Device dev = new Device();
             dev.Name = "Audio";
-            dev.node = new Node();
-            dev.node.Write = writeImpl;
+            dev.Node = new Node();
+            dev.Node.Write = writeImpl;
 
             DevFS.RegisterDevice(dev);
         }

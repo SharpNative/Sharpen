@@ -4,18 +4,15 @@ namespace Sharpen.FileSystem
 {
     class RandomFS
     {
-        private static Node m_currentNode;
-        
         /// <summary>
         /// Initializes Null device
         /// </summary>
         public unsafe static void Init()
         {
-
             Device device = new Device();
             device.Name = "random";
-            device.node = new Node();
-            device.node.Read = readImpl;
+            device.Node = new Node();
+            device.Node.Read = readImpl;
 
             DevFS.RegisterDevice(device);
         }
