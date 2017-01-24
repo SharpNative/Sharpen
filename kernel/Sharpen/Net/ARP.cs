@@ -1,19 +1,11 @@
-﻿using Sharpen.Arch;
-using Sharpen.MultiTasking;
+﻿using Sharpen.Mem;
 using Sharpen.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Net
 {
-
     class ARP
     {
-
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         unsafe struct ARPHeader
         {
@@ -47,7 +39,7 @@ namespace Sharpen.Net
         {
             Network.RegisterHandler(0x0806, handler);
 
-            // Max 20
+            // TODO: this can overflow if m_offset is too high
             m_arpTable = new ARPEntry[255];
         }
 
@@ -60,52 +52,45 @@ namespace Sharpen.Net
             byte[] brdIP = new byte[6];
             for (int i = 0; i < 6; i++)
                 brdIP[i] = 0xFF;
-            
+
             ArpSend(OP_REQUEST, brdIP, ip);
+            Heap.Free(brdIP);
         }
 
         public static unsafe void ArpSend(ushort op, byte[] hwAddr, byte[] ip)
         {
-            byte[] mac = new byte[6];
-            Network.GetMac((byte *)Util.ObjectToVoidPtr(mac));
+            byte* mac = (byte*)Heap.Alloc(6);
+            Network.GetMac(mac);
 
             NetPacketDesc* packet = NetPacket.Alloc();
 
-            ARPHeader *hdr = (ARPHeader *)(packet->buffer + packet->end);
-            hdr->HardwareType = Utilities.Byte.ReverseBytes(0x01);
-            hdr->ProtocolType = Utilities.Byte.ReverseBytes(0x800);
+            ARPHeader* hdr = (ARPHeader*)(packet->buffer + packet->end);
+            hdr->HardwareType = Byte.ReverseBytes(0x01);
+            hdr->ProtocolType = Byte.ReverseBytes(0x800);
 
             hdr->HardwareAdrLength = 6;
             hdr->ProtocolAdrLength = 4;
-            
-            hdr->Opcode = Utilities.Byte.ReverseBytes(op);
 
+            hdr->Opcode = Byte.ReverseBytes(op);
 
-            for (int i = 0; i < 6; i++)
-                hdr->SrcHw[i] = mac[i];
-
-            for (int i = 0; i < 4; i++)
-                hdr->SrcIP[i] = Network.Settings->IP[i];
+            Memory.Memcpy(hdr->SrcIP, Network.Settings->IP, 4);
+            Memory.Memcpy(hdr->SrcHw, mac, 6);
+            Memory.Memcpy(hdr->DstIP, Util.ObjectToVoidPtr(ip), 4);
 
             if (op == OP_REPLY)
             {
-                for (int i = 0; i < 6; i++)
-                    hdr->DstHw[i] = hwAddr[i];
+                Memory.Memcpy(hdr->DstHw, Util.ObjectToVoidPtr(hwAddr), 6);
             }
             else
             {
-                for (int i = 0; i < 6; i++)
-                    hdr->DstHw[i] = 0x00;
+                Memory.Memset(hdr->DstHw, 0, 6);
             }
-
-            for (int i = 0; i < 4; i++)
-                hdr->DstIP[i] = ip[i];
-
 
             packet->end += (short)sizeof(ARPHeader);
             Ethernet.SendMAC(packet, hwAddr, EthernetTypes.ARP);
 
             NetPacket.Free(packet);
+            Heap.Free(mac);
         }
 
         public static unsafe void FindOrAdd(byte[] srcIP, byte[] srcHW)
@@ -147,10 +132,10 @@ namespace Sharpen.Net
             ARPHeader* header = (ARPHeader*)buffer;
 
             // Only IPV4 - Ethernet ARP packages allowed! :)
-            if (Utilities.Byte.ReverseBytes(header->ProtocolType) != 0x0800 || Utilities.Byte.ReverseBytes(header->HardwareType) != 1)
+            if (Byte.ReverseBytes(header->ProtocolType) != 0x0800 || Byte.ReverseBytes(header->HardwareType) != 1)
                 return;
 
-            if (Utilities.Byte.ReverseBytes(header->Opcode) == OP_REPLY)
+            if (Byte.ReverseBytes(header->Opcode) == OP_REPLY)
             {
                 FindOrAdd(Util.PtrToArray(header->SrcIP), Util.PtrToArray(header->SrcHw));
             }
@@ -165,13 +150,14 @@ namespace Sharpen.Net
             }
         }
 
-        public static unsafe ARPEntry *GetEntry(byte[] IP)
+        public static unsafe ARPEntry* GetEntry(byte[] IP)
         {
+            // TODO: m_arpTable has a length of 20 instead of 255 atm
             for (int i = 0; i < 20; i++)
             {
                 if (IPEqual(IP, m_arpTable[i]))
                 {
-                    return (ARPEntry*)((byte *)Util.ObjectToVoidPtr(m_arpTable) + (sizeof(ARPEntry) * i));
+                    return (ARPEntry*)((byte*)Util.ObjectToVoidPtr(m_arpTable) + (sizeof(ARPEntry) * i));
                 }
             }
 
@@ -184,27 +170,25 @@ namespace Sharpen.Net
         /// <param name="IP"></param>
         /// <param name="DestMac"></param>
         /// <returns></returns>
-        public static unsafe bool Lookup(byte[] IP, byte *DestMac)
+        public static unsafe bool Lookup(byte[] IP, byte* DestMac)
         {
             // Broadcast?
-            if(IP[0] == 0xFF && IP[1] == 0xFF && IP[2] == 0xFF && IP[3] == 0xFF)
+            if (IP[0] == 0xFF && IP[1] == 0xFF && IP[2] == 0xFF && IP[3] == 0xFF)
             {
                 if (DestMac != null)
-                    for (int i =0; i < 6; i++)
-                    DestMac[i] = 0xFF;
+                    Memory.Memset(DestMac, 0xFF, 6);
 
                 return true;
             }
             else
             {
-                ARPEntry *entry = GetEntry(IP);
+                ARPEntry* entry = GetEntry(IP);
 
-                if(entry != null)
+                if (entry != null)
                 {
-                    if(DestMac != null)
-                        for (int i = 0; i < 6; i++)
-                            DestMac[i] = entry->MAC[i];
-                    
+                    if (DestMac != null)
+                        Memory.Memcpy(DestMac, entry->MAC, 6);
+
                     return true;
                 }
             }
@@ -212,6 +196,11 @@ namespace Sharpen.Net
             return false;
         }
 
+        /// <summary>
+        /// Checks if an IP exists in the ARP table
+        /// </summary>
+        /// <param name="IP">The IP</param>
+        /// <returns>If it exists in the ARP table</returns>
         public static unsafe bool IpExists(byte[] IP)
         {
             return Lookup(IP, null);

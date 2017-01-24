@@ -2,12 +2,7 @@
 using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.Net
 {
@@ -195,17 +190,14 @@ namespace Sharpen.Drivers.Net
 
             m_tx_descriptors[m_currentTransDesc].buf_len = (ushort)(0xF000 | (ushort)((-size) & 0xFFF));
             m_tx_descriptors[m_currentTransDesc].status = 0xA300;
-            
+
             m_currentTransDesc++;
-            if (m_currentTransDesc == BUF_SIZE - 1)
+            if (m_currentTransDesc == BUF_SIZE)
                 m_currentTransDesc = 0;
         }
-
-        private static int a = 0;
-
+        
         private static unsafe void handler(Regs* regsPtr)
         {
-
             // acknowledge IRQ
             uint csr0 = readCSR(0);
 
@@ -262,18 +254,13 @@ namespace Sharpen.Drivers.Net
                         Network.QueueReceivePacket(buffer, 2048);
                     }
                     
-                    uint adr = m_rx_descriptors[m_currentRescDesc].reserved;
-                    
-                    m_rx_descriptors[m_currentRescDesc].address = (uint)Paging.GetPhysicalFromVirtual((void*)(adr));
                     m_rx_descriptors[m_currentRescDesc].status = 0xF000 | (-2048 & STATUS_MASK);
                     m_rx_descriptors[m_currentRescDesc].mcnt = 0;
                     m_rx_descriptors[m_currentRescDesc].rcc = 0;
                     m_rx_descriptors[m_currentRescDesc].rpc = 0;
-                    m_rx_descriptors[m_currentRescDesc].reserved = adr;
 
-                    a++;
                     m_currentRescDesc++;
-                    if (m_currentRescDesc >= BUF_SIZE - 1)
+                    if (m_currentRescDesc == BUF_SIZE)
                         m_currentRescDesc = 0;
                 }
             }
@@ -286,7 +273,7 @@ namespace Sharpen.Drivers.Net
 
         private static void SoftwareReset()
         {
-            /// RESET
+            // RESET
             PortIO.In32((ushort)(m_io_base + 0x18));
             PortIO.In16((ushort)(m_io_base + 0x14));
 
@@ -367,22 +354,19 @@ namespace Sharpen.Drivers.Net
         {
             PortIO.Out32((ushort)(m_io_base + REG_RAP), val);
         }
-
-        private static unsafe uint switchShorts(uint address)
-        {
-            ushort top = (ushort)((address >> 16) & 0xFFFF);
-            ushort bottom = (ushort)((address) & 0xFFFF);
-            return (uint)(bottom << 16 | top);
-        }
-
+        
         private static unsafe void InitCard()
         {
+            // Card register needs to be 32-byte aligned
             CARD_REG* reg = (CARD_REG*)Heap.AlignedAlloc(0x1000, sizeof(CARD_REG));
             reg->MODE = 0x0180;
-            reg->TLEN = 255;
-            reg->RLEN = 255;
+            // TLEN and RLEN are the 2log of their descriptor lengths shifted to the left by 4
+            reg->TLEN = 8 << 4;
+            reg->RLEN = 8 << 4;
+
             for (int i = 0; i < 6; i++)
                 reg->MAC[i] = m_mac[i];
+
             reg->first_rec_entry = (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_rx_descriptors));
             reg->first_transmit_entry = (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_tx_descriptors));
 

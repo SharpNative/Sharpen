@@ -10,12 +10,12 @@ namespace Sharpen
         /// <summary>
         /// Cursor X position
         /// </summary>
-        public static int X { get; private set; } = 0;
+        public static int X { get; set; } = 0;
 
         /// <summary>
         /// Cursor Y position
         /// </summary>
-        public static int Y { get; private set; } = 0;
+        public static int Y { get; set; } = 0;
 
         /// <summary>
         /// Current character attribute

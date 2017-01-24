@@ -71,7 +71,7 @@ namespace Sharpen.Collections
             {
                 while (m_head == m_tail)
                 {
-                    Tasking.ManualSchedule();
+                    Tasking.Yield();
                 }
             }
 

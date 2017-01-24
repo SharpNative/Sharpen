@@ -50,17 +50,15 @@ namespace Sharpen.Net
             
             byte proto = header->Protocol;
 
-            byte[] ip = new byte[4];
-            for (int i = 0; i < 4; i++)
-                ip[i] = header->Source[i];
-
+            byte[] ip = Util.PtrToArray(header->Source);
+            
             // Fake ARP
             if(!(ip[0] == 255 && ip[1] == 255 && ip[2] == 255 && ip[3] == 255))
             {
                 ARP.FindOrAdd(ip, mac);
             }
             
-            ushort sz = (ushort)(Utilities.Byte.ReverseBytes(header->totalLength) - 20);
+            ushort sz = (ushort)(Utilities.Byte.ReverseBytes(header->totalLength) - sizeof(IPV4Header));
             
             m_handlers[proto]?.Invoke(ip, buffer + sizeof(IPV4Header), sz);
         }

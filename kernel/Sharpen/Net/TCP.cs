@@ -71,7 +71,7 @@ namespace Sharpen.Net
         /// <param name="packetLength"></param>
         /// <param name="dataLength"></param>
         /// <returns></returns>
-        private static unsafe bool FinishHeader(NetPacketDesc* packet, TCPHeader *header, byte[] sourceIp, int packetLength, int dataLength)
+        private static unsafe bool FinishHeader(NetPacketDesc* packet, TCPHeader* header, byte[] sourceIp, int packetLength, int dataLength)
         {
             // Welp!
             if (packetLength % 4 != 0)
@@ -85,11 +85,8 @@ namespace Sharpen.Net
             // Let's introduce some junk (i love that :))
             TCPChecksum* checksumHeader = (TCPChecksum*)(packet->buffer + packet->start - sizeof(TCPChecksum));
 
-            for (int i = 0; i < 4; i++)
-                checksumHeader->SrcIP[i] = Network.Settings->IP[i];
-
-            for (int i = 0; i < 4; i++)
-                checksumHeader->DstIP[i] = sourceIp[i];
+            Memory.Memcpy(checksumHeader->SrcIP, Network.Settings->IP, 4);
+            Memory.Memcpy(checksumHeader->DstIP, Util.ObjectToVoidPtr(sourceIp), 4);
 
             checksumHeader->Protocol = PROTOCOL_TCP;
             checksumHeader->Reserved = 0;
@@ -110,13 +107,12 @@ namespace Sharpen.Net
         {
             Close(con);
             
-            
             if (con.Clients != null)
                 Heap.Free(con.Clients);
-
             
             Heap.Free(con.IP);
             Heap.Free(con);
+            con = null;
         }
 
         /// <summary>
@@ -131,12 +127,12 @@ namespace Sharpen.Net
         /// <param name="data"></param>
         /// <param name="count"></param>
         /// <returns></returns>
-        private static unsafe bool SendPacket(byte[] destIP, uint seqNum, uint acknumb, ushort srcPort, ushort destPort, byte flags, byte *data, int count)
+        private static unsafe bool SendPacket(byte[] destIP, uint seqNum, uint acknumb, ushort srcPort, ushort destPort, byte flags, byte* data, int count)
         {
             NetPacketDesc* packet = NetPacket.Alloc();
-            
 
-            if(count > 0)
+
+            if (count > 0)
             {
                 Memory.Memcpy(packet->buffer + packet->start, data, count);
 
@@ -166,7 +162,7 @@ namespace Sharpen.Net
         #region Network handling
 
         /// <summary>
-        /// UDP packet handler
+        /// TCP packet handler
         /// </summary>
         /// <param name="xid">Identification ID</param>
         /// <param name="buffer">Buffer pointer</param>
@@ -174,10 +170,10 @@ namespace Sharpen.Net
         private static unsafe void handler(byte[] sourceIp, byte* buffer, uint size)
         {
             TCPHeader* header = (TCPHeader*)buffer;
-            
+
             ushort dest = Byte.ReverseBytes(header->DestPort);
-            
-            if(m_connections[dest] != null)
+
+            if (m_connections[dest] != null)
             {
                 handleConnection(m_connections[dest], sourceIp, buffer, size);
             }
@@ -191,12 +187,17 @@ namespace Sharpen.Net
         /// <param name="size"></param>
         private static unsafe void handleConnection(TCPConnection connection, byte[] sourceIP, byte* buffer, uint size)
         {
-            switch(connection.State)
+            //Console.Write("\t\t\t(");
+            //Console.WriteHex((int)Util.ObjectToVoidPtr(connection));
+            //Console.Write(") handleConnection: ");
+            //Console.WriteHex((int)connection.State);
+            //Console.WriteLine("");
+            switch (connection.State)
             {
                 case TCPConnectionState.CLOSED:
                     ClosedHandler(connection);
                     break;
-
+                    
                 case TCPConnectionState.LISTEN:
                     HandleListen(connection, sourceIP, buffer, size);
                     break;
@@ -254,10 +255,10 @@ namespace Sharpen.Net
         /// </summary>
         /// <param name="con"></param>
         /// <param name="buffer"></param>
-        private unsafe static void SynSentHandler(TCPConnection con, byte *buffer)
+        private unsafe static void SynSentHandler(TCPConnection con, byte* buffer)
         {
             TCPHeader* header = (TCPHeader*)buffer;
-
+            
             if ((header->Flags & (FLAG_SYN | FLAG_ACK)) == (FLAG_SYN | FLAG_ACK))
             {
                 con.SequenceNumber = Byte.ReverseBytes(Byte.ReverseBytes(con.SequenceNumber) + 1);
@@ -282,7 +283,7 @@ namespace Sharpen.Net
         private unsafe static void SynReceivedHandler(TCPConnection con, byte* buffer)
         {
             TCPHeader* header = (TCPHeader*)buffer;
-            
+
             /**
              * ACK received?
              */
@@ -291,12 +292,12 @@ namespace Sharpen.Net
                 con.SequenceNumber = Byte.ReverseBytes(Byte.ReverseBytes(con.SequenceNumber) + 1);
 
                 con.State = TCPConnectionState.ESTABLISHED;
-                
+
 
                 /**
                  * Do we need to notify we have a new connection?
                  */
-                if(con.Type == TCPConnectionType.CHILD_CONNECTION)
+                if (con.Type == TCPConnectionType.CHILD_CONNECTION)
                 {
                     /**
                      * Put ACCEPT in queue
@@ -334,6 +335,8 @@ namespace Sharpen.Net
             con.AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1);
 
             SendPacket(con.IP, con.SequenceNumber, con.AcknowledgeNumber, con.InPort, con.DestPort, FLAG_RST | FLAG_ACK, null, 0);
+
+            con.State = TCPConnectionState.CLOSED;
         }
 
         /// <summary>
@@ -373,7 +376,7 @@ namespace Sharpen.Net
         }
 
         /// <summary>
-        /// Find wait2 handler
+        /// FIN wait2 handler
         /// </summary>
         /// <param name="con"></param>
         /// <param name="buffer"></param>
@@ -385,7 +388,7 @@ namespace Sharpen.Net
             {
 
                 con.SequenceNumber = Byte.ReverseBytes(Byte.ReverseBytes(con.SequenceNumber) + 1);
-                
+
 
                 con.AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1);
 
@@ -416,7 +419,7 @@ namespace Sharpen.Net
 
 
                 con.AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1);
-                
+
                 // AND We're DONE!
                 setConnectionForWait(con);
 
@@ -460,8 +463,7 @@ namespace Sharpen.Net
                  */
                 if ((header->Flags & FLAG_SYN) == 0)
                 {
-                    Close(connection);
-
+                    //Close(connection);
                     return;
                 }
 
@@ -469,7 +471,7 @@ namespace Sharpen.Net
                  * Add connection to clients list
                  */
                 clientConnection = new TCPConnection();
-                
+
                 clientConnection.XID = id;
                 clientConnection.InPort = connection.InPort;
                 clientConnection.DestPort = Byte.ReverseBytes(header->SourcePort);
@@ -536,13 +538,13 @@ namespace Sharpen.Net
              *   - PUSH
              *   - FIN
              */
-             
+
             if ((header->Flags & (FLAG_FIN | FLAG_ACK)) == (FLAG_FIN | FLAG_ACK))
             {
                 connection.AcknowledgeNumber = Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1);
 
                 SendPacket(connection.IP, connection.SequenceNumber, Byte.ReverseBytes(Byte.ReverseBytes(header->Sequence) + 1), connection.InPort, connection.DestPort, FLAG_ACK, null, 0);
-                
+
                 setConnectionForWait(connection);
 
             }
@@ -571,9 +573,9 @@ namespace Sharpen.Net
                 TCPPacketDescriptor* buf = (TCPPacketDescriptor*)Heap.Alloc(sizeof(TCPPacketDescriptor));
                 buf->Size = sizePacket;
                 buf->Type = TCPPacketDescriptorTypes.RECEIVE;
-                buf->Data = (byte*)Heap.Alloc(1);
+                buf->Data = (byte*)Heap.Alloc(sizePacket);
                 buf->xid = connection.XID;
-                //Memory.Memcpy(buf->Data, buffer + sizeof(TCPHeader), sizePacket);
+                Memory.Memcpy(buf->Data, buffer + sizeof(TCPHeader), sizePacket);
 
                 Queue queue = connection.ReceiveQueue;
 
@@ -630,7 +632,7 @@ namespace Sharpen.Net
 
             if ((header->Flags & FLAG_ACK) > 0)
             {
-                
+
                 connection.State = TCPConnectionState.TIME_WAIT;
             }
             else
@@ -653,7 +655,7 @@ namespace Sharpen.Net
                 buf->Size = 0;
                 buf->Type = TCPPacketDescriptorTypes.CLOSE;
                 buf->Data = null;
-                buf->xid = 0x000;
+                buf->xid = 0;
 
                 connection.ReceiveQueue.Push(buf);
             }
@@ -671,7 +673,7 @@ namespace Sharpen.Net
                 buf->Type = TCPPacketDescriptorTypes.CLOSE;
                 buf->Data = null;
                 buf->xid = connection.XID;
-
+                
                 connection.BaseConnection.ReceiveQueue.Push(buf);
                 connection.BaseConnection.Clients.Remove(connection.XID);
             }
@@ -744,7 +746,7 @@ namespace Sharpen.Net
         }
 
         #endregion
-        
+
         #region helper methods
 
         /// <summary>
@@ -752,18 +754,17 @@ namespace Sharpen.Net
         /// </summary>
         /// <param name="con"></param>
         /// <returns></returns>
-        public unsafe static TCPPacketDescriptor *Read(TCPConnection con)
+        public unsafe static TCPPacketDescriptor* Read(TCPConnection con)
         {
             Queue queue = con.ReceiveQueue;
-            /*while (queue.IsEmpty())
-                Tasking.ManualSchedule();*/
             while (queue.IsEmpty())
-                CPU.HLT();
-            return (TCPPacketDescriptor *)con.ReceiveQueue.Pop();
+                Tasking.Yield();
+
+            return (TCPPacketDescriptor*)con.ReceiveQueue.Pop();
         }
 
         #endregion
-        
+
         /// <summary>
         /// Bind to IP
         /// </summary>
@@ -796,8 +797,7 @@ namespace Sharpen.Net
         {
             ushort inPort = RequestPort();
             int startSeq = Random.Rand();
-
-
+            
             if (!ARP.IpExists(ip))
             {
                 byte[] mac = new byte[6];
@@ -805,18 +805,13 @@ namespace Sharpen.Net
                     mac[i] = 0xFF;
 
                 ARP.ArpSend(ARP.OP_REQUEST, mac, ip);
-                
-                /**
-                 * Todo: free mac
-                 */
+                Heap.Free(mac);
             }
 
-            /*while (!ARP.IpExists(ip))
-                Tasking.ManualSchedule();*/
             while (!ARP.IpExists(ip))
-                CPU.HLT();
+                Tasking.Yield();
 
-                TCPConnection con = new TCPConnection();
+            TCPConnection con = new TCPConnection();
             con.DestPort = port;
             con.InPort = inPort;
             con.State = TCPConnectionState.CLOSED;
@@ -832,7 +827,7 @@ namespace Sharpen.Net
             m_connections[inPort] = con;
 
             handleConnection(con, null, null, 0);
-            
+
             return con;
         }
     }

@@ -124,9 +124,7 @@ namespace Sharpen.Net
                 return;
 
             Memory.Memcpy(buffer, packet->buffer + packet->start, size);
-
-            // LOGIC
-
+            
 #if NETWORK_DEBUG
             Console.Write("[NET] Transmit packet with ");
             Console.WriteNum(size);
@@ -156,6 +154,14 @@ namespace Sharpen.Net
         /// <param name="size">The packet buffer size</param>
         public static unsafe void QueueReceivePacket(byte[] buffer, int size)
         {
+            if (size < sizeof(EthernetHeader))
+            {
+#if NETWORK_DEBUG
+                Console.WriteLine("[NET] size < sizeof(EthernetHeader)");
+#endif
+                return;
+            }
+
             NetRecBuffer* netBuf = (NetRecBuffer*)Heap.Alloc(sizeof(NetRecBuffer));
             if (netBuf == null)
             {
@@ -177,7 +183,6 @@ namespace Sharpen.Net
             }
 
             Memory.Memcpy(netBuf->Buffer, Util.ObjectToVoidPtr(buffer), size);
-            
             m_recPacketQueue.Push(netBuf);
         }
 
@@ -189,8 +194,8 @@ namespace Sharpen.Net
             while (true)
             {
                 while (m_recPacketQueue.IsEmpty())
-                    Tasking.ManualSchedule();
-
+                    Tasking.Yield();
+                
                 NetRecBuffer* buffer = (NetRecBuffer*)m_recPacketQueue.Pop();
 #if NETWORK_DEBUG
                 if (buffer == null)
@@ -219,7 +224,7 @@ namespace Sharpen.Net
             EthernetHeader* header = (EthernetHeader*)bufPtr;
 
             ushort proto = Byte.ReverseBytes(header->Protocol);
-
+            
             m_handlers[proto]?.Invoke(Util.PtrToArray(header->Source), bufPtr + sizeof(EthernetHeader), (uint)size);
         }
 

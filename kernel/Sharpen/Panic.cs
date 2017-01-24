@@ -1,4 +1,4 @@
-﻿#define CLEAR_SCREEN
+﻿// #define CLEAR_SCREEN
 
 using Sharpen.Arch;
 using Sharpen.MultiTasking;
@@ -101,7 +101,11 @@ namespace Sharpen
                 Console.Write('\n');
             }
 
-            Util.PrintStackTrace(10);
+            // Only able to stacktrace if paging is available
+            if (Paging.CurrentDirectory != null)
+            {
+                Util.PrintStackTrace(10);
+            }
 
             // HALT
             CPU.HLT();

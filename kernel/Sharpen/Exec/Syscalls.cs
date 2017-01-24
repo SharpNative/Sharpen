@@ -140,7 +140,7 @@ namespace Sharpen.Exec
             if (!isNonBlocking)
             {
                 while (VFS.GetSize(node) == 0)
-                    Tasking.ManualSchedule();
+                    Tasking.Yield();
             }
             // Non-blocking but no data available?
             else
@@ -324,7 +324,7 @@ namespace Sharpen.Exec
 
                 // If the task is still found, it means it's still there
                 while (Tasking.GetTaskByPID(pid) != null)
-                    Tasking.ManualSchedule();
+                    Tasking.Yield();
             }
             // Wait for any child process whose group ID == calling process group ID
             else if (pid == 0)
@@ -461,7 +461,7 @@ namespace Sharpen.Exec
         /// <returns>Zero</returns>
         public static int Yield()
         {
-            Tasking.ManualSchedule();
+            Tasking.Yield();
             return 0;
         }
 

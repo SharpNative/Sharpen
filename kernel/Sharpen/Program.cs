@@ -131,83 +131,78 @@ namespace Sharpen
             E1000.Init();
             PCNet2.Init();
             rtl8139.Init();
-
+            
             DHCP.Discover();
+            
+            
+            TCPConnection con = TCP.Bind(80);
 
-            //TCPConnection con = TCP.Bind(80);
+            string message = "<!doctype html><html><title>Van Sharpen</title><body>Wij serveren dit van Sharpen naar Dossche</body></html>";
+            string httpResp = "HTTP/1.1 200 OK\r\nDate: Fri, 13 May 2005 05:51:12 GMT\r\nServer: Sharpen :)\r\nLast-Modified: Fri, 13 May 2005 05:25:02 GMT\r\nAccept-Ranges: bytes\r\nContent-Length: ";
 
-            //TCPPacketDescriptor* ptr;
-            //while (true)
-            //{
-            //    ptr = TCP.Read(con);
+            string count = Int.ToString(String.Length(message));
 
-            //    if (ptr == null)
-            //    {
-            //        continue;
-            //    }
+            httpResp = String.Merge(httpResp, count);
+            httpResp = String.Merge(httpResp, "\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n");
 
-            //    if (ptr->Type == TCPPacketDescriptorTypes.ACCEPT)
-            //    {
-            //        Console.Write("New connection from: ");
-            //        for (int i = 0; i < 3; i++)
-            //        {
-            //            Console.WriteNum(ptr->Data[i]);
-            //            Console.Write('.');
-            //        }
-            //        Console.WriteNum(ptr->Data[3]);
-            //        Console.Write(" with XID: ");
-            //        Console.WriteHex(ptr->xid);
-            //        Console.WriteLine("");
+            string finalResp = String.Merge(httpResp, message);
 
+            TCPPacketDescriptor* ptr;
+            while (true)
+            {
+                ptr = TCP.Read(con);
+                if (ptr == null)
+                {
+                    continue;
+                }
 
-            //        Heap.Free(ptr);
-            //    }
-            //    else if (ptr->Type == TCPPacketDescriptorTypes.RECEIVE)
-            //    {
-            //        Console.Write("New data from XID: ");
-            //        Console.WriteHex(ptr->xid);
-            //        Console.WriteLine("");
+                if (ptr->Type == TCPPacketDescriptorTypes.ACCEPT)
+                {
+                    Console.Write("New connection from: ");
+                    for (int i = 0; i < 3; i++)
+                    {
+                        Console.WriteNum(ptr->Data[i]);
+                        Console.Write('.');
+                    }
+                    Console.WriteNum(ptr->Data[3]);
+                    Console.Write(" with XID: ");
+                    Console.WriteHex(ptr->xid);
+                    Console.WriteLine("");
+                }
+                else if (ptr->Type == TCPPacketDescriptorTypes.RECEIVE)
+                {
+                    Console.Write("New data from XID: ");
+                    Console.WriteHex(ptr->xid);
+                    Console.WriteLine("");
+                    
+                    TCP.Send(con, ptr->xid, (byte*)Util.ObjectToVoidPtr(finalResp), (uint)String.Length(finalResp));
 
-            //        string message = "<html><title>Van Sharpen</title><body>Wij serveren dit van sharpen naar Dossche</body></html>";
+                    TCP.Close(con, ptr->xid);
+                }
+                else if (ptr->Type == TCPPacketDescriptorTypes.RESET)
+                {
+                    Console.Write("RESET from XID: ");
+                    Console.WriteHex(ptr->xid);
+                    Console.WriteLine("");
+                }
+                else if (ptr->Type == TCPPacketDescriptorTypes.CLOSE)
+                {
+                    Console.Write("CLOSE from XID: ");
+                    Console.WriteHex(ptr->xid);
+                    Console.WriteLine("");
+                }
+                else
+                {
+                    Console.WriteLine("Invalid ptr->Type!");
+                }
 
-            //        string httpResp = "HTTP/1.1 200 OK\r\nDate: Fri, 13 May 2005 05:51:12 GMT\r\nServer: Sharpen :)\r\nLast-Modified: Fri, 13 May 2005 05:25:02 GMT\r\nAccept-Ranges: bytes\r\nContent-Length: ";
+                Heap.Free(ptr);
+            }
 
-            //        string count = Int.ToString(String.Length(message));
+            Console.WriteLine("EXIT");
+            for (;;) ;
 
-
-            //        httpResp = String.Merge(httpResp, count);
-            //        httpResp = String.Merge(httpResp, "\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n");
-
-            //        string finalResp = String.Merge(httpResp, message);
-
-            //        TCP.Send(con, ptr->xid, (byte*)Util.ObjectToVoidPtr(finalResp), (uint)String.Length(finalResp));
-
-            //        TCP.Close(con, ptr->xid);
-
-            //        Heap.Free(ptr);
-            //    }
-            //    else if (ptr->Type == TCPPacketDescriptorTypes.RESET)
-            //    {
-            //        Console.Write("RESET from XID: ");
-            //        Console.WriteHex(ptr->xid);
-            //        Console.WriteLine("");
-
-            //        Heap.Free(ptr);
-            //    }
-            //    else if (ptr->Type == TCPPacketDescriptorTypes.CLOSE)
-            //    {
-            //        Console.Write("CLOSE from XID: ");
-            //        Console.WriteHex(ptr->xid);
-            //        Console.WriteLine("");
-
-            //        Heap.Free(ptr);
-            //    }
-            //}
-
-            //Console.WriteLine("EXIT");
-            //for (;;) ;
-
-            //TCP.Free(con);
+            TCP.Free(con);
         }
 
         /// <summary>

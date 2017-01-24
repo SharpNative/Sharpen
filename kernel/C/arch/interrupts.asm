@@ -182,14 +182,9 @@ Sharpen_Arch_IDT_IRQ0_0:
     popa
     iret
 
-; Manual scheduler
-global Sharpen_MultiTasking_Tasking_ManualSchedule_0
-Sharpen_MultiTasking_Tasking_ManualSchedule_0:
-    ; Setup fake interrupt stack frame
-    pushfd
-    push cs
-    push .r
-
+; Special INT routine for INT 0x81 (Yield)
+global Sharpen_Arch_IDT_Yield_0
+Sharpen_Arch_IDT_Yield_0:
     ; Store data
     pusha
 
@@ -206,10 +201,14 @@ Sharpen_MultiTasking_Tasking_ManualSchedule_0:
     mov fs, ax
     mov gs, ax
 
-    ; Task scheduler
+    ; Call both the PIT handler and the task scheduler
     push esp
     call Sharpen_MultiTasking_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
     mov esp, eax
+
+    ; Acknowledge IRQ
+    mov al, 0x20
+    out 0x20, al
 
     ; Reload original segment
     pop gs
@@ -220,7 +219,12 @@ Sharpen_MultiTasking_Tasking_ManualSchedule_0:
     ; Pop data
     popa
     iret
-.r:
+
+; Manual scheduler
+global Sharpen_MultiTasking_Tasking_Yield_0
+Sharpen_MultiTasking_Tasking_Yield_0:
+    sti
+    int 0x81
     ret
 
 ; IRQ routines

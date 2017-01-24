@@ -5,8 +5,6 @@ namespace Sharpen.MultiTasking
 {
     public class Tasking
     {
-        private static Thread threadToClone = null;
-
         public static Task KernelTask { get; private set; }
         public static Task CurrentTask { get; private set; }
 
@@ -27,9 +25,8 @@ namespace Sharpen.MultiTasking
             CurrentTask = kernel;
             kernel.NextTask = kernel;
 
-            // Enable interrupts, because we can now do multitasking
-            CPU.STI();
-            ManualSchedule();
+            // Do initial task switch to setup kernel task
+            Yield();
             Console.WriteLine("[Tasking] Initialized");
         }
         
@@ -90,7 +87,7 @@ namespace Sharpen.MultiTasking
 
             // The task is descheduled, we need to wait until this task is removed, do task switch
             while (true)
-                ManualSchedule();
+                Yield();
         }
 
         /// <summary>
@@ -124,9 +121,10 @@ namespace Sharpen.MultiTasking
         public static int SetForkingThread(Thread thread)
         {
             int pid = thread.OwningTask.PID;
-            threadToClone = thread;
-            ManualSchedule();
-            return (pid == CurrentTask.PID ? Task.NextPID - 1 : 0);
+            Task newTask = thread.OwningTask.Clone();
+            newTask.AddThread(thread.Clone());
+            ScheduleTask(newTask);
+            return (pid == CurrentTask.PID ? newTask.PID : 0);
         }
 
         /// <summary>
@@ -183,16 +181,7 @@ namespace Sharpen.MultiTasking
 
             void* stack = nextTask.RestoreThreadContext();
             CurrentTask = nextTask;
-
-            // Check for cloning
-            if (threadToClone != null)
-            {
-                Task newTask = threadToClone.OwningTask.Clone();
-                newTask.AddThread(threadToClone.Clone());
-                threadToClone = null;
-                ScheduleTask(newTask);
-            }
-
+            
             // Cleanup old task
             if (oldTask.HasFlag(Task.TaskFlag.DESCHEDULED))
             {
@@ -207,6 +196,6 @@ namespace Sharpen.MultiTasking
         /// <summary>
         /// Manually calls the task scheduler
         /// </summary>
-        public static extern void ManualSchedule();
+        public static extern void Yield();
     }
 }

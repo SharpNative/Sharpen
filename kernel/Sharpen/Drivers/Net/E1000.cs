@@ -9,8 +9,8 @@ namespace Sharpen.Drivers.Net
 {
     unsafe class E1000
     {
-        private const ushort NUM_RX_DESCRIPTORS = 16;
-        private const ushort NUM_TX_DESCRIPTIORS = 16;
+        private const ushort NUM_RX_DESCRIPTORS = 32;
+        private const ushort NUM_TX_DESCRIPTIORS = 32;
 
         /**
         * Device ids
@@ -51,7 +51,7 @@ namespace Sharpen.Drivers.Net
         private const ushort REG_TDT   = 0x3818;
         private const ushort REG_TCTL  = 0x0400;
 
-        private static ushort REG_RD_EOP = (1 << 1);
+        private const ushort REG_RD_EOP = (1 << 1);
 
 
         /**
@@ -175,7 +175,6 @@ namespace Sharpen.Drivers.Net
             public byte CSS;
 
             public ushort Special;
-
         }
 
         /// <summary>
@@ -197,7 +196,7 @@ namespace Sharpen.Drivers.Net
              * Wait till done
              */
             while ((*ptr & REG_EERD_DONE) == 0)
-                Tasking.ManualSchedule();
+                Tasking.Yield();
 
             return (ushort)((*ptr >> 16) & 0xFFFF);
         }
@@ -348,7 +347,7 @@ namespace Sharpen.Drivers.Net
             /**
             * Setup total length
             */
-            *(uint*)(m_register_base + REG_RDLEN) = NUM_RX_DESCRIPTORS * 16;
+            *(uint*)(m_register_base + REG_RDLEN) = NUM_RX_DESCRIPTORS * (uint)sizeof(RX_DESC);
             *(uint*)(m_register_base + REG_RDH) = 0;
             *(uint*)(m_register_base + REG_RDT) = NUM_RX_DESCRIPTORS;
 
@@ -361,7 +360,7 @@ namespace Sharpen.Drivers.Net
             /**
              * Setup read control register
              */
-            *(uint*)(m_register_base + REG_RCTL) = REG_RCTL_BSEX | REG_RCTL_BSECRC | REG_RCT_BAM | REG_RCT_LPE | 0 << 8 | 0 << 4 | 0 << 3 | (1 << 1) | REG_RCT_SBP | ( 2 << 16);
+            *(uint*)(m_register_base + REG_RCTL) = REG_RCTL_BSEX | REG_RCTL_BSECRC | REG_RCT_BAM | REG_RCT_LPE | (0 << 8) | (0 << 4) | (0 << 3) | (1 << 1) | REG_RCT_SBP | (2 << 16);
         }
         
         /// <summary>
@@ -374,15 +373,12 @@ namespace Sharpen.Drivers.Net
             if (size > 8000)
                 return;
             
-
             uint index = m_tx_next++;
-            if (m_tx_next > NUM_TX_DESCRIPTIORS - 3)
+            if (m_tx_next == NUM_TX_DESCRIPTIORS)
                 m_tx_next = 0;
             
             Memory.Memcpy(m_tx_buffers[index], bytes, (int)size);
-
-
-            m_tx_descs[index].Address = (uint)Paging.GetPhysicalFromVirtual(m_tx_buffers[index]);
+            
             m_tx_descs[index].Length = (ushort)size;
             m_tx_descs[index].CSO = 0;
             m_tx_descs[index].CMD = REG_RCMD_EOP | REG_RCMD_IC | REG_RCMD_IFCS;
@@ -398,7 +394,6 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         private static unsafe void txInit()
         {
-
             /**
              * Allocate transmit descriptors
              */
@@ -408,7 +403,7 @@ namespace Sharpen.Drivers.Net
             for (int i = 0; i < NUM_TX_DESCRIPTIORS; i++)
             {
                 m_tx_buffers[i] = (byte*)Heap.AlignedAlloc(16, 8192);
-                m_tx_descs[i].Address = 0;
+                m_tx_descs[i].Address = (uint)Paging.GetPhysicalFromVirtual(m_tx_buffers[i]);
                 m_tx_descs[i].CMD = 0;
                 m_tx_descs[i].CSO = 0;
                 m_tx_descs[i].CSS = 0;
@@ -426,9 +421,9 @@ namespace Sharpen.Drivers.Net
             /**
              * Setup total length
              */
-            *(uint*)(m_register_base + REG_TDLEN) = NUM_TX_DESCRIPTIORS * 16;
+            *(uint*)(m_register_base + REG_TDLEN) = NUM_TX_DESCRIPTIORS * (uint)sizeof(TX_DESC);
             *(uint*)(m_register_base + REG_TDH) = 0;
-            *(uint*)(m_register_base + REG_TDT) = NUM_TX_DESCRIPTIORS - 2;
+            *(uint*)(m_register_base + REG_TDT) = NUM_TX_DESCRIPTIORS;
 
             /**
              * Ensure tx next is 0
@@ -450,9 +445,9 @@ namespace Sharpen.Drivers.Net
             while((m_rx_descs[m_rx_next].Status & REG_RD_EOP) > 0)
             {
                 uint cur = m_rx_next++;
-                if (m_rx_next >= NUM_RX_DESCRIPTORS)
+                if (m_rx_next == NUM_RX_DESCRIPTORS)
                     m_rx_next = 0;
-
+                
                 ushort len = m_rx_descs[cur].Length;
                 
                 Memory.Memcpy(Util.ObjectToVoidPtr(m_packetBuffer), m_rx_buffers[cur], len);

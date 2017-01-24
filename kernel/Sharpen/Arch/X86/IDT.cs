@@ -177,6 +177,7 @@ namespace Sharpen.Arch
             #region Syscall
 
             SetEntry(0x80, Util.MethodToPtr(Syscall), 0x08, FLAG_INT);
+            SetEntry(0x81, Util.MethodToPtr(Yield), 0x08, FLAG_INT);
 
             #endregion
 
@@ -259,6 +260,7 @@ namespace Sharpen.Arch
         #region INT routines
 
         private static extern void Syscall();
+        private static extern void Yield();
 
         #endregion
     }

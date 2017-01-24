@@ -58,7 +58,7 @@ namespace Sharpen.MultiTasking
             m_sleepUntilFullTicks = fullTicks;
             m_sleepUntilSubTicks = subTicks;
             OwningTask.SleepingThreadCount++;
-            Tasking.ManualSchedule();
+            Tasking.Yield();
             return 0;
         }
 

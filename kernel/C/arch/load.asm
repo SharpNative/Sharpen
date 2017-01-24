@@ -41,5 +41,5 @@ start:
     jmp .halt
 
 section .bss
-resb 8192
+resb 16384
 _sys_stack:

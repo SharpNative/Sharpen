@@ -12,7 +12,7 @@ set USER_LD_FLAGS=-s -T../link.ld
 
 rem Kernelspace
 set KERNEL_ASM_FLAGS=-f elf32
-set KERNEL_C_FLAGS=-I./include -Wall -O1 -fno-omit-frame-pointer -std=c99
+set KERNEL_C_FLAGS=-I./include -Wall -O0 -fno-omit-frame-pointer -std=c99
 set KERNEL_LD_FLAGS=-Tlinker.ld
 
 rem Utilities
