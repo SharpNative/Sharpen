@@ -531,15 +531,7 @@ namespace Sharpen.Exec
         /// <returns>The amount of time the task still needs to sleep</returns>
         public static int Sleep(uint seconds, uint usec)
         {
-            // 1,000,000 usec = 1 second
-            // 1,000,000 usec = PIT.Frequency subticks
-            uint fullTicks = PIT.FullTicks + seconds;
-            uint subTicks = PIT.SubTicks + (PIT.Frequency * usec / 1000000);
-            fullTicks += subTicks / PIT.Frequency;
-            subTicks %= PIT.Frequency;
-
-            // Update task as paused task
-            return (int)Tasking.CurrentTask.CurrentThread.SleepUntil(fullTicks, subTicks);
+            return (int)Tasking.CurrentTask.CurrentThread.Sleep(seconds, usec);
         }
 
         /// <summary>

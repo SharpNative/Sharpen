@@ -56,7 +56,7 @@ namespace Sharpen.MultiTasking
         private List m_usedAddresses;
 
         // Next task in the linked list
-        public Task NextTask;
+        public Task NextTask { get; set; }
 
         // Priority times
         public TaskPriority Priority { get; private set; }
@@ -67,7 +67,7 @@ namespace Sharpen.MultiTasking
         private uint m_launchTime;
 
         // PID counter
-        public static int NextPID = 0;
+        private static int NextPID = 0;
 
         // Threading
         public Thread FirstThread { get; private set; }
@@ -154,10 +154,9 @@ namespace Sharpen.MultiTasking
             Thread current = FirstThread;
             while (current.NextThread != FirstThread)
             {
-                Thread next = current.NextThread;
                 current.Cleanup();
                 Heap.Free(current);
-                current = next;
+                current = current.NextThread;
             }
 
             // Cleanup virtual addresses claimed by this task
@@ -226,7 +225,9 @@ namespace Sharpen.MultiTasking
             do
             {
                 if (next.IsSleeping())
+                {
                     next.Awake();
+                }
             }
             while (next.NextThread != FirstThread);
         }

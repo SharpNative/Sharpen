@@ -19,15 +19,15 @@ namespace Sharpen.MultiTasking
         public IThreadContext Context { get; private set; }
         private ThreadFlags m_flags;
 
-        public Thread NextThread;
-        
+        public Thread NextThread { get; set; }
+
         public Task OwningTask { get; set; }
 
         public int TID { get; private set; }
 
         // TID counter
-        public static int NextTID = 0;
-        
+        private static int NextTID = 0;
+
         /// <summary>
         /// Creates a new thread
         /// </summary>
@@ -54,12 +54,46 @@ namespace Sharpen.MultiTasking
         /// <returns>The amount of time the task still needs to sleep (only if interrupted)</returns>
         public uint SleepUntil(uint fullTicks, uint subTicks)
         {
-            m_flags |= ThreadFlags.SLEEPING;
             m_sleepUntilFullTicks = fullTicks;
             m_sleepUntilSubTicks = subTicks;
-            OwningTask.SleepingThreadCount++;
-            Tasking.Yield();
+
+            /**
+             * If we're the only thread that and we are sleeping, we have nowhere to switch to
+             * when we have a taskswitch that happens.
+             * This case can only happen if we're the KernelTask with all threads sleeping but this one, so we just wait here
+            **/
+            if (OwningTask == Tasking.KernelTask && OwningTask.SleepingThreadCount == OwningTask.ThreadCount - 1)
+            {
+                while (!Awake())
+                {
+                    CPU.HLT();
+                }
+            }
+            else
+            {
+                m_flags |= ThreadFlags.SLEEPING;
+                OwningTask.SleepingThreadCount++;
+                Tasking.Yield();
+            }
+
             return 0;
+        }
+
+        /// <summary>
+        /// Sleeps some time
+        /// </summary>
+        /// <param name="seconds">Whole seconds</param>
+        /// <param name="usec">Microseconds</param>
+        /// <returns>The amount of time the task still needs to sleep</returns>
+        public uint Sleep(uint seconds, uint usec)
+        {
+            // 1,000,000 usec = 1 second
+            // 1,000,000 usec = PIT.Frequency subticks
+            uint fullTicks = PIT.FullTicks + seconds;
+            uint subTicks = PIT.SubTicks + (PIT.Frequency * usec / 1000000);
+            fullTicks += subTicks / PIT.Frequency;
+            subTicks %= PIT.Frequency;
+            return SleepUntil(fullTicks, subTicks);
         }
 
         /// <summary>
@@ -74,13 +108,15 @@ namespace Sharpen.MultiTasking
         /// <summary>
         /// Wakes the thread up
         /// </summary>
-        public void Awake()
+        /// <returns>Returns true if the thread has waken up</returns>
+        public bool Awake()
         {
             // If the full ticks are greater than the fullticks we needed to sleep until, we know we're done sleeping
             if (PIT.FullTicks > m_sleepUntilFullTicks)
             {
                 m_flags &= ~ThreadFlags.SLEEPING;
                 OwningTask.SleepingThreadCount--;
+                return true;
             }
 
             // If the full ticks are the same, and the subticks are greater, we know we're done sleeping
@@ -88,7 +124,10 @@ namespace Sharpen.MultiTasking
             {
                 m_flags &= ~ThreadFlags.SLEEPING;
                 OwningTask.SleepingThreadCount--;
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>

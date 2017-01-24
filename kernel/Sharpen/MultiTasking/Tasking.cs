@@ -38,18 +38,16 @@ namespace Sharpen.MultiTasking
         public static Task GetTaskByPID(int pid)
         {
             Task current = KernelTask;
-            while (true)
+            do
             {
-                // Check
-                if (current.PID == pid)
-                    return current;
-
-                // Get next if it exists, if we still haven't found
-                // it means there is no such task
                 current = current.NextTask;
-                if (current == KernelTask)
-                    return null;
             }
+            while (current.PID != pid && current.NextTask != KernelTask);
+
+            if (current.PID == pid)
+                return current;
+
+            return null;
         }
 
         /// <summary>
@@ -60,19 +58,15 @@ namespace Sharpen.MultiTasking
         {
             Task current = KernelTask;
             Task previous = null;
-            while (true)
+            do
             {
-                // Check
-                if (current.PID == pid)
-                    break;
-
-                // Get next if it exists, if we still haven't found
-                // it means there is no such task
                 previous = current;
                 current = current.NextTask;
-                if (current == KernelTask)
-                    return;
             }
+            while (current.PID != pid && current.NextTask != KernelTask);
+
+            if (current == KernelTask)
+                return;
 
             // Critical section, a task switch may not occur now
             CPU.CLI();
@@ -173,7 +167,6 @@ namespace Sharpen.MultiTasking
             oldTask.SwitchToNextThread();
 
             Task nextTask = GetNextTask();
-
             if (oldTask != nextTask)
             {
                 nextTask.PrepareContext();
