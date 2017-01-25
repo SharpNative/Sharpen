@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct
 {
@@ -45,11 +46,12 @@ int main(int argc, char* argv[])
     }
 
     char* byte = (char*)malloc(48);
+    memset(byte, 0, 48);
     byte[0] = 0x1B;
 
     write(fd, byte, 48);
 
-    ntp_packet *packet = (ntp_packet *)malloc(sizeof(ntp_packet));
+    ntp_packet* packet = (ntp_packet*)malloc(sizeof(ntp_packet));
 
     read(fd, packet, 48);
     close(fd);
@@ -60,6 +62,9 @@ int main(int argc, char* argv[])
     time_t txTm = (time_t)(packet->txTm_s - NTP_TIMESTAMP_DELTA);
     
     printf("Time: %s", ctime((const time_t*)&txTm));
+
+    free(packet);
+    free(byte);
 
     return 0;
 }

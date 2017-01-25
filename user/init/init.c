@@ -122,12 +122,8 @@ int main(int argc, char* argv[])
     }
     
     // Count down
-    puts("init: Child stopped, shutting down...");
-    for(int i = 5; i >= 1; i--)
-    {
-        printf("Shutting down in %d\n", i);
-        sleep(1);
-    }
+    puts("init: Child stopped, shutting down in 3s...");
+    sleep(3);
 
     // Done, shutdown
     if(shutdown())
