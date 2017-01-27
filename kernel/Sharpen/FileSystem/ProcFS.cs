@@ -49,7 +49,7 @@ namespace Sharpen.FileSystem
             Task task = Tasking.GetTaskByPID(pid);
             if (task == null)
                 return null;
-
+            
             Node taskNode = new Node();
             taskNode.Cookie = (uint)task.PID;
             taskNode.Flags = NodeFlags.DIRECTORY;

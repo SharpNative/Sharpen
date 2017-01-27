@@ -95,7 +95,7 @@ namespace Sharpen
                 Console.Write("  EIP ");
                 Console.WriteHex(regsPtr->EIP & 0xFFFFFFFF);
                 Console.Write("  CR2 ");
-                Console.WriteHex(Paging.ReadCR2() & 0xFFFFFFFF);
+                Console.WriteHex((int)Paging.FaultingAddress & 0xFFFFFFFF);
                 Console.Write("  EFlags ");
                 Console.WriteHex(regsPtr->EFlags & 0xFFFFFFFF);
                 Console.Write('\n');

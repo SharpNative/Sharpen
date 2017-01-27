@@ -8,4 +8,5 @@ section .text
 %include "arch/memory.asm"
 %include "arch/paging.asm"
 %include "arch/mutex.asm"
+%include "arch/usercode.asm"
 %include "arch/load.asm"

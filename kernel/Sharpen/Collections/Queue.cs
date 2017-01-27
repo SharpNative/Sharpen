@@ -91,6 +91,10 @@ namespace Sharpen.Collections
             return ret;
         }
 
+        /// <summary>
+        /// Returns the top element of the Queue without popping it
+        /// </summary>
+        /// <returns>The top element</returns>
         public unsafe void* Peek()
         {
             m_mutex.Lock();
@@ -103,10 +107,28 @@ namespace Sharpen.Collections
 
             stackNode* node = m_head;
             void* ret = node->Value;
-            
+
             m_mutex.Unlock();
 
             return ret;
+        }
+
+        /// <summary>
+        /// Cleans up this queue
+        /// </summary>
+        public void Dispose()
+        {
+            m_mutex.Lock();
+
+            Length = 0;
+            while (m_head != null)
+            {
+                stackNode* prev = m_head->Previous;
+                Heap.Free(m_head);
+                m_head = prev;
+            }
+
+            m_mutex.Unlock();
         }
     }
 }

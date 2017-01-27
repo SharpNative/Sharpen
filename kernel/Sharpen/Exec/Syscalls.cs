@@ -32,8 +32,8 @@ namespace Sharpen.Exec
         public const int SYS_PIPE = 18;
         public const int SYS_DUP2 = 19;
         public const int SYS_SIG_SEND = 20;
-        public const int SYS_SIG_HANDLER = 21;
-        public const int SYS_YIELD = 22;
+        public const int SYS_SETSIGHANDLER = 21;
+        public const int SYS_RETURN_FROM_SIGNAL = 22;
         public const int SYS_GETCWD = 23;
         public const int SYS_CHDIR = 24;
         public const int SYS_TIMES = 25;
@@ -233,16 +233,16 @@ namespace Sharpen.Exec
         /// <param name="descriptor">The descriptor ID</param>
         /// <param name="st">The stat structure</param>
         /// <returns>The errorcode</returns>
-        public static unsafe int FStat(int descriptor, Stat* st)
+        public static unsafe ErrorCode FStat(int descriptor, Stat* st)
         {
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
 
             Node node = descriptors.GetNode(descriptor);
             if (node == null)
-                return -(int)ErrorCode.EBADF;
+                return ErrorCode.EBADF;
 
             node.Stat(st);
-            return 0;
+            return ErrorCode.SUCCESS;
         }
 
         /// <summary>
@@ -251,15 +251,15 @@ namespace Sharpen.Exec
         /// <param name="path">The path</param>
         /// <param name="st">The stat structure</param>
         /// <returns>The errorcode</returns>
-        public static unsafe int Stat(string path, Stat* st)
+        public static unsafe ErrorCode Stat(string path, Stat* st)
         {
             Node node = VFS.GetByPath(path);
             if (node == null)
-                return -(int)ErrorCode.ENOENT;
+                return ErrorCode.ENOENT;
 
             node.Stat(st);
             Heap.Free(node);
-            return 0;
+            return ErrorCode.SUCCESS;
         }
 
         /// <summary>
@@ -308,7 +308,7 @@ namespace Sharpen.Exec
         /// <param name="status">Pointer to status</param>
         /// <param name="options">Options</param>
         /// <returns>The error code</returns>
-        public static unsafe int WaitPID(int pid, int* status, int options)
+        public static unsafe ErrorCode WaitPID(int pid, int* status, int options)
         {
             // Wait for specific PID
             if (pid > 0)
@@ -317,9 +317,9 @@ namespace Sharpen.Exec
                 if ((options & WNOHANG) == WNOHANG)
                 {
                     if (Tasking.GetTaskByPID(pid) != null)
-                        return 0;
+                        return ErrorCode.SUCCESS;
                     else
-                        return -(int)ErrorCode.ECHILD;
+                        return ErrorCode.ECHILD;
                 }
 
                 // If the task is still found, it means it's still there
@@ -342,7 +342,7 @@ namespace Sharpen.Exec
 
             }
 
-            return 0;
+            return ErrorCode.SUCCESS;
         }
 
         /// <summary>
@@ -352,48 +352,48 @@ namespace Sharpen.Exec
         /// <param name="entry">The directory entry</param>
         /// <param name="index">The index</param>
         /// <returns>Errorcode</returns>
-        public static unsafe int Readdir(int descriptor, DirEntry* entry, uint index)
+        public static unsafe ErrorCode Readdir(int descriptor, DirEntry* entry, uint index)
         {
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
 
             Node node = descriptors.GetNode(descriptor);
             if (node == null)
-                return -(int)ErrorCode.EBADF;
+                return ErrorCode.EBADF;
 
             DirEntry* gotEntry = VFS.ReadDir(node, index);
             if (gotEntry == null)
-                return -(int)ErrorCode.ENOENT;
+                return ErrorCode.ENOENT;
 
             Memory.Memcpy(entry, gotEntry, sizeof(DirEntry));
             Heap.Free(gotEntry);
 
-            return 0;
+            return ErrorCode.SUCCESS;
         }
 
         /// <summary>
         /// Shuts down the computer
         /// </summary>
         /// <returns>The error code</returns>
-        public static int Shutdown()
+        public static ErrorCode Shutdown()
         {
             if (Tasking.CurrentTask.UID > 0)
-                return -(int)ErrorCode.EPERM;
+                return ErrorCode.EPERM;
 
             Acpi.Shutdown();
-            return 0;
+            return ErrorCode.SUCCESS;
         }
 
         /// <summary>
         /// Reboots the computer
         /// </summary>
         /// <returns>The error code</returns>
-        public static int Reboot()
+        public static ErrorCode Reboot()
         {
             if (Tasking.CurrentTask.UID > 0)
-                return -(int)ErrorCode.EPERM;
+                return ErrorCode.EPERM;
 
             Acpi.Reboot();
-            return 0;
+            return ErrorCode.SUCCESS;
         }
 
         /// <summary>
@@ -401,11 +401,11 @@ namespace Sharpen.Exec
         /// </summary>
         /// <param name="tv">The time structure</param>
         /// <returns>The errorcode</returns>
-        public static unsafe int GetTimeOfDay(Time.Timeval* tv)
+        public static unsafe ErrorCode GetTimeOfDay(Time.Timeval* tv)
         {
             tv->tv_sec = PIT.FullTicks;
             tv->tv_usec = (PIT.SubTicks * 1000000 / PIT.Frequency);
-            return 0;
+            return ErrorCode.SUCCESS;
         }
 
         /// <summary>
@@ -413,14 +413,14 @@ namespace Sharpen.Exec
         /// </summary>
         /// <param name="pipefd">The pipe file descriptors (output)</param>
         /// <returns>The errorcode</returns>
-        public static unsafe int Pipe(int* pipefd)
+        public static unsafe ErrorCode Pipe(int* pipefd)
         {
             Node[] nodes = new Node[2];
             ErrorCode error = PipeFS.Create(nodes, 4096);
             if (error != ErrorCode.SUCCESS)
             {
                 Heap.Free(nodes);
-                return -(int)error;
+                return error;
             }
 
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
@@ -429,7 +429,7 @@ namespace Sharpen.Exec
 
             Heap.Free(nodes);
 
-            return 0;
+            return ErrorCode.SUCCESS;
         }
 
         /// <summary>
@@ -454,23 +454,13 @@ namespace Sharpen.Exec
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
             return descriptors.Dup2(oldfd, newfd);
         }
-
-        /// <summary>
-        /// Switches to another task
-        /// </summary>
-        /// <returns>Zero</returns>
-        public static int Yield()
-        {
-            Tasking.Yield();
-            return 0;
-        }
-
+        
         /// <summary>
         /// Changes the current directory to newDir
         /// </summary>
         /// <param name="newDir">The new working directory</param>
         /// <returns>Errorcode</returns>
-        public static int ChDir(string newDir)
+        public static ErrorCode ChDir(string newDir)
         {
             newDir = VFS.CreateAbsolutePath(newDir);
             Node node = VFS.GetByAbsolutePath(newDir);
@@ -478,14 +468,14 @@ namespace Sharpen.Exec
             if (node == null)
             {
                 Heap.Free(newDir);
-                return -(int)ErrorCode.ENOENT;
+                return ErrorCode.ENOENT;
             }
 
             if (node.Flags != NodeFlags.DIRECTORY)
             {
                 Heap.Free(newDir);
                 Heap.Free(node);
-                return -(int)ErrorCode.ENOTDIR;
+                return ErrorCode.ENOTDIR;
             }
 
             Heap.Free(node);
@@ -501,7 +491,7 @@ namespace Sharpen.Exec
             
             Tasking.CurrentTask.CurrentDirectory = newDir;
 
-            return 0;
+            return ErrorCode.SUCCESS;
         }
 
         /// <summary>
@@ -510,7 +500,7 @@ namespace Sharpen.Exec
         /// <param name="destination">The destination buffer</param>
         /// <param name="size">The size of the destination buffer</param>
         /// <returns>Errorcode</returns>
-        public static unsafe int GetCWD(char* destination, int size)
+        public static unsafe ErrorCode GetCWD(char* destination, int size)
         {
             if (size > MAX_PATH)
                 size = MAX_PATH;
@@ -520,7 +510,8 @@ namespace Sharpen.Exec
                 Memory.Memcpy(destination, ptr, size);
                 destination[size] = '\0';
             }
-            return 0;
+
+            return ErrorCode.SUCCESS;
         }
 
         /// <summary>
@@ -529,9 +520,9 @@ namespace Sharpen.Exec
         /// <param name="seconds">Whole seconds</param>
         /// <param name="usec">Microseconds</param>
         /// <returns>The amount of time the task still needs to sleep</returns>
-        public static int Sleep(uint seconds, uint usec)
+        public static uint Sleep(uint seconds, uint usec)
         {
-            return (int)Tasking.CurrentTask.CurrentThread.Sleep(seconds, usec);
+            return Tasking.CurrentTask.CurrentThread.Sleep(seconds, usec);
         }
 
         /// <summary>
@@ -619,6 +610,49 @@ namespace Sharpen.Exec
         {
             // TODO: implement (needs splitting the path and passing the directory name to the parent directory in VFS)
             return -1;
+        }
+
+        /// <summary>
+        /// Sets a signal handler
+        /// </summary>
+        /// <param name="sig">The signal number</param>
+        /// <param name="handler">The handler</param>
+        /// <returns>The errorcode</returns>
+        public static unsafe ErrorCode SetSigHandler(Signal sig, SignalAction.SigAction* newact, SignalAction.SigAction* oldact)
+        {
+            if (sig == Signal.SIGKILL || sig == Signal.SIGSTOP)
+                return ErrorCode.EINVAL;
+
+            if (newact == null)
+                return ErrorCode.EFAULT;
+
+            return Tasking.CurrentTask.SetSignalHandler(sig, newact, oldact);
+        }
+
+        /// <summary>
+        /// Sends a signal to a process
+        /// </summary>
+        /// <param name="pid">The PID</param>
+        /// <param name="sig">The signal</param>
+        /// <returns>The errorcode</returns>
+        public static ErrorCode SigSend(int pid, Signal sig)
+        {
+            if (pid <= 0)
+                return ErrorCode.EINVAL;
+
+            Task task = Tasking.GetTaskByPID(pid);
+            if (task == null)
+                return ErrorCode.ESRCH;
+
+            return task.ProcessSignal(sig);
+        }
+
+        /// <summary>
+        /// Returns from a signal (restores original context)
+        /// </summary>
+        public static void ReturnFromSignal()
+        {
+            Tasking.CurrentTask.CurrentThread.ReturnFromSignal();
         }
     }
 }

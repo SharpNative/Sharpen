@@ -14,6 +14,14 @@ SECTIONS
         . = ALIGN(4096);
     }
 
+    /* Kernel code that should be accessible from userspace */
+    .usercode : AT(phys + (usercode - code))
+    {
+        usercode = .;
+        *(.usercode)
+        . = ALIGN(4096);
+    }
+
     /* The kernel data */
     .data : AT(phys + (data - code))
     {

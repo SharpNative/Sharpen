@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sched.h>
 #include <time.h>
+#include <signal.h>
 
 int shutdown(void);
 int sched_yield(void);

@@ -6,13 +6,18 @@ mkdir build
 :nocreatedir
 del build\*.o 2>NUL
 
+rem Tools
+set AS=nasm
+set CC=i686-sharpen-gcc
+set NM=i686-sharpen-nm
+set LD=i686-sharpen-ld
+
 rem Userspace
-set USER_C_FLAGS=-I../newlib/include -Wall -O2 -std=c99
-set USER_LD_FLAGS=-s -T../link.ld
+set USER_C_FLAGS=-Wall -O3 -std=c99
 
 rem Kernelspace
 set KERNEL_ASM_FLAGS=-f elf32
-set KERNEL_C_FLAGS=-I./include -Wall -O0 -fno-omit-frame-pointer -std=c99
+set KERNEL_C_FLAGS=-Wall -O1 -fno-omit-frame-pointer -std=c99
 set KERNEL_LD_FLAGS=-Tlinker.ld
 
 rem Utilities

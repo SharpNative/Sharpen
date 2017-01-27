@@ -1,0 +1,52 @@
+diff -Naur newlib-2.5.0/config.sub newlib-2.5.0-sharpen/config.sub
+--- newlib-2.5.0/config.sub	2016-12-23 03:33:54.000000000 +0100
++++ newlib-2.5.0-sharpen/config.sub	2017-01-11 16:49:10.328603393 +0100
+@@ -1379,6 +1379,7 @@
+ 	      | -sym* | -kopensolaris* | -plan9* \
+ 	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+ 	      | -aos* | -aros* | -cloudabi* | -sortix* \
++	      | -*sharpen* \
+ 	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+ 	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+ 	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+diff -Naur newlib-2.5.0/newlib/configure.host newlib-2.5.0-sharpen/newlib/configure.host
+--- newlib-2.5.0/newlib/configure.host	2016-12-23 03:33:54.000000000 +0100
++++ newlib-2.5.0-sharpen/newlib/configure.host	2017-01-11 18:01:16.388603393 +0100
+@@ -544,6 +544,10 @@
+   tic80*)
+ 	sys_dir=tic80
+ 	;;
++  i[3-7]86-*-sharpen*)
++	sys_dir=sharpen
++	newlib_cflags="${newlib_cflags} -DSIGNAL_PROVIDED"
++	;;
+   v70-nec-*)
+ 	sys_dir=sysvnecv70
+ 	;;
+diff -Naur newlib-2.5.0/newlib/libc/ctype/ctype_.c newlib-2.5.0-sharpen/newlib/libc/ctype/ctype_.c
+--- newlib-2.5.0/newlib/libc/ctype/ctype_.c	2016-12-23 03:33:54.000000000 +0100
++++ newlib-2.5.0-sharpen/newlib/libc/ctype/ctype_.c	2017-01-11 20:15:50.292603393 +0100
+@@ -95,10 +95,10 @@
+ 	_CTYPE_DATA_128_255
+ };
+ 
+-#  ifdef __CYGWIN__
++//#  ifdef __CYGWIN__
+ /* For backward compatibility */
+ char __EXPORT *__ctype_ptr__ = DEFAULT_CTYPE_PTR;
+-
++#  ifdef __CYGWIN__
+ #    ifdef __x86_64__
+ __asm__ ("					\n\
+         .data					\n\
+diff -Naur newlib-2.5.0/newlib/libc/sys/configure.in newlib-2.5.0-sharpen/newlib/libc/sys/configure.in
+--- newlib-2.5.0/newlib/libc/sys/configure.in	2016-12-23 03:33:54.000000000 +0100
++++ newlib-2.5.0-sharpen/newlib/libc/sys/configure.in	2017-01-11 16:53:40.056603393 +0100
+@@ -30,6 +30,7 @@
+ 	h8300hms) AC_CONFIG_SUBDIRS(h8300hms) ;;
+ 	h8500hms) AC_CONFIG_SUBDIRS(h8500hms) ;;
+ 	linux) AC_CONFIG_SUBDIRS(linux) ;;
++	sharpen) AC_CONFIG_SUBDIRS(sharpen) ;;
+ 	m88kbug) AC_CONFIG_SUBDIRS(m88kbug) ;;
+ 	mmixware) AC_CONFIG_SUBDIRS(mmixware) ;;
+ 	netware) AC_CONFIG_SUBDIRS(netware) ;;

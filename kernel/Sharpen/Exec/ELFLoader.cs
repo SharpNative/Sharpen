@@ -156,7 +156,7 @@ namespace Sharpen.Exec
         /// <param name="size">The size of the ELF</param>
         /// <param name="argv">The arguments</param>
         /// <param name="flags">Spawn flags</param>
-        /// <returns>The error code</returns>
+        /// <returns>The error code or PID</returns>
         public static unsafe int Execute(byte[] buffer, uint size, string[] argv, Task.SpawnFlags flags)
         {
             ELF32* elf;

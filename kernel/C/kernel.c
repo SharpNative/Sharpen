@@ -83,6 +83,11 @@ inline void* Sharpen_Utilities_Util_MethodToPtr_1action_t_(action_t ptr)
 inline void* Sharpen_SymbolTable_getSymbolTable_0(void)
 {
     extern void* kernelsymbols;
-    void* pointer = (void*)&kernelsymbols;
-    return pointer;
+    return (void*)&kernelsymbols;
+}
+
+inline void* Sharpen_Arch_Paging_getUsercodeAddress_0(void)
+{
+    extern void* usercode;
+    return (void*)&usercode;
 }

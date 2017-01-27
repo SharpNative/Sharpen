@@ -1,4 +1,6 @@
-﻿using Sharpen.Exec;
+﻿// #define PRINT_SYSCALLS
+
+using Sharpen.Exec;
 using Sharpen.Utilities;
 using Sharpen.FileSystem;
 using Sharpen.MultiTasking;
@@ -11,7 +13,7 @@ namespace Sharpen.Arch
         /// Syscall handler
         /// </summary>
         /// <param name="regsPtr">Pointer to registers</param>
-        public static unsafe void Handler(Regs* regsPtr)
+        public static unsafe void Handler(RegsDirect* regsPtr)
         {
             int function = regsPtr->EAX;
             if (function < 0 || function > Syscalls.SYSCALL_MAX)
@@ -24,15 +26,17 @@ namespace Sharpen.Arch
                 return;
             }
 
-            /*if (function != 0x0D && function != 0x09 && function != 0x16 && function != 0x4 && function != 0x5)
+#if PRINT_SYSCALLS
+            if (function != 0x0D && function != 0x09 && function != 0x16 && function != 0x4 && function != 0x5)
             {
                 Console.Write("[SYSCALL] PID: ");
                 Console.WriteNum(Tasking.CurrentTask.PID);
                 Console.Write(" function: ");
                 Console.WriteNum(function);
                 Console.WriteLine("");
-            }*/
-            
+            }
+#endif
+
             Tasking.CurrentTask.CurrentThread.Context.UpdateSyscallRegs(regsPtr);
 
             int ret = 0;
@@ -75,11 +79,11 @@ namespace Sharpen.Arch
                     break;
 
                 case Syscalls.SYS_FSTAT:
-                    ret = Syscalls.FStat(regsPtr->EBX, (Stat*)regsPtr->ECX);
+                    ret = -(int)Syscalls.FStat(regsPtr->EBX, (Stat*)regsPtr->ECX);
                     break;
 
                 case Syscalls.SYS_STAT:
-                    ret = Syscalls.Stat(Util.CharPtrToString((char*)regsPtr->EBX), (Stat*)regsPtr->ECX);
+                    ret = -(int)Syscalls.Stat(Util.CharPtrToString((char*)regsPtr->EBX), (Stat*)regsPtr->ECX);
                     break;
 
                 case Syscalls.SYS_EXECVE:
@@ -91,27 +95,27 @@ namespace Sharpen.Arch
                     break;
 
                 case Syscalls.SYS_WAITPID:
-                    ret = Syscalls.WaitPID(regsPtr->EBX, (int*)regsPtr->ECX, regsPtr->EDX);
+                    ret = -(int)Syscalls.WaitPID(regsPtr->EBX, (int*)regsPtr->ECX, regsPtr->EDX);
                     break;
 
                 case Syscalls.SYS_READDIR:
-                    ret = Syscalls.Readdir(regsPtr->EBX, (DirEntry*)regsPtr->ECX, (uint)regsPtr->EDX);
+                    ret = -(int)Syscalls.Readdir(regsPtr->EBX, (DirEntry*)regsPtr->ECX, (uint)regsPtr->EDX);
                     break;
 
                 case Syscalls.SYS_SHUTDOWN:
-                    ret = Syscalls.Shutdown();
+                    ret = -(int)Syscalls.Shutdown();
                     break;
 
                 case Syscalls.SYS_REBOOT:
-                    ret = Syscalls.Reboot();
+                    ret = -(int)Syscalls.Reboot();
                     break;
 
                 case Syscalls.SYS_GETTIMEOFDAY:
-                    ret = Syscalls.GetTimeOfDay((Time.Timeval*)regsPtr->EBX);
+                    ret = -(int)Syscalls.GetTimeOfDay((Time.Timeval*)regsPtr->EBX);
                     break;
 
                 case Syscalls.SYS_PIPE:
-                    ret = Syscalls.Pipe((int*)regsPtr->EBX);
+                    ret = -(int)Syscalls.Pipe((int*)regsPtr->EBX);
                     break;
 
                 case Syscalls.SYS_DUP2:
@@ -119,27 +123,28 @@ namespace Sharpen.Arch
                     break;
 
                 case Syscalls.SYS_SIG_SEND:
-                    // TODO
+                    ret = -(int)Syscalls.SigSend(regsPtr->EBX, (Signal)regsPtr->ECX);
                     break;
 
-                case Syscalls.SYS_SIG_HANDLER:
-                    // TODO
+                case Syscalls.SYS_SETSIGHANDLER:
+                    ret = -(int)Syscalls.SetSigHandler((Signal)regsPtr->EBX, (SignalAction.SigAction*)regsPtr->ECX, (SignalAction.SigAction*)regsPtr->EDX);
                     break;
 
-                case Syscalls.SYS_YIELD:
-                    ret = Syscalls.Yield();
+                case Syscalls.SYS_RETURN_FROM_SIGNAL:
+                    Syscalls.ReturnFromSignal();
+                    ret = 0;
                     break;
 
                 case Syscalls.SYS_GETCWD:
-                    ret = Syscalls.GetCWD((char*)regsPtr->EBX, regsPtr->ECX);
+                    ret = -(int)Syscalls.GetCWD((char*)regsPtr->EBX, regsPtr->ECX);
                     break;
 
                 case Syscalls.SYS_CHDIR:
-                    ret = Syscalls.ChDir(Util.CharPtrToString((char*)regsPtr->EBX));
+                    ret = -(int)Syscalls.ChDir(Util.CharPtrToString((char*)regsPtr->EBX));
                     break;
 
                 case Syscalls.SYS_SLEEP:
-                    ret = Syscalls.Sleep((uint)regsPtr->EBX, (uint)regsPtr->ECX);
+                    ret = (int)Syscalls.Sleep((uint)regsPtr->EBX, (uint)regsPtr->ECX);
                     break;
 
                 case Syscalls.SYS_TRUNCATE:

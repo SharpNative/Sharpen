@@ -52,11 +52,15 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Arch\PciClassCodes.cs" />
+    <Compile Include="Arch\X86\X86SignalContext.cs" />
     <Compile Include="Collections\Bucket.cs" />
     <Compile Include="Collections\StringDictionary.cs" />
     <Compile Include="Collections\LongList.cs" />
     <Compile Include="Drivers\Block\AHCI.cs" />
     <Compile Include="Drivers\USB\UHCI.cs" />
+    <Compile Include="Exec\SignalAction.cs" />
+    <Compile Include="Exec\Signals.cs" />
+    <Compile Include="MultiTasking\ISignalContext.cs" />
     <Compile Include="MultiTasking\IThreadContext.cs" />
     <Compile Include="Arch\X86\CMOS.cs" />
     <Compile Include="Arch\X86\CPU.cs" />

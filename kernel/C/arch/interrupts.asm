@@ -3,7 +3,7 @@ extern Sharpen_MultiTasking_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
 ; PIT handler
 extern Sharpen_Arch_PIT_Handler_1struct_struct_Sharpen_Arch_Regs__
 ; Syscall handler
-extern Sharpen_Arch_Syscall_Handler_1struct_struct_Sharpen_Arch_Regs__
+extern Sharpen_Arch_Syscall_Handler_1struct_struct_Sharpen_Arch_RegsDirect__
 
 %macro INT_COMMON 2
     extern %2
@@ -108,9 +108,6 @@ ISR_NO_ERROR 31
 ; Syscall handler
 global Sharpen_Arch_IDT_Syscall_0
 Sharpen_Arch_IDT_Syscall_0:
-    ; No errorcode or INT number
-    sub esp, 8
-
     ; Store data
     pusha
 
@@ -129,7 +126,7 @@ Sharpen_Arch_IDT_Syscall_0:
 
     ; Call interrupt handler
     push esp
-    call Sharpen_Arch_Syscall_Handler_1struct_struct_Sharpen_Arch_Regs__
+    call Sharpen_Arch_Syscall_Handler_1struct_struct_Sharpen_Arch_RegsDirect__
     add esp, 4
 
     ; Reload original segment
@@ -140,7 +137,6 @@ Sharpen_Arch_IDT_Syscall_0:
 
     ; Pop data
     popa
-    add esp, 8
     iret
 
 ; Special IRQ routine for IRQ 0 (PIT)
@@ -205,10 +201,6 @@ Sharpen_Arch_IDT_Yield_0:
     push esp
     call Sharpen_MultiTasking_Tasking_scheduler_1struct_struct_Sharpen_Arch_Regs__
     mov esp, eax
-
-    ; Acknowledge IRQ
-    mov al, 0x20
-    out 0x20, al
 
     ; Reload original segment
     pop gs

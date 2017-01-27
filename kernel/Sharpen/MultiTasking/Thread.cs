@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Arch.X86;
+using Sharpen.Exec;
 using Sharpen.Mem;
 
 namespace Sharpen.MultiTasking
@@ -25,6 +26,10 @@ namespace Sharpen.MultiTasking
 
         public int TID { get; private set; }
 
+        // Signals
+        private ISignalContext m_currentSignalContext;
+        private Mutex m_signalMutex;
+
         // TID counter
         private static int NextTID = 0;
 
@@ -35,6 +40,36 @@ namespace Sharpen.MultiTasking
         {
             TID = NextTID++;
             Context = new X86ThreadContext();
+            m_currentSignalContext = null;
+            m_signalMutex = new Mutex();
+        }
+
+        /// <summary>
+        /// Checks if the thread has a flag
+        /// </summary>
+        /// <param name="flag">The flag</param>
+        /// <returns>If it has the flag</returns>
+        public bool HasFlag(ThreadFlags flag)
+        {
+            return ((m_flags & flag) == flag);
+        }
+
+        /// <summary>
+        /// Adds a flag to the thread
+        /// </summary>
+        /// <param name="flag">The flag</param>
+        public void AddFlag(ThreadFlags flag)
+        {
+            m_flags |= flag;
+        }
+
+        /// <summary>
+        /// Removes a flag from the thread
+        /// </summary>
+        /// <param name="flag">The flag</param>
+        public void RemoveFlag(ThreadFlags flag)
+        {
+            m_flags &= ~flag;
         }
 
         /// <summary>
@@ -44,6 +79,13 @@ namespace Sharpen.MultiTasking
         {
             Context.Cleanup();
             Heap.Free(Context);
+
+            if (m_currentSignalContext != null)
+            {
+                m_currentSignalContext.Dispose();
+                Heap.Free(m_currentSignalContext);
+            }
+            Heap.Free(m_signalMutex);
         }
 
         /// <summary>
@@ -66,12 +108,13 @@ namespace Sharpen.MultiTasking
             {
                 while (!Awake())
                 {
+                    // Wait for all interrupts, not just a task switch...
                     CPU.HLT();
                 }
             }
             else
             {
-                m_flags |= ThreadFlags.SLEEPING;
+                AddFlag(ThreadFlags.SLEEPING);
                 OwningTask.SleepingThreadCount++;
                 Tasking.Yield();
             }
@@ -102,7 +145,7 @@ namespace Sharpen.MultiTasking
         /// <returns>True if the task is sleeping, False if it's not sleeping</returns>
         public bool IsSleeping()
         {
-            return ((m_flags & ThreadFlags.SLEEPING) == ThreadFlags.SLEEPING);
+            return HasFlag(ThreadFlags.SLEEPING);
         }
 
         /// <summary>
@@ -114,7 +157,7 @@ namespace Sharpen.MultiTasking
             // If the full ticks are greater than the fullticks we needed to sleep until, we know we're done sleeping
             if (PIT.FullTicks > m_sleepUntilFullTicks)
             {
-                m_flags &= ~ThreadFlags.SLEEPING;
+                RemoveFlag(ThreadFlags.SLEEPING);
                 OwningTask.SleepingThreadCount--;
                 return true;
             }
@@ -122,12 +165,49 @@ namespace Sharpen.MultiTasking
             // If the full ticks are the same, and the subticks are greater, we know we're done sleeping
             if (PIT.FullTicks == m_sleepUntilFullTicks && PIT.SubTicks > m_sleepUntilSubTicks)
             {
-                m_flags &= ~ThreadFlags.SLEEPING;
+                RemoveFlag(ThreadFlags.SLEEPING);
                 OwningTask.SleepingThreadCount--;
                 return true;
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Returns from a signal (restores original context)
+        /// </summary>
+        public unsafe void ReturnFromSignal()
+        {
+            m_signalMutex.Lock();
+
+            if (m_currentSignalContext == null)
+            {
+                m_signalMutex.Unlock();
+                return;
+            }
+
+            Context.ReturnFromSignal(m_currentSignalContext);
+
+            m_currentSignalContext.Dispose();
+            Heap.Free(m_currentSignalContext);
+            m_currentSignalContext = null;
+
+            m_signalMutex.Unlock();
+        }
+
+        /// <summary>
+        /// Processes a signal
+        /// </summary>
+        /// <param name="action">The action</param>
+        /// <returns>The signal context</returns>
+        public void ProcessSignal(SignalAction action)
+        {
+            while (m_currentSignalContext != null)
+                Tasking.Yield();
+            
+            m_signalMutex.Lock();
+            m_currentSignalContext = Context.ProcessSignal(action);
+            m_signalMutex.Unlock();
         }
 
         /// <summary>

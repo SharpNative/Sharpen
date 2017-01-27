@@ -38,11 +38,10 @@ namespace Sharpen.MultiTasking
         public static Task GetTaskByPID(int pid)
         {
             Task current = KernelTask;
-            do
+            while (current.PID != pid && current.NextTask != KernelTask)
             {
                 current = current.NextTask;
             }
-            while (current.PID != pid && current.NextTask != KernelTask);
 
             if (current.PID == pid)
                 return current;
@@ -58,12 +57,11 @@ namespace Sharpen.MultiTasking
         {
             Task current = KernelTask;
             Task previous = null;
-            do
+            while (current.PID != pid && current.NextTask != KernelTask)
             {
                 previous = current;
                 current = current.NextTask;
             }
-            while (current.PID != pid && current.NextTask != KernelTask);
 
             if (current == KernelTask)
                 return;
@@ -130,7 +128,7 @@ namespace Sharpen.MultiTasking
             Task current = CurrentTask;
 
             // Only keep going with this task if we're not sleeping
-            if (!current.IsSleeping())
+            if (!current.IsSleeping() && !current.HasFlag(Task.TaskFlag.STOPPED))
             {
                 // Decrease the time, if there is still time left, keep going with this task
                 current.TimeLeft--;
@@ -141,12 +139,12 @@ namespace Sharpen.MultiTasking
                 current.TimeLeft = (int)current.Priority;
             }
 
-            // Sleeping
+            // Sleeping and stopped processes
             Task next = current.NextTask;
-            while (next.IsSleeping())
+            while (next.IsSleeping() && !next.HasFlag(Task.TaskFlag.STOPPED))
             {
                 next.AwakeThreads();
-                if (!next.IsSleeping())
+                if (!next.IsSleeping() && !next.HasFlag(Task.TaskFlag.STOPPED))
                     break;
                 next = next.NextTask;
             }

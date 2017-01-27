@@ -78,18 +78,10 @@ namespace Shell
                 string[] argv = null;
                 int argc = 1;
 
-                // It has no arguments
-                if (read[offsetToSpace] == '\0')
+                // Fetch arguments
+                string argumentStart = String.SubString(read, offsetToSpace + 1, String.Length(read) - offsetToSpace - 1);
+                if (argumentStart != null)
                 {
-                    argv = new string[2];
-                    argv[0] = command;
-                    argv[1] = null;
-                }
-                // It has arguments
-                else
-                {
-                    // Fetch arguments
-                    string argumentStart = String.SubString(read, offsetToSpace + 1, String.Length(read) - offsetToSpace - 1);
                     argc = 1 + (String.Count(argumentStart, ' ') + 1);
                     argv = new string[argc + 1];
                     argv[0] = command;
@@ -112,6 +104,12 @@ namespace Shell
                     // Add null to end arguments
                     argv[i] = null;
                     Heap.Free(argumentStart);
+                }
+                else
+                {
+                    argv = new string[2];
+                    argv[0] = command;
+                    argv[1] = null;
                 }
 
                 if (String.Equals(command, "cd"))

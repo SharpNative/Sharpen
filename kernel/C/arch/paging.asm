@@ -18,7 +18,7 @@ Sharpen_Arch_Paging_setDirectoryInternal_1struct_struct_Sharpen_Arch_Paging_Page
     mov cr3, eax
     ret
 
-global Sharpen_Arch_Paging_ReadCR2_0
-Sharpen_Arch_Paging_ReadCR2_0:
+global Sharpen_Arch_Paging_FaultingAddress_getter_0
+Sharpen_Arch_Paging_FaultingAddress_getter_0:
     mov eax, cr2
     ret

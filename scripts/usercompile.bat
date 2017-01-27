@@ -1,17 +1,11 @@
 call ..\..\scripts\pre
 
-set FILE=%1
-
 echo Compiling...
-i686-elf-gcc %USER_C_FLAGS% %FILE%.c -c -o build\%FILE%.o
-
-echo Linking...
-i686-elf-ld %USER_LD_FLAGS% build\%FILE%.o ..\newlib\libc.a -o %FILE%.elf
+%CC% %USER_C_FLAGS% %1.c -o %1.elf
 
 echo Copying...
 call ..\..\scripts\mount
-copy %FILE%.elf G:\exec\%FILE%
+copy %1.elf G:\exec\%1
 call ..\..\scripts\unmount
-del %FILE%.elf
 
 call ..\..\scripts\qemu

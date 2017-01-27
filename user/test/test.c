@@ -1,50 +1,34 @@
 #include <stdio.h>
-#include <string.h>
-#include <time.h>
+#include <signal.h>
 #include <unistd.h>
-#include <setjmp.h>
+
+void handler(int num)
+{
+    printf("Received signal %d\n", num);
+    register int esp __asm__("esp");
+    printf("ESP=%x\n", esp);
+}
 
 int main(int argc, char* argv[])
 {
-    // Time test
-    time_t rawtime;
-    time(&rawtime);
-    struct tm* timeInfo = localtime(&rawtime);
+    if(signal(SIGINT, handler) == SIG_ERR)
+        puts("Cannot catch SIGINT");
+    if(signal(SIGKILL, handler) == SIG_ERR)
+        puts("Cannot catch SIGKILL");
+    if(signal(SIGSTOP, handler) == SIG_ERR)
+        puts("Cannot catch SIGSTOP");
 
-    char buffer[256];
-    memset(buffer, 0, sizeof(buffer));
-    strftime(buffer, sizeof(buffer), "%c", timeInfo);
-    buffer[sizeof(buffer) - 1] = '\0';
-    printf("%s\n", buffer);
-
-    // Argument test
-    for(int i = 0; i < argc; i++)
-        printf("-> %s\n", argv[i]);
-
-    char cwd[512];
-    getcwd(cwd, sizeof(cwd));
-    printf("cwd=%s\n", cwd);
-    printf("chdir=%d\n", chdir("a"));
-    getcwd(cwd, sizeof(cwd));
-    printf("cwd=%s\n", cwd);
-
-    // Pipe test
-    int fd[2];
-    char* str = "This is a pipe test";
-    char readbuffer[100];
-
-    pipe(fd);
-
-    pid_t pid = fork();
-    if(pid == 0)
-    {
-        write(fd[1], str, strlen(str) + 1);
-    }
-    else
-    {
-        size_t a = read(fd[0], readbuffer, sizeof(readbuffer));
-        printf("received: (%d) %s\n", (int)a, readbuffer);
-    }
+    register int esp __asm__("esp");
+    printf("ESP=%x\n", esp);
+    
+    sleep(3);
+    volatile float a = 3.0f;
+    raise(SIGINT);
+    puts("Returned from signal");
+    volatile float c = 333.0f;
+    volatile float d = c / a;
+    printf("%g\n", d);
+    sleep(3);
 
     return 0;
 }

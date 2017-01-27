@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Collections;
+using Sharpen.Exec;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -10,7 +11,9 @@ namespace Sharpen.MultiTasking
         // Flags that a task can hold
         public enum TaskFlag
         {
-            DESCHEDULED = 1
+            NONE = 0,
+            DESCHEDULED = 1,
+            STOPPED = 2
         }
 
         // Flags that can be used when a task spawns
@@ -66,14 +69,17 @@ namespace Sharpen.MultiTasking
         public uint Uptime { get { return PIT.FullTicks - m_launchTime; } }
         private uint m_launchTime;
 
-        // PID counter
-        private static int NextPID = 0;
+        // Signals
+        private SignalAction[] m_signalActions;
 
         // Threading
         public Thread FirstThread { get; private set; }
         public Thread CurrentThread { get; private set; }
         public int ThreadCount { get; private set; }
         public int SleepingThreadCount { get; set; }
+
+        // PID counter
+        private static int NextPID = 0;
 
         /// <summary>
         /// Constructor of task
@@ -102,6 +108,9 @@ namespace Sharpen.MultiTasking
             m_launchTime = PIT.FullTicks;
             Name = "Nameless";
             CMDLine = "";
+
+            // Signals
+            m_signalActions = new SignalAction[Signals.NSIG];
 
             // Context
             Context = new X86Context();
@@ -146,6 +155,93 @@ namespace Sharpen.MultiTasking
         }
 
         /// <summary>
+        /// Sets the signal handler of a signal
+        /// </summary>
+        /// <param name="signal">The signal</param>
+        /// <param name="newact">The new action</param>
+        /// <param name="oldact">The old action</param>
+        /// <returns>The errorcode</returns>
+        public unsafe ErrorCode SetSignalHandler(Signal signal, SignalAction.SigAction* newact, SignalAction.SigAction* oldact)
+        {
+            if (signal <= 0 || (int)signal >= Signals.NSIG)
+                return ErrorCode.EINVAL;
+
+            SignalAction action = m_signalActions[(int)signal];
+
+            // If the handler is NULL, remove this action
+            if (newact->Handler == null)
+            {
+                m_signalActions[(int)signal] = null;
+                if (action != null)
+                    Heap.Free(action);
+
+                return ErrorCode.SUCCESS;
+            }
+
+            // If the action is NULL, allocate new signal action
+            if (action == null)
+            {
+                m_signalActions[(int)signal] = action = new SignalAction((int)signal);
+            }
+
+            // Copy to old action
+            if (oldact != null)
+            {
+                fixed (SignalAction.SigAction* ptr = &action.Sigaction)
+                    Memory.Memcpy(oldact, ptr, sizeof(SignalAction.SigAction));
+            }
+
+            // Set new action
+            fixed (SignalAction.SigAction* ptr = &action.Sigaction)
+                Memory.Memcpy(ptr, newact, sizeof(SignalAction.SigAction));
+
+            return ErrorCode.SUCCESS;
+        }
+
+        /// <summary>
+        /// Processes a signal
+        /// </summary>
+        /// <param name="signal">The signal</param>
+        /// <returns>The errorcode</returns>
+        public unsafe ErrorCode ProcessSignal(Signal signal)
+        {
+            if (signal <= 0 || (int)signal >= Signals.NSIG)
+                return ErrorCode.EINVAL;
+
+            // Get handler, if no handler is set, use default handler
+            SignalAction action = m_signalActions[(int)signal];
+            if (action == null)
+            {
+                Signals.DefaultAction defaultAction = Signals.DefaultActions[(int)signal];
+                switch (defaultAction)
+                {
+                    case Signals.DefaultAction.Continue:
+                        RemoveFlag(TaskFlag.STOPPED);
+                        break;
+
+                    case Signals.DefaultAction.Stop:
+                        AddFlag(TaskFlag.STOPPED);
+                        // Do a task switch because the task may not run until a continue is received
+                        Tasking.Yield();
+                        break;
+
+                    case Signals.DefaultAction.Core:
+                    case Signals.DefaultAction.Terminate:
+                        Console.WriteLine(Signals.SignalNames[(int)signal]);
+                        Tasking.RemoveTaskByPID(PID);
+                        break;
+                }
+            }
+            else
+            {
+                if (action.Sigaction.Handler != (void*)Signals.SIG_IGN)
+                    CurrentThread.ProcessSignal(action);
+            }
+
+            return ErrorCode.SUCCESS;
+        }
+
+        /// <summary>
         /// Cleans up this task
         /// </summary>
         public void Cleanup()
@@ -158,6 +254,15 @@ namespace Sharpen.MultiTasking
                 Heap.Free(current);
                 current = current.NextThread;
             }
+
+            // Cleanup signals
+            for (int i = 0; i < Signals.NSIG; i++)
+            {
+                SignalAction action = m_signalActions[i];
+                if (action != null)
+                    Heap.Free(action);
+            }
+            Heap.Free(m_signalActions);
 
             // Cleanup virtual addresses claimed by this task
             int count = m_usedAddresses.Count;
@@ -315,6 +420,17 @@ namespace Sharpen.MultiTasking
         public Task Clone()
         {
             Task newTask = new Task(Priority, SpawnFlags.NONE);
+
+            // Clone signal handlers
+            for (int i = 1; i < Signals.NSIG; i++)
+            {
+                SignalAction original = m_signalActions[i];
+                if (original == null)
+                    continue;
+
+                newTask.m_signalActions[i] = original.Clone();
+            }
+
             newTask.Context.CloneFrom(Context);
             return newTask;
         }

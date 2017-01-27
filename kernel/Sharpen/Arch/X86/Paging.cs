@@ -3,7 +3,7 @@ using Sharpen.Mem;
 
 namespace Sharpen.Arch
 {
-    public sealed class Paging
+    public sealed unsafe class Paging
     {
         // Flags on a page
         public enum PageFlags
@@ -27,26 +27,29 @@ namespace Sharpen.Arch
             SizeMegs = (1 << 0x7)
         }
 
-        public unsafe struct PageTable
+        public struct PageTable
         {
             public fixed int Pages[1024];
         }
 
-        public unsafe struct PageDirectory
+        public struct PageDirectory
         {
             public fixed int PhysicalTables[1024];
             public fixed int VirtualTables[1024];
             public PageDirectory* PhysicalDirectory;
         }
 
+        // Faulting address of last pagefault (CR2)
+        public static void* FaultingAddress { get; }
+
         // Kernel directory
-        public static unsafe PageDirectory* KernelDirectory { get; private set; }
+        public static PageDirectory* KernelDirectory { get; private set; }
 
         // The current page directory (virtual address)
-        public static unsafe PageDirectory* CurrentDirectory { get; private set; }
+        public static PageDirectory* CurrentDirectory { get; private set; }
 
         // The current page directory (physical address)
-        public static unsafe PageDirectory* CurrentDirectoryPhysical { get; private set; }
+        public static PageDirectory* CurrentDirectoryPhysical { get; private set; }
 
         private static BitArray bitmap;
 
@@ -77,10 +80,11 @@ namespace Sharpen.Arch
         /// <summary>
         /// Initializes paging
         /// </summary>
-        public static unsafe void Init()
+        public static void Init()
         {
             // Flags
             PageFlags kernelFlags = PageFlags.Present | PageFlags.Writable;
+            PageFlags usercodeFlags = PageFlags.Present | PageFlags.UserMode;
             PageFlags userFlags = PageFlags.Present | PageFlags.Writable | PageFlags.UserMode;
 
             // Bit array to store which frames are free
@@ -99,6 +103,10 @@ namespace Sharpen.Arch
                 bitmap.SetBit(address / 0x1000);
             }
 
+            // Usercode is a section that is code in the kernel available to usermode
+            int usercode = (int)getUsercodeAddress();
+            MapPage(KernelDirectory, usercode, usercode, usercodeFlags);
+
             // Enable paging
             Enable();
         }
@@ -108,7 +116,7 @@ namespace Sharpen.Arch
         /// </summary>
         /// <param name="flags">The flags</param>
         /// <returns>The page directory</returns>
-        public static unsafe PageDirectory* CreateNewDirectoryPhysically(PageFlags flags)
+        public static PageDirectory* CreateNewDirectoryPhysically(PageFlags flags)
         {
             // Allocate a new block of physical memory to store our physical page in
             PageDirectory* directory = (PageDirectory*)Heap.AlignedAlloc(0x1000, sizeof(PageDirectory));
@@ -140,7 +148,7 @@ namespace Sharpen.Arch
         /// <param name="phys">The physical address</param>
         /// <param name="virt">The virtual address</param>
         /// <param name="flags">The flags</param>
-        public static unsafe void MapPage(PageDirectory* directory, int phys, int virt, PageFlags flags)
+        public static void MapPage(PageDirectory* directory, int phys, int virt, PageFlags flags)
         {
             // Get indices
             int pageIndex = virt / 0x1000;
@@ -159,7 +167,7 @@ namespace Sharpen.Arch
         /// <param name="size">The size of the range</param>
         /// <param name="flags">The flags</param>
         /// <returns>The virtual address</returns>
-        public static unsafe void* MapToVirtual(PageDirectory* directory, int phys, int size, PageFlags flags)
+        public static void* MapToVirtual(PageDirectory* directory, int phys, int size, PageFlags flags)
         {
             int sizeAligned = (int)Align((uint)size) / 0x1000;
             int free = bitmap.FindFirstFreeRange(sizeAligned, true);
@@ -185,7 +193,7 @@ namespace Sharpen.Arch
         /// <param name="pageDir">The page directory to look into</param>
         /// <param name="virt">The virtual address</param>
         /// <returns>The physical address</returns>
-        public static unsafe void* GetPhysicalFromVirtual(PageDirectory* pageDir, void* virt)
+        public static void* GetPhysicalFromVirtual(PageDirectory* pageDir, void* virt)
         {
             // Get indices
             int address = (int)virt;
@@ -207,7 +215,7 @@ namespace Sharpen.Arch
         /// </summary>
         /// <param name="virt">The virtual address</param>
         /// <returns>The physical address</returns>
-        public static unsafe void* GetPhysicalFromVirtual(void* virt)
+        public static void* GetPhysicalFromVirtual(void* virt)
         {
             return GetPhysicalFromVirtual(CurrentDirectory, virt);
         }
@@ -233,7 +241,7 @@ namespace Sharpen.Arch
         /// </summary>
         /// <param name="size">The size</param>
         /// <returns>The pointer to the block</returns>
-        public static unsafe void* AllocateVirtual(int size)
+        public static void* AllocateVirtual(int size)
         {
             // Page align size
             uint sizeAligned = Align((uint)size);
@@ -261,7 +269,7 @@ namespace Sharpen.Arch
         /// </summary>
         /// <param name="address">The starting address</param>
         /// <param name="size">The size</param>
-        public static unsafe void FreeVirtual(void* address, int size)
+        public static void FreeVirtual(void* address, int size)
         {
             // Page align size
             uint sizeAligned = Align((uint)size);
@@ -285,7 +293,7 @@ namespace Sharpen.Arch
         /// </summary>
         /// <param name="source">The source page directory</param>
         /// <returns>The cloned page directory</returns>
-        public static unsafe PageDirectory* CloneDirectory(PageDirectory* source)
+        public static PageDirectory* CloneDirectory(PageDirectory* source)
         {
             // Note: sizeof(PageDirectory) is not neccesarily a page
             int pageDirSizeAligned = (int)Align((uint)sizeof(PageDirectory));
@@ -325,7 +333,7 @@ namespace Sharpen.Arch
         /// Frees a page directory
         /// </summary>
         /// <param name="directory">The directory</param>
-        public static unsafe void FreeDirectory(PageDirectory* directory)
+        public static void FreeDirectory(PageDirectory* directory)
         {
             if (directory == CurrentDirectory)
                 Panic.DoPanic("Tried to free the current page directory");
@@ -346,7 +354,7 @@ namespace Sharpen.Arch
         /// </summary>
         /// <param name="directoryVirtual">The virtual address of the page directory</param>
         /// <param name="directoryPhysical">The physical address of the page directory</param>
-        public static unsafe void SetPageDirectory(PageDirectory* directoryVirtual, PageDirectory* directoryPhysical)
+        public static void SetPageDirectory(PageDirectory* directoryVirtual, PageDirectory* directoryPhysical)
         {
             /** 
              * Note: This is a way to solve the issue that a page directory is not available
@@ -377,12 +385,12 @@ namespace Sharpen.Arch
         /// Sets the current paging directory in the CR3 register
         /// </summary>
         /// <param name="directory">The page directory</param>
-        private static unsafe extern void setDirectoryInternal(PageDirectory* directory);
+        private static extern void setDirectoryInternal(PageDirectory* directory);
 
         /// <summary>
-        /// Reads the CR2 (pagefault address)
+        /// Gets the usercode section address
         /// </summary>
-        /// <returns>The CR2 (faulting address)</returns>
-        public static unsafe extern int ReadCR2();
+        /// <returns>Usercode section address</returns>
+        public static extern void* getUsercodeAddress();
     }
 }

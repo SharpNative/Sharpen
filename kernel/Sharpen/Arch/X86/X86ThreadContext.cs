@@ -1,26 +1,28 @@
-﻿using Sharpen.Mem;
+﻿using Sharpen.Exec;
+using Sharpen.Mem;
 using Sharpen.MultiTasking;
+using Sharpen.Utilities;
 
 namespace Sharpen.Arch.X86
 {
     unsafe class X86ThreadContext : IThreadContext
     {
         // These can be found in the GDT
-        private const int KernelCS = 0x08;
-        private const int KernelDS = 0x10;
-        private const int UserspaceCS = 0x1B;
-        private const int UserspaceDS = 0x23;
+        public const int KernelCS = 0x08;
+        public const int KernelDS = 0x10;
+        public const int UserspaceCS = 0x1B;
+        public const int UserspaceDS = 0x23;
 
-        // Stacks
-        private const int KernelStackSize = 4 * 1024;
-        private const int UserStackSize = 16 * 1024;
+        // Stack sizes
+        public const int KernelStackSize = 4 * 1024;
+        public const int UserStackSize = 16 * 1024;
         
         private int* m_stack;
         private int* m_stackStart;
         private int* m_kernelStack;
         private int* m_kernelStackStart;
         private void* m_FPUContext;
-        private Regs* m_sysRegs;
+        private RegsDirect* m_sysRegs;
 
         /// <summary>
         /// Cleans the thread context
@@ -59,7 +61,7 @@ namespace Sharpen.Arch.X86
         /// <param name="ptr">Pointer to syscall registers</param>
         public void UpdateSyscallRegs(void* ptr)
         {
-            m_sysRegs = (Regs*)ptr;
+            m_sysRegs = (RegsDirect*)ptr;
         }
 
         /// <summary>
@@ -80,18 +82,12 @@ namespace Sharpen.Arch.X86
         /// <param name="kernelContext">If this is a kernel context or not</param>
         public void CreateNewContext(void* eip, int initialStackSize, int[] initialStack, bool kernelContext)
         {
-            // Stack
-            int* stacks = (int*)Heap.AlignedAlloc(16, KernelStackSize + UserStackSize);
-            m_stackStart = (int*)((int)stacks + KernelStackSize);
-            m_stack = (int*)((int)m_stackStart + UserStackSize);
+            createStacks();
 
             // Copy initial stack
-            if (initialStackSize > 0)
+            for (int i = 0; i < initialStackSize; i++)
             {
-                for (int i = 0; i < initialStackSize; i++)
-                {
-                    *--m_stack = initialStack[i];
-                }
+                *--m_stack = initialStack[i];
             }
 
             // Descriptors from the GDT
@@ -99,10 +95,8 @@ namespace Sharpen.Arch.X86
             int ds = (kernelContext ? KernelDS : UserspaceDS);
 
             // Continue with stacks
-            m_stack = writeSchedulerStack(m_stack, cs, ds, eip);
-            m_kernelStackStart = stacks;
-            m_kernelStack = (int*)((int)m_kernelStackStart + KernelStackSize);
-
+            m_stack = writeSchedulerStack(m_stack, m_stack, cs, ds, eip);
+            
             // FPU context
             m_FPUContext = Heap.AlignedAlloc(16, 512);
             FPU.StoreContext(m_FPUContext);
@@ -117,9 +111,7 @@ namespace Sharpen.Arch.X86
             X86ThreadContext source = (X86ThreadContext)context;
 
             // Stack
-            int* stacks = (int*)Heap.AlignedAlloc(16, KernelStackSize + UserStackSize);
-            m_stackStart = (int*)((int)stacks + KernelStackSize);
-            m_kernelStackStart = stacks;
+            createStacks();
 
             Memory.Memcpy(m_kernelStackStart, source.m_kernelStackStart, KernelStackSize + UserStackSize);
 
@@ -136,48 +128,77 @@ namespace Sharpen.Arch.X86
             // Update stack references within the system stack itself
             int diffRegs = (int)source.m_sysRegs - (int)source.m_stackStart;
             int diffESP = source.m_sysRegs->ESP - (int)source.m_stackStart;
-            m_sysRegs = (Regs*)((int)m_stackStart + diffRegs);
+            m_sysRegs = (RegsDirect*)((int)m_stackStart + diffRegs);
             m_sysRegs->ESP = (int)m_stackStart + diffESP;
-            
-            // Data pushed by CPU
-            *--m_stack = UserspaceDS;       // Data Segment
-            *--m_stack = m_sysRegs->ESP;    // Old stack
-            *--m_stack = 0x202;             // EFLAGS
-            *--m_stack = UserspaceCS;       // Code Segment
-            *--m_stack = m_sysRegs->EIP;    // Initial EIP
 
-            // Pushed by pusha
-            *--m_stack = 0;                 // EAX (return value)
-            *--m_stack = m_sysRegs->ECX;    // ECX
-            *--m_stack = m_sysRegs->EDX;    // EDX
-            *--m_stack = m_sysRegs->EBX;    // EBX
-             --m_stack;
-            *--m_stack = m_sysRegs->EBP;    // EBP
-            *--m_stack = m_sysRegs->ESI;    // ESI
-            *--m_stack = m_sysRegs->EDI;    // EDI
+            // Write stack
+            m_stack = writeSchedulerStack(m_stack, (void*)m_sysRegs->ESP, UserspaceCS, UserspaceDS, (void*)m_sysRegs->EIP);
+            RegsDirect* ptr = (RegsDirect*)m_stack;
+            ptr->EBX = m_sysRegs->EBX;
+            ptr->ECX = m_sysRegs->ECX;
+            ptr->EDX = m_sysRegs->EDX;
+            ptr->EBP = m_sysRegs->EBP;
+            ptr->ESI = m_sysRegs->ESI;
+            ptr->EDI = m_sysRegs->EDI;
+        }
 
-            // Data segments
-            *--m_stack = UserspaceDS;       // DS
-            *--m_stack = UserspaceDS;       // ES
-            *--m_stack = UserspaceDS;       // FS
-            *--m_stack = UserspaceDS;       // GS
+        /// <summary>
+        /// Processes a signal
+        /// </summary>
+        /// <param name="action">The action</param>
+        /// <returns>The signal context</returns>
+        public ISignalContext ProcessSignal(SignalAction action)
+        {
+            X86SignalContext context = new X86SignalContext();
+
+            // Push arguments
+            *--context.Stack = 0; // Context (unused)
+            *--context.Stack = 0x7331; // TODO: siginfo
+            *--context.Stack = action.SignalNumber;
+
+            // Return address of signal handling method
+            *--context.Stack = (int)Util.MethodToPtr(SignalAction.ReturnFromSignal);
+
+            // Backup regs so we can restore later
+            Memory.Memcpy(context.Sysregs, m_sysRegs, sizeof(RegsDirect));
+
+            // Modify regs to return to
+            m_sysRegs->ESP = (int)context.Stack;
+            m_sysRegs->EIP = (int)action.Sigaction.Handler;
+            m_sysRegs->EAX = 0;
+            m_sysRegs->EBX = 0;
+            m_sysRegs->ECX = 0;
+            m_sysRegs->EDX = 0;
+            m_sysRegs->ESI = 0;
+            m_sysRegs->EDI = 0;
+
+            return (ISignalContext)context;
+        }
+
+        /// <summary>
+        /// Returns from signal (restores original context)
+        /// </summary>
+        /// <param name="oldContext">Old context</param>
+        public void ReturnFromSignal(ISignalContext oldContext)
+        {
+            X86SignalContext old = (X86SignalContext)oldContext;
+            Memory.Memcpy(m_sysRegs, old.Sysregs, sizeof(RegsDirect));
         }
 
         /// <summary>
         /// Writes a scheduler stack
         /// </summary>
-        /// <param name="ptr">The pointer to the stack</param>
+        /// <param name="ptr">The pointer to the stack to write to</param>
+        /// <param name="esp">The pointer to the stack to restore to</param>
         /// <param name="cs">The Code Segment</param>
         /// <param name="ds">The Data Segment</param>
         /// <param name="eip">The return EIP value</param>
         /// <returns>The new pointer</returns>
-        private unsafe int* writeSchedulerStack(int* ptr, int cs, int ds, void* eip)
+        private unsafe int* writeSchedulerStack(int* ptr, void* esp, int cs, int ds, void* eip)
         {
-            int esp = (int)ptr;
-
             // Data pushed by CPU
             *--ptr = ds;        // Data Segment
-            *--ptr = esp;       // Old stack
+            *--ptr = (int)esp;  // Stack to restore to
             *--ptr = 0x202;     // EFLAGS
             *--ptr = cs;        // Code Segment
             *--ptr = (int)eip;  // Initial EIP
@@ -200,6 +221,19 @@ namespace Sharpen.Arch.X86
 
             // New location of stack
             return ptr;
+        }
+
+        /// <summary>
+        /// Sets up the stacks
+        /// </summary>
+        private void createStacks()
+        {
+            int* stacks = (int*)Heap.AlignedAlloc(16, KernelStackSize + UserStackSize);
+            m_stackStart = (int*)((int)stacks + KernelStackSize);
+            m_stack = (int*)((int)m_stackStart + UserStackSize);
+
+            m_kernelStackStart = stacks;
+            m_kernelStack = (int*)((int)m_kernelStackStart + KernelStackSize);
         }
     }
 }

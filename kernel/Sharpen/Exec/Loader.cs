@@ -12,7 +12,7 @@ namespace Sharpen.Exec
         /// <param name="path">The path</param>
         /// <param name="argv">The arguments</param>
         /// <param name="flags">Spawn flags</param>
-        /// <returns>Errorcode</returns>
+        /// <returns>Errorcode or PID</returns>
         public static int StartProcess(string path, string[] argv, Task.SpawnFlags flags)
         {
             if (argv == null)

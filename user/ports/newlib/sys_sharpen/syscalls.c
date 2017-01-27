@@ -13,6 +13,9 @@
 #include <malloc.h>
 #include <setjmp.h>
 #include <stdarg.h>
+#include <signal.h>
+
+typedef void (*sighandler_t)(int, siginfo_t*, void*);
 
 /* Cannot use printf here because it depends on other functions etc */
 #define UNIMPLEMENTED   {\
@@ -75,8 +78,6 @@ inline static int sys_##name(A a, B b, C c, D d, E e) \
     return ret; \
 }
 
-typedef void (*sighandler_t)(int);
-
 // =================================== //
 // ---     Syscall definitions     --- //
 // =================================== //
@@ -101,8 +102,7 @@ SYS1(gettimeofday,  17, struct timeval*);
 SYS1(pipe,          18, int*);
 SYS2(dup2,          19, int, int);
 SYS2(sig_send,      20, int, int);
-SYS2(sig_handler,   21, int, sighandler_t);
-SYS0(yield,         22);
+SYS3(sig_handler,   21, int, const struct sigaction*, struct sigaction*);
 SYS2(getcwd,        23, char*, size_t);
 SYS1(chdir,         24, const char*);
 SYS1(times,         25, struct tms*);
@@ -400,9 +400,31 @@ int kill(int pid, int sig)
     return 0;
 }
 
-sighandler_t signal(int sig, sighandler_t handler)
+_sig_func_ptr signal(int sig, _sig_func_ptr handler)
 {
-    return (sighandler_t)sys_sig_handler(sig, handler);
+    struct sigaction new;
+    new.sa_handler = handler;
+    new.sa_mask = 0;
+    new.sa_flags = 0;
+
+    struct sigaction old;
+    int error = sigaction(sig, &new, &old);
+    if(error < 0)
+        return SIG_ERR;
+
+    return old.sa_handler;
+}
+
+int sigaction(int signum, const struct sigaction* act, struct sigaction* oldact)
+{
+    int error = sys_sig_handler(signum, act, oldact);
+    if(error < 0)
+    {
+        errno = -error;
+        return -1;
+    }
+
+    return 0;
 }
 
 int link(char* old, char* new)
@@ -412,7 +434,7 @@ int link(char* old, char* new)
     return -1;
 }
 
-DIR* opendir(const char *name)
+DIR* opendir(const char* name)
 {
     /* Open the file, if it doesn't exist: stop! */
     int descriptor = open(name, O_RDONLY);
@@ -423,13 +445,13 @@ DIR* opendir(const char *name)
     }
 
     /* Create directory structure */
-    DIR *dir = (DIR *)calloc(1, sizeof(DIR));
+    DIR* dir = (DIR*)calloc(1, sizeof(DIR));
     dir->descriptor = descriptor;
 
     return dir;
 }
 
-struct dirent* readdir(DIR *dir)
+struct dirent* readdir(DIR* dir)
 {
     if(dir == NULL)
     {
@@ -449,7 +471,7 @@ struct dirent* readdir(DIR *dir)
     return &dir->__current;
 }
 
-int closedir(DIR *dir)
+int closedir(DIR* dir)
 {
     if(dir == NULL)
     {
@@ -538,7 +560,8 @@ int chdir(const char* path)
 
 int sched_yield(void)
 {
-    return sys_yield();
+    asm("int $0x81");
+    return 0;
 }
 
 char* getcwd(char* buf, size_t size)

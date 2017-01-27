@@ -1,4 +1,6 @@
-﻿namespace Sharpen.MultiTasking
+﻿using Sharpen.Exec;
+
+namespace Sharpen.MultiTasking
 {
     public interface IThreadContext
     {
@@ -45,5 +47,18 @@
         /// </summary>
         /// <param name="context">The other thread context</param>
         void CloneFrom(IThreadContext context);
+
+        /// <summary>
+        /// Processes a signal
+        /// </summary>
+        /// <param name="action">The action</param>
+        /// <returns>The signal context</returns>
+        ISignalContext ProcessSignal(SignalAction action);
+
+        /// <summary>
+        /// Returns from signal (restores original context)
+        /// </summary>
+        /// <param name="oldContext">The old context</param>
+        void ReturnFromSignal(ISignalContext oldContext);
     }
 }
