@@ -65,8 +65,6 @@ namespace Sharpen.Net
         /// </summary>
         public static void Init()
         {
-            m_dev.ID = 0;
-
             m_handlers = new PackerHandler[65536];
 
             Settings = (NetworkSettings*)Heap.Alloc(sizeof(NetworkSettings));
@@ -124,15 +122,14 @@ namespace Sharpen.Net
                 return;
 
             Memory.Memcpy(buffer, packet->buffer + packet->start, size);
-            
+
 #if NETWORK_DEBUG
             Console.Write("[NET] Transmit packet with ");
             Console.WriteNum(size);
             Console.WriteLine(" bytes");
 #endif
 
-            if (m_dev.ID != 0 && m_dev.Transmit != null)
-                m_dev.Transmit(buffer, (uint)size);
+            m_dev.Transmit?.Invoke(buffer, (uint)size);
 
             Heap.Free(buffer);
         }
@@ -143,8 +140,7 @@ namespace Sharpen.Net
         /// <param name="mac">6 byte struct to read the mac address in</param>
         public static unsafe void GetMac(byte* mac)
         {
-            if (m_dev.ID != 0 && m_dev.GetMac != null)
-                m_dev.GetMac(mac);
+            m_dev.GetMac?.Invoke(mac);
         }
 
         /// <summary>

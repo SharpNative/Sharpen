@@ -47,7 +47,7 @@ namespace Sharpen
             Keyboard.Init();
 
             initUSB();
-
+            
             Tasking.Init();
 
             initStorage();
@@ -116,7 +116,7 @@ namespace Sharpen
             // Networking
             Network.Init();
             Route.Init();
-
+            
             // Networking protocols
             IPV4.Init();
             ICMP.Init();
@@ -134,13 +134,12 @@ namespace Sharpen
             
             DHCP.Discover();
             
-            
-            TCPConnection con = TCP.Bind(80);
+            /*TCPConnection con = TCP.Bind(80);
 
             string message = "<!doctype html><html><title>Van Sharpen</title><body>Wij serveren dit van Sharpen naar Dossche</body></html>";
             string httpResp = "HTTP/1.1 200 OK\r\nDate: Fri, 13 May 2005 05:51:12 GMT\r\nServer: Sharpen :)\r\nLast-Modified: Fri, 13 May 2005 05:25:02 GMT\r\nAccept-Ranges: bytes\r\nContent-Length: ";
 
-            string count = Int.ToString(String.Length(message));
+            string count = Int.ToString(message.Length);
 
             httpResp = String.Merge(httpResp, count);
             httpResp = String.Merge(httpResp, "\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n");
@@ -175,7 +174,7 @@ namespace Sharpen
                     Console.WriteHex(ptr->xid);
                     Console.WriteLine("");
                     
-                    TCP.Send(con, ptr->xid, (byte*)Util.ObjectToVoidPtr(finalResp), (uint)String.Length(finalResp));
+                    TCP.Send(con, ptr->xid, (byte*)Util.ObjectToVoidPtr(finalResp), (uint)finalResp.Length);
 
                     TCP.Close(con, ptr->xid);
                 }
@@ -202,7 +201,7 @@ namespace Sharpen
             Console.WriteLine("EXIT");
             for (;;) ;
 
-            TCP.Free(con);
+            TCP.Free(con);*/
         }
 
         /// <summary>

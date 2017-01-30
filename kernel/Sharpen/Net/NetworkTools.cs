@@ -47,7 +47,7 @@ namespace Sharpen.Net
             byte[] ip = new byte[4];
 
             int previousIndex = 0;
-            int length = String.Length(ipIn);
+            int length = ipIn.Length;
             for (int i = 1; i <= 4; i++)
             {
                 int currentIndex = String.IndexOf(ipIn, ".", previousIndex) + 1;

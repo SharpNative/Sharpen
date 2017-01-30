@@ -174,6 +174,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="LibCS2C">
+      <HintPath>..\..\..\..\..\..\libcs2c\LibCS2C.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>

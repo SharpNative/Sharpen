@@ -874,7 +874,7 @@ namespace Sharpen.FileSystem
             /**
              * Calculate lengths (and check if no LFN)
              */
-            int length = String.Length(name);
+            int length = name.Length;
             if (length > 12)
                 return null;
             int dot = String.IndexOf(name, ".");

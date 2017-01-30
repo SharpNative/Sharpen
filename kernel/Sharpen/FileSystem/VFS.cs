@@ -120,7 +120,7 @@ namespace Sharpen.FileSystem
         public static unsafe Node GetByAbsolutePath(string path)
         {
             int index = String.IndexOf(path, "://");
-            int pathLength = String.Length(path);
+            int pathLength = path.Length;
 
             // Get the device name
             string deviceName = String.SubString(path, 0, index);
@@ -170,7 +170,7 @@ namespace Sharpen.FileSystem
         public static unsafe string ResolvePath(string path)
         {
             int index = String.IndexOf(path, "://");
-            int pathLength = String.Length(path);
+            int pathLength = path.Length;
 
             char* ptr = (char*)Heap.Alloc(pathLength + 1);
             Memory.Memcpy(ptr, Util.ObjectToVoidPtr(path), index + 3);

@@ -76,7 +76,7 @@ namespace Sharpen.Net
         private static unsafe DirEntry* makeByName(string str)
         {
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
-            Memory.Memcpy(entry->Name, Util.ObjectToVoidPtr(str), String.Length(str) + 1);
+            Memory.Memcpy(entry->Name, Util.ObjectToVoidPtr(str), str.Length + 1);
             return entry;
         }
         

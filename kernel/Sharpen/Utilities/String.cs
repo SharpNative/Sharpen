@@ -1,4 +1,5 @@
 ﻿using Sharpen.Mem;
+using LibCS2C.Attributes;
 
 namespace Sharpen.Utilities
 {
@@ -9,7 +10,8 @@ namespace Sharpen.Utilities
         /// </summary>
         /// <param name="text">The string</param>
         /// <returns>Its length</returns>
-        public static int Length(string text)
+        [Plug("string_Length_getter")]
+        private static int getLengthImpl(string text)
         {
             int i = 0;
             for (; text[i] != '\0'; i++) ;
@@ -23,7 +25,7 @@ namespace Sharpen.Utilities
         /// <returns>The clone</returns>
         public static unsafe string Clone(string text)
         {
-            int textLength = Length(text);
+            int textLength = text.Length;
 
             char* str = (char*)Heap.Alloc(textLength + 1);
             fixed (char* ptr = text)
@@ -34,65 +36,6 @@ namespace Sharpen.Utilities
             str[textLength] = '\0';
 
             return Util.CharPtrToString(str);
-        }
-
-        /// <summary>
-        /// Merge array with a string between the elements
-        /// </summary>
-        /// <param name="array">The array</param>
-        /// <param name="elements">The amount of elements to merge</param>
-        /// <param name="splitter">The string between the elements</param>
-        /// <returns>The resulting string</returns>
-        public static unsafe string MergeArray(string[] array, int elements, string splitter)
-        {
-            return MergeArray(array, elements, splitter, "");
-        }
-
-        /// <summary>
-        /// Merge array with a string between the elements
-        /// </summary>
-        /// <param name="array">The array</param>
-        /// <param name="elements">The amount of elements to merge</param>
-        /// <param name="splitter">The string between the elements</param>
-        /// <param name="prefix">The prefix</param>
-        /// <returns>The resulting string</returns>
-        public static unsafe string MergeArray(string[] array, int elements, string splitter, string prefix)
-        {
-            int prefixLength = Length(prefix);
-            int totalLength = prefixLength;
-            int splitterLength = Length(splitter);
-            for (int i = 0; i < elements; i++)
-            {
-                totalLength += Length(array[i]);
-                if (i < elements - 1)
-                    totalLength += splitterLength;
-            }
-
-            char* ptr = (char*)Heap.Alloc(totalLength + 1);
-            fixed (char* prefixPtr = prefix)
-                Memory.Memcpy(ptr, prefixPtr, prefixLength);
-
-            int offset = prefixLength;
-            for (int i = 0; i < elements; i++)
-            {
-                int length = Length(array[i]);
-                fixed (char* src = array[i])
-                    Memory.Memcpy((char*)((int)ptr + offset), src, length);
-
-                if (i < elements - 1)
-                {
-                    fixed (char* split = splitter)
-                        Memory.Memcpy((char*)((int)ptr + offset + length), split, splitterLength);
-
-                    offset += splitterLength;
-                }
-
-                offset += length;
-            }
-
-            ptr[offset] = '\0';
-
-            return Util.CharPtrToString(ptr);
         }
 
         /// <summary>
@@ -107,8 +50,8 @@ namespace Sharpen.Utilities
             int found = -1;
             int foundCount = 0;
 
-            int textLength = Length(text);
-            int occurenceLength = Length(occurence);
+            int textLength = text.Length;
+            int occurenceLength = occurence.Length;
 
             if (textLength == 0 || occurenceLength == 0 || offset >= textLength)
                 return -1;
@@ -176,7 +119,7 @@ namespace Sharpen.Utilities
             if (count <= 0)
                 return Clone("");
 
-            int stringLength = Length(str);
+            int stringLength = str.Length;
             if (start > stringLength)
                 return Clone("");
 
@@ -205,8 +148,8 @@ namespace Sharpen.Utilities
         /// <returns>The merged string</returns>
         public static unsafe string Merge(string first, string second)
         {
-            int firstLength = Length(first);
-            int secondLength = Length(second);
+            int firstLength = first.Length;
+            int secondLength = second.Length;
 
             int totalLength = firstLength + secondLength;
             char* outVal = (char*)Heap.Alloc(totalLength + 1);
@@ -225,13 +168,14 @@ namespace Sharpen.Utilities
         /// <param name="one">First string</param>
         /// <param name="two">Second string</param>
         /// <returns>If the two string are equal</returns>
+        //[Plug("string_Equals")]
         public static unsafe bool Equals(string one, string two)
         {
             fixed (char* onePtr = one)
             {
                 fixed (char* twoPtr = two)
                 {
-                    return Memory.Compare(onePtr, twoPtr, Length(one));
+                    return Memory.Compare(onePtr, twoPtr, one.Length);
                 }
             }
         }

@@ -70,7 +70,7 @@ namespace Sharpen.FileSystem
 
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
 
-            int strlen = String.Length(devname);
+            int strlen = devname.Length;
             int i = 0;
             for (; i < strlen; i++)
                 entry->Name[i] = devname[i];
@@ -115,13 +115,13 @@ namespace Sharpen.FileSystem
 
             char* ptr = (char*)Heap.Alloc(10);
             int x = 0;
-            for (int j = 0; j < String.Length(part1); j++)
+            for (int j = 0; j < part1.Length; j++)
                 ptr[x++] = part1[j];
             ptr[x++] = ':';
-            for (int j = 0; j < String.Length(part2); j++)
+            for (int j = 0; j < part2.Length; j++)
                 ptr[x++] = part2[j];
             ptr[x++] = ':';
-            for (int j = 0; j < String.Length(part3); j++)
+            for (int j = 0; j < part3.Length; j++)
                 ptr[x++] = part3[j];
             ptr[x] = '\0';
 
@@ -152,7 +152,7 @@ namespace Sharpen.FileSystem
             {
                 int index = String.IndexOf(str, ":", offset);
                 if (index == -1)
-                    index = String.Length(str) - offset;
+                    index = str.Length - offset;
                 else
                     index -= offset;
 
@@ -244,7 +244,7 @@ namespace Sharpen.FileSystem
         {
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
 
-            Memory.Memcpy(entry->Name, Util.ObjectToVoidPtr(str), String.Length(str) + 1);
+            Memory.Memcpy(entry->Name, Util.ObjectToVoidPtr(str), str.Length + 1);
 
             return entry;
         }

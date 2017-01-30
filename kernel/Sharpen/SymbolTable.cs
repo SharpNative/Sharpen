@@ -41,7 +41,7 @@ namespace Sharpen
                 // Get symbol info
                 Symbol* sym = (Symbol*)((int)table + tableOffset);
                 string symbolName = Util.CharPtrToString(&sym->Name);
-                int size = sizeof(void*) + String.Length(symbolName) + 1;
+                int size = sizeof(void*) + symbolName.Length + 1;
 
                 // Distance from current symbol address to the address we search for
                 int currentDistance = (int)address - (int)sym->Address;

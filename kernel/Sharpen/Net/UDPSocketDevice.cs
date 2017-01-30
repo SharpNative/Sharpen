@@ -19,7 +19,7 @@ namespace Sharpen.Net
                 return null;
 
             string ip = String.SubString(name, 0, foundIndex);
-            string portText = String.SubString(name, foundIndex + 1, String.Length(name) - foundIndex - 1);
+            string portText = String.SubString(name, foundIndex + 1, name.Length - foundIndex - 1);
 
             int port = Int.Parse(portText);
             if (port == -1)

@@ -294,7 +294,7 @@ namespace Sharpen.Net
             /**
              * Write our received ip
              */
-            byte* buf = (byte*)(packet->buffer + packet->end);
+            byte* buf = packet->buffer + packet->end;
             *buf++ = OPT_REQ_IP;
             *buf++ = 4; // IP is 4 bytes
             for (int i = 0; i < 4; i++)
@@ -303,14 +303,14 @@ namespace Sharpen.Net
             packet->end += 6;
 
             string hostname = Network.GetHostName();
-            int hostnameLength = Utilities.String.Length(hostname);
+            int hostnameLength = hostname.Length;
             if (hostnameLength > 0xFF)
                 hostnameLength = 0xFF;
 
             /**
              * Write our hostname
              */
-            buf = (byte*)(packet->buffer + packet->end);
+            buf = packet->buffer + packet->end;
             *buf++ = OPT_HOSTNAME;
             *buf++ = (byte)(hostnameLength & 0xFF);
             
@@ -324,7 +324,7 @@ namespace Sharpen.Net
             /**
              * Choose what we want to receive
              */
-            buf = (byte*)(packet->buffer + packet->end);
+            buf = packet->buffer + packet->end;
             *buf++ = OPT_PARAMETER_REQUEST; // OPT_PARAMETER_REQUEST
             *buf++ = 4; // Length of 4 :)
             *buf++ = OPT_SUBNET; // SUBNET

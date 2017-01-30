@@ -13,14 +13,14 @@ namespace Sharpen.Utilities
         /// <returns>The joined array string</returns>
         public static unsafe string Join(string[] arr, int length, string separator)
         {
-            int separatorLen = String.Length(separator);
+            int separatorLen = separator.Length;
             int totalLength = 0;
 
             // Calculate total length
             int[] lengthArray = new int[length];
             for (int i = 0; i < length; i++)
             {
-                int len = String.Length(arr[i]);
+                int len = arr[i].Length;
                 lengthArray[i] = len;
                 totalLength += len;
 

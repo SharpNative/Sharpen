@@ -480,7 +480,7 @@ namespace Sharpen.Exec
 
             Heap.Free(node);
 
-            int len = String.Length(newDir);
+            int len = newDir.Length;
 
             if (newDir[len - 1] != '/')
             {
