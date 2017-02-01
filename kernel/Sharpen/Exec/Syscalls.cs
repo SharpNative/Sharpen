@@ -163,6 +163,9 @@ namespace Sharpen.Exec
         /// <returns>The file descriptor ID</returns>
         public static int Open(string path, int flags)
         {
+            if (path.Length == 0)
+                return -(int)ErrorCode.EINVAL;
+
             Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;

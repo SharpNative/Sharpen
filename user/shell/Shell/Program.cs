@@ -1,6 +1,6 @@
 ﻿using Sharpen;
 using Sharpen.IO;
-using Sharpen.Memory;
+using Sharpen.Mem;
 using Sharpen.Utilities;
 
 namespace Shell
@@ -13,11 +13,11 @@ namespace Shell
         /// <param name="name">The program name</param>
         /// <param name="argv">Arguments</param>
         /// <param name="argc">Argument length</param>
-        /// <returns>PID</returns>
-        private unsafe static int tryRunFromExecDir(string name, string[] argv, int argc)
+        /// <returns>PID on success, -1 on fail</returns>
+        private unsafe static int tryRunFromExecDir(string name, string[] argv)
         {
             string totalString = String.Merge("C://exec/", name);
-            int ret = Process.Run(totalString, argv, argc);
+            int ret = Process.Run(totalString, argv, null);
             Heap.Free(totalString);
             return ret;
         }
@@ -28,21 +28,12 @@ namespace Shell
         /// <param name="command">The program name</param>
         /// <param name="name">The program name</param>
         /// <param name="argv">Arguments</param>
-        /// <param name="argc">Argument length</param>
-        /// <returns>PID</returns>
-        private static int tryStartProcess(string command, string[] argv, int argc)
+        /// <returns>PID on success, -1 on fail</returns>
+        private static int tryStartProcess(string command, string[] argv)
         {
-            int ret = Process.Run(command, argv, argc);
+            int ret = Process.Run(command, argv, null);
             if (ret < 0)
-            {
-                ret = tryRunFromExecDir(command, argv, argc);
-
-                if (ret < 0)
-                {
-                    Console.Write(command);
-                    Console.WriteLine(": Bad command or filename");
-                }
-            }
+                ret = tryRunFromExecDir(command, argv);
 
             return ret;
         }
@@ -53,66 +44,42 @@ namespace Shell
         /// <param name="args">Arguments</param>
         unsafe static void Main(string[] args)
         {
-            Console.WriteLine("Project Sharpen");
-            Console.WriteLine("(c) 2016 SharpNative\n");
+            Console.WriteLine("\nProject Sharpen");
+            Console.WriteLine("(c) 2016-2017 SharpNative\n");
 
             string currentDir = Directory.GetCurrentDirectory();
             while (true)
             {
+                // Prompt
                 Console.Write(currentDir);
                 Console.Write("> ");
 
+                // Read line
                 string read = Console.ReadLine();
-
-                int offsetToSpace = String.IndexOf(read, " ");
-                if (offsetToSpace == -1)
-                    offsetToSpace = String.Length(read);
-
-                string command = String.SubString(read, 0, offsetToSpace);
-                if (command == null)
+                if (read.Length == 0)
                 {
                     Heap.Free(read);
                     continue;
                 }
 
-                string[] argv = null;
-                int argc = 1;
+                // Split command line
+                int argc = String.Count(read, ' ') + 1;
+                string[] argv = read.Split(' ');
+                string command = argv[0];
 
-                // Fetch arguments
-                string argumentStart = String.SubString(read, offsetToSpace + 1, String.Length(read) - offsetToSpace - 1);
-                if (argumentStart != null)
+                // Remove the empty arguments
+                for (int i = 0; i < argc; i++)
                 {
-                    argc = 1 + (String.Count(argumentStart, ' ') + 1);
-                    argv = new string[argc + 1];
-                    argv[0] = command;
-
-                    // Add arguments
-                    int i = 0;
-                    int offset = 0;
-                    for (; i < argc; i++)
+                    if (argv[i].Length == 0)
                     {
-                        // Find argument end
-                        int nextOffset = offset;
-                        for (; argumentStart[nextOffset] != ' ' && argumentStart[nextOffset] != '\0'; nextOffset++) ;
-
-                        // Grab argument
-                        string arg = String.SubString(argumentStart, offset, nextOffset - offset);
-                        offset = nextOffset + 1;
-                        argv[i + 1] = arg;
+                        Heap.Free(argv[i]);
+                        argv[i] = null;
+                        argc--;
                     }
-
-                    // Add null to end arguments
-                    argv[i] = null;
-                    Heap.Free(argumentStart);
-                }
-                else
-                {
-                    argv = new string[2];
-                    argv[0] = command;
-                    argv[1] = null;
                 }
 
-                if (String.Equals(command, "cd"))
+                // Process commands
+                if (command.Equals("cd"))
                 {
                     if (argc != 2)
                     {
@@ -126,41 +93,39 @@ namespace Shell
                         }
                         else
                         {
-                            Heap.Free(currentDir);
+                            string old = currentDir;
                             currentDir = Directory.GetCurrentDirectory();
+                            Heap.Free(old);
                         }
                     }
                 }
-                else if (String.Equals(command, "dir"))
+                else if (command.Equals("dir"))
                 {
                     Directory dir = Directory.Open(currentDir);
 
-                    uint i = 0;
                     while (true)
                     {
-                        Directory.DirEntry entry = dir.Readdir(i);
+                        Directory.DirEntry entry = dir.Readdir();
                         if (entry.Name[0] == '\0')
                             break;
 
                         string str = Util.CharPtrToString(entry.Name);
-
                         Console.WriteLine(str);
-
-                        i++;
                     }
 
                     dir.Close();
+                    Heap.Free(dir);
                 }
-                else if (String.Equals(command, "exit"))
+                else if (command.Equals("exit"))
                 {
                     Process.Exit(0);
                 }
-                else if (String.Equals(command, "background"))
+                else if (command.Equals("background"))
                 {
                     // Try to start a process without waiting until exit
-                    string[] offsetArgv = (string[])Array.CreateSubArray(argv, 1, argc - 1);
+                    string[] offsetArgv = (string[])Array.CreateSubArray((object[])argv, 1, argc - 1);
 
-                    int ret = tryStartProcess(offsetArgv[0], offsetArgv, argc - 1);
+                    int ret = tryStartProcess(offsetArgv[0], offsetArgv);
                     if (ret > 0)
                     {
                         Console.Write("Process started in background with PID ");
@@ -172,14 +137,23 @@ namespace Shell
                 else
                 {
                     // Try to start a process and wait until exit to return to prompt
-                    int ret = tryStartProcess(command, argv, argc);
-                    Process.WaitForExit(ret);
+                    int ret = tryStartProcess(command, argv);
+                    if (ret > 0)
+                    {
+                        Process.WaitForExit(ret);
+                    }
+                    else
+                    {
+                        Console.Write(command);
+                        Console.WriteLine(": Bad command or filename");
+                    }
                 }
 
                 // Note: command is in the first entry of argv
                 for (int i = 0; i < argc; i++)
                 {
-                    Heap.Free(argv[i]);
+                    if (argv[i] != null)
+                        Heap.Free(argv[i]);
                 }
                 Heap.Free(read);
                 Heap.Free(argv);

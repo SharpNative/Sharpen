@@ -92,6 +92,28 @@ namespace Sharpen.Utilities
         }
 
         /// <summary>
+        /// IndexOf implementation
+        /// </summary>
+        /// <param name="text">The string to search into</param>
+        /// <param name="occurence">The character to search for</param>
+        /// <param name="offset">The offset in the string</param>
+        /// <returns>The index of the occurrence</returns>
+        public static int IndexOf(string text, char occurence, int offset)
+        {
+            int length = text.Length;
+            if (offset < 0 || offset >= length)
+                return -1;
+
+            for(int i = offset; i < length; i++)
+            {
+                if (text[i] == occurence)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        /// <summary>
         /// Count number of occurences
         /// </summary>
         /// <param name="str">The string</param>
@@ -184,13 +206,46 @@ namespace Sharpen.Utilities
         [Plug("System_String_Equals_2class_string_t_")]
         private static unsafe bool equalsImpl(string one, string two)
         {
+            int lengthOne = one.Length;
+            int lengthTwo = two.Length;
+
+            if (lengthOne != lengthTwo)
+                return false;
+
             fixed (char* onePtr = one)
             {
                 fixed (char* twoPtr = two)
                 {
-                    return Memory.Compare(onePtr, twoPtr, one.Length);
+                    return Memory.Compare(onePtr, twoPtr, lengthOne);
                 }
             }
+        }
+
+        /// <summary>
+        /// Splits a string
+        /// </summary>
+        /// <param name="str">The string</param>
+        /// <param name="ch">The character</param>
+        /// <returns>The array of split strings</returns>
+        [Plug("System_String_Split_2class_char__")]
+        public static unsafe string[] Split(string str, char ch)
+        {
+            int count = Count(str, ch) + 1;
+            string[] parts = new string[count];
+
+            int length = str.Length;
+            int offset = 0;
+            for (int i = 0; i < count; i++)
+            {
+                int nextOffset = IndexOf(str, ch, offset);
+                if (nextOffset == -1)
+                    nextOffset = length;
+                
+                parts[i] = str.Substring(offset, nextOffset - offset);
+                offset = nextOffset + 1;
+            }
+
+            return parts;
         }
 
         /// <summary>

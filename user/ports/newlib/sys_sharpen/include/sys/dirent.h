@@ -27,8 +27,8 @@ typedef struct
     struct dirent __current;    /* Copy of current directory entry */
 } DIR;
 
-DIR *opendir(const char *name);
-int closedir(DIR *dir);
-struct dirent *readdir(DIR *dir);
+DIR* opendir(const char *name);
+int closedir(DIR* dir);
+struct dirent* readdir(DIR* dir);
 
 #endif

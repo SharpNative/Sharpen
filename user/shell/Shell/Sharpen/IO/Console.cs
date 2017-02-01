@@ -15,7 +15,7 @@ namespace Sharpen.IO
         /// </summary>
         /// <param name="c">The character</param>
         public static extern void Write(char c);
-
+        
         /// <summary>
         /// Writes a line to the console
         /// </summary>

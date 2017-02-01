@@ -37,6 +37,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="LibCS2C">
+      <HintPath>..\..\..\..\..\..\..\libcs2c\LibCS2C.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -49,13 +52,13 @@
   <ItemGroup>
     <Compile Include="Sharpen\IO\Console.cs" />
     <Compile Include="Sharpen\IO\Directory.cs" />
-    <Compile Include="Sharpen\Memory\Heap.cs" />
-    <Compile Include="Sharpen\Memory\Memory.cs" />
+    <Compile Include="Sharpen\Mem\Heap.cs" />
+    <Compile Include="Sharpen\Mem\Memory.cs" />
     <Compile Include="Sharpen\Process.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sharpen\Utilities\Array.cs" />
-    <Compile Include="Sharpen\Utilities\String.cs" />
+    <Compile Include="..\..\..\kernel\Sharpen\Utilities\String.cs" />
     <Compile Include="Sharpen\Utilities\Util.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,6 @@
 ﻿namespace Sharpen.Utilities
 {
-    unsafe class Util
+    unsafe sealed class Util
     {
         /// <summary>
         /// Converts a char array to a string

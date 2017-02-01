@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using LibCS2C.Attributes;
 
-namespace Shell.Sharpen.Memory
+namespace Sharpen.Mem
 {
-    public sealed class Mem
+    public sealed class Memory
     {
         /// <summary>
         /// Copies the value of num bytes from the source to the destination
@@ -14,6 +10,7 @@ namespace Shell.Sharpen.Memory
         /// <param name="destination">The destination</param>
         /// <param name="source">The source</param>
         /// <param name="num">The number of bytes</param>
+        [Extern("memcpy")]
         public static extern unsafe void Memcpy(void* destination, void* source, int num);
 
         /// <summary>
@@ -40,6 +37,7 @@ namespace Shell.Sharpen.Memory
         /// <param name="ptr">The destination pointer</param>
         /// <param name="value">The value</param>
         /// <param name="num">The number of bytes</param>
+        [Extern("memset")]
         public static extern unsafe void Memset(void* ptr, int value, int num);
     }
 }

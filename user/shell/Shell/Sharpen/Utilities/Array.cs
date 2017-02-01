@@ -15,7 +15,7 @@
                 return null;
 
             object[] sub = new object[count];
-            for(int i = 0; i < count; i++)
+            for (int i = 0; i < count; i++)
             {
                 sub[i] = original[i + start];
             }
