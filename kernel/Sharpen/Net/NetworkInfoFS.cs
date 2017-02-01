@@ -30,15 +30,15 @@ namespace Sharpen.Net
         /// <returns>The node</returns>
         private static unsafe Node findDirImpl(Node node, string name)
         {
-            if (String.Equals(name, "ip"))
+            if (name.Equals("ip"))
                 return byID(0);
-            else if (String.Equals(name, "subnet"))
+            else if (name.Equals("subnet"))
                 return byID(1);
-            else if (String.Equals(name, "gateway"))
+            else if (name.Equals("gateway"))
                 return byID(2);
-            else if (String.Equals(name, "ns1"))
+            else if (name.Equals("ns1"))
                 return byID(3);
-            else if (String.Equals(name, "ns2"))
+            else if (name.Equals("ns2"))
                 return byID(4);
 
             return null;

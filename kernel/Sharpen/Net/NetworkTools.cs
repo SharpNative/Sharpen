@@ -54,10 +54,10 @@ namespace Sharpen.Net
                 if (currentIndex == 0)
                     currentIndex = length + 1;
 
-                string part = String.SubString(ipIn, previousIndex, currentIndex - previousIndex - 1);
+                string part = ipIn.Substring(previousIndex, currentIndex - previousIndex - 1);
 
                 previousIndex = currentIndex;
-                ip[i - 1] = (byte)Int.Parse(part);
+                ip[i - 1] = (byte)int.Parse(part);
 
                 Heap.Free(part);
             }

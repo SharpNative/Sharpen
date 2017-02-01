@@ -18,10 +18,10 @@ namespace Sharpen.Net
             if (foundIndex == -1)
                 return null;
 
-            string ip = String.SubString(name, 0, foundIndex);
-            string portText = String.SubString(name, foundIndex + 1, name.Length - foundIndex - 1);
+            string ip = name.Substring(0, foundIndex);
+            string portText = name.Substring(foundIndex + 1, name.Length - foundIndex - 1);
 
-            int port = Int.Parse(portText);
+            int port = int.Parse(portText);
             if (port == -1)
             {
                 Heap.Free(portText);

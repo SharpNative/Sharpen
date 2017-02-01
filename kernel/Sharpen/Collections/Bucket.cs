@@ -38,7 +38,7 @@ namespace Sharpen.Collections
             while (index < Count && !found)
             {
                 string currentKey = (string)m_index.Item[index];
-                if (String.GetHashCode(currentKey) == hash && String.Equals(currentKey, key))
+                if (String.GetHashCode(currentKey) == hash && currentKey.Equals(key))
                 {
                     found = true;
                 }

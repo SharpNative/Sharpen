@@ -123,7 +123,7 @@ namespace Sharpen.FileSystem
             int pathLength = path.Length;
 
             // Get the device name
-            string deviceName = String.SubString(path, 0, index);
+            string deviceName = path.Substring(0, index);
 
             // Find first mount
             MountPoint mp = FindMountByName(deviceName);
@@ -145,7 +145,7 @@ namespace Sharpen.FileSystem
             {
                 int newOffset = String.IndexOf(path, "/", offset);
 
-                string part = String.SubString(path, offset, newOffset - offset);
+                string part = path.Substring(offset, newOffset - offset);
                 lastNode = lastNode.FindDir(lastNode, part);
                 Heap.Free(part);
 
@@ -191,7 +191,7 @@ namespace Sharpen.FileSystem
             while (parts > 0)
             {
                 int newOffset = String.IndexOf(path, "/", offset);
-                string part = String.SubString(path, offset, newOffset - offset);
+                string part = path.Substring(offset, newOffset - offset);
 
                 // "../": Remove previous part
                 if (part[0] == '.' && part[1] == '.' && part[2] == '\0')

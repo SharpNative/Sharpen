@@ -62,15 +62,15 @@ namespace Sharpen.Drivers.Power
         {
             uint functionID = 0;
             
-            if (String.Equals(name, "info"))
+            if (name.Equals("info"))
             {
                 functionID = 1;
             }
-            else if (String.Equals(name, "reboot"))
+            else if (name.Equals("reboot"))
             {
                 functionID = 2;
             }
-            else if (String.Equals(name, "shutdown"))
+            else if (name.Equals("shutdown"))
             {
                 functionID = 3;
             }

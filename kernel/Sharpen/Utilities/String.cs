@@ -96,14 +96,14 @@ namespace Sharpen.Utilities
         /// </summary>
         /// <param name="str">The string</param>
         /// <param name="occurence">The character to check for</param>
-        /// <returns></returns>
+        /// <returns>The number of occurences</returns>
         public static int Count(string str, char occurence)
         {
             int matches = 0;
             for (int i = 0; str[i] != '\0'; i++)
                 if (str[i] == occurence)
                     matches++;
-
+            
             return matches;
         }
 
@@ -112,9 +112,22 @@ namespace Sharpen.Utilities
         /// </summary>
         /// <param name="str">The string</param>
         /// <param name="start">The starting index</param>
+        /// <returns>The substring</returns>
+        [Plug("System_String_Substring_2class_int32_t_")]
+        private static unsafe string subStringImpl(string str, int start)
+        {
+            return subStringImpl(str, start, str.Length - start);
+        }
+
+        /// <summary>
+        /// Substring implementation
+        /// </summary>
+        /// <param name="str">The string</param>
+        /// <param name="start">The starting index</param>
         /// <param name="count">The count</param>
-        /// <returns>The string</returns>
-        public static unsafe string SubString(string str, int start, int count)
+        /// <returns>The substring</returns>
+        [Plug("System_String_Substring_3class_int32_t_int32_t_")]
+        private static unsafe string subStringImpl(string str, int start, int count)
         {
             if (count <= 0)
                 return Clone("");
@@ -168,8 +181,8 @@ namespace Sharpen.Utilities
         /// <param name="one">First string</param>
         /// <param name="two">Second string</param>
         /// <returns>If the two string are equal</returns>
-        //[Plug("string_Equals")]
-        public static unsafe bool Equals(string one, string two)
+        [Plug("System_String_Equals_2class_string_t_")]
+        private static unsafe bool equalsImpl(string one, string two)
         {
             fixed (char* onePtr = one)
             {

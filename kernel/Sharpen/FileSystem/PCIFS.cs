@@ -109,9 +109,9 @@ namespace Sharpen.FileSystem
         /// <returns>The node name</returns>
         public static unsafe string GenerateNodeName(int bus, int slot, int function)
         {
-            string part1 = Int.ToString(bus);
-            string part2 = Int.ToString(slot);
-            string part3 = Int.ToString(function);
+            string part1 = bus.ToString();
+            string part2 = slot.ToString();
+            string part3 = function.ToString();
 
             char* ptr = (char*)Heap.Alloc(10);
             int x = 0;
@@ -157,9 +157,9 @@ namespace Sharpen.FileSystem
                     index -= offset;
 
 
-                string part = String.SubString(str, offset, index);
+                string part = str.Substring(offset, index);
                 
-                uint num = (uint)Int.Parse(part);
+                uint num = (uint)int.Parse(part);
 
                 l |= num << shiftOffset;
 
@@ -207,7 +207,7 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         private static unsafe Node deviceFindDir(Node node, string name)
         {
-            if (String.Equals(name, "info"))
+            if (name.Equals("info"))
             {
                 return byKey(0, node.Cookie);
             }

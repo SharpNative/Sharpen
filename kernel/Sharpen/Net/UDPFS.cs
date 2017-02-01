@@ -36,9 +36,9 @@ namespace Sharpen.Net
         {
             if (node.Cookie == OPT_LIST)
             {
-                if (String.Equals(name, "bind"))
+                if (name.Equals("bind"))
                     return byID(OPT_BIND);
-                else if (String.Equals(name, "connect"))
+                else if (name.Equals("connect"))
                     return byID(OPT_SOCK);
             }
             else if (node.Cookie == OPT_SOCK)

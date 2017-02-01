@@ -13,7 +13,7 @@ namespace Sharpen.Net
         /// <returns>The node</returns>
         public static unsafe Node Open(string name)
         {
-            int port = Int.Parse(name);
+            int port = int.Parse(name);
             if (port == -1)
                 return null;
 

@@ -42,7 +42,7 @@ namespace Sharpen.FileSystem
         /// <returns>The node</returns>
         private static unsafe Node rootFindDirImpl(Node node, string name)
         {
-            int pid = Int.Parse(name);
+            int pid = int.Parse(name);
             if (pid < 0)
                 return null;
 
@@ -80,7 +80,7 @@ namespace Sharpen.FileSystem
                 return null;
 
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
-            string name = Int.ToString(current.PID);
+            string name = current.PID.ToString();
 
             i = 0;
             for (; name[i] != '\0'; i++)
@@ -101,7 +101,7 @@ namespace Sharpen.FileSystem
         private static unsafe Node procFindDirImpl(Node node, string name)
         {
             // File is a command: info
-            if (String.Equals("info", name))
+            if (name.Equals("info"))
             {
                 Node infoNode = new Node();
                 infoNode.Flags = NodeFlags.FILE;
@@ -117,7 +117,7 @@ namespace Sharpen.FileSystem
                 return null;
 
             // File is a thread ID
-            int tid = Int.Parse(name);
+            int tid = int.Parse(name);
             if (tid < 0)
                 return null;
 
@@ -164,7 +164,7 @@ namespace Sharpen.FileSystem
                 if (j < index - 1 && current.NextThread == task.FirstThread)
                     return null;
 
-                name = Int.ToString(current.TID);
+                name = current.TID.ToString();
             }
 
             int i = 0;

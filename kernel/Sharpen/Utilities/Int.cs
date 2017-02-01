@@ -1,8 +1,9 @@
-﻿using Sharpen.Mem;
+﻿using LibCS2C.Attributes;
+using Sharpen.Mem;
 
 namespace Sharpen.Utilities
 {
-    class Int
+    sealed class Int
     {
         public const int MinValue = -2147483648;
         public const int MaxValue = 2147483647;
@@ -12,7 +13,8 @@ namespace Sharpen.Utilities
         /// </summary>
         /// <param name="value"></param>
         /// <returns>-1 when failed</returns>
-        public static int Parse(string value)
+        [Plug("System_Int32_Parse_1string_t_")]
+        private static int parseImpl(string value)
         {
             int res = 0;
             int sign = 1;
@@ -43,7 +45,8 @@ namespace Sharpen.Utilities
         /// </summary>
         /// <param name="val">The integer to convert</param>
         /// <returns>The string</returns>
-        public static unsafe string ToString(int val)
+        [Plug("System_Int32_ToString_1class_")]
+        private static unsafe string toStringImpl(int val)
         {
             // This method fails for MinValue because of the sign inversion (overflow)
             if (val == MinValue)

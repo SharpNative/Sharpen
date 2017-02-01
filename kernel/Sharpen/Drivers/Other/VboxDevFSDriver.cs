@@ -61,15 +61,15 @@ namespace Sharpen.Drivers.Other
         private static unsafe Node findDirImpl(Node node, string name)
         {
             uint functionID = 0;
-            if (String.Equals(name, "sessionid"))
+            if (name.Equals("sessionid"))
             {
                 functionID = (uint)VboxDevRequestTypes.VMMDevReq_GetSessionId;
             }
-            else if(String.Equals(name, "powerstate"))
+            else if(name.Equals("powerstate"))
             {
                 functionID = (uint)VboxDevRequestTypes.VMMDevReq_SetPowerStatus;
             }
-            else if (String.Equals(name, "hosttime"))
+            else if (name.Equals("hosttime"))
             {
                 functionID = (uint)VboxDevRequestTypes.VMMDevReq_GetHostTime;
             }
