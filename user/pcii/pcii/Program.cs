@@ -28,11 +28,38 @@ namespace pcii
             TM = '\xC2',
             TR = '\xBF',
             ML = '\xB3',
+            MLC = '\xC3',
             MM = '\xC5',
             MR = '\xB4',
             BL = '\xC0',
             BM = '\xC1',
             BR = '\xD9'
+        }
+
+        /// <summary>
+        /// Prints a hex number with padding
+        /// </summary>
+        /// <param name="num">The number</param>
+        /// <param name="padding">The amount of characters it should be at least</param>
+        private static void printHexWithPadding(int num, int padding)
+        {
+            // Calculate 0x10^padding
+            int paddingNum = 0x10;
+            padding--;
+            while (padding > 1)
+            {
+                padding--;
+                paddingNum *= 0x10;
+            }
+
+            // Loop and check for padding
+            while (paddingNum >= 0x10 && num < paddingNum)
+            {
+                Console.Write('0');
+                paddingNum /= 0x10;
+            }
+
+            Console.WriteHex(num);
         }
 
         /// <summary>
@@ -57,15 +84,15 @@ namespace pcii
                 Console.Write("\t\xB3\t");
                 Console.Write(info.Function);
                 Console.Write("\t\xB3\t");
-                Console.WriteHex(info.Vendor);
+                printHexWithPadding(info.Vendor, 4);
                 Console.Write("\t\xB3\t");
-                Console.WriteHex(info.Device);
+                printHexWithPadding(info.Device, 4);
                 Console.Write("\t\xB3\t");
-                Console.WriteHex(info.ClassCode);
+                printHexWithPadding(info.ClassCode, 2);
                 Console.Write("\t\xB3\t");
-                Console.WriteHex(info.SubClass);
+                printHexWithPadding(info.SubClass, 2);
                 Console.Write("\t\xB3\t");
-                Console.WriteHex(info.ProgIntf);
+                printHexWithPadding(info.ProgIntf, 2);
                 Console.Write("\t\xB3\n");
             }
 
@@ -112,7 +139,7 @@ namespace pcii
         /// </summary>
         private static void printSplitLine()
         {
-            Console.Write((char)BoxChar.ML);
+            Console.Write((char)BoxChar.MLC);
             printLine(7, BoxChar.MM);
             printLine(7, BoxChar.MM);
             printLine(7, BoxChar.MM);
@@ -152,16 +179,16 @@ namespace pcii
             printTopLine();
             Console.WriteLine("\xB3  BUS  \xB3  SLOT \xB3  FUNC \xB3   VENDOR  \xB3   DEVICE  \xB3 CLASS \xB3  SUB  \xB3 INTF  \xB3");
             printSplitLine();
-            
+
             Directory dir = Directory.Open("pci://");
-            
+
             Directory.DirEntry entry = dir.Readdir();
             while (entry.Name[0] != '\0')
             {
                 string str = Util.CharPtrToString(entry.Name);
 
                 printDevice(str);
-                
+
                 entry = dir.Readdir();
                 if (entry.Name[0] != '\0')
                     printSplitLine();
