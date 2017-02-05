@@ -13,7 +13,7 @@ set NM=i686-sharpen-nm
 set LD=i686-sharpen-ld
 
 rem Userspace
-set USER_C_FLAGS=-Wall -s -O2 -std=c99
+set USER_C_FLAGS=-Wall -s -O1 -std=c99
 
 rem Kernelspace
 set KERNEL_ASM_FLAGS=-f elf32

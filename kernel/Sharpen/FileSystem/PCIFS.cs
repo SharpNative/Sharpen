@@ -8,6 +8,20 @@ namespace Sharpen.FileSystem
 {
     class PCIFS
     {
+        struct PCIFSInfo
+        {
+            public ushort Bus;
+            public ushort Slot;
+            public ushort Function;
+
+            public byte classCode;
+            public byte SubClass;
+            public byte ProgIntf;
+
+            public ushort Vendor;
+            public ushort Device;
+        }
+
         private static Dictionary m_dictionary;
         private static List m_direntries;
         private static Node m_currentNode;
