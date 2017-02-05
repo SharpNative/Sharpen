@@ -867,7 +867,7 @@ namespace Sharpen.FileSystem
             if (length > 12)
                 return null;
 
-            int dot = String.IndexOf(name, '.');
+            int dot = name.IndexOf('.');
             if (dot > 8)
                 return null;
 
@@ -964,7 +964,8 @@ namespace Sharpen.FileSystem
                     /**
                      * Calculate length and offsets
                      */
-                    int fnLength = String.IndexOf(Util.CharPtrToString(entry.Name), ' ');
+                    string nameStr = Util.CharPtrToString(entry.Name);
+                    int fnLength = nameStr.IndexOf(' ');
 
                     if (fnLength > 8 || fnLength == -1)
                         fnLength = 8;
@@ -978,8 +979,8 @@ namespace Sharpen.FileSystem
                      */
                     if ((dir.DirEntries[i].Attribs & ATTRIB_SUBDIR) == 0)
                     {
-
-                        int extLength = String.IndexOf(Util.CharPtrToString(entry.Name + 8), " ");
+                        nameStr = Util.CharPtrToString(entry.Name + 8);
+                        int extLength = nameStr.IndexOf(' ');
                         if (extLength == -1)
                             extLength = 3;
 

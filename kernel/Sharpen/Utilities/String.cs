@@ -45,7 +45,8 @@ namespace Sharpen.Utilities
         /// <param name="occurence">The string to search for</param>
         /// <param name="offset">The offset in the string</param>
         /// <returns>The index of the occurrence</returns>
-        public static int IndexOf(string text, string occurence, int offset)
+        [Plug("System_String_IndexOf_3class_string_t_int32_t_")]
+        private static int indexOfImpl(string text, string occurence, int offset)
         {
             int found = -1;
             int foundCount = 0;
@@ -86,9 +87,10 @@ namespace Sharpen.Utilities
         /// <param name="text">The string to search into</param>
         /// <param name="occurence">The string to search for</param>
         /// <returns>The index of the occurrence</returns>
-        public static int IndexOf(string text, string occurence)
+        [Plug("System_String_IndexOf_2class_string_t_")]
+        private static int indexOfImpl(string text, string occurence)
         {
-            return IndexOf(text, occurence, 0);
+            return indexOfImpl(text, occurence, 0);
         }
 
         /// <summary>
@@ -98,7 +100,8 @@ namespace Sharpen.Utilities
         /// <param name="occurence">The character to search for</param>
         /// <param name="offset">The offset in the string</param>
         /// <returns>The index of the occurrence</returns>
-        public static int IndexOf(string text, char occurence, int offset)
+        [Plug("System_String_IndexOf_3class_char_int32_t_")]
+        private static int indexOfImpl(string text, char occurence, int offset)
         {
             int length = text.Length;
             if (offset < 0 || offset >= length)
@@ -119,9 +122,10 @@ namespace Sharpen.Utilities
         /// <param name="text">The string to search into</param>
         /// <param name="occurence">The character to search for</param>
         /// <returns>The index of the occurrence</returns>
-        public static int IndexOf(string text, char occurence)
+        [Plug("System_String_IndexOf_2class_char_")]
+        private static int indexOfImpl(string text, char occurence)
         {
-            return IndexOf(text, occurence, 0);
+            return indexOfImpl(text, occurence, 0);
         }
 
         /// <summary>
@@ -248,7 +252,7 @@ namespace Sharpen.Utilities
             int offset = 0;
             for (int i = 0; i < count; i++)
             {
-                int nextOffset = IndexOf(str, ch, offset);
+                int nextOffset = str.IndexOf(ch, offset);
                 if (nextOffset == -1)
                     nextOffset = length;
                 

@@ -119,7 +119,7 @@ namespace Sharpen.FileSystem
         /// <returns>The node</returns>
         public static unsafe Node GetByAbsolutePath(string path)
         {
-            int index = String.IndexOf(path, "://");
+            int index = path.IndexOf("://");
             int pathLength = path.Length;
 
             // Get the device name
@@ -143,7 +143,7 @@ namespace Sharpen.FileSystem
             int offset = index + 3;
             while (parts > 0 && lastNode != null)
             {
-                int newOffset = String.IndexOf(path, "/", offset);
+                int newOffset = path.IndexOf('/', offset);
 
                 string part = path.Substring(offset, newOffset - offset);
                 lastNode = lastNode.FindDir(lastNode, part);
@@ -169,7 +169,7 @@ namespace Sharpen.FileSystem
         /// <returns>The resolved version of the path</returns>
         public static unsafe string ResolvePath(string path)
         {
-            int index = String.IndexOf(path, "://");
+            int index = path.IndexOf("://");
             int pathLength = path.Length;
 
             char* ptr = (char*)Heap.Alloc(pathLength + 1);
@@ -190,7 +190,7 @@ namespace Sharpen.FileSystem
             int partIndex = 0;
             while (parts > 0)
             {
-                int newOffset = String.IndexOf(path, "/", offset);
+                int newOffset = path.IndexOf('/', offset);
                 string part = path.Substring(offset, newOffset - offset);
 
                 // "../": Remove previous part
@@ -236,11 +236,11 @@ namespace Sharpen.FileSystem
         /// <returns>If it's an absolute path</returns>
         public static bool IsAbsolutePath(string path)
         {
-            int index = String.IndexOf(path, "://");
+            int index = path.IndexOf("://");
             if (index == -1)
                 return false;
 
-            int firstSlashIndex = String.IndexOf(path, "/");
+            int firstSlashIndex = path.IndexOf('/');
             if (firstSlashIndex > -1 && firstSlashIndex < index - 1)
                 return false;
 

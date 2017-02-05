@@ -14,8 +14,7 @@ namespace Sharpen.Net
         /// <returns>The node</returns>
         public static unsafe Node Open(string name)
         {
-            int foundIndex = String.IndexOf(name, ":");
-
+            int foundIndex = name.IndexOf(':');
             if (foundIndex == -1)
                 return null;
 

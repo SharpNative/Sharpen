@@ -143,7 +143,6 @@ namespace Sharpen.FileSystem
         public static long GetKey(string str)
         {
             int count = String.Count(str, ':');
-
             if (count != 2)
                 return -1;
 
@@ -153,13 +152,12 @@ namespace Sharpen.FileSystem
             int offset = 0;
             for (int j = 0; j < 3; j++)
             {
-                int index = String.IndexOf(str, ":", offset);
+                int index = str.IndexOf(':', offset);
                 if (index == -1)
                     index = str.Length - offset;
                 else
                     index -= offset;
-
-
+                
                 string part = str.Substring(offset, index);
                 
                 uint num = (uint)int.Parse(part);

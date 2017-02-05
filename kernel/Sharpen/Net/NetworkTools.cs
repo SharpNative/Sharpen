@@ -50,7 +50,7 @@ namespace Sharpen.Net
             int length = ipIn.Length;
             for (int i = 1; i <= 4; i++)
             {
-                int currentIndex = String.IndexOf(ipIn, ".", previousIndex) + 1;
+                int currentIndex = ipIn.IndexOf('.', previousIndex) + 1;
                 if (currentIndex == 0)
                     currentIndex = length + 1;
 
