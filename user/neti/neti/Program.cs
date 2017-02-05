@@ -1,7 +1,6 @@
 ﻿using LibCS2C.Attributes;
 using Sharpen.IO;
 using Sharpen.Mem;
-using SharpenLib.IO;
 
 namespace Neti
 {

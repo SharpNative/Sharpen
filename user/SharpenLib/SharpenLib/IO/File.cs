@@ -1,7 +1,7 @@
 ﻿using LibCS2C.Attributes;
 using Sharpen.Utilities;
 
-namespace SharpenLib.IO
+namespace Sharpen.IO
 {
     public class File
     {
@@ -30,6 +30,14 @@ namespace SharpenLib.IO
         }
 
         private int m_fd;
+
+        public bool IsOpen
+        {
+            get
+            {
+                return (m_fd > 0);
+            }
+        }
 
         /// <summary>
         /// Creates a new File object

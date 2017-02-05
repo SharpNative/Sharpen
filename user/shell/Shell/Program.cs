@@ -66,8 +66,16 @@ namespace Shell
 
                 // Split command line
                 int argc = String.Count(read, ' ') + 1;
-                string[] argv = read.Split(' ');
+
+                // Copy for NULL ending
+                string[] argv = new string[argc + 1];
+                string[] split = read.Split(' ');
+                for (int i = 0; i < argc; i++)
+                    argv[i] = split[i];
+
                 string command = argv[0];
+
+                Heap.Free(split);
 
                 // Remove the empty arguments
                 for (int i = 0; i < argc; i++)
@@ -79,7 +87,7 @@ namespace Shell
                         argc--;
                     }
                 }
-
+                
                 // Process commands
                 if (command.Equals("cd"))
                 {

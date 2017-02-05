@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Utilities
 {
-    class Byte
+    public sealed class Byte
     {
         /// <summary>
         /// Converts an int to a byte array

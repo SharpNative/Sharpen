@@ -3,7 +3,7 @@ using Sharpen.Mem;
 
 namespace Sharpen.Utilities
 {
-    sealed class Int
+    public sealed class Int
     {
         public const int MinValue = -2147483648;
         public const int MaxValue = 2147483647;

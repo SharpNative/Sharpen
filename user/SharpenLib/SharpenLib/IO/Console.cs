@@ -1,4 +1,5 @@
-﻿using Sharpen.Utilities;
+﻿using LibCS2C.Attributes;
+using Sharpen.Utilities;
 
 namespace Sharpen.IO
 {
@@ -14,7 +15,13 @@ namespace Sharpen.IO
         /// Writes a character to the console
         /// </summary>
         /// <param name="c">The character</param>
+        [Extern("putchar")]
         public static extern void Write(char c);
+
+        /// <summary>
+        /// Flushes the output stream
+        /// </summary>
+        public static extern void Flush();
 
         /// <summary>
         /// Writes a line to the console

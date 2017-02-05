@@ -26,15 +26,14 @@ inline void* Sharpen_Utilities_Util_ObjectToVoidPtr_1object_t_(object_t ptr)
     return ptr;
 }
 
-void Sharpen_IO_Console_Write_1string_t_(string_t str)
+inline void Sharpen_IO_Console_Flush_0(void)
 {
-    printf("%s", str);
     fflush(stdout);
 }
 
-void Sharpen_IO_Console_Write_1char_(char c)
+void Sharpen_IO_Console_Write_1string_t_(string_t str)
 {
-    putchar(c);
+    printf("%s", str);
     fflush(stdout);
 }
 

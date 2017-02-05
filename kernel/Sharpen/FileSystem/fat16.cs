@@ -877,7 +877,7 @@ namespace Sharpen.FileSystem
             char* testFor = (char*)Heap.Alloc(11);
             Memory.Memset(testFor, ' ', 11);
             
-            int min = (dot < 0) ? Math.Min(length, 8) : Math.Min(dot, 8);
+            int min = (dot == -1) ? Math.Min(length, 8) : Math.Min(dot, 8);
             int i = 0;
             for (; i < min; i++)
             {
@@ -887,7 +887,7 @@ namespace Sharpen.FileSystem
             if (dot != -1)
             {
                 int lengthExt = length - dot - 1;
-                min = 8 + Math.Min(3, lengthExt);
+                min = Math.Min(3, lengthExt);
 
                 i++;
                 for (int j = 0; j < min; j++)
@@ -906,13 +906,13 @@ namespace Sharpen.FileSystem
                 FatDirEntry* entry = cookie.DirEntry;
                 cluster = entry->ClusterNumberLo;
             }
-
             /**
              * Find file in cluster (directory)
              */
             Node nd = FindFileInDirectory(cluster, testFor);
 
             Heap.Free(testFor);
+
             return nd;
         }
 

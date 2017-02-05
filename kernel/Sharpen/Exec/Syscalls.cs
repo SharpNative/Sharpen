@@ -170,11 +170,11 @@ namespace Sharpen.Exec
         {
             if (path.Length == 0)
                 return -(int)ErrorCode.EINVAL;
-
+            
             Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
-            
+
             VFS.Open(node, flags);
 
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
