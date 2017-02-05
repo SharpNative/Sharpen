@@ -1,4 +1,5 @@
 ﻿using Sharpen.FileSystem;
+using Sharpen.FileSystem.Cookie;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -25,7 +26,7 @@ namespace Sharpen.Net
             dev.Node.ReadDir = readDirImpl;
             dev.Node.Flags = NodeFlags.DIRECTORY;
 
-            UDPFSCookie cookie = new UDPFSCookie(OPT.LIST);
+            IDCookie cookie = new IDCookie((int)OPT.LIST);
             dev.Node.Cookie = (ICookie)cookie;
 
             NetFS.RegisterDevice(dev);
@@ -39,8 +40,8 @@ namespace Sharpen.Net
         /// <returns>The node</returns>
         private static unsafe Node findDirImpl(Node node, string name)
         {
-            UDPFSCookie cookie = (UDPFSCookie)node.Cookie;
-            OPT opt = cookie.Opt;
+            IDCookie cookie = (IDCookie)node.Cookie;
+            OPT opt = (OPT)cookie.ID;
 
             if (opt == OPT.LIST)
             {
@@ -72,7 +73,7 @@ namespace Sharpen.Net
             node.Flags = NodeFlags.DIRECTORY;
             node.FindDir = findDirImpl;
 
-            UDPFSCookie cookie = new UDPFSCookie(opt);
+            IDCookie cookie = new IDCookie((int)opt);
             node.Cookie = (ICookie)cookie;
 
             return node;
@@ -98,8 +99,8 @@ namespace Sharpen.Net
         /// <returns>The directory entry</returns>
         private static unsafe DirEntry* readDirImpl(Node node, uint index)
         {
-            UDPFSCookie cookie = (UDPFSCookie)node.Cookie;
-            OPT opt = cookie.Opt;
+            IDCookie cookie = (IDCookie)node.Cookie;
+            OPT opt = (OPT)cookie.ID;
 
             // Do list ;)
             if (opt == OPT.LIST)

@@ -1,6 +1,6 @@
 ﻿using Sharpen.FileSystem;
+using Sharpen.FileSystem.Cookie;
 using Sharpen.Mem;
-using Sharpen.Utilities;
 
 namespace Sharpen.Drivers.Power
 {
@@ -60,7 +60,7 @@ namespace Sharpen.Drivers.Power
         /// <returns></returns>
         private static unsafe Node findDirImpl(Node node, string name)
         {
-            uint functionID = 0;
+            int functionID = 0;
             
             if (name.Equals("info"))
             {
@@ -83,8 +83,7 @@ namespace Sharpen.Drivers.Power
             outNode.Write = writeImpl;
             outNode.Flags = NodeFlags.FILE;
 
-            ACPICookie cookie = new ACPICookie();
-            cookie.Function = functionID;
+            IDCookie cookie = new IDCookie(functionID);
             outNode.Cookie = (ICookie)cookie;
 
             return outNode;
@@ -100,8 +99,8 @@ namespace Sharpen.Drivers.Power
         /// <returns>The amount of bytes written</returns>
         private static unsafe uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            ACPICookie cookie = (ACPICookie)node.Cookie;
-            uint function = cookie.Function;
+            IDCookie cookie = (IDCookie)node.Cookie;
+            int function = cookie.ID;
 
             switch (function)
             {
@@ -130,8 +129,8 @@ namespace Sharpen.Drivers.Power
         /// <returns>The amount of bytes read</returns>
         private static unsafe uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            ACPICookie cookie = (ACPICookie)node.Cookie;
-            uint function = cookie.Function;
+            IDCookie cookie = (IDCookie)node.Cookie;
+            int function = cookie.ID;
 
             switch (function)
             {
@@ -141,18 +140,6 @@ namespace Sharpen.Drivers.Power
             }
 
             return 0;
-        }
-    }
-
-    public class ACPICookie : ICookie
-    {
-        public uint Function;
-
-        /// <summary>
-        /// Cleans up
-        /// </summary>
-        public void Dispose()
-        {
         }
     }
 }

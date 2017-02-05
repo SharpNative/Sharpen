@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Collections;
+using Sharpen.FileSystem.Cookie;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -44,8 +45,7 @@ namespace Sharpen.FileSystem
             if (obj == null)
                 return null;
 
-            PCIFSCookie cookie = new PCIFSCookie();
-            cookie.Key = key;
+            IDCookie cookie = new IDCookie((int)key);
 
             Node outNode = new Node();
             outNode.Cookie = (ICookie)cookie;
@@ -212,8 +212,8 @@ namespace Sharpen.FileSystem
         {
             if (name.Equals("info"))
             {
-                PCIFSCookie cookie = (PCIFSCookie)node.Cookie;
-                return byKey(0, cookie.Key);
+                IDCookie cookie = (IDCookie)node.Cookie;
+                return byKey(0, (uint)cookie.ID);
             }
 
             return null;
@@ -229,8 +229,7 @@ namespace Sharpen.FileSystem
         {
             Node node = new Node();
 
-            PCIFSCookie cookie = new PCIFSCookie();
-            cookie.Key = key;
+            IDCookie cookie = new IDCookie((int)key);
             node.Cookie = (ICookie)cookie;
 
             if (type == 0)
@@ -266,8 +265,8 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         private static unsafe uint infoReadImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            PCIFSCookie cookie = (PCIFSCookie)node.Cookie;
-            PciDevice dev = (PciDevice)m_dictionary.GetByKey(cookie.Key);
+            IDCookie cookie = (IDCookie)node.Cookie;
+            PciDevice dev = (PciDevice)m_dictionary.GetByKey((uint)cookie.ID);
             if (dev == null)
                 return 0;
 

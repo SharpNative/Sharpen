@@ -1,4 +1,5 @@
 ﻿using Sharpen.FileSystem;
+using Sharpen.FileSystem.Cookie;
 using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Utilities;
@@ -65,8 +66,10 @@ namespace Sharpen.Net
         {
             byte* sourceBuffer = null;
 
-            NetworkInfoFSCookie cookie = (NetworkInfoFSCookie)node.Cookie;
-            switch (cookie.InfoOPT)
+            IDCookie cookie = (IDCookie)node.Cookie;
+            InfoOPT opt = (InfoOPT)cookie.ID;
+
+            switch (opt)
             {
                 case InfoOPT.IP:
                     sourceBuffer = Network.Settings->IP;
@@ -106,7 +109,7 @@ namespace Sharpen.Net
             node.Read = readImpl;
             node.Size = 4;
 
-            NetworkInfoFSCookie cookie = new NetworkInfoFSCookie(opt);
+            IDCookie cookie = new IDCookie((int)opt);
             node.Cookie = (ICookie)cookie;
 
             return node;

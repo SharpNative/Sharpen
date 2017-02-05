@@ -1,4 +1,6 @@
-﻿namespace Sharpen.FileSystem
+﻿using Sharpen.FileSystem.Cookie;
+
+namespace Sharpen.FileSystem
 {
     public class Node
     {

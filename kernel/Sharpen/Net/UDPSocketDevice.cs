@@ -1,4 +1,5 @@
 ﻿using Sharpen.FileSystem;
+using Sharpen.FileSystem.Cookie;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 

@@ -1,6 +1,7 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Collections;
 using Sharpen.FileSystem;
+using Sharpen.FileSystem.Cookie;
 
 namespace Sharpen.Drivers.Char
 {

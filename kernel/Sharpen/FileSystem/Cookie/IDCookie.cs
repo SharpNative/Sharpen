@@ -1,4 +1,4 @@
-﻿namespace Sharpen.FileSystem
+﻿namespace Sharpen.FileSystem.Cookie
 {
     public class IDCookie : ICookie
     {

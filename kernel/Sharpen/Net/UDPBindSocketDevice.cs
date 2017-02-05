@@ -1,5 +1,5 @@
 ﻿using Sharpen.FileSystem;
-using Sharpen.Mem;
+using Sharpen.FileSystem.Cookie;
 using Sharpen.Utilities;
 
 namespace Sharpen.Net

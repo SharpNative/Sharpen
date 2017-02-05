@@ -1,4 +1,5 @@
 ﻿using Sharpen.FileSystem;
+using Sharpen.FileSystem.Cookie;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -82,7 +83,7 @@ namespace Sharpen.Drivers.Other
             outNode.Write = writeImpl;
             outNode.Flags = NodeFlags.FILE;
 
-            VboxDevFSCookie cookie = new VboxDevFSCookie(function);
+            IDCookie cookie = new IDCookie((int)function);
             outNode.Cookie = (ICookie)cookie;
 
             return outNode;
@@ -98,9 +99,10 @@ namespace Sharpen.Drivers.Other
         /// <returns>The amount of bytes written</returns>
         private static unsafe uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            VboxDevFSCookie cookie = (VboxDevFSCookie)node.Cookie;
+            IDCookie cookie = (IDCookie)node.Cookie;
+            VboxDevRequestTypes request = (VboxDevRequestTypes)cookie.ID;
 
-            switch (cookie.Request)
+            switch (request)
             {
                 case VboxDevRequestTypes.VMMDevReq_SetPowerStatus:
                     if (size < 4)
@@ -127,9 +129,10 @@ namespace Sharpen.Drivers.Other
         /// <returns>The amount of bytes read</returns>
         private static unsafe uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            VboxDevFSCookie cookie = (VboxDevFSCookie)node.Cookie;
+            IDCookie cookie = (IDCookie)node.Cookie;
+            VboxDevRequestTypes request = (VboxDevRequestTypes)cookie.ID;
 
-            switch (cookie.Request)
+            switch (request)
             {
                 case VboxDevRequestTypes.VMMDevReq_GetSessionId:
                     if (size != 8)

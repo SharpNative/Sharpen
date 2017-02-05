@@ -1,7 +1,7 @@
 ﻿using Sharpen.Mem;
 using Sharpen.Net;
 
-namespace Sharpen.FileSystem
+namespace Sharpen.FileSystem.Cookie
 {
     public class UDPSocketCookie : ICookie
     {
