@@ -2,7 +2,7 @@
 {
     sealed class Mutex
     {
-        private int m_lock = 0;
+        private int m_lock;
 
         /// <summary>
         /// Locks the mutex
