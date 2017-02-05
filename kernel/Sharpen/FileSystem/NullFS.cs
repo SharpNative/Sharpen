@@ -31,7 +31,7 @@ namespace Sharpen.FileSystem
         /// <returns>The amount of bytes read</returns>
         private unsafe static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            Memory.Memset((char*)Util.ObjectToVoidPtr(buffer) + offset, 0x00, (int)size);
+            Memory.Memclear((char*)Util.ObjectToVoidPtr(buffer) + offset, (int)size);
             return size;
         }
 

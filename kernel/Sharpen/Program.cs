@@ -33,19 +33,21 @@ namespace Sharpen
         {
             heapStart = (void*)end;
             Console.Clear();
+            X86Arch.EarlyInit();
 
             processMultiboot(header, magic);
             Heap.InitTempHeap(heapStart);
+            
             X86Arch.Init();
             Acpi.Init();
             initMemory();
             Random.Init();
-
+            
             initFileSystems();
-
+            
             initPCIDevices();
             Keyboard.Init();
-
+            
             initUSB();
             
             Tasking.Init();
@@ -82,7 +84,6 @@ namespace Sharpen
             RandomFS.Init();
             STDOUT.Init();
             SerialPort.Init();
-            PipeFS.Init();
             NetFS.Init();
             ProcFS.Init();
         }

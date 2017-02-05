@@ -178,18 +178,19 @@ namespace Sharpen.Drivers.Block
         /// <summary>
         /// Read sectors into the output buffer and return size in bytes
         /// </summary>
+        /// <param name="num">The disk number</param>
         /// <param name="lba">Input LBA</param>
         /// <param name="size">Size in sectors</param>
         /// <param name="buffer">Output buffer</param>
         /// <returns>The amount of bytes read</returns>
-        public static int ReadSector(uint device_num, uint lba, byte size, byte[] buffer)
+        public static int ReadSector(int num, uint lba, byte size, byte[] buffer)
         {
             // The driver only supports up to 4 drives
-            if (device_num >= 4)
+            if (num >= 4)
                 return 0;
 
             // Get IDE device from array
-            IDE_Device device = Devices[device_num];
+            IDE_Device device = Devices[num];
             if (!device.Exists)
                 return 0;
 
@@ -234,18 +235,19 @@ namespace Sharpen.Drivers.Block
         /// <summary>
         /// Write sector to drive and return size in bytes
         /// </summary>
+        /// <param name="num">The disk number</param>
         /// <param name="lba">Input LBA</param>
         /// <param name="size">Output size in sectors</param>
         /// <param name="buffer">Input buffer</param>
         /// <returns>The amount of bytes written</returns>
-        public static int WriteSector(uint device_num, uint lba, byte size, byte[] buffer)
+        public static int WriteSector(int num, uint lba, byte size, byte[] buffer)
         {
             // The driver only supports up to 4 drivers
-            if (device_num >= 4)
+            if (num >= 4)
                 return 0;
 
             // Get IDE device from array
-            IDE_Device device = Devices[device_num];
+            IDE_Device device = Devices[num];
             if (!device.Exists)
                 return 0;
 
@@ -400,7 +402,7 @@ namespace Sharpen.Drivers.Block
             Devices = new IDE_Device[4];
             probe();
 
-            for(uint i = 0; i < 4; i++)
+            for (int i = 0; i < 4; i++)
             {
                 if (!Devices[i].Exists)
                     continue;
@@ -412,10 +414,13 @@ namespace Sharpen.Drivers.Block
                 name[2] = 'D';
                 name[3] = (char)('0' + i);
                 dev.Name = Util.CharPtrToString(name);
-                dev.Node.Cookie = i; // Disk ID
+                
                 dev.Node = new Node();
                 dev.Node.Read = readImpl;
                 dev.Node.Write = writeImpl;
+
+                IDCookie cookie = new IDCookie(i);
+                dev.Node.Cookie = (ICookie)cookie;
 
                 DevFS.RegisterDevice(dev);
             }
@@ -436,8 +441,9 @@ namespace Sharpen.Drivers.Block
                 return 0;
 
             uint inSize = size / 512;
-            
-            return (uint)WriteSector(node.Cookie, offset, (byte)inSize, buffer);
+
+            IDCookie cookie = (IDCookie)node.Cookie;
+            return (uint)WriteSector(cookie.ID, offset, (byte)inSize, buffer);
         }
 
         /// <summary>
@@ -456,7 +462,8 @@ namespace Sharpen.Drivers.Block
 
             uint inSize = size / 512;
 
-            return (uint)ReadSector(node.Cookie, offset, (byte)inSize, buffer);
+            IDCookie cookie = (IDCookie)node.Cookie;
+            return (uint)ReadSector(cookie.ID, offset, (byte)inSize, buffer);
         }
 
 

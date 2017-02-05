@@ -2,10 +2,9 @@
 {
     public class Node
     {
+        // TODO: cookie cleaning?
         public uint Size;
-        public uint Cookie;
-        public uint Cookie2;
-        public uint Cookie3;
+        public ICookie Cookie;
         public FileMode FileMode;
         public int OpenFlags;
         public NodeFlags Flags;
@@ -63,10 +62,9 @@
             // We shouldn't copy the reference to the Open and Close method, because that's the task of the original node
             Node clone = new Node();
 
+            // TODO: clone cookie? or is this the task of the filesystem implementation itself?
             clone.Size = Size;
             clone.Cookie = Cookie;
-            clone.Cookie2 = Cookie2;
-            clone.Cookie3 = Cookie3;
             clone.FileMode = FileMode;
             clone.OpenFlags = OpenFlags;
             clone.Flags = Flags;

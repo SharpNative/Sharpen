@@ -19,16 +19,20 @@ namespace Sharpen.Mem
         /// <param name="s1">The first chunk</param>
         /// <param name="s2">The second chunk</param>
         /// <param name="n">The amount of memory to compare</param>
-        /// <returns>If the two chunks are equal</returns>
-        internal static unsafe bool Compare(char* s1, char* s2, int n)
-        {
-            for (int i = 0; i < n; i++)
-            {
-                if (s1[i] != s2[i])
-                    return false;
-            }
+        /// <returns>Which chunk was greater or less, or zero if equal</returns>
+        [Extern("memcmp")]
+        public static extern unsafe int Memcmp(void* s1, void* s2, int n);
 
-            return true;
+        /// <summary>
+        /// Compares two chunks of memory
+        /// </summary>
+        /// <param name="s1">The first chunk</param>
+        /// <param name="s2">The second chunk</param>
+        /// <param name="n">The amount of memory to compare</param>
+        /// <returns>If the two chunks are equal</returns>
+        public static unsafe bool Compare(void* s1, void* s2, int n)
+        {
+            return (Memcmp(s1, s2, n) == 0);
         }
 
         /// <summary>

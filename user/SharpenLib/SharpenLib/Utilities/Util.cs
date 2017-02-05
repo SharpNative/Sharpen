@@ -1,20 +1,20 @@
 ﻿namespace Sharpen.Utilities
 {
-    unsafe sealed class Util
+    public unsafe sealed class Util
     {
         /// <summary>
         /// Converts a char array to a string
         /// </summary>
         /// <param name="array">The char array</param>
         /// <returns>The string</returns>
-        internal static extern string CharArrayToString(char[] array);
+        public static extern string CharArrayToString(char[] array);
 
         /// <summary>
         /// Converts a char pointer to a string
         /// </summary>
         /// <param name="ptr">The char pointer</param>
         /// <returns>The string</returns>
-        internal static extern string CharPtrToString(char* ptr);
+        public static extern string CharPtrToString(char* ptr);
 
         /// <summary>
         /// Converts an object to a void pointer

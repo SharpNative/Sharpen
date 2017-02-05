@@ -4,7 +4,7 @@ using Sharpen.Utilities;
 
 namespace Sharpen.IO
 {
-    sealed unsafe class Directory
+    public sealed unsafe class Directory
     {
         public struct DirEntry
         {
@@ -44,7 +44,7 @@ namespace Sharpen.IO
         public DirEntry Readdir()
         {
             DirEntry* read = readdir(m_instance);
-            
+
             DirEntry entry = new DirEntry();
             if (read != null)
                 Memory.Memcpy(&entry, read, sizeof(DirEntry));
@@ -59,9 +59,7 @@ namespace Sharpen.IO
         {
             closeInternal(m_instance);
         }
-
-        public static extern bool SetCurrentDirectory(string path);
-
+        
         /// <summary>
         /// Gets the current working directory
         /// </summary>
@@ -70,6 +68,24 @@ namespace Sharpen.IO
         /// <returns>The buffer</returns>
         [Extern("getcwd")]
         public static extern unsafe char* GetCWD(char* destination, int size);
+
+        /// <summary>
+        /// Changes the current working directory
+        /// </summary>
+        /// <param name="path">The path</param>
+        /// <returns>0 if success, -1 if failed</returns>
+        [Extern("chdir")]
+        private static extern int CHDir(string path);
+
+        /// <summary>
+        /// Changes the current working directory
+        /// </summary>
+        /// <param name="path">The path</param>
+        /// <returns>If the directory change was successful</returns>
+        public static bool SetCurrentDirectory(string path)
+        {
+            return (CHDir(path) == 0);
+        }
 
         /// <summary>
         /// Gets the current directory
@@ -104,6 +120,6 @@ namespace Sharpen.IO
         /// </summary>
         /// <param name="instance">The pointer to the directory structure</param>
         [Extern("closedir")]
-        private static extern void closeInternal(void* instance);
+        private static extern int closeInternal(void* instance);
     }
 }

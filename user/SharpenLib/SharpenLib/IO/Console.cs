@@ -2,7 +2,7 @@
 
 namespace Sharpen.IO
 {
-    class Console
+    public class Console
     {
         /// <summary>
         /// Writes a string to the console without a newline
@@ -15,7 +15,7 @@ namespace Sharpen.IO
         /// </summary>
         /// <param name="c">The character</param>
         public static extern void Write(char c);
-        
+
         /// <summary>
         /// Writes a line to the console
         /// </summary>
@@ -42,17 +42,17 @@ namespace Sharpen.IO
 
             char c;
             int i = 0;
-            while((c = ReadChar()) != '\n')
+            while ((c = ReadChar()) != '\n')
             {
                 buffer[i++] = c;
-                if (i > 1022)
+                if (i >= 1023)
                     break;
             }
             buffer[i] = '\0';
 
             return Util.CharArrayToString(buffer);
         }
-        
+
         /// <summary>
         /// Writes a hexadecimal integer to the screen
         /// </summary>

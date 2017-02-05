@@ -79,10 +79,13 @@ namespace Sharpen.Drivers.Power
                 return null;
 
             Node outNode = new Node();
-            outNode.Cookie = functionID;
             outNode.Read = readImpl;
             outNode.Write = writeImpl;
             outNode.Flags = NodeFlags.FILE;
+
+            ACPICookie cookie = new ACPICookie();
+            cookie.Function = functionID;
+            outNode.Cookie = (ICookie)cookie;
 
             return outNode;
         }
@@ -97,7 +100,8 @@ namespace Sharpen.Drivers.Power
         /// <returns>The amount of bytes written</returns>
         private static unsafe uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            uint function = node.Cookie;
+            ACPICookie cookie = (ACPICookie)node.Cookie;
+            uint function = cookie.Function;
 
             switch (function)
             {
@@ -126,7 +130,8 @@ namespace Sharpen.Drivers.Power
         /// <returns>The amount of bytes read</returns>
         private static unsafe uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            uint function = node.Cookie;
+            ACPICookie cookie = (ACPICookie)node.Cookie;
+            uint function = cookie.Function;
 
             switch (function)
             {
@@ -136,6 +141,18 @@ namespace Sharpen.Drivers.Power
             }
 
             return 0;
+        }
+    }
+
+    public class ACPICookie : ICookie
+    {
+        public uint Function;
+
+        /// <summary>
+        /// Cleans up
+        /// </summary>
+        public void Dispose()
+        {
         }
     }
 }

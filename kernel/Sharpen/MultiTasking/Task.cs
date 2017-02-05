@@ -207,7 +207,7 @@ namespace Sharpen.MultiTasking
         {
             if (signal <= 0 || (int)signal >= Signals.NSIG)
                 return ErrorCode.EINVAL;
-
+            
             // Get handler, if no handler is set, use default handler
             SignalAction action = m_signalActions[(int)signal];
             if (action == null)

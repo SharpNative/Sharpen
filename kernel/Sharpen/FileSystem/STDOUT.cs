@@ -11,6 +11,7 @@
             device.Name = "stdout";
             device.Node = new Node();
             device.Node.Write = writeImpl;
+            device.Node.Flags = NodeFlags.DEVICE | NodeFlags.FILE;
 
             DevFS.RegisterDevice(device);
         }

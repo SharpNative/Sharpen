@@ -2,7 +2,7 @@
 
 namespace Sharpen
 {
-    sealed class Process
+    public sealed class Process
     {
         /// <summary>
         /// Exits the current process

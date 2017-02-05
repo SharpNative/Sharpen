@@ -4,11 +4,14 @@ using Sharpen.Utilities;
 
 namespace Sharpen.Net
 {
-    class UDPFS
+    public class UDPFS
     {
-        private const uint OPT_LIST = 0;
-        private const uint OPT_BIND = 1;
-        private const uint OPT_SOCK = 2;
+        public enum OPT
+        {
+            LIST,
+            BIND,
+            SOCK
+        }
 
         /// <summary>
         /// Initializes UDP filesystem in NetFS
@@ -18,10 +21,12 @@ namespace Sharpen.Net
             Device dev = new Device();
             dev.Name = "udp";
             dev.Node = new Node();
-            dev.Node.Cookie = OPT_LIST;
             dev.Node.FindDir = findDirImpl;
             dev.Node.ReadDir = readDirImpl;
             dev.Node.Flags = NodeFlags.DIRECTORY;
+
+            UDPFSCookie cookie = new UDPFSCookie(OPT.LIST);
+            dev.Node.Cookie = (ICookie)cookie;
 
             NetFS.RegisterDevice(dev);
         }
@@ -34,18 +39,21 @@ namespace Sharpen.Net
         /// <returns>The node</returns>
         private static unsafe Node findDirImpl(Node node, string name)
         {
-            if (node.Cookie == OPT_LIST)
+            UDPFSCookie cookie = (UDPFSCookie)node.Cookie;
+            OPT opt = cookie.Opt;
+
+            if (opt == OPT.LIST)
             {
                 if (name.Equals("bind"))
-                    return byID(OPT_BIND);
+                    return byID(OPT.BIND);
                 else if (name.Equals("connect"))
-                    return byID(OPT_SOCK);
+                    return byID(OPT.SOCK);
             }
-            else if (node.Cookie == OPT_SOCK)
+            else if (opt == OPT.SOCK)
             {
                 return UDPSocketDevice.Open(name);
             }
-            else if (node.Cookie == OPT_BIND)
+            else if (opt == OPT.BIND)
             {
                 return UDPBindSocketDevice.Open(name);
             }
@@ -56,14 +64,16 @@ namespace Sharpen.Net
         /// <summary>
         /// Creates a node
         /// </summary>
-        /// <param name="id">The ID</param>
+        /// <param name="opt">The option</param>
         /// <returns>The node</returns>
-        private static unsafe Node byID(uint id)
+        private static unsafe Node byID(OPT opt)
         {
             Node node = new Node();
-            node.Cookie = id;
             node.Flags = NodeFlags.DIRECTORY;
             node.FindDir = findDirImpl;
+
+            UDPFSCookie cookie = new UDPFSCookie(opt);
+            node.Cookie = (ICookie)cookie;
 
             return node;
         }
@@ -88,8 +98,11 @@ namespace Sharpen.Net
         /// <returns>The directory entry</returns>
         private static unsafe DirEntry* readDirImpl(Node node, uint index)
         {
+            UDPFSCookie cookie = (UDPFSCookie)node.Cookie;
+            OPT opt = cookie.Opt;
+
             // Do list ;)
-            if (node.Cookie == OPT_LIST)
+            if (opt == OPT.LIST)
             {
                 if (index == 0)
                     return makeByName("bind");

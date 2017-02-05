@@ -352,9 +352,8 @@ namespace Sharpen.Drivers.Net
                 m_curBuffer = 0;
 
             /**
-             * Clear old data and copy new :)
+             * Set data
              */
-            Memory.Memset(bufferPtr, 0x00, 8192 + 16);
             Memory.Memcpy(bufferPtr, bytes, (int)size);
 
             /**

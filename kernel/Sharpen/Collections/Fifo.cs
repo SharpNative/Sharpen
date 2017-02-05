@@ -1,16 +1,17 @@
-﻿using Sharpen.MultiTasking;
+﻿using Sharpen.Mem;
+using Sharpen.MultiTasking;
 
 namespace Sharpen.Collections
 {
     public class Fifo
     {
         private byte[] m_buffer;
-        private bool m_wait = true;
-        private int m_head = 0;
-        private int m_tail = 0;
+        private bool m_wait;
+        private int m_head;
+        private int m_tail;
         private int m_size;
 
-        public uint AvailableBytes { get; private set; } = 0;
+        public uint AvailableBytes { get; private set; }
 
         /// <summary>
         /// Creates a fifo buffer
@@ -24,12 +25,20 @@ namespace Sharpen.Collections
         }
 
         /// <summary>
+        /// Cleans up this Fifo
+        /// </summary>
+        public void Dispose()
+        {
+            Heap.Free(m_buffer);
+        }
+
+        /// <summary>
         /// Read until the buffer is full with the requested amount of data
         /// </summary>
         /// <param name="buffer">The buffer where to put the data into</param>
         /// <param name="size">The amount of bytes to read</param>
         /// <returns>The amount of read bytes</returns>
-        public unsafe uint ReadWait(byte[] buffer, uint size)
+        public unsafe uint ReadFull(byte[] buffer, uint size)
         {
             uint left = size;
             uint offset = 0;

@@ -1,7 +1,7 @@
 call ..\..\scripts\pre
 
 echo Compiling...
-%CC% %USER_C_FLAGS% %1.c -o %1.elf
+%CC% %USER_C_FLAGS% ../SharpenLib/SharpenLib.c %1/C/output.c -o %1.elf
 
 echo Copying...
 call ..\..\scripts\mount

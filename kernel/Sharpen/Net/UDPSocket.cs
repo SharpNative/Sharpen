@@ -4,7 +4,7 @@ using Sharpen.Utilities;
 
 namespace Sharpen.Net
 {
-    class UDPSocket
+    public class UDPSocket
     {
         private unsafe struct UDPBacklogEntry
         {

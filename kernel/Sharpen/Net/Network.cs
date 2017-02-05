@@ -68,7 +68,7 @@ namespace Sharpen.Net
             m_handlers = new PackerHandler[65536];
 
             Settings = (NetworkSettings*)Heap.Alloc(sizeof(NetworkSettings));
-            Memory.Memset(Settings, 0, sizeof(NetworkSettings));
+            Memory.Memclear(Settings, sizeof(NetworkSettings));
 
             m_recPacketQueue = new Queue();
 

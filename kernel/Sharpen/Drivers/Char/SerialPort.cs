@@ -4,7 +4,7 @@ using Sharpen.FileSystem;
 
 namespace Sharpen.Drivers.Char
 {
-    public sealed class SerialPort
+    public class SerialPort
     {
         private static SerialPortComport[] comports;
 
@@ -33,11 +33,13 @@ namespace Sharpen.Drivers.Char
             dev.Name = comports[num].Name;
             dev.Node = new Node();
             
-            dev.Node.Cookie = (uint)num;
             dev.Node.Flags = NodeFlags.FILE;
             dev.Node.Write = writeImpl;
             dev.Node.Read = readImpl;
             dev.Node.GetSize = getSizeImpl;
+
+            IDCookie cookie = new IDCookie(num);
+            dev.Node.Cookie = (ICookie)cookie;
 
             DevFS.RegisterDevice(dev);
         }
@@ -52,13 +54,15 @@ namespace Sharpen.Drivers.Char
         /// <returns>The amount of bytes written</returns>
         private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
+            IDCookie cookie = (IDCookie)node.Cookie;
+
             uint i = 0;
-            if (comports[node.Cookie].Address == 0)
+            if (comports[cookie.ID].Address == 0)
                 return 0;
 
-            while(i < size)
+            while (i < size)
             {
-                write(buffer[i], comports[node.Cookie].Address);
+                write(buffer[i], comports[cookie.ID].Address);
 
                 i++;
             }
@@ -74,10 +78,11 @@ namespace Sharpen.Drivers.Char
         /// <returns>The size</returns>
         private static uint getSizeImpl(Node node)
         {
-            if (comports[node.Cookie].Buffer == null)
+            IDCookie cookie = (IDCookie)node.Cookie;
+            if (comports[cookie.ID].Buffer == null)
                 return 0;
 
-            return comports[node.Cookie].Buffer.AvailableBytes;
+            return comports[cookie.ID].Buffer.AvailableBytes;
         }
 
         /// <summary>
@@ -90,10 +95,11 @@ namespace Sharpen.Drivers.Char
         /// <returns>The amount of bytes read</returns>
         private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            if (comports[node.Cookie].Address == 0)
+            IDCookie cookie = (IDCookie)node.Cookie;
+            if (comports[cookie.ID].Address == 0)
                 return 0;
 
-            return comports[node.Cookie].Buffer.Read(buffer, (ushort)size);
+            return comports[cookie.ID].Buffer.Read(buffer, (ushort)size);
         }
 
         /// <summary>
@@ -192,10 +198,7 @@ namespace Sharpen.Drivers.Char
             while (hasReceived(port.Address))
                 port.Buffer.WriteByte(read(port.Address));
         }
-
-
-
-
+        
         /// <summary>
         /// Initialize serialport
         /// </summary>

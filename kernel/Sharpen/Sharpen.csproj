@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <UsingTask TaskName="LibCS2C.Tasks.CompileProjectTask" AssemblyFile="C:/libcs2c/LibCS2C.dll" />
+  <UsingTask TaskName="LibCS2C.Tasks.CompileProjectTask" AssemblyFile="../../tools/libcs2c/LibCS2C.dll" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -51,7 +51,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Arch\PciClassCodes.cs" />
+    <Compile Include="Arch\PCIClassCodes.cs" />
     <Compile Include="Arch\X86\X86SignalContext.cs" />
     <Compile Include="Collections\Bucket.cs" />
     <Compile Include="Collections\StringDictionary.cs" />
@@ -60,6 +60,15 @@
     <Compile Include="Drivers\USB\UHCI.cs" />
     <Compile Include="Exec\SignalAction.cs" />
     <Compile Include="Exec\Signals.cs" />
+    <Compile Include="FileSystem\Fat16Cookie.cs" />
+    <Compile Include="FileSystem\ICookie.cs" />
+    <Compile Include="FileSystem\NetworkInfoFSCookie.cs" />
+    <Compile Include="FileSystem\PCIFSCookie.cs" />
+    <Compile Include="FileSystem\PipeFSCookie.cs" />
+    <Compile Include="FileSystem\ProcFSCookie.cs" />
+    <Compile Include="FileSystem\UDPFSCookie.cs" />
+    <Compile Include="FileSystem\UDPSocketCookie.cs" />
+    <Compile Include="FileSystem\VboxDevFSCookie.cs" />
     <Compile Include="MultiTasking\ISignalContext.cs" />
     <Compile Include="MultiTasking\IThreadContext.cs" />
     <Compile Include="Arch\X86\CMOS.cs" />
@@ -175,7 +184,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="LibCS2C">
-      <HintPath>..\..\..\..\..\..\libcs2c\LibCS2C.dll</HintPath>
+      <HintPath>../../tools/libcs2c/LibCS2C.dll</HintPath>
     </Reference>
     <Reference Include="System" />
   </ItemGroup>
@@ -194,6 +203,6 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="Build">
-    <CompileProjectTask Path="$(MSBuildProjectFullPath)" Outpath="../C/output.c" AfterBuildWorkingDir="$(SolutionDir)C" AfterBuildCommand="$(SolutionDir)C/compile.bat" />
+    <CompileProjectTask Path="$(MSBuildProjectFullPath)" SourceOutPath="../C/output.c" HeaderOutPath="../C/output.h" AfterBuildWorkingDir="$(SolutionDir)C" AfterBuildCommand="$(SolutionDir)C/compile.bat" />
   </Target>
 </Project>

@@ -25,11 +25,13 @@ namespace Sharpen.Net
             
             Node node = new Node();
             node.Flags = NodeFlags.FILE;
-            node.Cookie = (uint)Util.ObjectToVoidPtr(sock);
             node.Read = readImpl;
             node.Write = writeImpl;
             node.GetSize = getSizeImpl;
             node.Close = closeImpl;
+
+            UDPSocketCookie cookie = new UDPSocketCookie(sock);
+            node.Cookie = (ICookie)cookie;
 
             return node;
         }
@@ -41,7 +43,8 @@ namespace Sharpen.Net
         /// <returns>The socket</returns>
         private static unsafe UDPSocket getSocketFromNode(Node node)
         {
-            return (UDPSocket)Util.VoidPtrToObject((void*)node.Cookie);
+            UDPSocketCookie cookie = (UDPSocketCookie)node.Cookie;
+            return cookie.Socket;
         }
 
         /// <summary>
@@ -108,10 +111,8 @@ namespace Sharpen.Net
         /// <param name="node">The node</param>
         private static unsafe void closeImpl(Node node)
         {
-            UDPSocket sock = getSocketFromNode(node);
-            sock.Close();
-            node.Cookie = 0;
-            Heap.Free(sock);
+            node.Cookie.Dispose();
+            node.Cookie = null;
         }
     }
 }

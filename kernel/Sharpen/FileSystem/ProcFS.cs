@@ -49,9 +49,11 @@ namespace Sharpen.FileSystem
             Task task = Tasking.GetTaskByPID(pid);
             if (task == null)
                 return null;
-            
+
+            IDCookie cookie = new IDCookie(task.PID);
+
             Node taskNode = new Node();
-            taskNode.Cookie = (uint)task.PID;
+            taskNode.Cookie = (ICookie)cookie;
             taskNode.Flags = NodeFlags.DIRECTORY;
             taskNode.FindDir = procFindDirImpl;
             taskNode.ReadDir = procReadDirImpl;
@@ -105,15 +107,15 @@ namespace Sharpen.FileSystem
             {
                 Node infoNode = new Node();
                 infoNode.Flags = NodeFlags.FILE;
-                infoNode.Cookie = node.Cookie;
+                infoNode.Cookie = node.Cookie; // TODO: clone this?
                 infoNode.Size = (uint)sizeof(ProcFSInfo);
                 infoNode.Read = infoReadImpl;
                 return infoNode;
             }
 
             // Check if task still exists
-            int pid = (int)node.Cookie;
-            if (Tasking.GetTaskByPID(pid) == null)
+            IDCookie cookie = (IDCookie)node.Cookie;
+            if (Tasking.GetTaskByPID(cookie.ID) == null)
                 return null;
 
             // File is a thread ID
@@ -121,9 +123,11 @@ namespace Sharpen.FileSystem
             if (tid < 0)
                 return null;
 
+            IDCookie threadCookie = new IDCookie(tid);
+
             Node threadNode = new Node();
             threadNode.Flags = NodeFlags.FILE;
-            threadNode.Cookie = (uint)tid;
+            threadNode.Cookie = (ICookie)threadCookie;
 
             return threadNode;
         }
@@ -137,8 +141,8 @@ namespace Sharpen.FileSystem
         private static unsafe DirEntry* procReadDirImpl(Node node, uint index)
         {
             // Check if task still exists
-            int pid = (int)node.Cookie;
-            Task task = Tasking.GetTaskByPID(pid);
+            IDCookie cookie = (IDCookie)node.Cookie;
+            Task task = Tasking.GetTaskByPID(cookie.ID);
             if (task == null)
                 return null;
 
@@ -190,7 +194,8 @@ namespace Sharpen.FileSystem
         private static unsafe uint infoReadImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             // Check if the task still exists
-            Task task = Tasking.GetTaskByPID((int)node.Cookie);
+            IDCookie cookie = (IDCookie)node.Cookie;
+            Task task = Tasking.GetTaskByPID(cookie.ID);
             if (task == null)
                 return 0;
 

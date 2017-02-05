@@ -144,7 +144,7 @@ namespace Sharpen.Arch
 
             // Set TSS
             // Kernel Data Selector = 0x10, Kernel Code Selector = 0x08
-            Memory.Memset(tss, 0, sizeof(TSS));
+            Memory.Memclear(tss, sizeof(TSS));
             tss->SS0 = 0x10;
             tss->IOMap = (ushort)sizeof(TSS);
             tss->CS = 0x08;

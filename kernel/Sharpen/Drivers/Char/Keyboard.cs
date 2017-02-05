@@ -109,6 +109,7 @@ namespace Sharpen.Drivers.Char
             device.Node = new Node();
             device.Node.Read = readImpl;
             device.Node.GetSize = getSizeImpl;
+            device.Node.Flags = NodeFlags.DEVICE | NodeFlags.FILE;
 
             DevFS.RegisterDevice(device);
         }

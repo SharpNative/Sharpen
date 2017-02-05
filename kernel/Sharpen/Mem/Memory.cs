@@ -17,9 +17,9 @@
         /// <param name="s2">The second chunk</param>
         /// <param name="n">The amount of memory to compare</param>
         /// <returns>If the two chunks are equal</returns>
-        internal static unsafe bool Compare(char* s1, char *s2, int n)
+        public static unsafe bool Compare(char* s1, char *s2, int n)
         {
-            for(int i = 0; i < n; i++)
+            for (int i = 0; i < n; i++)
             {
                 if (s1[i] != s2[i])
                     return false;
@@ -35,5 +35,12 @@
         /// <param name="value">The value</param>
         /// <param name="num">The number of bytes</param>
         public static extern unsafe void Memset(void* ptr, int value, int num);
+
+        /// <summary>
+        /// Zeroes the block of memory pointed by ptr
+        /// </summary>
+        /// <param name="ptr">The destination pointer</param>
+        /// <param name="num">The number of bytes</param>
+        public static extern unsafe void Memclear(void* ptr, int num);
     }
 }

@@ -18,10 +18,8 @@ Sharpen_Mem_Memory_Memcpy_3void__void__int32_t_:
     and eax, 3
     shr ecx, 2
     
-    ; Clear direction flag
-    cld
-
     ; First part (as 32bit ints)
+    cld
     rep movsd
 
     ; Second part (as bytes)
@@ -29,7 +27,6 @@ Sharpen_Mem_Memory_Memcpy_3void__void__int32_t_:
     rep movsb
 
     ; Done
-    mov eax, edi
     pop esi
     pop edi
     ret
@@ -37,36 +34,13 @@ Sharpen_Mem_Memory_Memcpy_3void__void__int32_t_:
 global Sharpen_Mem_Memory_Memset_3void__int32_t_int32_t_
 Sharpen_Mem_Memory_Memset_3void__int32_t_int32_t_:
     push edi
-
-    ; First set per 4 bytes using stosd
-    ; Then set the remaining bytes
-    ; Note: count >> 2 = count / 4
-    ; Note: count & 3 = count % 4
-
-    mov eax, [esp + 16] ; Count
-    mov edi, [esp + 8] ; Destination
-
-    mov ecx, eax
-    mov edx, eax
-
-    ; Remaining part
-    and edx, 3
-    shr ecx, 2
     
-    ; Load value
-    mov eax, [esp + 12]
+    mov ecx, [esp + 16] ; Count
+    mov eax, [esp + 12] ; Value
+    mov edi, [esp + 8]  ; Destination
 
-    ; Clear direction flag
     cld
-
-    ; First part (as 32bit ints)
-    rep stosd
-
-    ; Second part (as bytes)
-    mov ecx, edx
     rep stosb
 
-    ; Done
-    mov eax, edi
     pop edi
     ret

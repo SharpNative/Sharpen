@@ -5,8 +5,17 @@ using Sharpen.Utilities;
 
 namespace Sharpen.Net
 {
-    class NetworkInfoFS
+    public class NetworkInfoFS
     {
+        public enum InfoOPT
+        {
+            IP,
+            SUBNET,
+            GATEWAY,
+            NS1,
+            NS2
+        }
+
         /// <summary>
         /// Initializes the networking info filesystem module
         /// </summary>
@@ -31,15 +40,15 @@ namespace Sharpen.Net
         private static unsafe Node findDirImpl(Node node, string name)
         {
             if (name.Equals("ip"))
-                return byID(0);
+                return byID(InfoOPT.IP);
             else if (name.Equals("subnet"))
-                return byID(1);
+                return byID(InfoOPT.SUBNET);
             else if (name.Equals("gateway"))
-                return byID(2);
+                return byID(InfoOPT.GATEWAY);
             else if (name.Equals("ns1"))
-                return byID(3);
+                return byID(InfoOPT.NS1);
             else if (name.Equals("ns2"))
-                return byID(4);
+                return byID(InfoOPT.NS2);
 
             return null;
         }
@@ -56,30 +65,26 @@ namespace Sharpen.Net
         {
             byte* sourceBuffer = null;
 
-            switch (node.Cookie)
+            NetworkInfoFSCookie cookie = (NetworkInfoFSCookie)node.Cookie;
+            switch (cookie.InfoOPT)
             {
-                // IP
-                case 0:
+                case InfoOPT.IP:
                     sourceBuffer = Network.Settings->IP;
                     break;
 
-                // Subnet
-                case 1:
+                case InfoOPT.SUBNET:
                     sourceBuffer = Network.Settings->Subnet;
                     break;
 
-                // Gateway
-                case 2:
+                case InfoOPT.GATEWAY:
                     sourceBuffer = Network.Settings->Gateway;
                     break;
 
-                // NS1
-                case 3:
+                case InfoOPT.NS1:
                     sourceBuffer = Network.Settings->DNS1;
                     break;
 
-                // NS2
-                case 4:
+                case InfoOPT.NS2:
                     sourceBuffer = Network.Settings->DNS2;
                     break;
             }
@@ -93,14 +98,16 @@ namespace Sharpen.Net
         /// <summary>
         /// Creates a node by its ID
         /// </summary>
-        /// <param name="id">The ID</param>
+        /// <param name="pt">The option</param>
         /// <returns>The node</returns>
-        private static unsafe Node byID(uint id)
+        private static unsafe Node byID(InfoOPT opt)
         {
             Node node = new Node();
-            node.Cookie = id;
             node.Read = readImpl;
             node.Size = 4;
+
+            NetworkInfoFSCookie cookie = new NetworkInfoFSCookie(opt);
+            node.Cookie = (ICookie)cookie;
 
             return node;
         }
@@ -113,9 +120,7 @@ namespace Sharpen.Net
         private static unsafe DirEntry* makeByName(string str)
         {
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
-
             Memory.Memcpy(entry->Name, Util.ObjectToVoidPtr(str), str.Length + 1);
-
             return entry;
         }
 

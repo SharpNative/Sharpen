@@ -43,9 +43,12 @@ namespace Sharpen.FileSystem
             object obj = m_dictionary.GetByKey(key);
             if (obj == null)
                 return null;
-            
+
+            PCIFSCookie cookie = new PCIFSCookie();
+            cookie.Key = key;
+
             Node outNode = new Node();
-            outNode.Cookie = key;
+            outNode.Cookie = (ICookie)cookie;
             outNode.Flags = NodeFlags.DIRECTORY;
             outNode.ReadDir = deviceReadDir;
             outNode.FindDir = deviceFindDir;
@@ -180,9 +183,9 @@ namespace Sharpen.FileSystem
         /// <param name="device"></param>
         /// <param name="function"></param>
         /// <returns></returns>
-        public static long GenerateKey(byte bus, byte device, byte function)
+        public static uint GenerateKey(byte bus, byte device, byte function)
         {
-            return (bus << 16) | (device << 8) | (function);
+            return (uint)((bus << 16) | (device << 8) | (function));
         }
 
         /// <summary>
@@ -209,7 +212,8 @@ namespace Sharpen.FileSystem
         {
             if (name.Equals("info"))
             {
-                return byKey(0, node.Cookie);
+                PCIFSCookie cookie = (PCIFSCookie)node.Cookie;
+                return byKey(0, cookie.Key);
             }
 
             return null;
@@ -224,7 +228,10 @@ namespace Sharpen.FileSystem
         private static unsafe Node byKey(int type, uint key)
         {
             Node node = new Node();
-            node.Cookie = key;
+
+            PCIFSCookie cookie = new PCIFSCookie();
+            cookie.Key = key;
+            node.Cookie = (ICookie)cookie;
 
             if (type == 0)
             {
@@ -259,7 +266,8 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         private static unsafe uint infoReadImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            PciDevice dev = (PciDevice)m_dictionary.GetByKey(node.Cookie);
+            PCIFSCookie cookie = (PCIFSCookie)node.Cookie;
+            PciDevice dev = (PciDevice)m_dictionary.GetByKey(cookie.Key);
             if (dev == null)
                 return 0;
 

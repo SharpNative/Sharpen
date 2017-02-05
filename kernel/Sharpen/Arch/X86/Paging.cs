@@ -131,7 +131,7 @@ namespace Sharpen.Arch
                 if (table == null)
                     Panic.DoPanic("table == null");
 
-                Memory.Memset(table, 0, sizeof(PageTable));
+                Memory.Memclear(table, sizeof(PageTable));
 
                 // Note: At this point, virtual address == physical address due to identity mapping
                 directory->PhysicalTables[i] = (int)table | (int)flags;
@@ -259,7 +259,7 @@ namespace Sharpen.Arch
             }
 
             // Clear the data before returning it for safety
-            Memory.Memset((void*)start, 0, size);
+            Memory.Memclear((void*)start, size);
 
             return (void*)start;
         }

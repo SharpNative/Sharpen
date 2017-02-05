@@ -114,6 +114,17 @@ namespace Sharpen.Utilities
         }
 
         /// <summary>
+        /// IndexOf implementation
+        /// </summary>
+        /// <param name="text">The string to search into</param>
+        /// <param name="occurence">The character to search for</param>
+        /// <returns>The index of the occurrence</returns>
+        public static int IndexOf(string text, char occurence)
+        {
+            return IndexOf(text, occurence, 0);
+        }
+
+        /// <summary>
         /// Count number of occurences
         /// </summary>
         /// <param name="str">The string</param>

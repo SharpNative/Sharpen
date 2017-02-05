@@ -22,7 +22,7 @@ namespace Sharpen.FileSystem
         public static unsafe void Init()
         {
             m_dictionary = new Dictionary();
-
+            
             MountPoint mountPoint = new MountPoint();
             mountPoint.Name = "mounts";
             mountPoint.Node = new Node();
@@ -200,7 +200,7 @@ namespace Sharpen.FileSystem
                     {
                         partIndex--;
                         destOffset = partOffsets[partIndex];
-                        Memory.Memset(&ptr[destOffset], 0, partOffsets[partIndex + 1] - partOffsets[partIndex]);
+                        Memory.Memclear(&ptr[destOffset], partOffsets[partIndex + 1] - partOffsets[partIndex]);
                     }
                 }
                 // Everything else and not "./": add the part

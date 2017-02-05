@@ -1,6 +1,6 @@
 ﻿namespace Sharpen.Utilities
 {
-    sealed class Array
+    public sealed class Array
     {
         /// <summary>
         /// Creates a sub array from a bigger array

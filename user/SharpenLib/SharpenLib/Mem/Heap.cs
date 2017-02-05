@@ -2,7 +2,7 @@
 
 namespace Sharpen.Mem
 {
-    unsafe sealed class Heap
+    public unsafe sealed class Heap
     {
         /// <summary>
         /// Allocates a block of memory

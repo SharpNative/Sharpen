@@ -38,7 +38,7 @@ namespace Sharpen.FileSystem
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    unsafe struct FatDirEntry
+    public unsafe struct FatDirEntry
     {
         public fixed char Name[11];
         public byte Attribs;

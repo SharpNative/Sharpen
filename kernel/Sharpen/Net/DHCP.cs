@@ -68,7 +68,7 @@ namespace Sharpen.Net
         private static unsafe void addHeader(NetPacketDesc *packet, uint xid, byte[] clientIP, byte messageType)
         {
             DHCPBootstrapHeader *header = (DHCPBootstrapHeader *)(packet->buffer + packet->start);
-            Memory.Memset(header, 0, sizeof(DHCPBootstrapHeader));
+            Memory.Memclear(header, sizeof(DHCPBootstrapHeader));
 
             header->Opcode = 1; // REQUEST
             header->HardwareType = HARDTYPE_ETH; // Ethernet

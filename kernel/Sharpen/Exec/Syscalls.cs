@@ -134,8 +134,12 @@ namespace Sharpen.Exec
             if (node == null)
                 return -(int)ErrorCode.EBADF;
 
-            bool isNonBlocking = ((node.OpenFlags & O_NONBLOCK) == O_NONBLOCK);
+            // Can't do read from a directory
+            if ((node.Flags & NodeFlags.DIRECTORY) == NodeFlags.DIRECTORY)
+                return -(int)ErrorCode.EISDIR;
 
+            bool isNonBlocking = ((node.OpenFlags & O_NONBLOCK) == O_NONBLOCK);
+            
             // Wait until data is available if its blocking
             if (!isNonBlocking)
             {
@@ -150,9 +154,10 @@ namespace Sharpen.Exec
             }
 
             uint offset = descriptors.GetOffset(descriptor);
-            descriptors.SetOffset(descriptor, offset + size);
+            uint readBytes = VFS.Read(node, offset, size, buffer);
+            descriptors.SetOffset(descriptor, offset + readBytes);
 
-            return (int)VFS.Read(node, offset, size, buffer);
+            return (int)readBytes;
         }
 
         /// <summary>
@@ -169,7 +174,7 @@ namespace Sharpen.Exec
             Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
-
+            
             VFS.Open(node, flags);
 
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
@@ -223,7 +228,9 @@ namespace Sharpen.Exec
                     currentOffset = (uint)(node.Size + offset);
             }
             else
+            {
                 return -(int)ErrorCode.EINVAL;
+            }
             
             descriptors.SetOffset(descriptor, currentOffset);
 
@@ -467,13 +474,13 @@ namespace Sharpen.Exec
         {
             newDir = VFS.CreateAbsolutePath(newDir);
             Node node = VFS.GetByAbsolutePath(newDir);
-
+            
             if (node == null)
             {
                 Heap.Free(newDir);
                 return ErrorCode.ENOENT;
             }
-
+            
             if (node.Flags != NodeFlags.DIRECTORY)
             {
                 Heap.Free(newDir);
@@ -482,16 +489,8 @@ namespace Sharpen.Exec
             }
 
             Heap.Free(node);
-
-            int len = newDir.Length;
-
-            if (newDir[len - 1] != '/')
-            {
-                string old = newDir;
-                newDir = String.Merge(old, "/");
-                Heap.Free(old);
-            }
             
+            // GetByAbsolutePath makes sure there's a slash on the end
             Tasking.CurrentTask.CurrentDirectory = newDir;
 
             return ErrorCode.SUCCESS;

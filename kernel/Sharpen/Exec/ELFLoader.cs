@@ -185,7 +185,7 @@ namespace Sharpen.Exec
                 // BSS
                 if (section->Type == SectionHeaderType.SHT_NOBITS)
                 {
-                    Memory.Memset((void*)((uint)allocated + offset), 0, (int)section->Size);
+                    Memory.Memclear((void*)((uint)allocated + offset), (int)section->Size);
                 }
                 // Copy
                 else

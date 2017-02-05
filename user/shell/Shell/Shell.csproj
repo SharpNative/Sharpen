@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <UsingTask TaskName="LibCS2C.Tasks.CompileProjectTask" AssemblyFile="C:/libcs2c/LibCS2C.dll" />
+  <UsingTask TaskName="LibCS2C.Tasks.CompileProjectTask" AssemblyFile="../../../tools/libcs2c/LibCS2C.dll" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -24,7 +24,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <NoWarn>CS0626</NoWarn>
+    <NoWarn>
+    </NoWarn>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -38,7 +39,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="LibCS2C">
-      <HintPath>..\..\..\..\..\..\..\libcs2c\LibCS2C.dll</HintPath>
+      <HintPath>../../../tools/libcs2c/LibCS2C.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpenLib">
+      <HintPath>..\..\SharpenLib\SharpenLib\bin\Release\SharpenLib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -50,16 +54,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Sharpen\IO\Console.cs" />
-    <Compile Include="Sharpen\IO\Directory.cs" />
-    <Compile Include="Sharpen\Mem\Heap.cs" />
-    <Compile Include="Sharpen\Mem\Memory.cs" />
-    <Compile Include="Sharpen\Process.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Sharpen\Utilities\Array.cs" />
-    <Compile Include="..\..\..\kernel\Sharpen\Utilities\String.cs" />
-    <Compile Include="Sharpen\Utilities\Util.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -73,6 +69,6 @@
   </Target>
   -->
   <Target Name="Build">
-    <CompileProjectTask Path="$(MSBuildProjectFullPath)" Outpath="C/output.c" AfterBuildWorkingDir="$(SolutionDir)" AfterBuildCommand="$(SolutionDir)compile.bat" />
+    <CompileProjectTask Path="$(MSBuildProjectFullPath)" SourceOutPath="C/output.c" HeaderOutPath="C/output.h" AfterBuildWorkingDir="$(SolutionDir)" AfterBuildCommand="$(SolutionDir)compile.bat" HeaderFiles="$(SolutionDir)../SharpenLib/SharpenLib/C/output.h" />
   </Target>
 </Project>

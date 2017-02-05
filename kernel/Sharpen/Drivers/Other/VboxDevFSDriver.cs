@@ -6,8 +6,8 @@ namespace Sharpen.Drivers.Other
 {
     class VboxDevFSDriver
     {
-        private const int m_numCommands = 3;
-        public static readonly string[] m_commands =
+        public const int NumCommands = 3;
+        public static readonly string[] CommandNames =
         {
             "sessionid",
             "powerstate",
@@ -39,14 +39,14 @@ namespace Sharpen.Drivers.Other
         /// <returns>The directory entry</returns>
         private static unsafe DirEntry* readDirImpl(Node node, uint index)
         {
-            if (index >= m_numCommands)
+            if (index >= NumCommands)
                 return null;
             
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
 
             int i = 0;
-            for (; m_commands[index][i] != '\0'; i++)
-                entry->Name[i] = m_commands[index][i];
+            for (; CommandNames[index][i] != '\0'; i++)
+                entry->Name[i] = CommandNames[index][i];
             entry->Name[i] = '\0';
 
             return entry;
@@ -60,28 +60,30 @@ namespace Sharpen.Drivers.Other
         /// <returns></returns>
         private static unsafe Node findDirImpl(Node node, string name)
         {
-            uint functionID = 0;
+            VboxDevRequestTypes function = VboxDevRequestTypes.VMMDevReq_InvalidRequest;
             if (name.Equals("sessionid"))
             {
-                functionID = (uint)VboxDevRequestTypes.VMMDevReq_GetSessionId;
+                function = VboxDevRequestTypes.VMMDevReq_GetSessionId;
             }
             else if(name.Equals("powerstate"))
             {
-                functionID = (uint)VboxDevRequestTypes.VMMDevReq_SetPowerStatus;
+                function = VboxDevRequestTypes.VMMDevReq_SetPowerStatus;
             }
             else if (name.Equals("hosttime"))
             {
-                functionID = (uint)VboxDevRequestTypes.VMMDevReq_GetHostTime;
+                function = VboxDevRequestTypes.VMMDevReq_GetHostTime;
             }
 
-            if (functionID == 0)
+            if (function == VboxDevRequestTypes.VMMDevReq_InvalidRequest)
                 return null;
 
             Node outNode = new Node();
-            outNode.Cookie = functionID;
             outNode.Read = readImpl;
             outNode.Write = writeImpl;
             outNode.Flags = NodeFlags.FILE;
+
+            VboxDevFSCookie cookie = new VboxDevFSCookie(function);
+            outNode.Cookie = (ICookie)cookie;
 
             return outNode;
         }
@@ -96,9 +98,9 @@ namespace Sharpen.Drivers.Other
         /// <returns>The amount of bytes written</returns>
         private static unsafe uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            VboxDevRequestTypes function = (VboxDevRequestTypes)node.Cookie;
+            VboxDevFSCookie cookie = (VboxDevFSCookie)node.Cookie;
 
-            switch (function)
+            switch (cookie.Request)
             {
                 case VboxDevRequestTypes.VMMDevReq_SetPowerStatus:
                     if (size < 4)
@@ -125,9 +127,9 @@ namespace Sharpen.Drivers.Other
         /// <returns>The amount of bytes read</returns>
         private static unsafe uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            VboxDevRequestTypes function = (VboxDevRequestTypes)node.Cookie;
+            VboxDevFSCookie cookie = (VboxDevFSCookie)node.Cookie;
 
-            switch (function)
+            switch (cookie.Request)
             {
                 case VboxDevRequestTypes.VMMDevReq_GetSessionId:
                     if (size != 8)

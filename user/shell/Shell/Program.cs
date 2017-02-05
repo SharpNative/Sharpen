@@ -1,4 +1,5 @@
-﻿using Sharpen;
+﻿using LibCS2C.Attributes;
+using Sharpen;
 using Sharpen.IO;
 using Sharpen.Mem;
 using Sharpen.Utilities;
@@ -42,11 +43,12 @@ namespace Shell
         /// Program entry point
         /// </summary>
         /// <param name="args">Arguments</param>
+        [Plug("EntryPoint")]
         unsafe static void Main(string[] args)
         {
             Console.WriteLine("\nProject Sharpen");
             Console.WriteLine("(c) 2016-2017 SharpNative\n");
-
+            
             string currentDir = Directory.GetCurrentDirectory();
             while (true)
             {

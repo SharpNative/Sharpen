@@ -136,7 +136,7 @@ namespace Sharpen.Collections
                 return;
 
             m_mutex.Lock();
-            Memory.Memset(Util.ObjectToVoidPtr(Item), 0, m_currentCap * sizeof(void*));
+            Memory.Memclear(Util.ObjectToVoidPtr(Item), m_currentCap * sizeof(void*));
             Count = 0;
             m_mutex.Unlock();
         }

@@ -6,7 +6,6 @@ namespace Sharpen.FileSystem
 {
     unsafe class Fat16
     {
-
         private const int FirstPartitonEntry = 0x1BE;
 
         private const int ENTRYACTIVE = 0;
@@ -67,14 +66,18 @@ namespace Sharpen.FileSystem
             p.Node.ReadDir = readDirImpl;
             p.Node.FindDir = findDirImpl;
             p.Node.Truncate = truncateImpl;
-            p.Node.Cookie = 0xFFFFFFFF;
             p.Node.Flags = NodeFlags.DIRECTORY;
+
+            /**
+             * Root cookie
+             */
+            Fat16Cookie rootCookie = new Fat16Cookie();
+            rootCookie.Cluster = 0xFFFFFFFF;
+            p.Node.Cookie = (ICookie)rootCookie;
 
             VFS.AddMountPoint(p);
         }
-
-
-
+        
         /// <summary>
         /// Intializes FAT device on device node
         /// </summary>
@@ -83,9 +86,7 @@ namespace Sharpen.FileSystem
         {
             // Read first sector
             byte[] firstSector = new byte[512];
-            firstSector[0x00] = 0xFF;
             dev.Read(dev, 0, 512, firstSector);
-            
 
             // Get partition type from first entry
             // Detect if FAT16
@@ -108,16 +109,7 @@ namespace Sharpen.FileSystem
 
             byte[] bootSector = new byte[512];
             dev.Read(dev, (uint)m_beginLBA, 512, bootSector);
-
-            byte* bootPtr = (byte*)Util.ObjectToVoidPtr(bootSector);
-
-            /*
-             * Avoid that the GC cleans this update (for in the future) and convert to struct
-             */
-            byte* bpb = (byte*)Heap.Alloc(90);
-            Memory.Memcpy(bpb, bootPtr, 90);
-            m_bpb = (Fat16BPB*)bpb;
-
+            m_bpb = (Fat16BPB*)Util.ObjectToVoidPtr(bootSector);
             
             int fatRegionSize = m_bpb->NumFats * m_bpb->SectorsPerFat16;
             int rootDirSize = (512 * 32) / m_bpb->BytesPerSector;
@@ -189,25 +181,28 @@ namespace Sharpen.FileSystem
         {
             Node node = new Node();
             node.Size = dirEntry->Size;
-            node.Cookie = (uint)dirEntry;
-            node.Cookie2 = cluster;
-            node.Cookie3 = num;
+
+            Fat16Cookie cookie = new Fat16Cookie();
+            cookie.DirEntry = dirEntry;
+            cookie.Cluster = cluster;
+            cookie.Num = num;
+            node.Cookie = (ICookie)cookie;
 
             /**
-             * Is it a file?
+             * Is it a directory?
              */
-            if ((dirEntry->Attribs & ATTRIB_SUBDIR) == 0)
+            if ((dirEntry->Attribs & ATTRIB_SUBDIR) == ATTRIB_SUBDIR)
+            {
+                node.ReadDir = readDirImpl;
+                node.FindDir = findDirImpl;
+                node.Flags = NodeFlags.DIRECTORY;
+            }
+            else
             {
                 node.Read = readImpl;
                 node.Write = writeImpl;
                 node.Truncate = truncateImpl;
                 node.Flags = NodeFlags.FILE;
-            }
-            else
-            {
-                node.ReadDir = readDirImpl;
-                node.FindDir = findDirImpl;
-                node.Flags = NodeFlags.DIRECTORY;
             }
 
             return node;
@@ -249,18 +244,15 @@ namespace Sharpen.FileSystem
              * Get next cluster address
              */
             byte* ptr = (byte*)Util.ObjectToVoidPtr(fatBuffer);
-            ushort* pointer = (ushort*)(ptr + offset);
-            
-            ushort nextCluster = *pointer;
+            ushort nextCluster = *(ushort*)(ptr + offset);
 
             if (nextCluster >= FAT_EOF)
             {
-                Heap.Free(ptr);
-
+                Heap.Free(fatBuffer);
                 return 0xFFFF;
             }
 
-            Heap.Free(ptr);
+            Heap.Free(fatBuffer);
             return nextCluster;
         }
 
@@ -341,7 +333,7 @@ namespace Sharpen.FileSystem
 
             lastResult = cluster;
 
-            int target = (int)count - (int)offset;
+            int target = count - (int)offset;
 
             while (target > 0)
             {
@@ -410,11 +402,10 @@ namespace Sharpen.FileSystem
 
             Heap.Free(fatPointer);
 
-            if(freeSector != 0)
-                return freeSector;
-
-            // FULL!!! :O
-            return 0;
+            /**
+             * If freeSector is zero, it is full
+            */
+            return freeSector;
         }
 
         /// <summary>
@@ -463,20 +454,17 @@ namespace Sharpen.FileSystem
         public static Node FindFileInDirectory(uint cluster, char* testFor)
         {
             SubDirectory dir = readDirectory(cluster);
-
             for (int i = 0; i < dir.Length; i++)
             {
                 FatDirEntry entry = dir.DirEntries[i];
 
                 if (entry.Name[0] == 0 || entry.Name[0] == 0xE5 || entry.Attribs == 0xF || (entry.Attribs & 0x08) > 0)
                     continue;
-
-                FatDirEntry* entr = (FatDirEntry*)Heap.Alloc(sizeof(FatDirEntry));
-                Memory.Memcpy(entr, dir.DirEntries + i, sizeof(FatDirEntry));
-
+                
                 if (Memory.Compare(testFor, entry.Name, 11))
                 {
-
+                    FatDirEntry* entr = (FatDirEntry*)Heap.Alloc(sizeof(FatDirEntry));
+                    Memory.Memcpy(entr, dir.DirEntries + i, sizeof(FatDirEntry));
                     return CreateNode(entr, cluster, (uint)i);
                 }
             }
@@ -770,8 +758,8 @@ namespace Sharpen.FileSystem
                     ushort currentCluster = findLastCluster((ushort)cluster);
                     
 
-                    byte[] buf = new byte[(int)m_bpb->BytesPerSector];
-                    Memory.Memset(Util.ObjectToVoidPtr(buf), 0x00, (int)m_bpb->BytesPerSector);
+                    byte[] buf = new byte[m_bpb->BytesPerSector];
+                    Memory.Memclear(Util.ObjectToVoidPtr(buf), m_bpb->BytesPerSector);
 
                     /**
                      * Allocating clusters
@@ -831,12 +819,12 @@ namespace Sharpen.FileSystem
                 if (offset != 0)
                 {
                     m_dev.Read(m_dev, lba + i, 512, readSec);
-                    Memory.Memcpy(Util.ObjectToVoidPtr(writeSec), (byte*)Util.ObjectToVoidPtr(readSec), (int)offset);
-                    Memory.Memset((byte*)Util.ObjectToVoidPtr(writeSec) + offset, 0x00, (int)(512 - offset));
+                    Memory.Memcpy(Util.ObjectToVoidPtr(writeSec), Util.ObjectToVoidPtr(readSec), (int)offset);
+                    Memory.Memclear((byte*)Util.ObjectToVoidPtr(writeSec) + offset, (int)(512 - offset));
                 }
                 else
                 {
-                    Memory.Memset(Util.ObjectToVoidPtr(writeSec), 0x00, 512);
+                    Memory.Memclear(Util.ObjectToVoidPtr(writeSec), 512);
                 }
 
                 offset = 0;
@@ -877,7 +865,8 @@ namespace Sharpen.FileSystem
             int length = name.Length;
             if (length > 12)
                 return null;
-            int dot = String.IndexOf(name, ".");
+
+            int dot = String.IndexOf(name, '.');
             if (dot > 8)
                 return null;
 
@@ -886,38 +875,34 @@ namespace Sharpen.FileSystem
              */
             char* testFor = (char*)Heap.Alloc(11);
             Memory.Memset(testFor, ' ', 11);
-
-            for (int i = 0; i < 8; i++)
+            
+            int min = (dot < 0) ? Math.Min(length, 8) : Math.Min(dot, 8);
+            int i = 0;
+            for (; i < min; i++)
             {
-                if ((dot > 0 && i < length && i < dot) || (dot == -1 && i < length))
-                    testFor[i] = String.ToUpper(name[i]);
-                else
-                    testFor[i] = ' ';
-
+                testFor[i] = String.ToUpper(name[i]);
             }
 
             if (dot != -1)
             {
                 int lengthExt = length - dot - 1;
+                min = 8 + Math.Min(3, lengthExt);
 
-                for (int i = 0; i < 3; i++)
+                i++;
+                for (int j = 0; j < min; j++)
                 {
-                    if (i < lengthExt)
-                        testFor[i + 8] = String.ToUpper(name[i + dot + 1]);
-                    else
-                        testFor[i + 8] = ' ';
+                    testFor[j + 8] = String.ToUpper(name[i + j]);
                 }
             }
-
+            
             /**
              * Find cluster number
              */
             uint cluster = 0xFFFFFFFF;
-
-            if (node.Cookie != 0xFFFFFFFF)
+            Fat16Cookie cookie = (Fat16Cookie)node.Cookie;
+            if (cookie.DirEntry != null)
             {
-                FatDirEntry* entry = (FatDirEntry*)node.Cookie;
-
+                FatDirEntry* entry = cookie.DirEntry;
                 cluster = entry->ClusterNumberLo;
             }
 
@@ -945,10 +930,10 @@ namespace Sharpen.FileSystem
              */
             uint cluster = 0xFFFFFFFF;
 
-            if (node.Cookie != 0xFFFFFFFF)
+            Fat16Cookie cookie = (Fat16Cookie)node.Cookie;
+            if (cookie.DirEntry != null)
             {
-                FatDirEntry* entry = (FatDirEntry*)node.Cookie;
-
+                FatDirEntry* entry = cookie.DirEntry;
                 cluster = entry->ClusterNumberLo;
             }
 
@@ -978,7 +963,7 @@ namespace Sharpen.FileSystem
                     /**
                      * Calculate length and offsets
                      */
-                    int fnLength = String.IndexOf(Util.CharPtrToString(entry.Name), " ");
+                    int fnLength = String.IndexOf(Util.CharPtrToString(entry.Name), ' ');
 
                     if (fnLength > 8 || fnLength == -1)
                         fnLength = 8;
@@ -1042,7 +1027,8 @@ namespace Sharpen.FileSystem
             /**
              * Get directory entry from cookie "cache"
              */
-            FatDirEntry* entry = (FatDirEntry*)node.Cookie;
+            Fat16Cookie cookie = (Fat16Cookie)node.Cookie;
+            FatDirEntry* entry = cookie.DirEntry;
 
             /*
              * If the offset is behind the size, stop here
@@ -1072,7 +1058,8 @@ namespace Sharpen.FileSystem
             /**
              * Get directory entry from cookie "cache"
              */
-            FatDirEntry* entry = (FatDirEntry*)node.Cookie;
+            Fat16Cookie cookie = (Fat16Cookie)node.Cookie;
+            FatDirEntry* entry = cookie.DirEntry;
             
             uint totalSize = size + offset;
 
@@ -1081,7 +1068,7 @@ namespace Sharpen.FileSystem
              */
             if (entry->Size < totalSize)
             {
-                if (ResizeFile(entry, node.Cookie2, node.Cookie3, totalSize) == 0)
+                if (ResizeFile(entry, cookie.Cluster, cookie.Num, totalSize) == 0)
                     return 0;
             }
             
@@ -1102,9 +1089,10 @@ namespace Sharpen.FileSystem
             /**
              * Get directory entry from cookie "cache"
              */
-            FatDirEntry* entry = (FatDirEntry*)node.Cookie;
+            Fat16Cookie cookie = (Fat16Cookie)node.Cookie;
+            FatDirEntry* entry = cookie.DirEntry;
 
-            if (entry == (FatDirEntry *)0x0000)
+            if (entry == null)
                 return 0;
 
             /**
@@ -1112,13 +1100,11 @@ namespace Sharpen.FileSystem
              */
             if (size == 0)
                 return 0;
-
             
-
             /**
              * Resize file
              */
-            return ResizeFile(entry, node.Cookie2, node.Cookie3, size); ;
+            return ResizeFile(entry, cookie.Cluster, cookie.Num, size);
         }
 
 
