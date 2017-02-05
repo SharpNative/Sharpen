@@ -106,6 +106,20 @@ namespace Sharpen.IO
         }
 
         /// <summary>
+        /// Reads file contents into a buffer
+        /// </summary>
+        /// <param name="buffer">The buffer</param>
+        /// <param name="size">The amount of bytes to read</param>
+        /// <returns>How many bytes were read</returns>
+        public unsafe int Read(void* buffer, int size)
+        {
+            if (m_fd < 0)
+                return 0;
+
+            return readInternal(m_fd, buffer, size);
+        }
+
+        /// <summary>
         /// Internal open method
         /// </summary>
         /// <param name="path">The path</param>

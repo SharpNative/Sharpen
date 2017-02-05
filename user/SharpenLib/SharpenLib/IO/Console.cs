@@ -34,6 +34,16 @@ namespace Sharpen.IO
         }
 
         /// <summary>
+        /// Writes a line to the console
+        /// </summary>
+        /// <param name="num">The number</param>
+        public static void WriteLine(int num)
+        {
+            Write(num);
+            Write("\n");
+        }
+
+        /// <summary>
         /// Reads a character from the console
         /// </summary>
         /// <returns>The character</returns>
