@@ -176,7 +176,7 @@ namespace Sharpen.Arch
 
             #region Syscall
 
-            SetEntry(0x80, Util.MethodToPtr(Syscall), 0x08, FLAG_INT);
+            SetEntry(0x80, Util.MethodToPtr(Syscall), 0x08, FLAG_TRAP);
             SetEntry(0x81, Util.MethodToPtr(Yield), 0x08, FLAG_INT);
 
             #endregion
