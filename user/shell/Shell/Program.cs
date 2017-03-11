@@ -40,6 +40,29 @@ namespace Shell
         }
 
         /// <summary>
+        /// Print text to console
+        /// </summary>
+        /// <param name="argv">Arguments</param>
+        /// <param name="argc">Argument count</param>
+        private static void Print(string[] argv, int argc)
+        {
+            if(argc <= 1)
+            {
+                Console.WriteLine("Usage: echo <<string>>");
+
+                return;
+            }
+
+            for(int i = 1; i < argc - 1; i++)
+            {
+                Console.Write(argv[i]);
+                Console.Write(' ');
+            }
+
+            Console.WriteLine(argv[argc - 1]);
+        }
+
+        /// <summary>
         /// Program entry point
         /// </summary>
         /// <param name="args">Arguments</param>
@@ -125,6 +148,14 @@ namespace Shell
 
                     dir.Close();
                     Heap.Free(dir);
+                }
+                else if (command.Equals("print"))
+                {
+                    Print(argv, argc);
+                }
+                else if(command.Equals("echo"))
+                {
+                    Print(argv, argc);
                 }
                 else if (command.Equals("exit"))
                 {
