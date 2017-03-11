@@ -25,10 +25,10 @@ namespace Sharpen.Net
             dev.Node.FindDir = findDirImpl;
             dev.Node.ReadDir = readDirImpl;
             dev.Node.Flags = NodeFlags.DIRECTORY;
-
+            
             IDCookie cookie = new IDCookie((int)OPT.LIST);
             dev.Node.Cookie = (ICookie)cookie;
-
+            
             NetFS.RegisterDevice(dev);
         }
 
@@ -42,7 +42,7 @@ namespace Sharpen.Net
         {
             IDCookie cookie = (IDCookie)node.Cookie;
             OPT opt = (OPT)cookie.ID;
-
+            
             if (opt == OPT.LIST)
             {
                 if (name.Equals("bind"))
