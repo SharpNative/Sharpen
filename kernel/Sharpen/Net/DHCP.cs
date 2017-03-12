@@ -320,13 +320,15 @@ namespace Sharpen.Net
             Heap.Free(Util.ObjectToVoidPtr(hostname));
 
             packet->end += 10;
+
             buf = packet->buffer + packet->end;
             *buf++ = OPT_SERVER_ID;
+            *buf++ = 4;
             for (int i = 0; i < 4; i++)
                 *buf++ = (byte)ip[i];
 
 
-            packet->end += 10;
+            packet->end += 6;
 
 
             /**
