@@ -139,7 +139,18 @@ namespace Sharpen
             Thread abc = new Thread();
             abc.Context.CreateNewContext(Util.MethodToPtr(timer), 0, null, true);
             Tasking.KernelTask.AddThread(abc);
+            
+            Thread packetHandler = new Thread();
+            packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest), 0, null, true);
+            Tasking.KernelTask.AddThread(packetHandler);
 
+            Console.WriteLine("EXIT");
+            for (;;) ;
+
+        }
+        
+        private static unsafe void HttpTest()
+        {
             TCPConnection con = TCP.Bind(80);
 
             string message = "<!doctype html><html><title>Van Sharpen</title><body>Wij serveren dit van Sharpen naar Dossche</body></html>";
@@ -179,7 +190,7 @@ namespace Sharpen
                     Console.Write("New data from XID: ");
                     Console.WriteHex(ptr->xid);
                     Console.WriteLine("");
-                    
+
                     TCP.Send(con, ptr->xid, (byte*)Util.ObjectToVoidPtr(finalResp), (uint)finalResp.Length);
 
                     TCP.Close(con, ptr->xid);
@@ -199,6 +210,7 @@ namespace Sharpen
                 else
                 {
                     Console.WriteLine("Invalid ptr->Type!");
+                    break;
                 }
 
                 Heap.Free(ptr);

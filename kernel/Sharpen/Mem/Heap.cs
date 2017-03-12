@@ -1,6 +1,6 @@
-﻿// These two flags are used for debugging
-// #define HEAP_DEBUG
-// #define HEAP_DEBUG_DESCRIPTOR
+﻿// These flags are used for debugging
+//#define HEAP_DEBUG
+//#define HEAP_DEBUG_DESCRIPTOR
 // #define HEAP_USE_MAGIC
 
 using Sharpen.Arch;
@@ -367,7 +367,7 @@ namespace Sharpen.Mem
                         if ((int)currentBlock < (int)descriptor->FirstFree)
                             descriptor->FirstFree = currentBlock;
                     }
-
+                    
                     // Return block (skip header)
                     Mutex.InternalUnlock(&descriptor->Lock);
                     return (void*)((int)currentBlock + sizeof(Block));

@@ -229,7 +229,7 @@ namespace Sharpen.Drivers.Net
              */
             m_irq_num = (ushort)PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
 
-            m_packetBuffer = new byte[8500];
+            m_packetBuffer = new byte[9500];
 
             /**
              * Enable bus mastering
@@ -339,7 +339,7 @@ namespace Sharpen.Drivers.Net
             *(uint*)(m_register_base + REG_RDLEN) = NUM_RX_DESCRIPTORS * (uint)sizeof(RX_DESC);
             *(uint*)(m_register_base + REG_RDH) = 0;
             *(uint*)(m_register_base + REG_RDT) = NUM_RX_DESCRIPTORS - 1;
-            
+
             /**
              * Setup read control register
              */
@@ -414,6 +414,7 @@ namespace Sharpen.Drivers.Net
             *(uint*)(m_register_base + REG_TCTL) = REG_TCTL_EN | REG_TCTL_PSP;
 
         }
+        
 
         /// <summary>
         /// Handle packet reception
