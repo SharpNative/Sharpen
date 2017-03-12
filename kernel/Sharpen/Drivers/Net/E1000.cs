@@ -51,6 +51,7 @@ namespace Sharpen.Drivers.Net
         private const ushort REG_TDT   = 0x3818;
         private const ushort REG_TCTL  = 0x0400;
 
+        private const ushort REG_RD_DD = (1 << 0);
         private const ushort REG_RD_EOP = (1 << 1);
 
 
@@ -233,7 +234,7 @@ namespace Sharpen.Drivers.Net
              */
             m_irq_num = (ushort)PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
 
-            m_packetBuffer = new byte[8500];
+            m_packetBuffer = new byte[9500];
 
             /**
              * Enable bus mastering
@@ -349,7 +350,7 @@ namespace Sharpen.Drivers.Net
             */
             *(uint*)(m_register_base + REG_RDLEN) = NUM_RX_DESCRIPTORS * (uint)sizeof(RX_DESC);
             *(uint*)(m_register_base + REG_RDH) = 0;
-            *(uint*)(m_register_base + REG_RDT) = NUM_RX_DESCRIPTORS;
+            *(uint*)(m_register_base + REG_RDT) = NUM_RX_DESCRIPTORS - 1;
 
 
             /**
@@ -423,7 +424,7 @@ namespace Sharpen.Drivers.Net
              */
             *(uint*)(m_register_base + REG_TDLEN) = NUM_TX_DESCRIPTIORS * (uint)sizeof(TX_DESC);
             *(uint*)(m_register_base + REG_TDH) = 0;
-            *(uint*)(m_register_base + REG_TDT) = NUM_TX_DESCRIPTIORS;
+            *(uint*)(m_register_base + REG_TDT) = /*NUM_TX_DESCRIPTIORS - 1*/0;
 
             /**
              * Ensure tx next is 0
@@ -436,29 +437,34 @@ namespace Sharpen.Drivers.Net
             *(uint*)(m_register_base + REG_TCTL) = REG_TCTL_EN | REG_TCTL_PSP;
 
         }
+        
 
         /// <summary>
         /// Handle packet reception
         /// </summary>
         private static void receive()
         {
-            while((m_rx_descs[m_rx_next].Status & REG_RD_EOP) > 0)
+            uint m_rx = *(uint*)(m_register_base + REG_RDT);
+
+            while ((m_rx_descs[m_rx_next].Status & REG_RD_DD) > 0)
             {
                 uint cur = m_rx_next++;
                 if (m_rx_next == NUM_RX_DESCRIPTORS)
                     m_rx_next = 0;
                 
-                ushort len = m_rx_descs[cur].Length;
-                
-                Memory.Memcpy(Util.ObjectToVoidPtr(m_packetBuffer), m_rx_buffers[cur], len);
-                
-                Network.QueueReceivePacket(m_packetBuffer, len);
+                if((m_rx_descs[cur].Status & REG_RD_EOP) > 0)
+                {
+                    ushort len = m_rx_descs[cur].Length;
+
+                    Memory.Memcpy(Util.ObjectToVoidPtr(m_packetBuffer), m_rx_buffers[cur], len);
+
+                    Network.QueueReceivePacket(m_packetBuffer, len);
+                }
 
                 m_rx_descs[cur].Status = 0;
                 
                 *(uint*)(m_register_base + REG_RDT) = cur;
             }
-
         }
 
         /// <summary>

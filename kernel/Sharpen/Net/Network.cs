@@ -1,4 +1,4 @@
-﻿// #define NETWORK_DEBUG
+﻿//#define NETWORK_DEBUG
 
 using Sharpen.Collections;
 using Sharpen.Mem;
@@ -157,7 +157,7 @@ namespace Sharpen.Net
 #endif
                 return;
             }
-
+            
             NetRecBuffer* netBuf = (NetRecBuffer*)Heap.Alloc(sizeof(NetRecBuffer));
             if (netBuf == null)
             {
@@ -215,6 +215,12 @@ namespace Sharpen.Net
         /// <param name="size"></param>
         private static unsafe void handlePacket(byte[] buffer, int size)
         {
+#if NETWORK_DEBUG
+            Console.Write("[NET] Receive packet with ");
+            Console.WriteNum(size);
+            Console.WriteLine(" bytes");
+#endif
+
             byte* bufPtr = (byte*)Util.ObjectToVoidPtr(buffer);
 
             EthernetHeader* header = (EthernetHeader*)bufPtr;

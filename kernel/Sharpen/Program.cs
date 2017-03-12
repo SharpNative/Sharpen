@@ -135,7 +135,18 @@ namespace Sharpen
             
             DHCP.Discover();
             
-            /*TCPConnection con = TCP.Bind(80);
+            Thread packetHandler = new Thread();
+            packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest), 0, null, true);
+            Tasking.KernelTask.AddThread(packetHandler);
+
+            Console.WriteLine("EXIT");
+            for (;;) ;
+
+        }
+        
+        private static unsafe void HttpTest()
+        {
+            TCPConnection con = TCP.Bind(80);
 
             string message = "<!doctype html><html><title>Van Sharpen</title><body>Wij serveren dit van Sharpen naar Dossche</body></html>";
             string httpResp = "HTTP/1.1 200 OK\r\nDate: Fri, 13 May 2005 05:51:12 GMT\r\nServer: Sharpen :)\r\nLast-Modified: Fri, 13 May 2005 05:25:02 GMT\r\nAccept-Ranges: bytes\r\nContent-Length: ";
@@ -174,7 +185,7 @@ namespace Sharpen
                     Console.Write("New data from XID: ");
                     Console.WriteHex(ptr->xid);
                     Console.WriteLine("");
-                    
+
                     TCP.Send(con, ptr->xid, (byte*)Util.ObjectToVoidPtr(finalResp), (uint)finalResp.Length);
 
                     TCP.Close(con, ptr->xid);
@@ -194,15 +205,12 @@ namespace Sharpen
                 else
                 {
                     Console.WriteLine("Invalid ptr->Type!");
+                    break;
                 }
 
                 Heap.Free(ptr);
             }
-
-            Console.WriteLine("EXIT");
-            for (;;) ;
-
-            TCP.Free(con);*/
+            TCP.Free(con);
         }
 
         /// <summary>
