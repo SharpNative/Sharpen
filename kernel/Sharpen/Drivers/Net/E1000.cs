@@ -3,24 +3,23 @@ using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.MultiTasking;
 using Sharpen.Utilities;
-using System.Runtime.InteropServices;
 
 namespace Sharpen.Drivers.Net
 {
     unsafe class E1000
     {
-        private const ushort NUM_RX_DESCRIPTORS = 32;
+        private const ushort NUM_RX_DESCRIPTORS  = 32;
         private const ushort NUM_TX_DESCRIPTIORS = 32;
 
         /**
         * Device ids
         */
-        private const ushort MANUID_INTEL = 0x8086;
-        private const ushort DEVID_EMU = 0x100E;
-        private const ushort DEVID_I217 = 0x153A;
-        private const ushort DEVID_82577LM = 0x10EA;
-        private const ushort DEVID_82545EM = 0x100F;
-        private const ushort DEVID_82545EMA = 0x100;
+        private const ushort MANUID_INTEL    = 0x8086;
+        private const ushort DEVID_EMU       = 0x100E;
+        private const ushort DEVID_I217      = 0x153A;
+        private const ushort DEVID_82577LM   = 0x10EA;
+        private const ushort DEVID_82545EM   = 0x100F;
+        private const ushort DEVID_82545EMA  = 0x100;
         private const ushort DEVID_82545EMAF = 1011;
 
         /**
@@ -37,12 +36,12 @@ namespace Sharpen.Drivers.Net
         private const ushort REG_LEDCTL     = 0xE00;
         private const ushort REG_MULTICAST  = 0x5200;
         private const ushort REG_IMASK      = 0x00D0;
-        private const ushort REG_RCTL  = 0x0100;
-        private const ushort REG_RDBAL = 0x2800;
-        private const ushort REG_RDBAH = 0x2804;
-        private const ushort REG_RDLEN = 0x2808;
-        private const ushort REG_RDH   = 0x2810;
-        private const ushort REG_RDT   = 0x2818;
+        private const ushort REG_RCTL       = 0x0100;
+        private const ushort REG_RDBAL      = 0x2800;
+        private const ushort REG_RDBAH      = 0x2804;
+        private const ushort REG_RDLEN      = 0x2808;
+        private const ushort REG_RDH        = 0x2810;
+        private const ushort REG_RDT        = 0x2818;
 
         private const ushort REG_TDBAL = 0x3800;
         private const ushort REG_TDBAH = 0x3804;
@@ -51,9 +50,9 @@ namespace Sharpen.Drivers.Net
         private const ushort REG_TDT   = 0x3818;
         private const ushort REG_TCTL  = 0x0400;
 
+        private const ushort REG_RD_DD  = (1 << 0);
         private const ushort REG_RD_EOP = (1 << 1);
-
-
+        
         /**
          * EEP REQ bits
          */
@@ -109,20 +108,20 @@ namespace Sharpen.Drivers.Net
         /**
          * Receive descriptor cmd
          */
-        private const byte REG_RCMD_EOP = (1 << 0);
+        private const byte REG_RCMD_EOP  = (1 << 0);
         private const byte REG_RCMD_IFCS = (1 << 1);
-        private const byte REG_RCMD_IC = (1 << 2);
+        private const byte REG_RCMD_IC   = (1 << 2);
 
         /**
          * Transmit control register
          */
-        private const ushort REG_TCTL_EN = (1 << 1);
+        private const ushort REG_TCTL_EN  = (1 << 1);
         private const ushort REG_TCTL_PSP = (1 << 2);
 
         /**
          * We should do this in the PCI driver!
          */
-        private const ushort PCI_MEM = (1 << 0);
+        private const ushort PCI_MEM  = (1 << 0);
         private const ushort PCI_SIZE = (1 << 1) | (1 << 2);
 
         private static byte[] m_mac;
@@ -139,8 +138,8 @@ namespace Sharpen.Drivers.Net
         private static RX_DESC* m_rx_descs;
         private static TX_DESC* m_tx_descs;
 
-        private static byte** m_rx_buffers;
-        private static byte** m_tx_buffers;
+        private static byte*[] m_rx_buffers;
+        private static byte*[] m_tx_buffers;
         private static uint m_rx_next = 0;
         private static uint m_tx_next = 0;
         private static byte[] m_packetBuffer;
@@ -150,7 +149,6 @@ namespace Sharpen.Drivers.Net
         /// <summary>
         /// Receive descriptor
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct RX_DESC
         {
             public ulong Address;
@@ -164,7 +162,6 @@ namespace Sharpen.Drivers.Net
         /// <summary>
         /// Transmit descriptor
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct TX_DESC
         {
             public ulong Address;
@@ -173,7 +170,6 @@ namespace Sharpen.Drivers.Net
             public byte CMD;
             public byte STA;
             public byte CSS;
-
             public ushort Special;
         }
 
@@ -299,15 +295,10 @@ namespace Sharpen.Drivers.Net
 
         /// <summary>
         /// Set interrupt mask
-        /// 
-        /// TODO: clean up this code
         /// </summary>
         private static unsafe void setInterruptMask()
         {
-            uint* ptr = (uint*)(m_register_base + REG_IMASK);
-
-            *ptr = 0x1F6DC;
-            *ptr = 0xFF;
+            *(uint*)(m_register_base + REG_IMASK) = 0xFF;
         }
 
         /// <summary>
@@ -315,8 +306,7 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         private static unsafe void linkUp()
         {
-
-            *(uint*)(m_register_base + REG_CTRL) = *(uint*)(m_register_base + REG_CTRL) | REG_CTRL_SLU;
+            *(uint*)(m_register_base + REG_CTRL) |= REG_CTRL_SLU;
         }
 
         /// <summary>
@@ -328,12 +318,11 @@ namespace Sharpen.Drivers.Net
              * Allocate receive descriptors
              */
             m_rx_descs = (RX_DESC*)Heap.AlignedAlloc(16, NUM_RX_DESCRIPTORS * sizeof(RX_DESC));
-            m_rx_buffers = (byte**)Heap.Alloc(NUM_RX_DESCRIPTORS * sizeof(byte*));
-            
+            m_rx_buffers = new byte*[NUM_RX_DESCRIPTORS];
             
             for (int i = 0; i < NUM_RX_DESCRIPTORS; i++)
             {
-                m_rx_buffers[i] = (byte *)Heap.AlignedAlloc(16, 8192);
+                m_rx_buffers[i] = (byte*)Heap.AlignedAlloc(16, 8192);
                 m_rx_descs[i].Address = (uint)(Paging.GetPhysicalFromVirtual(m_rx_buffers[i]));
                 m_rx_descs[i].Status = 0;
             }
@@ -345,22 +334,16 @@ namespace Sharpen.Drivers.Net
             *(uint*)(m_register_base + REG_RDBAH) = 0;
 
             /**
-            * Setup total length
-            */
+             * Setup total length
+             */
             *(uint*)(m_register_base + REG_RDLEN) = NUM_RX_DESCRIPTORS * (uint)sizeof(RX_DESC);
             *(uint*)(m_register_base + REG_RDH) = 0;
-            *(uint*)(m_register_base + REG_RDT) = NUM_RX_DESCRIPTORS;
-
-
-            /**
-             * Ensure rx next is 0
-             */
-            m_rx_next = 0x00;
-
+            *(uint*)(m_register_base + REG_RDT) = NUM_RX_DESCRIPTORS - 1;
+            
             /**
              * Setup read control register
              */
-            *(uint*)(m_register_base + REG_RCTL) = REG_RCTL_BSEX | REG_RCTL_BSECRC | REG_RCT_BAM | REG_RCT_LPE | (0 << 8) | (0 << 4) | (0 << 3) | (1 << 1) | REG_RCT_SBP | (2 << 16);
+            *(uint*)(m_register_base + REG_RCTL) = REG_RCTL_BSEX | REG_RCTL_BSECRC | REG_RCT_BAM | REG_RCT_LPE | (1 << 1) | REG_RCT_SBP | (2 << 16);
         }
         
         /// <summary>
@@ -398,7 +381,7 @@ namespace Sharpen.Drivers.Net
              * Allocate transmit descriptors
              */
             m_tx_descs = (TX_DESC*)Heap.AlignedAlloc(16, NUM_TX_DESCRIPTIORS * sizeof(TX_DESC));
-            m_tx_buffers = (byte**)Heap.Alloc(NUM_TX_DESCRIPTIORS * sizeof(byte*));
+            m_tx_buffers = new byte*[NUM_TX_DESCRIPTIORS];
 
             for (int i = 0; i < NUM_TX_DESCRIPTIORS; i++)
             {
@@ -423,13 +406,8 @@ namespace Sharpen.Drivers.Net
              */
             *(uint*)(m_register_base + REG_TDLEN) = NUM_TX_DESCRIPTIORS * (uint)sizeof(TX_DESC);
             *(uint*)(m_register_base + REG_TDH) = 0;
-            *(uint*)(m_register_base + REG_TDT) = NUM_TX_DESCRIPTIORS;
-
-            /**
-             * Ensure tx next is 0
-             */
-            m_tx_next = 0x00;
-
+            *(uint*)(m_register_base + REG_TDT) = 0;
+            
             /**
              * Setup transmit control register
              */
@@ -442,23 +420,25 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         private static void receive()
         {
-            while((m_rx_descs[m_rx_next].Status & REG_RD_EOP) > 0)
+            while ((m_rx_descs[m_rx_next].Status & REG_RD_DD) > 0)
             {
                 uint cur = m_rx_next++;
                 if (m_rx_next == NUM_RX_DESCRIPTORS)
                     m_rx_next = 0;
-                
-                ushort len = m_rx_descs[cur].Length;
-                
-                Memory.Memcpy(Util.ObjectToVoidPtr(m_packetBuffer), m_rx_buffers[cur], len);
-                
-                Network.QueueReceivePacket(m_packetBuffer, len);
+
+                if ((m_rx_descs[cur].Status & REG_RD_EOP) > 0)
+                {
+                    ushort len = m_rx_descs[cur].Length;
+
+                    Memory.Memcpy(Util.ObjectToVoidPtr(m_packetBuffer), m_rx_buffers[cur], len);
+
+                    Network.QueueReceivePacket(m_packetBuffer, len);
+                }
 
                 m_rx_descs[cur].Status = 0;
-                
+
                 *(uint*)(m_register_base + REG_RDT) = cur;
             }
-
         }
 
         /// <summary>
@@ -470,7 +450,7 @@ namespace Sharpen.Drivers.Net
             /**
              * Read Interrupt control state
              */
-            uint icr = *(uint *)(m_register_base + REG_ICR);
+            uint icr = *(uint*)(m_register_base + REG_ICR);
             
             /**
              * Link status change or transmit empty? then say link is up!
@@ -507,9 +487,12 @@ namespace Sharpen.Drivers.Net
                 mac[i] = m_mac[i];
         }
 
+        /// <summary>
+        /// Exit handler
+        /// </summary>
+        /// <param name="dev">The PCI device</param>
         private static void exitHandler(PciDevice dev)
         {
-
         }
 
         /// <summary>

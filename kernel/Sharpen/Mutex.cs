@@ -30,12 +30,12 @@
         /// Internal locking method
         /// </summary>
         /// <param name="x">The lock pointer</param>
-        private static unsafe extern void InternalLock(int* x);
+        public static unsafe extern void InternalLock(int* x);
 
         /// <summary>
         /// Internal unlocking method
         /// </summary>
         /// <param name="x">The lock pointer</param>
-        private static unsafe extern void InternalUnlock(int* x);
+        public static unsafe extern void InternalUnlock(int* x);
     }
 }

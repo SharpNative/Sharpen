@@ -30,6 +30,7 @@ namespace Sharpen.Mem
             public BlockDescriptor* Next;
             public Block* First;
             public Block* FirstFree;
+            public int Lock;
 #if HEAP_USE_MAGIC
             public uint Magic;
 #endif
@@ -43,10 +44,7 @@ namespace Sharpen.Mem
 
         // First block descriptor
         private static unsafe BlockDescriptor* firstDescriptor;
-
-        // Mutex
-        private static Mutex mutex;
-
+        
         // Minimal amount of pages in a descriptor
         private const int MINIMALPAGES = 100;
 
@@ -64,7 +62,6 @@ namespace Sharpen.Mem
             Console.Write('\n');
 
             CurrentEnd = start;
-            mutex = new Mutex();
         }
 
         /// <summary>
@@ -116,9 +113,9 @@ namespace Sharpen.Mem
 
 #if HEAP_DEBUG_DESCRIPTOR
             Console.Write("[HEAP] New descriptor is at 0x");
-            Console.WriteHex((long)descriptor);
+            Console.WriteHex((int)descriptor);
             Console.Write(", physical: 0x");
-            Console.WriteHex((long)Paging.GetPhysicalFromVirtual(descriptor));
+            Console.WriteHex((int)Paging.GetPhysicalFromVirtual(descriptor));
             Console.Write('\n');
 #endif
 
@@ -224,8 +221,6 @@ namespace Sharpen.Mem
 
             if (useRealHeap)
             {
-                mutex.Lock();
-
                 // Find a descriptor that is big enough to hold the block header and its data
                 // We need to look for something that can hold an aligned size if alignment is requested
                 size += sizeof(Block);
@@ -248,6 +243,9 @@ namespace Sharpen.Mem
 
                 currentBlock = descriptor->FirstFree;
                 previousBlock = null;
+
+                // Lock descriptor
+                Mutex.InternalLock(&descriptor->Lock);
 
                 // Search in the descriptor
                 while (true)
@@ -371,7 +369,7 @@ namespace Sharpen.Mem
                     }
 
                     // Return block (skip header)
-                    mutex.Unlock();
+                    Mutex.InternalUnlock(&descriptor->Lock);
                     return (void*)((int)currentBlock + sizeof(Block));
 
                 // Next block
@@ -379,6 +377,7 @@ namespace Sharpen.Mem
                     {
                         previousBlock = currentBlock;
                         currentBlock = currentBlock->Next;
+                        Mutex.InternalUnlock(&descriptor->Lock);
                         if (currentBlock == null)
                         {
                             // This was the last block in the descriptor
@@ -462,13 +461,14 @@ namespace Sharpen.Mem
 #endif
 
             Block* block = getBlockFromPtr(ptr);
+            BlockDescriptor* descriptor = block->Descriptor;
 
 #if HEAP_DEBUG
             if (!block->Used)
-                Panic.DoPanic("Tried to free a block that was already freed");
+                Panic.DoPanic("[HEAP] Tried to free a block that was already freed");
 #endif
 
-            mutex.Lock();
+            Mutex.InternalLock(&descriptor->Lock);
 
             // Not used anymore
             block->Used = false;
@@ -504,7 +504,7 @@ namespace Sharpen.Mem
                     block->Next->Prev = prev;
             }
 
-            mutex.Unlock();
+            Mutex.InternalUnlock(&descriptor->Lock);
         }
 
         /// <summary>

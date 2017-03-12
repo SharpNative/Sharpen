@@ -134,8 +134,13 @@ namespace Sharpen
             rtl8139.Init();
             
             DHCP.Discover();
-            
-            /*TCPConnection con = TCP.Bind(80);
+
+            // Timer thread to see if the system hangs or not
+            Thread abc = new Thread();
+            abc.Context.CreateNewContext(Util.MethodToPtr(timer), 0, null, true);
+            Tasking.KernelTask.AddThread(abc);
+
+            TCPConnection con = TCP.Bind(80);
 
             string message = "<!doctype html><html><title>Van Sharpen</title><body>Wij serveren dit van Sharpen naar Dossche</body></html>";
             string httpResp = "HTTP/1.1 200 OK\r\nDate: Fri, 13 May 2005 05:51:12 GMT\r\nServer: Sharpen :)\r\nLast-Modified: Fri, 13 May 2005 05:25:02 GMT\r\nAccept-Ranges: bytes\r\nContent-Length: ";
@@ -202,7 +207,28 @@ namespace Sharpen
             Console.WriteLine("EXIT");
             for (;;) ;
 
-            TCP.Free(con);*/
+            TCP.Free(con);
+        }
+
+        /// <summary>
+        /// Timer thread
+        /// </summary>
+        private static void timer()
+        {
+            while(true)
+            {
+                int x = Console.X;
+                int y = Console.Y;
+                Console.X = 58;
+                Console.Y = 3;
+                byte att = Console.Attribute;
+                Console.Attribute = 0x5F;
+                Console.WriteHex(PIT.FullTicks);
+                Console.Attribute = att;
+                Console.X = x;
+                Console.Y = y;
+                CPU.HLT();
+            }
         }
 
         /// <summary>

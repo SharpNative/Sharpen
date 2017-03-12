@@ -130,7 +130,7 @@ namespace Sharpen.Net
 #endif
 
             m_dev.Transmit?.Invoke(buffer, (uint)size);
-
+            
             Heap.Free(buffer);
         }
 
