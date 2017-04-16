@@ -119,7 +119,7 @@
     <Compile Include="Net\NetFS.cs" />
     <Compile Include="Net\NetPacket.cs" />
     <Compile Include="Net\Network.cs" />
-    <Compile Include="Net\NetworkInfoFS.cs" />
+    <Compile Include="FileSystem\NetworkInfoFS.cs" />
     <Compile Include="Net\NetworkSettings.cs" />
     <Compile Include="Net\NetworkTools.cs" />
     <Compile Include="Net\UDP.cs" />
