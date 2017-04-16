@@ -105,6 +105,24 @@ namespace Sharpen.Drivers.USB
         const ushort TRANS_PACKET_IN = 0x69;
         const ushort TRANS_PACKET_OUT = 0xE1;
 
+        const uint TD_CONTROL_BITSTUFF = (1 << 17);
+        const uint TD_CONTROL_CRC = (1 << 18);
+        const uint TD_CONTROL_NAK = (1 << 19);
+        const uint TD_CONTROL_BABBLE = (1 << 20);
+        const uint TD_CONTROL_OVERFLOW = (1 << 21);
+        const uint TD_CONTROL_STALLED = (1 << 22);
+        const uint TD_CONTROL_ACTIVE = (1 << 23);
+        const uint TD_CONTROL_LOW_SPEED = (1 << 24);
+        const uint TD_CONTROL_IOC = (1 << 25);
+        const uint TD_CONTROL_IOS = (1 << 26);
+        const uint TD_CONTROL_ERROR_MASK = (3 << 27);
+        const uint TD_ERROR_SHIFT = 27;
+        const uint TD_CONTROL_SPD = (1 << 29);
+
+        const int TD_TOKEN_ADDR = 8;
+        const int TD_TOKEN_ENDP = 15;
+        const int TD_TOKEN_D_SHIFT = 19;
+        const int TD_TOKEN_MAXLEN = 21;
 
         /// <summary>
         /// 
@@ -131,6 +149,10 @@ namespace Sharpen.Drivers.USB
                 Console.WriteLine("[UHCI] Only Portio supported");
             }
 
+            ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
+            cmd |= 0x04;
+            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, cmd);
+
             UHCIController uhciDev = new UHCIController();
             uhciDev.IOBase = (ushort)dev.BAR4.Address;
 
@@ -142,6 +164,7 @@ namespace Sharpen.Drivers.USB
             uhciDev.QueueHeadPool = (UHCIQueueHead *)Heap.AlignedAlloc(0x1000, sizeof(UHCIQueueHead) * MAX_HEADS);
             uhciDev.TransmitPool = (UHCITransmitDescriptor*)Heap.AlignedAlloc(0x1000, sizeof(UHCITransmitDescriptor) * MAX_TRANSMIT);
 
+            
 
             UHCIQueueHead* head = GetQueueHead(uhciDev);
             head->Head = 0;
@@ -156,6 +179,9 @@ namespace Sharpen.Drivers.USB
 
             for (int i = 0; i < 1024; i++)
                 uhciDev.FrameList[i] = (1 << 1) | (int)Paging.GetPhysicalFromVirtual(head);
+
+
+            PortIO.Out16((ushort)(uhciDev.IOBase + REG_LEGSUP), 0x8f00);
 
             /**
              * Initalize framelist
@@ -286,7 +312,7 @@ namespace Sharpen.Drivers.USB
 
 #if __UHCI_DIAG
 
-            Console.WriteLine("------transfer---------");
+            Console.WriteLine("------ UHCI Control message ---------");
             Console.Write("Request: ");
             Console.WriteHex(request.Request);
             Console.WriteLine("");
@@ -302,6 +328,7 @@ namespace Sharpen.Drivers.USB
             Console.Write("Value:");
             Console.WriteHex(request.Value);
             Console.WriteLine("");
+            Console.WriteLine("--------------------------------------");
 #endif
 
             UHCIController controller = (UHCIController)dev.Controller;
@@ -352,6 +379,8 @@ namespace Sharpen.Drivers.USB
             if (td == null)
                 return;
 
+            packetType = ((request.Type & USBDevice.TYPE_DEVICETOHOST) > 0) ? TRANS_PACKET_OUT : TRANS_PACKET_IN;
+
             toggle = 1;
             InitTransmit(td, prev, dev.Speed, 0, 0, toggle, packetType, 0, null);
 
@@ -360,12 +389,10 @@ namespace Sharpen.Drivers.USB
             qh->Head = 0;
             qh->Transfer = transfer;
             qh->Transmit = head;
-
-            Console.WriteHex(qh->Element & ~0xF);
-            Console.WriteLine("");
+            
 
             InsertHead(controller, qh);
-            WaitForQueueHead(controller, qh);
+            //WaitForQueueHead(controller, qh);
         }
 
         public static void WaitForQueueHead(UHCIController controller, UHCIQueueHead *head)
@@ -412,8 +439,51 @@ namespace Sharpen.Drivers.USB
             USBTransfer *transfer = head->Transfer;
 
             UHCITransmitDescriptor* td = head->Transmit;
-            
 
+            if((head->Element & ~0xF) == 0)
+            {
+
+            }
+            else
+            {
+                if((td->Control & TD_CONTROL_NAK) > 0)
+                {
+                    Console.WriteLine("NAK");
+                }
+
+                if((td->Control & TD_CONTROL_STALLED) > 0)
+                {
+                    Console.WriteLine("Stalled");
+                    transfer->Executed = true;
+                    transfer->Success = false;
+                }
+
+
+                if ((td->Control & TD_CONTROL_BABBLE) > 0)
+                {
+                    Console.WriteLine("Control Babble error");
+                }
+
+
+                if ((td->Control & TD_CONTROL_CRC) > 0)
+                {
+                    Console.WriteLine("CRC Timeout");
+                }
+
+
+                if ((td->Control & TD_CONTROL_BITSTUFF) > 0)
+                {
+                    Console.WriteLine("Bitstuff error");
+                }
+            }
+            
+            Console.WriteHex(head->Element & ~0xF);
+            Console.WriteLine("");
+
+            if(transfer->Executed)
+            {
+
+            }
         }
 
         /// <summary>
@@ -497,26 +567,27 @@ namespace Sharpen.Drivers.USB
         private static void InitTransmit(UHCITransmitDescriptor* td, UHCITransmitDescriptor *previous, 
             USBDeviceSpeed speed, uint address, uint endp, uint toogle, uint type, uint len, byte *data)
         {
+
             len = (len - 1) & 0x7FFF;
 
             if (previous != null)
             {
-                previous->Link = (int)Paging.GetPhysicalFromVirtual(td) | 2;
+                previous->Link = (int)Paging.GetPhysicalFromVirtual(td) | (1 << 2);
                 previous->Next = td;
             }
 
             td->Link = 0;
             td->Next = null;
 
-            td->Control = (1 << 27) | (1 << 23);
+            td->Control = (int)((3 << (int)TD_ERROR_SHIFT) | TD_CONTROL_ACTIVE);
             if (speed == USBDeviceSpeed.LOW_SPEED)
-                td->Control |= (1 << 26);
+                td->Control |= (int)TD_CONTROL_LOW_SPEED;
 
 
-            td->Token = (len << 21) |
-                (toogle << 19) |
-                (endp << 15) |
-                (address << 8) |
+            td->Token = (len << TD_TOKEN_MAXLEN) |
+                (toogle << TD_TOKEN_D_SHIFT) |
+                (endp << TD_TOKEN_ENDP) | 
+                (0 << TD_TOKEN_ADDR) |
                 type;
 
             td->BufferPointer = (int)Paging.GetPhysicalFromVirtual(data);
