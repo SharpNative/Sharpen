@@ -11,15 +11,17 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.USB
 {
-    public struct UHCITransmitDescriptor
+    public unsafe struct UHCITransmitDescriptor
     {
         public int Link;
         public int Control;
-        public int Token;
+        public uint Token;
         public int BufferPointer;
 
 
         public bool Allocated { get; set; }
+        public UHCITransmitDescriptor* Previous { get; set; }
+        public UHCITransmitDescriptor* Next { get; set; }
     }
 
     public unsafe struct UHCIQueueHead
@@ -30,6 +32,7 @@ namespace Sharpen.Drivers.USB
         public bool Allocated { get; set; }
 
         public USBTransfer *Transfer { get; set; }
+        public UHCITransmitDescriptor *Transmit { get; set; }
 
         public UHCIQueueHead *Previous { get; set; }
         public UHCIQueueHead *Next { get; set; }
@@ -48,6 +51,8 @@ namespace Sharpen.Drivers.USB
         public UHCIQueueHead *QueueHeadPool { get; set; }
 
         public UHCITransmitDescriptor *TransmitPool { get; set; }
+
+        public UHCIQueueHead * FirstHead { get; set; }
     }
 
 
@@ -94,7 +99,11 @@ namespace Sharpen.Drivers.USB
 
         const ushort MAX_HEADS = 8;
         const ushort MAX_TRANSMIT = 32;
-        
+
+
+        const ushort TRANS_PACKET_SETUP = 0x2D;
+        const ushort TRANS_PACKET_IN = 0x69;
+        const ushort TRANS_PACKET_OUT = 0xE1;
 
 
         /// <summary>
@@ -134,13 +143,19 @@ namespace Sharpen.Drivers.USB
             uhciDev.TransmitPool = (UHCITransmitDescriptor*)Heap.AlignedAlloc(0x1000, sizeof(UHCITransmitDescriptor) * MAX_TRANSMIT);
 
 
-
             UHCIQueueHead* head = GetQueueHead(uhciDev);
             head->Head = 0;
             head->Element = 0;
 
+            uhciDev.FirstHead = head;
+
+            Console.WriteHex((int)head);
+            Console.WriteLine("");
+            Console.WriteHex((int)Paging.GetPhysicalFromVirtual(head));
+            Console.WriteLine("");
+
             for (int i = 0; i < 1024; i++)
-                uhciDev.FrameList[i] = (1 << 1) | (int)head;
+                uhciDev.FrameList[i] = (1 << 1) | (int)Paging.GetPhysicalFromVirtual(head);
 
             /**
              * Initalize framelist
@@ -148,7 +163,7 @@ namespace Sharpen.Drivers.USB
             PortIO.Out16((ushort)(uhciDev.IOBase + REG_FRNUM), 0);
             PortIO.Out32((ushort)(uhciDev.IOBase + REG_FRBASEADD), (uint)Paging.GetPhysicalFromVirtual(uhciDev.FrameList));
             PortIO.Out8(((ushort)(uhciDev.IOBase + REG_SOFMOD)), 0x40); // Ensure default value of 64 (aka cycle time of 12000)
-
+            
             /**
              * We are going to poll!
              */
@@ -265,12 +280,13 @@ namespace Sharpen.Drivers.USB
         /// </summary>
         /// <param name="dev"></param>
         /// <param name="transfer"></param>
-        private static void Control(USBDevice dev, USBTransfer transfer)
+        private static void Control(USBDevice dev, USBTransfer *transfer)
         {
-#if __UHCI_DIAG
-            USBDeviceRequest request = transfer.Request;
+            USBDeviceRequest request = transfer->Request;
 
-            Console.Write("------transfer---------");
+#if __UHCI_DIAG
+
+            Console.WriteLine("------transfer---------");
             Console.Write("Request: ");
             Console.WriteHex(request.Request);
             Console.WriteLine("");
@@ -287,7 +303,76 @@ namespace Sharpen.Drivers.USB
             Console.WriteHex(request.Value);
             Console.WriteLine("");
 #endif
+
+            UHCIController controller = (UHCIController)dev.Controller;
+
+            UHCITransmitDescriptor *td = GetTransmit(controller);
+
+            UHCITransmitDescriptor* head = td;
+            UHCITransmitDescriptor* prev = null;
+
+            USBDeviceRequest* a = (USBDeviceRequest *)Heap.Alloc(sizeof(USBDeviceRequest));
+            a->Request = request.Request;
+            a->Index = request.Index;
+            a->Length = request.Length;
+            a->Type = request.Type;
+            a->Value = request.Value;
+
+            InitTransmit(td, prev, dev.Speed, 0, 0, 0, TRANS_PACKET_SETUP, (uint)sizeof(USBDeviceRequest), (byte *)a);
+
+            uint packetType = ((request.Type & USBDevice.TYPE_DEVICETOHOST) > 0) ? TRANS_PACKET_IN : TRANS_PACKET_OUT;
+
+            byte* ptr = transfer->Data;
+            uint packetSize = transfer->Length;
+            uint offset = 0;
+
+            uint toggle = 0;
+
+            uint remaining = packetSize;
+
+            while (remaining > 0)
+            {
+                td = GetTransmit(controller);
+                if (td == null)
+                    return;
+                
+                packetSize = remaining;
+                if (packetSize > dev.MaxPacketSize)
+                    packetSize = dev.MaxPacketSize;
+
+                remaining -= packetSize;
+                offset += packetSize;
+                
+                toggle ^= 1;
+
+                InitTransmit(td, prev, dev.Speed, 0, 0, toggle, packetType, packetSize, ptr + offset);
+            }
             
+            td = GetTransmit(controller);
+            if (td == null)
+                return;
+
+            toggle = 1;
+            InitTransmit(td, prev, dev.Speed, 0, 0, toggle, packetType, 0, null);
+
+            UHCIQueueHead *qh = GetQueueHead(controller);
+            qh->Element = (int)Paging.GetPhysicalFromVirtual(head);
+            qh->Head = 0;
+            qh->Transfer = transfer;
+            qh->Transmit = head;
+
+            Console.WriteHex(qh->Element & ~0xF);
+            Console.WriteLine("");
+
+            InsertHead(controller, qh);
+            WaitForQueueHead(controller, qh);
+        }
+
+        public static void WaitForQueueHead(UHCIController controller, UHCIQueueHead *head)
+        {
+
+            while (!head->Transfer->Executed)
+                ProcessHead(controller, head);
         }
 
         #region Head allocation
@@ -305,9 +390,13 @@ namespace Sharpen.Drivers.USB
                 if (!dev.QueueHeadPool[i].Allocated)
                 {
                     dev.QueueHeadPool[i].Allocated = true;
+                    dev.QueueHeadPool[i].Next = null;
+                    dev.QueueHeadPool[i].Previous = null;
 
                     return (UHCIQueueHead*)(((int)dev.QueueHeadPool) + (sizeof(UHCIQueueHead) * i));
                 }
+
+                i++;
             }
 
             return null;
@@ -320,6 +409,10 @@ namespace Sharpen.Drivers.USB
         /// <param name="head"></param>
         public static void ProcessHead(UHCIController controller, UHCIQueueHead *head)
         {
+            USBTransfer *transfer = head->Transfer;
+
+            UHCITransmitDescriptor* td = head->Transmit;
+            
 
         }
 
@@ -330,17 +423,19 @@ namespace Sharpen.Drivers.USB
         /// <param name="head"></param>
         public static void InsertHead(UHCIController controller, UHCIQueueHead* head)
         {
-            UHCIQueueHead* end = head;
+            UHCIQueueHead* end = controller.FirstHead;
 
             while (true)
                 if (end->Next != null)
                     end = end->Next;
                 else
                     break;
-
+            
             end->Next = head;
-            end->Head = (int)head | 1;
+            end->Head = (int)Paging.GetPhysicalFromVirtual(head) | 1;
             head->Head = 0;
+
+
         }
 
         public static void RemoveHead(UHCIController controller, UHCIQueueHead* head)
@@ -385,12 +480,91 @@ namespace Sharpen.Drivers.USB
                 if (!dev.TransmitPool[i].Allocated)
                 {
                     dev.TransmitPool[i].Allocated = true;
+                    dev.TransmitPool[i].Next = null;
+                    dev.TransmitPool[i].Previous = null;
 
                     return (UHCITransmitDescriptor*)(((int)dev.TransmitPool) + (sizeof(UHCITransmitDescriptor) * i));
                 }
+
+                i++;
             }
 
+            Console.WriteLine("NO TRANSMIT LEFT");
+
             return null;
+        }
+
+        private static void InitTransmit(UHCITransmitDescriptor* td, UHCITransmitDescriptor *previous, 
+            USBDeviceSpeed speed, uint address, uint endp, uint toogle, uint type, uint len, byte *data)
+        {
+            len = (len - 1) & 0x7FFF;
+
+            if (previous != null)
+            {
+                previous->Link = (int)Paging.GetPhysicalFromVirtual(td) | 2;
+                previous->Next = td;
+            }
+
+            td->Link = 0;
+            td->Next = null;
+
+            td->Control = (1 << 27) | (1 << 23);
+            if (speed == USBDeviceSpeed.LOW_SPEED)
+                td->Control |= (1 << 26);
+
+
+            td->Token = (len << 21) |
+                (toogle << 19) |
+                (endp << 15) |
+                (address << 8) |
+                type;
+
+            td->BufferPointer = (int)Paging.GetPhysicalFromVirtual(data);
+
+        }
+
+        /// <summary>
+        /// Insert head
+        /// </summary>
+        /// <param name="controller">UHCIController</param>
+        /// <param name="head"></param>
+        public static void InsertTransmit(UHCIController controller, UHCITransmitDescriptor* transmit)
+        {
+            UHCITransmitDescriptor* end = transmit;
+
+            while (true)
+                if (end->Next != null)
+                    end = end->Next;
+                else
+                    break;
+
+            end->Next = transmit;
+            end->Link = (int)transmit | 1;
+            transmit->Link = 0;
+        }
+
+        public static void RemoveTransmit(UHCIController controller, UHCITransmitDescriptor* transmit)
+        {
+            if (transmit->Previous != null)
+            {
+                if (transmit->Next != null)
+                {
+                    transmit->Previous->Link = transmit->Next->Link;
+                    transmit->Previous->Next = transmit->Next;
+                }
+                else
+                {
+                    transmit->Previous->Link = 0;
+                    transmit->Previous->Next = null;
+                }
+            }
+
+            FreeTransmit(controller, transmit);
+        }
+
+        public static void FreeTransmit(UHCIController controller, UHCITransmitDescriptor* transmit)
+        {
+            transmit->Allocated = false;
         }
 
         #endregion
@@ -441,6 +615,7 @@ namespace Sharpen.Drivers.USB
 
                 USBDevice dev = new USBDevice();
                 dev.Controller = uhciDev;
+                dev.Control = Control;
 
                 /**
                  * Root hub

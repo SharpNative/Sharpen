@@ -27,7 +27,7 @@ namespace Sharpen.USB
         HIGH_SPEED
     }
 
-    public struct USBDeviceRequest
+    public unsafe struct USBDeviceRequest
     {
         public byte Type { get; set; }
 
@@ -58,6 +58,6 @@ namespace Sharpen.USB
     {
         public unsafe delegate void ControllerPoll(IUSBController controller);
 
-        public unsafe delegate void DeviceControl(USBDevice dev, USBTransfer transfer);
+        public unsafe delegate void DeviceControl(USBDevice dev, USBTransfer *transfer);
     }
 }

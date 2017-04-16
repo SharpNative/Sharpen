@@ -1,4 +1,5 @@
 ﻿using Sharpen.Mem;
+using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,8 +14,8 @@ namespace Sharpen.USB
         /**
          * Transfer types
          */
-        const byte TYPE_HOSTODEVICE = 0;
-        const byte TYPE_DEVICETOHOST = 1;
+        public const byte TYPE_HOSTODEVICE = 0;
+        public const byte TYPE_DEVICETOHOST = 1;
         const byte TYPE_STANDARD = 0;
         const byte TYPE_CLASS = 0x20;
         const byte TYPE_VENDOR = 0x40;
@@ -61,6 +62,8 @@ namespace Sharpen.USB
 
         public ushort Port { get; set; }
 
+        public uint MaxPacketSize { get; set; } = 8;
+
         /// <summary>
         /// Control device state
         /// </summary>
@@ -75,17 +78,17 @@ namespace Sharpen.USB
             request.Type = type;
             request.Value = value;
 
-            USBTransfer transfer = new USBTransfer();
-            transfer.Request = request;
-            transfer.Data = data;
-            transfer.Length = len;
+            USBTransfer* transfer = (USBTransfer*)Heap.Alloc(sizeof(USBTransfer));
+            transfer->Request = request;
+            transfer->Data = data;
+            transfer->Length = len;
 
-            transfer.Success = false;
-            transfer.Executed = false;
+            transfer->Success = false;
+            transfer->Executed = false;
 
-            //Control(this, transfer);
+            Control(this, transfer);
 
-            return transfer.Success;
+            return transfer->Success;
             
         }
 
