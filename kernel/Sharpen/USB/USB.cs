@@ -5,10 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Sharpen.Arch
+namespace Sharpen.USB
 {
-    class USB
+    public class USB
     {
+        const ushort USB_LOW_SPEED = 0;
+        const ushort USB_HIGH_SPEED = 1;
+
+
         private static List Controllers;
 
         public static void Init()

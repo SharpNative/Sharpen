@@ -1,5 +1,8 @@
-﻿using Sharpen.Arch;
+﻿#define __UHCI_DIAG
+using Sharpen.Arch;
 using Sharpen.Mem;
+using Sharpen.USB;
+using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +11,31 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.USB
 {
-    public unsafe class UHCIDevice : IUSBController
+    public struct UHCITransmitDescriptor
+    {
+        public int Link;
+        public int Control;
+        public int Token;
+        public int BufferPointer;
+
+
+        public bool Allocated { get; set; }
+    }
+
+    public unsafe struct UHCIQueueHead
+    {
+        public int Head;
+        public int Element;
+
+        public bool Allocated { get; set; }
+
+        public USBTransfer *Transfer { get; set; }
+
+        public UHCIQueueHead *Previous { get; set; }
+        public UHCIQueueHead *Next { get; set; }
+    }
+
+    public unsafe class UHCIController : IUSBController
     {
         public USBHelpers.ControllerPoll Poll { get; set; }
 
@@ -17,6 +44,10 @@ namespace Sharpen.Drivers.USB
         public ushort IOBase { get; set; }
 
         public int* FrameList { get; set; }
+
+        public UHCIQueueHead *QueueHeadPool { get; set; }
+
+        public UHCITransmitDescriptor *TransmitPool { get; set; }
     }
 
 
@@ -60,21 +91,11 @@ namespace Sharpen.Drivers.USB
         const ushort USBCMD_SWDBG = (1 << 5);
         const ushort USBCMD_CF = (1 << 6);
         const ushort USBCMD_MAXP = (1 << 7);
+
+        const ushort MAX_HEADS = 8;
+        const ushort MAX_TRANSMIT = 32;
         
 
-        struct UHCITransmitDescriptor
-        {
-            public int Link;
-            public int Control;
-            public int Token;
-            public int BufferPointer;
-        }
-
-        struct UHCIQueueHead
-        {
-            public int Head;
-            public int Element;
-        }
 
         /// <summary>
         /// 
@@ -101,7 +122,7 @@ namespace Sharpen.Drivers.USB
                 Console.WriteLine("[UHCI] Only Portio supported");
             }
 
-            UHCIDevice uhciDev = new UHCIDevice();
+            UHCIController uhciDev = new UHCIController();
             uhciDev.IOBase = (ushort)dev.BAR4.Address;
 
             Console.Write("[UHCI] Initalize at 0x");
@@ -109,9 +130,17 @@ namespace Sharpen.Drivers.USB
             Console.WriteLine("");
 
             uhciDev.FrameList = (int*)Heap.AlignedAlloc(0x1000, sizeof(int) * 1024);
+            uhciDev.QueueHeadPool = (UHCIQueueHead *)Heap.AlignedAlloc(0x1000, sizeof(UHCIQueueHead) * MAX_HEADS);
+            uhciDev.TransmitPool = (UHCITransmitDescriptor*)Heap.AlignedAlloc(0x1000, sizeof(UHCITransmitDescriptor) * MAX_TRANSMIT);
+
+
+
+            UHCIQueueHead* head = GetQueueHead(uhciDev);
+            head->Head = 0;
+            head->Element = 0;
 
             for (int i = 0; i < 1024; i++)
-                uhciDev.FrameList[i] = FL_TERMINATE;
+                uhciDev.FrameList[i] = (1 << 1) | (int)head;
 
             /**
              * Initalize framelist
@@ -135,16 +164,17 @@ namespace Sharpen.Drivers.USB
              */
             PortIO.Out16((ushort)(uhciDev.IOBase + REG_USBCMD), USBCMD_RS);
 
-            Arch.USB.RegisterController(uhciDev);
+            Sharpen.USB.USB.RegisterController(uhciDev);
 
             probe(uhciDev);
+            uhciDev.Poll = Poll;
         }
 
         /// <summary>
         /// Reset port
         /// </summary>
         /// <param name="port">Port num to reset</param>
-        private static void resetPort(UHCIDevice uhciDev, ushort port)
+        private static void resetPort(UHCIController uhciDev, ushort port)
         {
             /**
              * Set reset bit
@@ -190,6 +220,7 @@ namespace Sharpen.Drivers.USB
                  */
                 if((status & PORTSC_CUR_ENABLE) > 0)
                     break;
+                
 
             }
         }
@@ -208,9 +239,9 @@ namespace Sharpen.Drivers.USB
         /// <summary>
         /// Set bit on port
         /// </summary>
-        /// <param name="port"></param>
-        /// <param name="bit"></param>
-        private static void setPortBit(UHCIDevice uhciDev, ushort port, ushort bit)
+        /// <param name="port">Port number</param>
+        /// <param name="bit">Bit to setr</param>
+        private static void setPortBit(UHCIController uhciDev, ushort port, ushort bit)
         {
             ushort status = PortIO.In16((ushort)(uhciDev.IOBase + port));
             status |= bit;
@@ -220,16 +251,144 @@ namespace Sharpen.Drivers.USB
         /// <summary>
         /// Unset bit on port
         /// </summary>
-        /// <param name="port"></param>
-        /// <param name="bit"></param>
-        private static void unsetPortBit(UHCIDevice uhciDev, ushort port, ushort bit)
+        /// <param name="port">Port number</param>
+        /// <param name="bit">Bit to unset</param>
+        private static void unsetPortBit(UHCIController uhciDev, ushort port, ushort bit)
         {
             ushort status = PortIO.In16((ushort)(uhciDev.IOBase + port));
             status &= (ushort)~bit;
             PortIO.Out16((ushort)(uhciDev.IOBase + port), status);
         }
 
-        private static void probe(UHCIDevice uhciDev)
+        /// <summary>
+        /// Control USB Device
+        /// </summary>
+        /// <param name="dev"></param>
+        /// <param name="transfer"></param>
+        private static void Control(USBDevice dev, USBTransfer transfer)
+        {
+#if __UHCI_DIAG
+            Console.Write("------transfer---------");
+            Console.Write("Request: ");
+            Console.WriteHex(transfer.Request.Request);
+            Console.WriteLine("");
+            Console.Write("Index: ");
+            Console.WriteHex(transfer.Request.Index);
+            Console.WriteLine("");
+            Console.Write("Length:");
+            Console.WriteHex(transfer.Request.Length);
+            Console.WriteLine("");
+            Console.Write("Type:");
+            Console.WriteHex(transfer.Request.Type);
+            Console.WriteLine("");
+            Console.Write("Value:");
+            Console.WriteHex(transfer.Request.Value);
+            Console.WriteLine("");
+#endif
+
+            
+        }
+
+        #region Head allocation
+
+        /// <summary>
+        /// Get Queue head item
+        /// </summary>
+        /// <param name="dev">Device</param>
+        /// <returns></returns>
+        private static UHCIQueueHead* GetQueueHead(UHCIController dev)
+        {
+            int i = 0;
+            while (i < MAX_HEADS)
+            {
+                if (!dev.QueueHeadPool[i].Allocated)
+                {
+                    dev.QueueHeadPool[i].Allocated = true;
+
+                    return (UHCIQueueHead*)(((int)dev.QueueHeadPool) + (sizeof(UHCIQueueHead) * i));
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Process Queue Head
+        /// </summary>
+        /// <param name="device"></param>
+        /// <param name="head"></param>
+        public static void ProcessHead(UHCIController controller, UHCIQueueHead *head)
+        {
+
+        }
+
+        /// <summary>
+        /// Insert head
+        /// </summary>
+        /// <param name="controller">UHCIController</param>
+        /// <param name="head"></param>
+        public static void InsertHead(UHCIController controller, UHCIQueueHead* head)
+        {
+
+
+        }
+
+        public static void RemoveHead(UHCIController controller, UHCIQueueHead* head)
+        {
+
+        }
+
+        public static void FreeHead(UHCIController controller, UHCIQueueHead* head)
+        {
+            head->Allocated = false;
+        }
+
+        #endregion
+
+        #region Transmit allocation
+
+
+        /// <summary>
+        /// Get Queue head item
+        /// </summary>
+        /// <param name="dev">Device</param>
+        /// <returns></returns>
+        private static UHCITransmitDescriptor* GetTransmit(UHCIController dev)
+        {
+            int i = 0;
+            while (i < MAX_TRANSMIT)
+            {
+                if (!dev.TransmitPool[i].Allocated)
+                {
+                    dev.TransmitPool[i].Allocated = true;
+
+                    return (UHCITransmitDescriptor*)(((int)dev.TransmitPool) + (sizeof(UHCITransmitDescriptor) * i));
+                }
+            }
+
+            return null;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Poll queue heads
+        /// </summary>
+        /// <param name="controller"></param>
+        public static void Poll(IUSBController controller)
+        {
+            UHCIController uhciController = (UHCIController)controller;
+
+            for (int i = 0; i < MAX_HEADS; i++)
+                if (uhciController.QueueHeadPool[i].Transfer != null)
+                    ProcessHead(uhciController, (UHCIQueueHead *)((int)uhciController.QueueHeadPool) + (sizeof(UHCIQueueHead) * i));
+        }
+
+        /// <summary>
+        /// Probe usb devices on port
+        /// </summary>
+        /// <param name="uhciDev">The UHCI device</param>
+        private static void probe(UHCIController uhciDev)
         {
 
             /**
@@ -256,6 +415,18 @@ namespace Sharpen.Drivers.USB
                  * TODO: Handle connected device!
                  */
 
+                USBDevice dev = new USBDevice();
+                dev.Controller = uhciDev;
+
+                /**
+                 * Root hub
+                 */
+                dev.Parent = null;
+                dev.Port = port;
+                dev.State = USBDeviceState.ATTACHED;
+                dev.Speed = (lowSpeed) ? USBDeviceSpeed.LOW_SPEED : USBDeviceSpeed.HIGH_SPEED;
+
+                dev.Init();
             }
         }
     }

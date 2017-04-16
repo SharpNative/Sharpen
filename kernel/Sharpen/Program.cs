@@ -106,7 +106,7 @@ namespace Sharpen
         /// </summary>
         private static void initUSB()
         {
-            USB.Init();
+            USB.USB.Init();
 
             UHCI.Init();
         }
