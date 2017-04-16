@@ -268,21 +268,23 @@ namespace Sharpen.Drivers.USB
         private static void Control(USBDevice dev, USBTransfer transfer)
         {
 #if __UHCI_DIAG
+            USBDeviceRequest request = transfer.Request;
+
             Console.Write("------transfer---------");
             Console.Write("Request: ");
-            Console.WriteHex(transfer.Request.Request);
+            Console.WriteHex(request.Request);
             Console.WriteLine("");
             Console.Write("Index: ");
-            Console.WriteHex(transfer.Request.Index);
+            Console.WriteHex(request.Index);
             Console.WriteLine("");
             Console.Write("Length:");
-            Console.WriteHex(transfer.Request.Length);
+            Console.WriteHex(request.Length);
             Console.WriteLine("");
             Console.Write("Type:");
-            Console.WriteHex(transfer.Request.Type);
+            Console.WriteHex(request.Type);
             Console.WriteLine("");
             Console.Write("Value:");
-            Console.WriteHex(transfer.Request.Value);
+            Console.WriteHex(request.Value);
             Console.WriteLine("");
 #endif
 

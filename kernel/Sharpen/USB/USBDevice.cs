@@ -83,7 +83,7 @@ namespace Sharpen.USB
             transfer.Success = false;
             transfer.Executed = false;
 
-            Control(this, transfer);
+            //Control(this, transfer);
 
             return transfer.Success;
             
