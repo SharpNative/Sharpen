@@ -8,8 +8,22 @@ using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.USB
 {
+    public unsafe class UHCIDevice : IUSBController
+    {
+        public USBHelpers.ControllerPoll Poll { get; set; }
+
+        public USBControllerType Type { get { return USBControllerType.UHCI; } }
+
+        public ushort IOBase { get; set; }
+
+        public int* FrameList { get; set; }
+    }
+
+
     unsafe class UHCI
     {
+        const ushort INTF_UHCI = 0x00;
+
         const ushort REG_USBCMD    = 0x00;
         const ushort REG_USBSTS    = 0x02;
         const ushort REG_USBINTR   = 0x04;
@@ -19,8 +33,6 @@ namespace Sharpen.Drivers.USB
         const ushort REG_PORTSC1   = 0x10;
         const ushort REG_PORTSC2   = 0x12;
         const ushort REG_LEGSUP    = 0xC0;
-
-        private static ushort m_ioBase = 0x00;
 
 
         const ushort PORTSC_CUR_STAT            = (1 << 0);
@@ -48,8 +60,7 @@ namespace Sharpen.Drivers.USB
         const ushort USBCMD_SWDBG = (1 << 5);
         const ushort USBCMD_CF = (1 << 6);
         const ushort USBCMD_MAXP = (1 << 7);
-
-        private static int *m_frameList;
+        
 
         struct UHCITransmitDescriptor
         {
@@ -70,60 +81,75 @@ namespace Sharpen.Drivers.USB
         /// </summary>
         public static unsafe void Init()
         {
-            PciDevice dev = findEHCIDevice();
+            /**
+             * Note: this cycles through PCI devices!
+             */
+            for (int i = 0; i < PCI.DeviceNum; i++)
+            {
+                PciDevice dev = PCI.Devices[i];
 
-            if (dev == null)
-                return;
+                if (dev.CombinedClass == (int)PCIClassCombinations.USBController && dev.ProgIntf == INTF_UHCI)
+                    initDevice(dev);
+            }
 
-            if((dev.BAR4.flags & PCI.BAR_IO) == 0)
+        }
+
+        private static void initDevice(PciDevice dev)
+        {
+            if ((dev.BAR4.flags & PCI.BAR_IO) == 0)
             {
                 Console.WriteLine("[UHCI] Only Portio supported");
             }
 
-            m_ioBase = (ushort)dev.BAR4.Address;
+            UHCIDevice uhciDev = new UHCIDevice();
+            uhciDev.IOBase = (ushort)dev.BAR4.Address;
 
-            Console.WriteLine("[UHCI] Initalize");
+            Console.Write("[UHCI] Initalize at 0x");
+            Console.WriteHex(uhciDev.IOBase);
+            Console.WriteLine("");
 
-            m_frameList = (int *)Heap.AlignedAlloc(0x1000, sizeof(int) * 1024);
-            
-            for(int i = 0; i < 1024; i++)
-                m_frameList[i] = FL_TERMINATE;
+            uhciDev.FrameList = (int*)Heap.AlignedAlloc(0x1000, sizeof(int) * 1024);
+
+            for (int i = 0; i < 1024; i++)
+                uhciDev.FrameList[i] = FL_TERMINATE;
 
             /**
              * Initalize framelist
              */
-            PortIO.Out16((ushort)(m_ioBase + REG_FRNUM), 0);
-            PortIO.Out32((ushort)(m_ioBase + REG_FRBASEADD), (uint)Paging.GetPhysicalFromVirtual(m_frameList));
-            PortIO.Out8(((ushort)(m_ioBase + REG_SOFMOD)), 0x40); // Ensure default value of 64 (aka cycle time of 12000)
+            PortIO.Out16((ushort)(uhciDev.IOBase + REG_FRNUM), 0);
+            PortIO.Out32((ushort)(uhciDev.IOBase + REG_FRBASEADD), (uint)Paging.GetPhysicalFromVirtual(uhciDev.FrameList));
+            PortIO.Out8(((ushort)(uhciDev.IOBase + REG_SOFMOD)), 0x40); // Ensure default value of 64 (aka cycle time of 12000)
 
             /**
              * We are going to poll!
              */
-            PortIO.Out16((ushort)(m_ioBase + REG_USBINTR), 0x00);
+            PortIO.Out16((ushort)(uhciDev.IOBase + REG_USBINTR), 0x00);
 
             /**
              * Clear any pending statusses
              */
-            PortIO.Out16((ushort)(m_ioBase + REG_USBSTS), 0xFFFF);
+            PortIO.Out16((ushort)(uhciDev.IOBase + REG_USBSTS), 0xFFFF);
 
             /**
              * Enable device
              */
-            PortIO.Out16((ushort)(m_ioBase + REG_USBCMD), USBCMD_RS);
+            PortIO.Out16((ushort)(uhciDev.IOBase + REG_USBCMD), USBCMD_RS);
 
-            probe();
+            Arch.USB.RegisterController(uhciDev);
+
+            probe(uhciDev);
         }
 
         /// <summary>
         /// Reset port
         /// </summary>
-        /// <param name="port"></param>
-        private static void resetPort(ushort port)
+        /// <param name="port">Port num to reset</param>
+        private static void resetPort(UHCIDevice uhciDev, ushort port)
         {
             /**
              * Set reset bit
              */
-            setPortBit(port, PORTSC_RESET);
+            setPortBit(uhciDev, port, PORTSC_RESET);
 
             /**
              * Wait for 60 ms
@@ -133,7 +159,7 @@ namespace Sharpen.Drivers.USB
             /**
              * Unset reset bit
              */
-            unsetPortBit(port, PORTSC_RESET);
+            unsetPortBit(uhciDev, port, PORTSC_RESET);
 
             /**
              * Wait for atleast 150ms for link to go up
@@ -142,7 +168,7 @@ namespace Sharpen.Drivers.USB
             {
                 Sleep(10);
 
-                ushort status = PortIO.In16((ushort)(m_ioBase + port));
+                ushort status = PortIO.In16((ushort)(uhciDev.IOBase + port));
 
                 /**
                  * Is it even connected?
@@ -155,7 +181,7 @@ namespace Sharpen.Drivers.USB
                  */
                 if(((status) & (PORTSC_STAT_CHNG | PORTSC_ENABLE_STAT)) > 0)
                 {
-                    unsetPortBit(port, PORTSC_STAT_CHNG | PORTSC_ENABLE_STAT);
+                    unsetPortBit(uhciDev, port, PORTSC_STAT_CHNG | PORTSC_ENABLE_STAT);
                     continue;
                 }
 
@@ -184,11 +210,11 @@ namespace Sharpen.Drivers.USB
         /// </summary>
         /// <param name="port"></param>
         /// <param name="bit"></param>
-        private static void setPortBit(ushort port, ushort bit)
+        private static void setPortBit(UHCIDevice uhciDev, ushort port, ushort bit)
         {
-            ushort status = PortIO.In16((ushort)(m_ioBase + port));
+            ushort status = PortIO.In16((ushort)(uhciDev.IOBase + port));
             status |= bit;
-            PortIO.Out16((ushort)(m_ioBase + port), status);
+            PortIO.Out16((ushort)(uhciDev.IOBase + port), status);
         }
 
         /// <summary>
@@ -196,23 +222,27 @@ namespace Sharpen.Drivers.USB
         /// </summary>
         /// <param name="port"></param>
         /// <param name="bit"></param>
-        private static void unsetPortBit(ushort port, ushort bit)
+        private static void unsetPortBit(UHCIDevice uhciDev, ushort port, ushort bit)
         {
-            ushort status = PortIO.In16((ushort)(m_ioBase + port));
+            ushort status = PortIO.In16((ushort)(uhciDev.IOBase + port));
             status &= (ushort)~bit;
-            PortIO.Out16((ushort)(m_ioBase + port), status);
+            PortIO.Out16((ushort)(uhciDev.IOBase + port), status);
         }
 
-        private static void probe()
+        private static void probe(UHCIDevice uhciDev)
         {
+
+            /**
+             * UHCI only supports 2 ports, so just 2 :-)
+             */
             for(int i = 0; i < 2; i++)
             {
                 ushort port = (i == 0 )? REG_PORTSC1 : REG_PORTSC2;
 
-                resetPort(port);
+                resetPort(uhciDev, port);
 
 
-                ushort status = PortIO.In16((ushort)(m_ioBase + port));
+                ushort status = PortIO.In16((ushort)(uhciDev.IOBase + port));
 
                 /**
                  * Is the port even connected?
@@ -221,27 +251,12 @@ namespace Sharpen.Drivers.USB
                     continue;
 
                 bool lowSpeed = ((status & PORTSC_LOW_SPEED) > 0);
-                
+
                 /**
                  * TODO: Handle connected device!
                  */
+
             }
-        }
-
-        private static PciDevice findEHCIDevice()
-        {
-            /**
-             * Note: this cycles through PCI devices!
-             */
-            for (int i = 0; i < PCI.DeviceNum; i++)
-            {
-                PciDevice dev = PCI.Devices[i];
-
-                if (dev.CombinedClass == (int)PCIClassCombinations.USBController && dev.ProgIntf == 0x00)
-                    return dev;
-            }
-
-            return null;
         }
     }
 }

@@ -53,6 +53,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Arch\PCIClassCodes.cs" />
+    <Compile Include="Arch\USB.cs" />
+    <Compile Include="Arch\USBDevice.cs" />
     <Compile Include="Arch\X86\X86SignalContext.cs" />
     <Compile Include="Collections\Bucket.cs" />
     <Compile Include="Collections\StringDictionary.cs" />

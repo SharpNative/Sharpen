@@ -106,6 +106,8 @@ namespace Sharpen
         /// </summary>
         private static void initUSB()
         {
+            USB.Init();
+
             UHCI.Init();
         }
 
@@ -136,16 +138,14 @@ namespace Sharpen
             DHCP.Discover();
 
             // Timer thread to see if the system hangs or not
-            Thread abc = new Thread();
-            abc.Context.CreateNewContext(Util.MethodToPtr(timer), 0, null, true);
-            Tasking.KernelTask.AddThread(abc);
+            //Thread abc = new Thread();
+            //abc.Context.CreateNewContext(Util.MethodToPtr(timer), 0, null, true);
+            //Tasking.KernelTask.AddThread(abc);
             
-            Thread packetHandler = new Thread();
-            packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest), 0, null, true);
-            Tasking.KernelTask.AddThread(packetHandler);
-
-            Console.WriteLine("EXIT");
-            for (;;) ;
+            //Thread packetHandler = new Thread();
+            //packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest), 0, null, true);
+            //Tasking.KernelTask.AddThread(packetHandler);
+            
 
         }
         
@@ -216,7 +216,7 @@ namespace Sharpen
                 Heap.Free(ptr);
             }
 
-            Console.WriteLine("EXIT");
+            Console.WriteLine("EXIAT");
             for (;;) ;
 
             TCP.Free(con);
