@@ -133,7 +133,7 @@ namespace Sharpen
             // Network drivers
             E1000.Init();
             PCNet2.Init();
-            rtl8139.Init();
+            RTL8139.Init();
             
             DHCP.Discover();
 
