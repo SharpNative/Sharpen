@@ -287,7 +287,6 @@ namespace Sharpen.Drivers.USB
             Console.WriteHex(request.Value);
             Console.WriteLine("");
 #endif
-
             
         }
 
@@ -331,13 +330,36 @@ namespace Sharpen.Drivers.USB
         /// <param name="head"></param>
         public static void InsertHead(UHCIController controller, UHCIQueueHead* head)
         {
+            UHCIQueueHead* end = head;
 
+            while (true)
+                if (end->Next != null)
+                    end = end->Next;
+                else
+                    break;
 
+            end->Next = head;
+            end->Head = (int)head | 1;
+            head->Head = 0;
         }
 
         public static void RemoveHead(UHCIController controller, UHCIQueueHead* head)
         {
+            if (head->Previous != null)
+            {
+                if (head->Next != null)
+                {
+                    head->Previous->Head = head->Next->Head;
+                    head->Previous->Next = head->Next;
+                }
+                else
+                {
+                    head->Previous->Head = 0;
+                    head->Previous->Next = null;
+                }
+            }
 
+            FreeHead(controller, head);
         }
 
         public static void FreeHead(UHCIController controller, UHCIQueueHead* head)
