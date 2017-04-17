@@ -1,4 +1,6 @@
 ﻿using Sharpen.Collections;
+using Sharpen.MultiTasking;
+using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,10 +18,15 @@ namespace Sharpen.USB
         private static List Controllers;
         private static List Devices;
 
-        public static void Init()
+        public unsafe static void Init()
         {
             Controllers = new List();
             Devices = new List();
+
+            Thread pollThread = new Thread();
+            pollThread.Context.CreateNewContext(Util.MethodToPtr(Poll), 0, null, true);
+            Tasking.KernelTask.AddThread(pollThread);
+
         }
 
         public static void RegisterController(IUSBController controller)
@@ -35,6 +42,7 @@ namespace Sharpen.USB
 
         public static void Poll()
         {
+
             for (int i = 0; i < Controllers.Count; i++)
             {
                 IUSBController controller = (IUSBController)Controllers.Item[i];
@@ -49,6 +57,8 @@ namespace Sharpen.USB
                 if (device.State == USBDeviceState.CONFIGURED)
                     device.Driver?.Poll(device);
             }
+
+            MultiTasking.Tasking.CurrentTask.CurrentThread.Sleep(0, 100);
         }
     }
 }

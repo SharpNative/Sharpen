@@ -59,6 +59,8 @@ namespace Sharpen.USB
 
         public USBDeviceState State { get; set; }
 
+        public uint Toggle { get; set; }
+
         public USBDeviceSpeed Speed { get; set; }
 
         public ushort Port { get; set; }
@@ -75,6 +77,11 @@ namespace Sharpen.USB
         /// Control device state
         /// </summary>
         public USBHelpers.DeviceControl Control { get; set; }
+
+        /// <summary>
+        /// Prepare device
+        /// </summary>
+        public USBHelpers.PrepareDevice Prepare { get; set; }
 
         /// <summary>
         /// Number of languages

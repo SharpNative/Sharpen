@@ -145,9 +145,9 @@ namespace Sharpen
             //abc.Context.CreateNewContext(Util.MethodToPtr(timer), 0, null, true);
             //Tasking.KernelTask.AddThread(abc);
 
-            //Thread packetHandler = new Thread();
-            //packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest2), 0, null, true);
-            //Tasking.KernelTask.AddThread(packetHandler);
+            Thread packetHandler = new Thread();
+            packetHandler.Context.CreateNewContext(Util.MethodToPtr(USB.USB.Poll), 0, null, true);
+            Tasking.KernelTask.AddThread(packetHandler);
 
 
         }

@@ -56,6 +56,8 @@ namespace Sharpen.Drivers.USB
         public UHCITransmitDescriptor *TransmitPool { get; set; }
 
         public UHCIQueueHead * FirstHead { get; set; }
+
+        public USBHelpers.DeviceControl Prepare { get; set; }
     }
 
 
@@ -162,6 +164,7 @@ namespace Sharpen.Drivers.USB
 
             UHCIController uhciDev = new UHCIController();
             uhciDev.IOBase = (ushort)dev.BAR4.Address;
+            
 
             Console.Write("[UHCI] Initalize at 0x");
             Console.WriteHex(uhciDev.IOBase);
@@ -301,6 +304,41 @@ namespace Sharpen.Drivers.USB
             ushort status = PortIO.In16((ushort)(uhciDev.IOBase + port));
             status &= (ushort)~bit;
             PortIO.Out16((ushort)(uhciDev.IOBase + port), status);
+        }
+
+        /// <summary>
+        /// Prepare 
+        /// </summary>
+        /// <param name="dev"></param>
+        /// <param name="transfer"></param>
+        private static void Prepare(USBDevice dev, USBTransfer *transfer)
+        {
+            UHCIController controller = (UHCIController)dev.Controller;
+            
+            uint endp = (uint)(dev.EndPointDesc->Address & 0xF);
+
+            UHCITransmitDescriptor* td = GetTransmit(controller);
+            if(td == null)
+            {
+                transfer->Success = false;
+                transfer->Executed = true;
+            }
+
+            UHCITransmitDescriptor* head = td;
+
+            /**
+             * Initalize read
+             */
+            InitTransmit(td, null, dev.Speed, dev.Address, endp, dev.Toggle, TRANS_PACKET_IN, transfer->Length, transfer->Data);
+
+
+            UHCIQueueHead* qh = GetQueueHead(controller);
+            qh->Element = (int)Paging.GetPhysicalFromVirtual(head);
+            qh->Head = 0;
+            qh->Transfer = transfer;
+            qh->Transmit = head;
+
+            InsertHead(controller, qh);
         }
 
         /// <summary>
@@ -714,6 +752,7 @@ namespace Sharpen.Drivers.USB
                 USBDevice dev = new USBDevice();
                 dev.Controller = uhciDev;
                 dev.Control = Control;
+                dev.Prepare = Prepare;
 
                 /**
                  * Root hub

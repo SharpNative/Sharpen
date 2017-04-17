@@ -148,5 +148,7 @@ namespace Sharpen.USB
         public unsafe delegate void ControllerPoll(IUSBController controller);
 
         public unsafe delegate void DeviceControl(USBDevice dev, USBTransfer *transfer);
+
+        public unsafe delegate void PrepareDevice(USBDevice dev, USBTransfer* transfer);
     }
 }
