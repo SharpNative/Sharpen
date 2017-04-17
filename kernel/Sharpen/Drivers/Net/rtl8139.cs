@@ -112,6 +112,7 @@ namespace Sharpen.Drivers.Net
         private static byte*[] m_transmits;
 
         private static Mutex[] m_mutexes;
+        private static Mutex m_tx_mutex;
 
         private static bool m_linkFail;
         private static bool m_100mbit;
@@ -245,6 +246,7 @@ namespace Sharpen.Drivers.Net
             PortIO.Out32((ushort)(m_io_base + REG_TC), TC_DMA_2048);
 
             // Mutexes so we can't reuse a TX buffer before it has been processed
+            m_tx_mutex = new Mutex();
             m_mutexes = new Mutex[4];
             for (int i = 0; i < 4; i++)
             {
@@ -308,31 +310,33 @@ namespace Sharpen.Drivers.Net
         /// <summary>
         /// Transmit packet
         /// </summary>
-        /// <param name="bytes"></param>
-        /// <param name="size"></param>
+        /// <param name="bytes">The bytes</param>
+        /// <param name="size">The size of the packet</param>
         public static unsafe void Transmit(byte* bytes, uint size)
         {
             /**
              * Max packetsize
              */
-            if (size >= 1536)
+            if (size >= 1500)
                 return;
 
+            m_tx_mutex.Lock();
+            uint current = m_curTX;
+            m_curTX++;
+            if (m_curTX == 4)
+                m_curTX = 0;
+            m_tx_mutex.Unlock();
+
             // Acquire mutex on current descriptor
-            m_mutexes[m_curTX].Lock();
+            m_mutexes[current].Lock();
 
             // Copy data to buffer
-            byte* bufferPtr = m_transmits[m_curTX];
+            byte* bufferPtr = m_transmits[current];
             Memory.Memcpy(bufferPtr, bytes, (int)size);
 
             // Set status on this TX
             uint status = size & 0x1FFF;
-            PortIO.Out32((ushort)(m_io_base + REG_TSD0 + (m_curTX * 4)), status);
-
-            // Next one
-            m_curTX++;
-            if (m_curTX == 4)
-                m_curTX = 0;
+            PortIO.Out32((ushort)(m_io_base + REG_TSD0 + (current * 4)), status);
         }
 
         /// <summary>
