@@ -55,7 +55,8 @@ namespace Sharpen.Drivers.USB
             mTransfer->Executed = false;
             mTransfer->Success = false;
             
-            device.Prepare(device, mTransfer);
+            device.PrepareInterrupt(device, mTransfer);
+
 
             return this;
         }
@@ -80,7 +81,7 @@ namespace Sharpen.Drivers.USB
                  * And again
                  */
                 mTransfer->Executed = false;
-                device.Prepare(device, mTransfer);
+                device.PrepareInterrupt(device, mTransfer);
             }
 
             Console.WriteLine("YES");

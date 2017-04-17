@@ -81,7 +81,7 @@ namespace Sharpen.USB
         /// <summary>
         /// Prepare device
         /// </summary>
-        public USBHelpers.PrepareDevice Prepare { get; set; }
+        public USBHelpers.PrepareDevice PrepareInterrupt { get; set; }
 
         /// <summary>
         /// Number of languages

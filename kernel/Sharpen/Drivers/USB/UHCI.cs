@@ -307,11 +307,11 @@ namespace Sharpen.Drivers.USB
         }
 
         /// <summary>
-        /// Prepare 
+        /// Prepare interrupt
         /// </summary>
         /// <param name="dev"></param>
         /// <param name="transfer"></param>
-        private static void Prepare(USBDevice dev, USBTransfer *transfer)
+        private static void PrepareInterrupt(USBDevice dev, USBTransfer *transfer)
         {
             UHCIController controller = (UHCIController)dev.Controller;
             
@@ -752,7 +752,7 @@ namespace Sharpen.Drivers.USB
                 USBDevice dev = new USBDevice();
                 dev.Controller = uhciDev;
                 dev.Control = Control;
-                dev.Prepare = Prepare;
+                dev.PrepareInterrupt = PrepareInterrupt;
 
                 /**
                  * Root hub
