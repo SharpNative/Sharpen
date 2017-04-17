@@ -348,10 +348,10 @@ namespace Sharpen.FileSystem
         {
             if (node.Write == null)
                 return 0;
-
+            
             if (node.FileMode != FileMode.O_RDWR && node.FileMode != FileMode.O_WRONLY)
                 return 0;
-
+            
             return node.Write(node, offset, size, buffer);
         }
 

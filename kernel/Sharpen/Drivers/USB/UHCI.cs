@@ -119,6 +119,10 @@ namespace Sharpen.Drivers.USB
         const uint TD_ERROR_SHIFT = 27;
         const uint TD_CONTROL_SPD = (1 << 29);
 
+        const int TD_POINTER_TERMINATE = (1 << 0);
+        const int TD_POINTER_QH = (1 << 1);
+        const int TD_POINTER_DEPTH = (1 << 2);
+
         const int TD_TOKEN_ADDR = 8;
         const int TD_TOKEN_ENDP = 15;
         const int TD_TOKEN_D_SHIFT = 19;
@@ -167,19 +171,17 @@ namespace Sharpen.Drivers.USB
             
 
             UHCIQueueHead* head = GetQueueHead(uhciDev);
-            head->Head = 0;
-            head->Element = 0;
+            head->Head = TD_POINTER_TERMINATE;
+            head->Element = TD_POINTER_TERMINATE;
 
             uhciDev.FirstHead = head;
 
-            Console.WriteHex((int)head);
-            Console.WriteLine("");
-            Console.WriteHex((int)Paging.GetPhysicalFromVirtual(head));
-            Console.WriteLine("");
 
             for (int i = 0; i < 1024; i++)
-                uhciDev.FrameList[i] = (1 << 1) | (int)Paging.GetPhysicalFromVirtual(head);
+                uhciDev.FrameList[i] = TD_POINTER_QH | (int)Paging.GetPhysicalFromVirtual(head);
 
+            Console.WriteHex(uhciDev.FrameList[0]);
+            Console.WriteLine("");
 
             PortIO.Out16((ushort)(uhciDev.IOBase + REG_LEGSUP), 0x8f00);
 
@@ -384,15 +386,19 @@ namespace Sharpen.Drivers.USB
             toggle = 1;
             InitTransmit(td, prev, dev.Speed, 0, 0, toggle, packetType, 0, null);
 
+            
             UHCIQueueHead *qh = GetQueueHead(controller);
             qh->Element = (int)Paging.GetPhysicalFromVirtual(head);
             qh->Head = 0;
             qh->Transfer = transfer;
             qh->Transmit = head;
-            
+
 
             InsertHead(controller, qh);
             //WaitForQueueHead(controller, qh);
+
+
+
         }
 
         public static void WaitForQueueHead(UHCIController controller, UHCIQueueHead *head)
@@ -442,7 +448,8 @@ namespace Sharpen.Drivers.USB
 
             if((head->Element & ~0xF) == 0)
             {
-
+                transfer->Executed = true;
+                transfer->Success = true;
             }
             else
             {
@@ -476,13 +483,41 @@ namespace Sharpen.Drivers.USB
                     Console.WriteLine("Bitstuff error");
                 }
             }
-            
-            Console.WriteHex(head->Element & ~0xF);
-            Console.WriteLine("");
 
-            if(transfer->Executed)
+            //Console.WriteHex(head->Element & ~0xF);
+            //Console.WriteLine("");
+
+            if (transfer->Executed)
             {
+                head->Transfer = null;
 
+                /**
+                 * We need to toggle endpoint state here
+                 */
+
+                /**
+                 * Remove head from schedule
+                 */
+                RemoveHead(controller, head);
+
+                /**
+                 * Free transmit descriptors
+                 */
+                UHCITransmitDescriptor* tdE = td;
+
+                while(tdE != null)
+                {
+                    UHCITransmitDescriptor* next = tdE->Next;
+                    FreeTransmit(controller, tdE);
+                    tdE = next;
+                }
+
+                /**
+                 * Free head for use
+                 */
+                FreeHead(controller, head);
+
+                Console.WriteLine("YAY!");
             }
         }
 
@@ -500,12 +535,19 @@ namespace Sharpen.Drivers.USB
                     end = end->Next;
                 else
                     break;
+
             
             end->Next = head;
-            end->Head = (int)Paging.GetPhysicalFromVirtual(head) | 1;
-            head->Head = 0;
+            end->Head = (int)Paging.GetPhysicalFromVirtual(head) | TD_POINTER_QH;
+            end->Element = TD_POINTER_TERMINATE;
+            head->Head = TD_POINTER_TERMINATE;
 
-
+            Console.WriteHex((long)end->Head & ~0xF);
+            Console.WriteLine("");
+            Console.WriteHex((long)head->Head & ~0xF);
+            Console.WriteLine("");
+            Console.WriteHex((long)head->Element);
+            Console.WriteLine("");
         }
 
         public static void RemoveHead(UHCIController controller, UHCIQueueHead* head)
@@ -572,11 +614,11 @@ namespace Sharpen.Drivers.USB
 
             if (previous != null)
             {
-                previous->Link = (int)Paging.GetPhysicalFromVirtual(td) | (1 << 2);
+                previous->Link = (int)Paging.GetPhysicalFromVirtual(td) | TD_POINTER_DEPTH;
                 previous->Next = td;
             }
 
-            td->Link = 0;
+            td->Link = TD_POINTER_TERMINATE;
             td->Next = null;
 
             td->Control = (int)((3 << (int)TD_ERROR_SHIFT) | TD_CONTROL_ACTIVE);
