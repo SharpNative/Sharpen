@@ -53,6 +53,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Arch\PCIClassCodes.cs" />
+    <Compile Include="Net\TCPSocketDevice.cs" />
+    <Compile Include="Net\TCPFS.cs" />
     <Compile Include="USB\USB.cs" />
     <Compile Include="USB\USBController.cs" />
     <Compile Include="USB\USBDevice.cs" />

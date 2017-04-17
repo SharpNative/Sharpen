@@ -141,14 +141,98 @@ namespace Sharpen
             //Thread abc = new Thread();
             //abc.Context.CreateNewContext(Util.MethodToPtr(timer), 0, null, true);
             //Tasking.KernelTask.AddThread(abc);
-            
+
             //Thread packetHandler = new Thread();
-            //packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest), 0, null, true);
+            //packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest2), 0, null, true);
             //Tasking.KernelTask.AddThread(packetHandler);
-            
+
 
         }
-        
+
+        private static unsafe void HttpTest2()
+        {
+            Node node = TCPSocketDevice.BindNode("80");
+
+            string message = "<!doctype html><html><title>Van Sharpen</title><body>Wij serveren dit van Sharpen naar Dossche</body></html>";
+            string httpResp = "HTTP/1.1 200 OK\r\nDate: Fri, 13 May 2005 05:51:12 GMT\r\nServer: Sharpen :)\r\nLast-Modified: Fri, 13 May 2005 05:25:02 GMT\r\nAccept-Ranges: bytes\r\nContent-Length: ";
+
+            string count = message.Length.ToString();
+
+            httpResp = String.Merge(httpResp, count);
+            httpResp = String.Merge(httpResp, "\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n");
+
+            string finalResp = String.Merge(httpResp, message);
+
+            byte[] array = new byte[4000];
+            TCPPacketSmallDescriptor* ptr = (TCPPacketSmallDescriptor *)Util.ObjectToVoidPtr(array);
+            byte* data = (byte*)ptr + sizeof(TCPPacketSmallDescriptor);
+            while (true)
+            {
+                uint sz = VFS.Read(node, 0, 4000, array);
+                if (sz == 0)
+                {
+                    continue;
+                }
+                
+                if (ptr->Type == TCPPacketDescriptorTypes.ACCEPT)
+                {
+                    Console.Write("New connection from: ");
+
+                    for (int i = 0; i < 3; i++)
+                    {
+                        Console.WriteNum(data[i]);
+                        Console.Write('.');
+                    }
+                    Console.WriteNum(data[3]);
+                    Console.Write(" with XID: ");
+                    Console.WriteHex(ptr->xid);
+                    Console.WriteLine("");
+                }
+                else if (ptr->Type == TCPPacketDescriptorTypes.RECEIVE)
+                {
+                    Console.Write("New data from XID: ");
+                    Console.WriteHex(ptr->xid);
+                    Console.WriteLine("");
+
+                    byte[] sendData = new byte[sizeof(TCPPacketSendDescriptor)];
+
+                    TCPPacketSendDescriptor* sendd = (TCPPacketSendDescriptor*)Util.ObjectToVoidPtr(sendData);
+                    sendd->xid = ptr->xid;
+                    sendd->data = (byte*)Util.ObjectToVoidPtr(finalResp);
+                    sendd->Size = finalResp.Length;
+
+                    Console.WriteLine("Writing");
+                    VFS.Write(node, 0, (uint)sizeof(TCPPacketSendDescriptor), sendData);
+
+                    //TCP.Send(con, ptr->xid, (byte*)Util.ObjectToVoidPtr(finalResp), (uint)finalResp.Length);
+
+                    //TCP.Close(con, ptr->xid);
+                }
+                else if (ptr->Type == TCPPacketDescriptorTypes.RESET)
+                {
+                    Console.Write("RESET from XID: ");
+                    Console.WriteHex(ptr->xid);
+                    Console.WriteLine("");
+                }
+                else if (ptr->Type == TCPPacketDescriptorTypes.CLOSE)
+                {
+                    Console.Write("CLOSE from XID: ");
+                    Console.WriteHex(ptr->xid);
+                    Console.WriteLine("");
+                }
+                else
+                {
+                    Console.WriteLine("Invalid ptr->Type!");
+                    break;
+                }
+
+                Heap.Free(ptr);
+            }
+
+            Console.WriteLine("EXIAT");
+            for (;;) ;
+        }
+
         private static unsafe void HttpTest()
         {
             TCPConnection con = TCP.Bind(80);

@@ -30,6 +30,7 @@ namespace Sharpen.Net
             NetworkInfoFS.Init();
             ARPFS.Init();
             UDPFS.Init();
+            TCPFS.Init();
         }
 
         /// <summary>
