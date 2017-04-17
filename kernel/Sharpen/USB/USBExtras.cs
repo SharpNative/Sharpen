@@ -28,6 +28,23 @@ namespace Sharpen.USB
         HIGH_SPEED
     }
 
+    public enum USBClassCodes: byte
+    {
+        DEVICE = 0x00,
+        INTERFACE = 0x01,
+        BOTH =0x02,
+        HID = 0x03,
+        PHYSICAL = 0x05,
+        IMAGE = 0x06,
+        PRINTER = 0x07,
+        MASS_STORAGE = 0x08,
+        HUB = 0x09,
+        CDC_DATA = 0x0A,
+        SMARTCARD = 0x0B,
+        SECURITY = 0x0D,
+        VIDEO = 0x0E
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public unsafe struct USBDeviceDescriptor
     {
@@ -126,6 +143,8 @@ namespace Sharpen.USB
 
     public class USBHelpers
     {
+        public const byte DRIVER_NO_SUBCLASS_CHECK = 0xFF;
+
         public unsafe delegate void ControllerPoll(IUSBController controller);
 
         public unsafe delegate void DeviceControl(USBDevice dev, USBTransfer *transfer);

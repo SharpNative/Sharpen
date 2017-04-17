@@ -69,6 +69,8 @@ namespace Sharpen.USB
 
         private static ushort NextAddress { get; set; } = 0;
 
+        public IUSBDriver Driver { get; set; }
+
         /// <summary>
         /// Control device state
         /// </summary>
@@ -260,7 +262,18 @@ namespace Sharpen.USB
                  * Init driver here
                  */
                 Console.WriteLine("[USB] Device configured!");
+                Console.WriteHex(InterfaceDesc->Class);
+                Console.WriteLine("");
                 State = USBDeviceState.CONFIGURED;
+
+                IUSBDriver test = USBDrivers.LoadDriver(this);
+
+                if(test == null)
+                {
+                    Console.WriteLine("test");
+                }
+
+                Driver = test;
             }
 
             return true;

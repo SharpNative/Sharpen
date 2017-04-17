@@ -53,6 +53,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Arch\PCIClassCodes.cs" />
+    <Compile Include="Drivers\USB\USBHIDMouse.cs" />
     <Compile Include="Net\TCPSocketDevice.cs" />
     <Compile Include="Net\TCPFS.cs" />
     <Compile Include="USB\USB.cs" />
@@ -135,6 +136,8 @@
     <Compile Include="Arch\X86\Regs.cs" />
     <Compile Include="Arch\X86\Syscall.cs" />
     <Compile Include="SymbolTable.cs" />
+    <Compile Include="USB\IUSBDriver.cs" />
+    <Compile Include="USB\USBDrivers.cs" />
     <Compile Include="USB\USBExtras.cs" />
     <Compile Include="Utilities\Array.cs" />
     <Compile Include="Utilities\Byte.cs" />

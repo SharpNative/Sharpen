@@ -14,16 +14,24 @@ namespace Sharpen.USB
 
 
         private static List Controllers;
+        private static List Devices;
 
         public static void Init()
         {
             Controllers = new List();
+            Devices = new List();
         }
 
         public static void RegisterController(IUSBController controller)
         {
             Controllers.Add(controller);
         }
+
+        public static void RegisterDevice(USBDevice device)
+        {
+            Devices.Add(device);
+        }
+
 
         public static void Poll()
         {
@@ -32,6 +40,14 @@ namespace Sharpen.USB
                 IUSBController controller = (IUSBController)Controllers.Item[i];
 
                 controller?.Poll(controller);
+            }
+
+            for (int i = 0; i < Devices.Count; i++)
+            {
+                USBDevice device = (USBDevice)Devices.Item[i];
+
+                if (device.State == USBDeviceState.CONFIGURED)
+                    device.Driver?.Poll(device);
             }
         }
     }

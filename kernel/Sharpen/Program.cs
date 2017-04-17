@@ -107,8 +107,11 @@ namespace Sharpen
         private static void initUSB()
         {
             USB.USB.Init();
+            USB.USBDrivers.Init();
 
             UHCI.Init();
+
+            USBHIDMouse.Init();
         }
 
         /// <summary>
