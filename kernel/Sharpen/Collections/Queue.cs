@@ -16,13 +16,12 @@ namespace Sharpen.Collections
         private Mutex m_mutex;
 
         public uint Length { get; private set; }
-
+        
         /// <summary>
         /// Queue
         /// </summary>
         public Queue()
         {
-            m_tail = m_head = null;
             m_mutex = new Mutex();
         }
 

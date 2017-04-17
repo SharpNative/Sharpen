@@ -3,7 +3,7 @@
     sealed class Mutex
     {
         private int m_lock;
-
+        
         /// <summary>
         /// Locks the mutex
         /// </summary>
@@ -24,6 +24,15 @@
             {
                 InternalUnlock(ptr);
             }
+        }
+
+        /// <summary>
+        /// Returns if the mutex is locked
+        /// </summary>
+        /// <returns>If the mutex is locked</returns>
+        public bool IsLocked()
+        {
+            return (m_lock == 1);
         }
 
         /// <summary>

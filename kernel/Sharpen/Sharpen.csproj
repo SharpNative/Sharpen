@@ -87,7 +87,7 @@
     <Compile Include="Collections\Queue.cs" />
     <Compile Include="Drivers\Net\E1000.cs" />
     <Compile Include="Drivers\Net\PCNet2.cs" />
-    <Compile Include="Drivers\Net\rtl8139.cs" />
+    <Compile Include="Drivers\Net\RTL8139.cs" />
     <Compile Include="Drivers\Power\AcpiDevice.cs" />
     <Compile Include="Drivers\Power\AcpiHelper.cs" />
     <Compile Include="ErrorCode.cs" />
