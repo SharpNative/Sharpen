@@ -49,9 +49,16 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Arch\PCIClassCodes.cs" />
+    <Compile Include="Drivers\USB\USBHIDMouse.cs" />
+    <Compile Include="Net\TCPSocketDevice.cs" />
+    <Compile Include="Net\TCPFS.cs" />
+    <Compile Include="USB\USB.cs" />
+    <Compile Include="USB\USBController.cs" />
+    <Compile Include="USB\USBDevice.cs" />
     <Compile Include="Arch\X86\X86SignalContext.cs" />
     <Compile Include="Collections\Bucket.cs" />
     <Compile Include="Collections\StringDictionary.cs" />
@@ -81,7 +88,7 @@
     <Compile Include="Collections\Queue.cs" />
     <Compile Include="Drivers\Net\E1000.cs" />
     <Compile Include="Drivers\Net\PCNet2.cs" />
-    <Compile Include="Drivers\Net\rtl8139.cs" />
+    <Compile Include="Drivers\Net\RTL8139.cs" />
     <Compile Include="Drivers\Power\AcpiDevice.cs" />
     <Compile Include="Drivers\Power\AcpiHelper.cs" />
     <Compile Include="ErrorCode.cs" />
@@ -115,7 +122,7 @@
     <Compile Include="Net\NetFS.cs" />
     <Compile Include="Net\NetPacket.cs" />
     <Compile Include="Net\Network.cs" />
-    <Compile Include="Net\NetworkInfoFS.cs" />
+    <Compile Include="FileSystem\NetworkInfoFS.cs" />
     <Compile Include="Net\NetworkSettings.cs" />
     <Compile Include="Net\NetworkTools.cs" />
     <Compile Include="Net\UDP.cs" />
@@ -129,6 +136,9 @@
     <Compile Include="Arch\X86\Regs.cs" />
     <Compile Include="Arch\X86\Syscall.cs" />
     <Compile Include="SymbolTable.cs" />
+    <Compile Include="USB\IUSBDriver.cs" />
+    <Compile Include="USB\USBDrivers.cs" />
+    <Compile Include="USB\USBExtras.cs" />
     <Compile Include="Utilities\Array.cs" />
     <Compile Include="Utilities\Byte.cs" />
     <Compile Include="Drivers\Other\VboxDev.cs" />

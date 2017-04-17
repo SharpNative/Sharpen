@@ -5,7 +5,7 @@ using Sharpen.Utilities;
 
 namespace Sharpen.Net
 {
-    public class UDPFS
+    public class TCPFS
     {
         public enum OPT
         {
@@ -20,7 +20,7 @@ namespace Sharpen.Net
         public static unsafe void Init()
         {
             Device dev = new Device();
-            dev.Name = "udp";
+            dev.Name = "tcp";
             dev.Node = new Node();
             dev.Node.FindDir = findDirImpl;
             dev.Node.ReadDir = readDirImpl;
@@ -52,11 +52,11 @@ namespace Sharpen.Net
             }
             else if (opt == OPT.SOCK)
             {
-                return UDPSocketDevice.Open(name);
+                return TCPSocketDevice.ConnectNode(name);
             }
             else if (opt == OPT.BIND)
             {
-                return UDPBindSocketDevice.Open(name);
+                return TCPSocketDevice.BindNode(name);
             }
 
             return null;

@@ -17,6 +17,7 @@ namespace Sharpen.FileSystem
             device.Node = new Node();
             device.Node.Read = readImpl;
             device.Node.Write = writeImpl;
+            device.Node.Size = 0xFFFFFFFF;
 
             DevFS.RegisterDevice(device);
         }

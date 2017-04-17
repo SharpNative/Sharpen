@@ -27,7 +27,7 @@
         }
 
         // In MHz
-        public const uint PIT_OSCILLATOR = 1193182;
+        public const uint PIT_OSCILLATOR = 1193180;
 
         // PIT channel 0 data port
         // We use channel 0 because it is linked to IRQ 0
@@ -111,7 +111,7 @@
         public static unsafe void Init()
         {
             // Set frequency in one second
-            Frequency = 200;
+            Frequency = 1000;
             CMOS.UpdateTime();
             FullTicks = Time.CalculateEpochTime();
 
@@ -134,15 +134,14 @@
                 // Update ticks
                 SubTicks = 0;
                 FullTicks++;
-
-                // Re-read the CMOS time every hour
+                
                 Time.Seconds++;
                 if (Time.Seconds == 60)
                 {
                     Time.Seconds = 0;
                     Time.Minutes++;
 
-                    // Resync with CMOS
+                    // Re-read the CMOS time every hour
                     if (Time.Minutes == 60)
                     {
                         CMOS.UpdateTime();

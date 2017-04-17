@@ -84,4 +84,10 @@ namespace Sharpen.Net
         RESET,
         CLOSE
     }
+
+    enum TCPPacketSendTypes
+    {
+        SEND,
+        CLOSE
+    }
 }

@@ -29,16 +29,16 @@ namespace proci
                 case 1:
                     return "Very low";
 
-                case 3:
+                case 2:
                     return "Low";
 
-                case 6:
+                case 4:
                     return "Normal";
 
-                case 9:
+                case 6:
                     return "High";
 
-                case 12:
+                case 8:
                     return "Very high";
             }
 

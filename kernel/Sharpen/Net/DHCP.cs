@@ -185,7 +185,7 @@ namespace Sharpen.Net
             switch (type)
             {
                 case DHCP_OFFER:
-                    request(buffer);
+                    request(buffer, ip);
                     break;
 
                 case DHCP_NAK:
@@ -281,7 +281,7 @@ namespace Sharpen.Net
         /// Perform a DHCP request
         /// </summary>
         /// <param name="buffer">Old packet</param>
-        private static unsafe void request(byte* buffer)
+        private static unsafe void request(byte* buffer, byte[] ip)
         {
             DHCPBootstrapHeader* header = (DHCPBootstrapHeader*)buffer;
             NetPacketDesc* packet = NetPacket.Alloc();
@@ -320,6 +320,16 @@ namespace Sharpen.Net
             Heap.Free(Util.ObjectToVoidPtr(hostname));
 
             packet->end += 10;
+
+            buf = packet->buffer + packet->end;
+            *buf++ = OPT_SERVER_ID;
+            *buf++ = 4;
+            for (int i = 0; i < 4; i++)
+                *buf++ = (byte)ip[i];
+
+
+            packet->end += 6;
+
 
             /**
              * Choose what we want to receive
@@ -415,12 +425,26 @@ namespace Sharpen.Net
             packet->end += 9;
 
             /**
-             * Request Empty IP (because we dont want a specific one)
+             * Request hostname
              */
-            *buf++ = OPT_REQ_IP; // OPT_REG_IP
-            *buf++ = 4;
+            string hostname = Network.GetHostName();
+            int hostnameLength = hostname.Length;
+            if (hostnameLength > 0xFF)
+                hostnameLength = 0xFF;
 
-            packet->end += 6;
+            /**
+             * Write our hostname
+             */
+            buf = packet->buffer + packet->end;
+            *buf++ = OPT_HOSTNAME;
+            *buf++ = (byte)(hostnameLength & 0xFF);
+
+            for (int i = 0; i < hostnameLength; i++)
+                *buf++ = (byte)hostname[i];
+
+            Heap.Free(Util.ObjectToVoidPtr(hostname));
+
+            packet->end += 10;
 
 
             /**

@@ -174,9 +174,9 @@ namespace Sharpen.Exec
             Node node = VFS.GetByPath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
-
+            
             VFS.Open(node, flags);
-
+            
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
             return descriptors.AddNode(node);
         }

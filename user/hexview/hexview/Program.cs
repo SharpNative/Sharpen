@@ -22,8 +22,8 @@ namespace type
             // Usage
             if (argc <= 1 || argc > 3)
             {
-                Console.WriteLine("type:  Prints the contents of a file.");
-                Console.WriteLine("Usage: type <filename> [optional: maxlength]");
+                Console.WriteLine("hexview:  Prints the contents of a file.");
+                Console.WriteLine("Usage: hexview <filename> [optional: maxlength]");
                 return;
             }
             
@@ -31,7 +31,7 @@ namespace type
             File file = new File(args[1], File.FileMode.ReadOnly);
             if (!file.IsOpen)
             {
-                Console.WriteLine("type: Could not open the file.");
+                Console.WriteLine("hexview: Could not open the file.");
                 Heap.Free(file);
                 return;
             }
@@ -48,7 +48,7 @@ namespace type
             {
                 read = file.Read(buffer, BufferSize);
                 for (int i = 0; i < read && i < maxLength - totalRead; i++)
-                    Console.Write((char)buffer[i]);
+                    Console.WriteHex((char)buffer[i] & 0xFF);
                 totalRead += read;
                 Console.Flush();
             }

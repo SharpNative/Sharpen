@@ -1,4 +1,4 @@
-﻿ #define ALWAYS_DO_PANIC
+﻿// #define ALWAYS_DO_PANIC
 
 using Sharpen.MultiTasking;
 using Sharpen.Exec;

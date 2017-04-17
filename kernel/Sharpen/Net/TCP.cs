@@ -187,11 +187,6 @@ namespace Sharpen.Net
         /// <param name="size"></param>
         private static unsafe void handleConnection(TCPConnection connection, byte[] sourceIP, byte* buffer, uint size)
         {
-            //Console.Write("\t\t\t(");
-            //Console.WriteHex((int)Util.ObjectToVoidPtr(connection));
-            //Console.Write(") handleConnection: ");
-            //Console.WriteHex((int)connection.State);
-            //Console.WriteLine("");
             switch (connection.State)
             {
                 case TCPConnectionState.CLOSED:

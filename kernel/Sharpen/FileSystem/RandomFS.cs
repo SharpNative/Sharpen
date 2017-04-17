@@ -13,6 +13,7 @@ namespace Sharpen.FileSystem
             device.Name = "random";
             device.Node = new Node();
             device.Node.Read = readImpl;
+            device.Node.Size = 0xFFFFFFFF;
 
             DevFS.RegisterDevice(device);
         }

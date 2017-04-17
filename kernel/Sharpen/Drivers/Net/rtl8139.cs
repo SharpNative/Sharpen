@@ -1,24 +1,14 @@
 ﻿#define RTL_DEBUG
 
 using Sharpen.Arch;
-using Sharpen.Drivers.Char;
 using Sharpen.Mem;
 using Sharpen.Net;
 using Sharpen.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.Net
 {
-    /// <summary>
-    /// NOTE: Redo this driver and fix magic values and documentation
-    /// </summary>
-    class rtl8139
+    unsafe class RTL8139
     {
-
         /**
          * Registers
          */
@@ -51,11 +41,6 @@ namespace Sharpen.Drivers.Net
         private const byte CMD_RST = (1 << 4);
 
         /**
-         * CONFIG1 bits
-         */
-        private const byte CONF1_PMEM = (1 << 0);
-
-        /**
          * Receive configuration register
          */
         private const uint RC_AAP = (1 << 0);
@@ -70,8 +55,24 @@ namespace Sharpen.Drivers.Net
          */
         private const uint TC_DMA_2048 = (7 << 8);
         private const uint TC_DMA_1024 = (6 << 8);
-        private const uint TC_DMA_512  = (5 << 8);
-        private const uint TC_DMA_256  = (4 << 8);
+        private const uint TC_DMA_512 = (5 << 8);
+        private const uint TC_DMA_256 = (4 << 8);
+
+        /**
+         * TX status bits
+         */
+        private const uint TX_HOST_OWNS = 0x2000;
+        private const uint TX_UNDERRUN = 0x4000;
+        private const uint TX_STATUS_OK = 0x8000;
+
+        /**
+         * RX status bits
+         */
+        private const uint RX_STATUS_OK = 0x1;
+        private const uint RX_BAD_ALIGN = 0x2;
+        private const uint RX_CRC_ERROR = 0x4;
+        private const uint RX_TOO_LONG = 0x8;
+        private const uint RX_RUNT = 0x10;
 
         /**
          * Interrupt mask register
@@ -84,13 +85,13 @@ namespace Sharpen.Drivers.Net
         /**
          * Media Status Register
          */
-        private const byte MS_RXPF          = (1 << 0);
-        private const byte MS_TXPF          = (1 << 1);
-        private const byte MS_LINKB         = (1 << 2);
-        private const byte MS_SPEED_10      = (1 << 3);
-        private const byte MS_AUX_STATUS    = (1 << 4);
-        private const byte MS_RXFCE         = (1 << 6);
-        private const byte MS_TXFCE         = (1 << 7);
+        private const byte MS_RXPF = (1 << 0);
+        private const byte MS_TXPF = (1 << 1);
+        private const byte MS_LINKB = (1 << 2);
+        private const byte MS_SPEED_10 = (1 << 3);
+        private const byte MS_AUX_STATUS = (1 << 4);
+        private const byte MS_RXFCE = (1 << 6);
+        private const byte MS_TXFCE = (1 << 7);
 
         /**
          * Interrupt status register
@@ -107,16 +108,17 @@ namespace Sharpen.Drivers.Net
         /**
          * Buffers
          */
-        private static byte[] m_buffer;
-        private static byte[] m_transmit0;
-        private static byte[] m_transmit1;
-        private static byte[] m_transmit2;
-        private static byte[] m_transmit3;
+        private static byte* m_buffer;
+        private static byte*[] m_transmits;
+
+        private static Mutex[] m_mutexes;
+        private static Mutex m_tx_mutex;
 
         private static bool m_linkFail;
         private static bool m_100mbit;
         private static ushort m_irq_num;
-        private static uint m_curBuffer;
+        private static uint m_curTX = 0;
+        private static uint m_curRX = 0;
 
         /// <summary>
         /// Initialization handler
@@ -127,22 +129,16 @@ namespace Sharpen.Drivers.Net
             m_io_base = (ushort)(dev.BAR0.Address);
 
             /**
-             * Check if portio
+             * Check if I/O bar
              */
-            if((dev.BAR0.flags & PCI.BAR_IO) == 0)
+            if ((dev.BAR0.flags & PCI.BAR_IO) == 0)
             {
-                Console.WriteLine("[RTL8139] MMIO not supported!");
-
+                Console.WriteLine("[RTL8139] RTL8139 should be an I/O bar, not a memory bar!");
                 return;
             }
 
             /**
-             * Initalize and allocate buffers
-             */
-            initalizeBuffers();
-
-            /**
-             * Read IRQ number and map
+             * Read IRQ number
              */
             m_irq_num = (ushort)PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
             IRQ.SetHandler(m_irq_num, handler);
@@ -157,7 +153,7 @@ namespace Sharpen.Drivers.Net
             /**
              * Enable device
              */
-            PortIO.Out8((ushort)(m_io_base + CONF1_PMEM), CONF1_PMEM);
+            PortIO.Out8((ushort)(m_io_base + REG_CONF1), 0);
 
             /**
              *  Do a software reset
@@ -165,9 +161,14 @@ namespace Sharpen.Drivers.Net
             softwareReset();
 
             /**
+             * Initalize and allocate buffers
+             */
+            initializeBuffers();
+
+            /**
              * Setup interrupts
              */
-            setInterruptMask(IMR_TOK | IMR_TER);
+            setInterruptMask(IMR_TOK | IMR_TER | IMR_ROK | IMR_RER);
 
             /**
              * Initalize transmit
@@ -185,11 +186,16 @@ namespace Sharpen.Drivers.Net
             readMac();
 
             /**
+             * Update link status
+             */
+            updateLinkStatus();
+
+            /**
              * Enable receiving and transmitting!
              */
             PortIO.Out8((ushort)(m_io_base + REG_CMD), CMD_TE | CMD_RE);
 
-            Console.WriteLine("[RTL8139] Intialized");
+            Console.WriteLine("[RTL8139] Initialized");
 
             /**
              * Register device as the main network device
@@ -200,68 +206,63 @@ namespace Sharpen.Drivers.Net
             netDev.GetMac = GetMac;
 
             Network.Set(netDev);
-
-            for (int i = 0; i < 6; i++)
-            {
-                Console.WriteHex(m_mac[i]);
-                Console.Write(':');
-            }
-            Console.WriteLine("");
-            
         }
 
         /// <summary>
         /// Update link status
         /// </summary>
-        private static unsafe void updateLinkStatus()
+        private static void updateLinkStatus()
         {
             byte b = PortIO.In8((ushort)(m_io_base + REG_MS));
 
-            m_linkFail = (b & MS_LINKB) == 0;
-            m_100mbit = (b & MS_SPEED_10) == 0;
+            m_linkFail = ((b & MS_LINKB) == 0);
+            m_100mbit = ((b & MS_SPEED_10) == 0);
         }
 
         /// <summary>
         /// Set interrupt mask
         /// </summary>
-        private static unsafe void setInterruptMask(ushort value)
+        private static void setInterruptMask(ushort value)
         {
-
             PortIO.Out16((ushort)(m_io_base + REG_IMR), value);
         }
 
         /// <summary>
         /// Transmit initalization
         /// </summary>
-        private static unsafe void txInit()
+        private static void txInit()
         {
-
-            m_curBuffer = 0;
-
             /**
              * Set transmit buffers
              */
-            PortIO.Out32((ushort)(m_io_base + REG_TSAD0), (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_transmit0)));
-            PortIO.Out32((ushort)(m_io_base + REG_TSAD1), (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_transmit1)));
-            PortIO.Out32((ushort)(m_io_base + REG_TSAD2), (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_transmit2)));
-            PortIO.Out32((ushort)(m_io_base + REG_TSAD3), (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_transmit3)));
+            for (int i = 0; i < 4; i++)
+            {
+                PortIO.Out32((ushort)(m_io_base + REG_TSAD0 + (i * 4)), (uint)Paging.GetPhysicalFromVirtual(m_transmits[i]));
+            }
 
             /**
              * Set transmit configuration register
              */
             PortIO.Out32((ushort)(m_io_base + REG_TC), TC_DMA_2048);
+
+            // Mutexes so we can't reuse a TX buffer before it has been processed
+            m_tx_mutex = new Mutex();
+            m_mutexes = new Mutex[4];
+            for (int i = 0; i < 4; i++)
+            {
+                m_mutexes[i] = new Mutex();
+            }
         }
 
         /// <summary>
         /// Receive initalization
         /// </summary>
-        private static unsafe void rxInit()
+        private static void rxInit()
         {
-
             /**
              * Set receive buffer
              */
-            PortIO.Out32((ushort)(m_io_base + REG_BUF), (uint)Paging.GetPhysicalFromVirtual(Util.ObjectToVoidPtr(m_buffer)));
+            PortIO.Out32((ushort)(m_io_base + REG_BUF), (uint)Paging.GetPhysicalFromVirtual(m_buffer));
 
             /**
              * Set receive configuration register
@@ -274,7 +275,6 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         private static void softwareReset()
         {
-
             PortIO.Out8((ushort)(m_io_base + REG_CMD), CMD_RST);
 
             /**
@@ -285,16 +285,16 @@ namespace Sharpen.Drivers.Net
         }
 
         /// <summary>
-        /// Initalize buffers
+        /// Initialize buffers
         /// </summary>
-        private static void initalizeBuffers()
+        private static unsafe void initializeBuffers()
         {
-
-            m_buffer = new byte[8 * 1024];
-            m_transmit0 = new byte[8192 + 16];
-            m_transmit1 = new byte[8192 + 16];
-            m_transmit2 = new byte[8192 + 16];
-            m_transmit3 = new byte[8192 + 16];
+            m_buffer = (byte*)Heap.AlignedAlloc(0x1000, 8192);
+            m_transmits = new byte*[4];
+            for (int i = 0; i < 4; i++)
+            {
+                m_transmits[i] = (byte*)Heap.AlignedAlloc(0x1000, 1536);
+            }
             m_mac = new byte[6];
         }
 
@@ -303,66 +303,41 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         private static void readMac()
         {
-
             for (int i = 0; i < 6; i++)
                 m_mac[i] = PortIO.In8((ushort)(m_io_base + i));
-
         }
 
         /// <summary>
         /// Transmit packet
         /// </summary>
-        /// <param name="bytes"></param>
-        /// <param name="size"></param>
+        /// <param name="bytes">The bytes</param>
+        /// <param name="size">The size of the packet</param>
         public static unsafe void Transmit(byte* bytes, uint size)
         {
             /**
-             * Max packetsize 4096
+             * Max packetsize
              */
-            if (size >= 4096)
+            if (size >= 1500)
                 return;
 
-            /**
-             * Select buffer and descriptor address
-             */
-            byte* bufferPtr = (byte*)Util.ObjectToVoidPtr(m_transmit0);
-            ushort address = (ushort)(m_io_base + REG_TSD0);
+            m_tx_mutex.Lock();
+            uint current = m_curTX;
+            m_curTX++;
+            if (m_curTX == 4)
+                m_curTX = 0;
+            m_tx_mutex.Unlock();
 
-            if(m_curBuffer == 1)
-            {
-                bufferPtr = (byte*)Util.ObjectToVoidPtr(m_transmit1);
-                address = (ushort)(m_io_base + REG_TSD1);
-            }
-            else if(m_curBuffer == 2)
-            {
-                bufferPtr = (byte*)Util.ObjectToVoidPtr(m_transmit2);
-                address = (ushort)(m_io_base + REG_TSD2);
-            }
-            else if(m_curBuffer == 3)
-            {
-                bufferPtr = (byte*)Util.ObjectToVoidPtr(m_transmit3);
-                address = (ushort)(m_io_base + REG_TSD3);
-            }
+            // Acquire mutex on current descriptor
+            m_mutexes[current].Lock();
 
-            /**
-             * Avoid overflow
-             */
-            m_curBuffer++;
-            if (m_curBuffer > 3)
-                m_curBuffer = 0;
-
-            /**
-             * Set data
-             */
+            // Copy data to buffer
+            byte* bufferPtr = m_transmits[current];
             Memory.Memcpy(bufferPtr, bytes, (int)size);
 
-            /**
-             * Write size to chip to fire!
-             */
-            PortIO.Out32(address, size);
+            // Set status on this TX
+            uint status = size & 0x1FFF;
+            PortIO.Out32((ushort)(m_io_base + REG_TSD0 + (current * 4)), status);
         }
-
-
 
         /// <summary>
         /// Get mac address implementation
@@ -381,17 +356,28 @@ namespace Sharpen.Drivers.Net
         private static unsafe void handler(Regs* regsPtr)
         {
             ushort ISR = PortIO.In16((ushort)(m_io_base + REG_ISR));
-            setInterruptMask(0);
 
-#if RTL_DEBUG
-            if((ISR & ISR_TOK) > 0)
+            if ((ISR & ISR_TOK) > 0)
             {
-                Console.WriteLine("[RTL8139] Transmit OK!");
+                // We need to read every TX
+                for (int i = 0; i < 4; i++)
+                {
+                    if (((int)PortIO.In32((ushort)(m_io_base + REG_TSD0 + (i * 4))) & TX_STATUS_OK) > 0)
+                    {
+                        m_mutexes[i].Unlock();
+                    }
+                }
             }
 
+#if RTL_DEBUG
             if ((ISR & ISR_TER) > 0)
             {
-                Console.WriteLine("[RTL8139] Transmit Error!");
+                Console.WriteLine("[RTL8139] Transmit error!");
+            }
+
+            if ((ISR & ISR_RER) > 0)
+            {
+                Console.WriteLine("[RTL8139] Receive error!");
             }
 #endif
 
@@ -399,19 +385,40 @@ namespace Sharpen.Drivers.Net
             {
                 HandlePackets();
             }
-            
+
             PortIO.Out16((ushort)(m_io_base + REG_ISR), ISR);
-            setInterruptMask(IMR_TOK | IMR_TER);
         }
 
+        /// <summary>
+        /// Handles incoming packets
+        /// </summary>
         private static unsafe void HandlePackets()
         {
             /**
              * While buffer is not empty...
              */
-            while((PortIO.In8((ushort)(m_io_base + REG_CMD)) & CMD_BUFE) == 0)
+            while ((PortIO.In8((ushort)(m_io_base + REG_CMD)) & CMD_BUFE) == 0)
             {
+                uint offset = m_curRX % 8192;
 
+                uint status = *(uint*)(m_buffer + offset);
+                uint size = (status >> 16);
+                status &= 0xFFFF;
+
+                // Add packet
+                byte[] buffer = new byte[size];
+                Memory.Memcpy(Util.ObjectToVoidPtr(buffer), &m_buffer[offset + 4], (int)size);
+                Network.QueueReceivePacket(buffer, (int)size);
+                Heap.Free(buffer);
+
+                // Next packet and align
+                m_curRX += 4 + size;
+                m_curRX = (uint)((m_curRX + 3) & ~3);
+                if (m_curRX > 8192)
+                    m_curRX -= 8192;
+
+                // Update receive pointer
+                PortIO.Out16((ushort)(m_io_base + REG_CAPR), (ushort)(m_curRX - 16));
             }
         }
 

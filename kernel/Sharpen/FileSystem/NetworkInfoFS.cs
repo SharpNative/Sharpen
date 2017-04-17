@@ -2,9 +2,10 @@
 using Sharpen.FileSystem.Cookie;
 using Sharpen.Lib;
 using Sharpen.Mem;
+using Sharpen.Net;
 using Sharpen.Utilities;
 
-namespace Sharpen.Net
+namespace Sharpen.FileSystem
 {
     public class NetworkInfoFS
     {
