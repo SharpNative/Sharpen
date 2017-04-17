@@ -1,4 +1,4 @@
-﻿#define __UHCI_DIAG
+﻿//#define __UHCI_DIAG
 using Sharpen.Arch;
 using Sharpen.Mem;
 using Sharpen.USB;
@@ -6,6 +6,7 @@ using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,8 +23,9 @@ namespace Sharpen.Drivers.USB
         public bool Allocated { get; set; }
         public UHCITransmitDescriptor* Previous { get; set; }
         public UHCITransmitDescriptor* Next { get; set; }
+        public fixed byte padding[2];
     }
-
+    
     public unsafe struct UHCIQueueHead
     {
         public int Head;
@@ -36,6 +38,7 @@ namespace Sharpen.Drivers.USB
 
         public UHCIQueueHead *Previous { get; set; }
         public UHCIQueueHead *Next { get; set; }
+        public fixed byte padding[20];
     }
 
     public unsafe class UHCIController : IUSBController
@@ -167,7 +170,6 @@ namespace Sharpen.Drivers.USB
             uhciDev.FrameList = (int*)Heap.AlignedAlloc(0x1000, sizeof(int) * 1024);
             uhciDev.QueueHeadPool = (UHCIQueueHead *)Heap.AlignedAlloc(0x1000, sizeof(UHCIQueueHead) * MAX_HEADS);
             uhciDev.TransmitPool = (UHCITransmitDescriptor*)Heap.AlignedAlloc(0x1000, sizeof(UHCITransmitDescriptor) * MAX_TRANSMIT);
-
             
 
             UHCIQueueHead* head = GetQueueHead(uhciDev);
@@ -175,13 +177,11 @@ namespace Sharpen.Drivers.USB
             head->Element = TD_POINTER_TERMINATE;
 
             uhciDev.FirstHead = head;
-
+            
 
             for (int i = 0; i < 1024; i++)
                 uhciDev.FrameList[i] = TD_POINTER_QH | (int)Paging.GetPhysicalFromVirtual(head);
-
-            Console.WriteHex(uhciDev.FrameList[0]);
-            Console.WriteLine("");
+            
 
             PortIO.Out16((ushort)(uhciDev.IOBase + REG_LEGSUP), 0x8f00);
 
@@ -347,7 +347,8 @@ namespace Sharpen.Drivers.USB
             a->Type = request.Type;
             a->Value = request.Value;
 
-            InitTransmit(td, prev, dev.Speed, 0, 0, 0, TRANS_PACKET_SETUP, (uint)sizeof(USBDeviceRequest), (byte *)a);
+            InitTransmit(td, prev, dev.Speed, dev.Address, 0, 0, TRANS_PACKET_SETUP, (uint)sizeof(USBDeviceRequest), (byte *)a);
+            prev = td;
 
             uint packetType = ((request.Type & USBDevice.TYPE_DEVICETOHOST) > 0) ? TRANS_PACKET_IN : TRANS_PACKET_OUT;
 
@@ -370,11 +371,13 @@ namespace Sharpen.Drivers.USB
                     packetSize = dev.MaxPacketSize;
 
                 remaining -= packetSize;
-                offset += packetSize;
                 
                 toggle ^= 1;
 
-                InitTransmit(td, prev, dev.Speed, 0, 0, toggle, packetType, packetSize, ptr + offset);
+                InitTransmit(td, prev, dev.Speed, dev.Address, 0, toggle, packetType, packetSize, ptr + offset);
+                prev = td;
+
+                offset += packetSize;
             }
             
             td = GetTransmit(controller);
@@ -384,7 +387,7 @@ namespace Sharpen.Drivers.USB
             packetType = ((request.Type & USBDevice.TYPE_DEVICETOHOST) > 0) ? TRANS_PACKET_OUT : TRANS_PACKET_IN;
 
             toggle = 1;
-            InitTransmit(td, prev, dev.Speed, 0, 0, toggle, packetType, 0, null);
+            InitTransmit(td, prev, dev.Speed, dev.Address, 0, toggle, packetType, 0, null);
 
             
             UHCIQueueHead *qh = GetQueueHead(controller);
@@ -393,12 +396,8 @@ namespace Sharpen.Drivers.USB
             qh->Transfer = transfer;
             qh->Transmit = head;
 
-
             InsertHead(controller, qh);
-            //WaitForQueueHead(controller, qh);
-
-
-
+            WaitForQueueHead(controller, qh);
         }
 
         public static void WaitForQueueHead(UHCIController controller, UHCIQueueHead *head)
@@ -445,7 +444,7 @@ namespace Sharpen.Drivers.USB
             USBTransfer *transfer = head->Transfer;
 
             UHCITransmitDescriptor* td = head->Transmit;
-
+            
             if((head->Element & ~0xF) == 0)
             {
                 transfer->Executed = true;
@@ -475,6 +474,9 @@ namespace Sharpen.Drivers.USB
                 if ((td->Control & TD_CONTROL_CRC) > 0)
                 {
                     Console.WriteLine("CRC Timeout");
+
+                    transfer->Executed = true;
+                    transfer->Success = false;
                 }
 
 
@@ -483,10 +485,7 @@ namespace Sharpen.Drivers.USB
                     Console.WriteLine("Bitstuff error");
                 }
             }
-
-            //Console.WriteHex(head->Element & ~0xF);
-            //Console.WriteLine("");
-
+            
             if (transfer->Executed)
             {
                 head->Transfer = null;
@@ -511,13 +510,6 @@ namespace Sharpen.Drivers.USB
                     FreeTransmit(controller, tdE);
                     tdE = next;
                 }
-
-                /**
-                 * Free head for use
-                 */
-                FreeHead(controller, head);
-
-                Console.WriteLine("YAY!");
             }
         }
 
@@ -535,19 +527,13 @@ namespace Sharpen.Drivers.USB
                     end = end->Next;
                 else
                     break;
-
             
+
             end->Next = head;
             end->Head = (int)Paging.GetPhysicalFromVirtual(head) | TD_POINTER_QH;
             end->Element = TD_POINTER_TERMINATE;
             head->Head = TD_POINTER_TERMINATE;
-
-            Console.WriteHex((long)end->Head & ~0xF);
-            Console.WriteLine("");
-            Console.WriteHex((long)head->Head & ~0xF);
-            Console.WriteLine("");
-            Console.WriteHex((long)head->Element);
-            Console.WriteLine("");
+            head->Previous = end;
         }
 
         public static void RemoveHead(UHCIController controller, UHCIQueueHead* head)
@@ -561,7 +547,7 @@ namespace Sharpen.Drivers.USB
                 }
                 else
                 {
-                    head->Previous->Head = 0;
+                    head->Previous->Head = TD_POINTER_TERMINATE;
                     head->Previous->Next = null;
                 }
             }
@@ -629,11 +615,10 @@ namespace Sharpen.Drivers.USB
             td->Token = (len << TD_TOKEN_MAXLEN) |
                 (toogle << TD_TOKEN_D_SHIFT) |
                 (endp << TD_TOKEN_ENDP) | 
-                (0 << TD_TOKEN_ADDR) |
+                (address << TD_TOKEN_ADDR) |
                 type;
 
             td->BufferPointer = (int)Paging.GetPhysicalFromVirtual(data);
-
         }
 
         /// <summary>
