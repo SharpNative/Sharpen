@@ -11,7 +11,7 @@ namespace Sharpen.Drivers.Net
     /// </summary>
     class PCNet2
     {
-        private const ushort BUF_SIZE = 256;
+        private const ushort BUF_COUNT = 256;
         private const ushort REG_APROM = 0x00;
         private const ushort REG_RDP = 0x10;
         private const ushort REG_RAP = 0x14;
@@ -192,7 +192,7 @@ namespace Sharpen.Drivers.Net
             m_tx_descriptors[m_currentTransDesc].status = 0xA300;
 
             m_currentTransDesc++;
-            if (m_currentTransDesc == BUF_SIZE)
+            if (m_currentTransDesc == BUF_COUNT)
                 m_currentTransDesc = 0;
         }
         
@@ -260,7 +260,7 @@ namespace Sharpen.Drivers.Net
                     m_rx_descriptors[m_currentRescDesc].rpc = 0;
 
                     m_currentRescDesc++;
-                    if (m_currentRescDesc == BUF_SIZE)
+                    if (m_currentRescDesc == BUF_COUNT)
                         m_currentRescDesc = 0;
                 }
             }
@@ -300,15 +300,15 @@ namespace Sharpen.Drivers.Net
 
         private static unsafe void InitBuffers()
         {
-            m_rx_descriptors = new REC_DESCRIPTOR[BUF_SIZE];
-            m_tx_descriptors = new TRANS_DESCRIPTOR[BUF_SIZE];
-            m_rx_buffer = new byte[2048 * BUF_SIZE];
-            m_tx_buffer = new byte[2048 * BUF_SIZE];
+            m_rx_descriptors = new REC_DESCRIPTOR[BUF_COUNT];
+            m_tx_descriptors = new TRANS_DESCRIPTOR[BUF_COUNT];
+            m_rx_buffer = new byte[2048 * BUF_COUNT];
+            m_tx_buffer = new byte[2048 * BUF_COUNT];
 
             int rx_buf_adr = (int)Util.ObjectToVoidPtr(m_rx_buffer);
             int tx_buf_adr = (int)Util.ObjectToVoidPtr(m_tx_buffer);
 
-            for (int i = 0; i < BUF_SIZE; i++)
+            for (int i = 0; i < BUF_COUNT; i++)
             {
                 m_rx_descriptors[i].address = (uint)Paging.GetPhysicalFromVirtual((void *)(rx_buf_adr + i * 2048));
                 m_rx_descriptors[i].buf_len = 0xF000 | (-2048 & 0xFFF);
