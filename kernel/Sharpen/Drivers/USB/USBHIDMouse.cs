@@ -43,7 +43,9 @@ namespace Sharpen.Drivers.USB
                 desc->SubClass == 0x01 &&
                 desc->Protocol == 0x02))
                 return null;
-            
+
+            device.Classifier = USBDeviceClassifier.FUNCTION;
+
             mTransfer = (USBTransfer*)Heap.Alloc(sizeof(USBTransfer));
             mLocation = (MouseLocation*)Heap.Alloc(sizeof(MouseLocation));
 

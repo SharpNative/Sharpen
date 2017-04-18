@@ -73,6 +73,8 @@ namespace Sharpen.USB
 
         public IUSBDriver Driver { get; set; }
 
+        public USBDeviceClassifier Classifier { get; set; }
+
         /// <summary>
         /// Control device state
         /// </summary>

@@ -22,6 +22,12 @@ namespace Sharpen.USB
         SUSPENDED
     }
 
+    public enum USBDeviceClassifier
+    {
+        HUB,
+        FUNCTION
+    }
+
     public enum USBDeviceSpeed
     {
         LOW_SPEED,
