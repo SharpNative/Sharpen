@@ -17,41 +17,41 @@ namespace Sharpen.USB
          */
         public const byte TYPE_HOSTTODEVICE = 0;
         public const byte TYPE_DEVICETOHOST = 0x80;
-        const byte TYPE_STANDARD = 0;
-        const byte TYPE_CLASS = 0x20;
-        const byte TYPE_VENDOR = 0x40;
+        public const byte TYPE_STANDARD = 0;
+        public const byte TYPE_CLASS = 0x20;
+        public const byte TYPE_VENDOR = 0x40;
 
-        const byte TYPE_DEV = 0x0;
-        const byte TYPE_INTF = 0x01;
-        const byte TYPE_ENDP = 0x02;
-        const byte TYPE_OTHER = 0x03;
+        public const byte TYPE_DEV = 0x0;
+        public const byte TYPE_INTF = 0x01;
+        public const byte TYPE_ENDP = 0x02;
+        public const byte TYPE_OTHER = 0x03;
 
         /**
          * Requests
          */
-        const byte REQ_GET_STATUS = 0x0;
-        const byte REQ_CLEAR_FEATURE = 0x1;
-        const byte REQ_SET_FEATURE = 0x3;
-        const byte REQ_SET_ADDR = 0x05;
-        const byte REQ_GET_DESCRIPTOR = 0x06;
-        const byte REQ_SET_DESCRIPTOR = 0x07;
-        const byte REQ_GET_CONFIGURATION = 0x08;
-        const byte REQ_SET_CONFIGURATION = 0x09;
-        const byte REQ_GET_INTERFACE = 0x0A;
-        const byte REQ_SET_INTERFACE = 0x0B;
-        const byte REQ_SYNC_FRAME = 0x0C;
+        public const byte REQ_GET_STATUS = 0x0;
+        public const byte REQ_CLEAR_FEATURE = 0x1;
+        public const byte REQ_SET_FEATURE = 0x3;
+        public const byte REQ_SET_ADDR = 0x05;
+        public const byte REQ_GET_DESCRIPTOR = 0x06;
+        public const byte REQ_SET_DESCRIPTOR = 0x07;
+        public const byte REQ_GET_CONFIGURATION = 0x08;
+        public const byte REQ_SET_CONFIGURATION = 0x09;
+        public const byte REQ_GET_INTERFACE = 0x0A;
+        public const byte REQ_SET_INTERFACE = 0x0B;
+        public const byte REQ_SYNC_FRAME = 0x0C;
 
         /**
          * Descriptors
          */
-        const byte DESC_DEVICE = 0x01;
-        const byte DESC_CONFIGURATION = 0x02;
-        const byte DESC_STRING = 0x03;
-        const byte DESC_INTERFACE = 0x04;
-        const byte DESC_ENDPOINT = 0x05;
-        const byte DESC_DEVICE_QUALIFIER = 0x06;
-        const byte DESC_OTHER_SPEED_CONFIGURATION = 0x07;
-        const byte DESC_INTERFACE_POWER = 0x08;
+        public const byte DESC_DEVICE = 0x01;
+        public const byte DESC_CONFIGURATION = 0x02;
+        public const byte DESC_STRING = 0x03;
+        public const byte DESC_INTERFACE = 0x04;
+        public const byte DESC_ENDPOINT = 0x05;
+        public const byte DESC_DEVICE_QUALIFIER = 0x06;
+        public const byte DESC_OTHER_SPEED_CONFIGURATION = 0x07;
+        public const byte DESC_INTERFACE_POWER = 0x08;
 
         public USBDevice Parent { get; set; }
 

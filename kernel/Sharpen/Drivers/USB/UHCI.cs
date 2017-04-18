@@ -744,11 +744,7 @@ namespace Sharpen.Drivers.USB
                     continue;
 
                 bool lowSpeed = ((status & PORTSC_LOW_SPEED) > 0);
-
-                /**
-                 * TODO: Handle connected device!
-                 */
-
+                
                 USBDevice dev = new USBDevice();
                 dev.Controller = uhciDev;
                 dev.Control = Control;

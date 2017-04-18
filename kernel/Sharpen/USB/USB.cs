@@ -42,7 +42,7 @@ namespace Sharpen.USB
 
         public static void Poll()
         {
-
+            
             for (int i = 0; i < Controllers.Count; i++)
             {
                 IUSBController controller = (IUSBController)Controllers.Item[i];
