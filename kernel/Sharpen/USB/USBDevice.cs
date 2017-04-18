@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Mem;
+using Sharpen.MultiTasking;
 using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
@@ -170,6 +171,7 @@ namespace Sharpen.USB
         /// <returns>Success?</returns>
         public unsafe bool Init()
         {
+            Console.WriteLine("JHAP");
             byte* data = (byte *)Heap.Alloc(sizeof(USBDeviceDescriptor));
             for (int i = 0; i < sizeof(USBDeviceDescriptor);i++)
                 data[i] = 0x1;
@@ -195,7 +197,7 @@ namespace Sharpen.USB
 
             Address = tempAdr;
 
-            Sleep(20);
+            //Tasking.CurrentTask.CurrentThread.Sleep(0, 20);
 
             /**
              * Get descriptor
@@ -277,7 +279,7 @@ namespace Sharpen.USB
 
                 IUSBDriver test = USBDrivers.LoadDriver(this);
 
-                if(test == null)
+                if (test == null)
                 {
                     Console.WriteLine("No driver");
 

@@ -1,6 +1,7 @@
 ﻿//#define __UHCI_DIAG
 using Sharpen.Arch;
 using Sharpen.Mem;
+using Sharpen.MultiTasking;
 using Sharpen.USB;
 using Sharpen.Utilities;
 using System;
@@ -229,7 +230,7 @@ namespace Sharpen.Drivers.USB
             /**
              * Wait for 60 ms
              */
-            Sleep(60);
+            Tasking.CurrentTask.CurrentThread.Sleep(0, 60);
 
             /**
              * Unset reset bit
@@ -241,7 +242,7 @@ namespace Sharpen.Drivers.USB
              */
             for(int i =0; i < 15; i++)
             {
-                Sleep(10);
+                Tasking.CurrentTask.CurrentThread.Sleep(0, 60);
 
                 ushort status = PortIO.In16((ushort)(uhciDev.IOBase + port));
 
@@ -747,6 +748,7 @@ namespace Sharpen.Drivers.USB
                 USBDevice dev = new USBDevice();
                 dev.Controller = uhciDev;
                 dev.Control = Control;
+                dev.PrepareInterrupt = PrepareInterrupt;
 
                 /**
                  * Root hub

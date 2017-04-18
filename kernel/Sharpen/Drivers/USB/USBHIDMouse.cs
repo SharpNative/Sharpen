@@ -59,6 +59,7 @@ namespace Sharpen.Drivers.USB
             mTransfer->Executed = false;
             mTransfer->Success = false;
             
+
             device.PrepareInterrupt(device, mTransfer);
 
 
@@ -71,10 +72,9 @@ namespace Sharpen.Drivers.USB
         /// <param name="device"></param>
         public void Poll(USBDevice device)
         {
-            Console.WriteLine("YES");
             if (mTransfer->Executed)
             {
-                if(mTransfer->Success)
+                if (mTransfer->Success)
                 {
                     Console.WriteHex(mLocation->X);
                     Console.Write(":");
@@ -88,8 +88,6 @@ namespace Sharpen.Drivers.USB
                 mTransfer->Executed = false;
                 device.PrepareInterrupt(device, mTransfer);
             }
-
-            Console.WriteLine("YES");
         }
     }
 }
