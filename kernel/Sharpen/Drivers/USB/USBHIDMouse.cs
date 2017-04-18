@@ -14,8 +14,8 @@ namespace Sharpen.Drivers.USB
     public struct MouseLocation
     {
         public byte Buttons;
-        public byte X;
-        public byte Y;
+        public byte MovementX;
+        public byte MovementY;
     }
 
 
@@ -55,13 +55,13 @@ namespace Sharpen.Drivers.USB
              * Prepare poll transfer
              */
             mTransfer->Data = (byte *)mLocation;
-            mTransfer->Length = 4;
+            mTransfer->Length = 3;
             mTransfer->Executed = false;
             mTransfer->Success = false;
             
 
             device.PrepareInterrupt(device, mTransfer);
-
+            
 
             return this;
         }
@@ -76,11 +76,11 @@ namespace Sharpen.Drivers.USB
             {
                 if (mTransfer->Success)
                 {
-                    Console.WriteHex(mLocation->X);
-                    Console.Write(":");
-                    Console.WriteHex(mLocation->Y);
-                    Console.WriteLine("");
+                    /**
+                     * Todo: Handle mouse events here!
+                     */
                 }
+
 
                 /**
                  * And again

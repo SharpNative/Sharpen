@@ -60,6 +60,12 @@ namespace Sharpen.Drivers.USB
 
         private USBHubDescriptor *descriptor;
 
+        public static void Init()
+        {
+            USBHub hub = new USBHub();
+            USBDrivers.RegisterDriver(hub);
+        }
+
         public void Close(USBDevice device)
         {
 

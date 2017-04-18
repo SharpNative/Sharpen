@@ -230,7 +230,7 @@ namespace Sharpen.Drivers.USB
             /**
              * Wait for 60 ms
              */
-            Tasking.CurrentTask.CurrentThread.Sleep(0, 60);
+            //Tasking.CurrentTask.CurrentThread.Sleep(0, 60);
 
             /**
              * Unset reset bit
@@ -242,7 +242,7 @@ namespace Sharpen.Drivers.USB
              */
             for(int i =0; i < 15; i++)
             {
-                Tasking.CurrentTask.CurrentThread.Sleep(0, 60);
+                //Tasking.CurrentTask.CurrentThread.Sleep(0, 60);
 
                 ushort status = PortIO.In16((ushort)(uhciDev.IOBase + port));
 
@@ -480,6 +480,7 @@ namespace Sharpen.Drivers.USB
         public static void ProcessHead(UHCIController controller, UHCIQueueHead *head)
         {
             USBTransfer *transfer = head->Transfer;
+            
 
             UHCITransmitDescriptor* td = head->Transmit;
             
@@ -492,7 +493,7 @@ namespace Sharpen.Drivers.USB
             {
                 if((td->Control & TD_CONTROL_NAK) > 0)
                 {
-                    Console.WriteLine("NAK");
+
                 }
 
                 if((td->Control & TD_CONTROL_STALLED) > 0)
@@ -527,7 +528,7 @@ namespace Sharpen.Drivers.USB
             if (transfer->Executed)
             {
                 head->Transfer = null;
-
+                
                 /**
                  * We need to toggle endpoint state here
                  */
@@ -715,7 +716,12 @@ namespace Sharpen.Drivers.USB
 
             for (int i = 0; i < MAX_HEADS; i++)
                 if (uhciController.QueueHeadPool[i].Transfer != null)
-                    ProcessHead(uhciController, (UHCIQueueHead *)((int)uhciController.QueueHeadPool) + (sizeof(UHCIQueueHead) * i));
+                {
+                    int address = (int)uhciController.QueueHeadPool;
+                    address += sizeof(UHCIQueueHead) * i;
+
+                    ProcessHead(uhciController, (UHCIQueueHead*)(address));
+                }
         }
 
         /// <summary>

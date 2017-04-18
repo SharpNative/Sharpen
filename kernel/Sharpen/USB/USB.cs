@@ -51,13 +51,15 @@ namespace Sharpen.USB
                     //tada
                     controller?.Poll(controller);
                 }
-                
+
                 for (int i = 0; i < Devices.Count; i++)
                 {
                     USBDevice device = (USBDevice)Devices.Item[i];
                     
                     if (device.State == USBDeviceState.CONFIGURED)
+                    {
                         device.Driver?.Poll(device);
+                    }
                 }
                 
                 MultiTasking.Tasking.CurrentTask.CurrentThread.Sleep(0, 100);

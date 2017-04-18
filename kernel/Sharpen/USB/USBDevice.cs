@@ -171,7 +171,6 @@ namespace Sharpen.USB
         /// <returns>Success?</returns>
         public unsafe bool Init()
         {
-            Console.WriteLine("JHAP");
             byte* data = (byte *)Heap.Alloc(sizeof(USBDeviceDescriptor));
             for (int i = 0; i < sizeof(USBDeviceDescriptor);i++)
                 data[i] = 0x1;
@@ -272,24 +271,24 @@ namespace Sharpen.USB
                 /**
                  * Init driver here
                  */
-                Console.WriteLine("[USB] Device configured!");
-                Console.WriteHex(InterfaceDesc->Class);
-                Console.WriteLine("");
                 State = USBDeviceState.CONFIGURED;
-
-                IUSBDriver test = USBDrivers.LoadDriver(this);
-
-                if (test == null)
+                
+                IUSBDriver result = USBDrivers.LoadDriver(this);
+                
+                if (result == null)
                 {
-                    Console.WriteLine("No driver");
+                    Console.Write("[USB] No driver found for device with name ");
+                    Console.WriteLine(Product);
 
                     return false;
                 }
 
+                Console.Write("[USB] Device configured with name ");
+                Console.WriteLine(Product);
 
                 USB.RegisterDevice(this);
 
-                Driver = test;
+                Driver = result;
             }
 
             return true;
