@@ -54,6 +54,7 @@
   <ItemGroup>
     <Compile Include="Arch\PCIClassCodes.cs" />
     <Compile Include="Drivers\USB\USBHIDMouse.cs" />
+    <Compile Include="Drivers\USB\USBHub.cs" />
     <Compile Include="Net\TCPSocketDevice.cs" />
     <Compile Include="Net\TCPFS.cs" />
     <Compile Include="USB\USB.cs" />
