@@ -279,8 +279,13 @@ namespace Sharpen.USB
 
                 if(test == null)
                 {
-                    Console.WriteLine("test");
+                    Console.WriteLine("No driver");
+
+                    return false;
                 }
+
+
+                USB.RegisterDevice(this);
 
                 Driver = test;
             }

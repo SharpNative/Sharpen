@@ -12,7 +12,5 @@ namespace Sharpen.USB
         USBControllerType Type { get; }
 
         USBHelpers.ControllerPoll Poll { get; }
-
-        USBHelpers.DeviceControl Prepare { get; }
     }
 }

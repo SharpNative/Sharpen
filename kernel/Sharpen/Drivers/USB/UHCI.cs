@@ -43,9 +43,10 @@ namespace Sharpen.Drivers.USB
 
     public unsafe class UHCIController : IUSBController
     {
-        public USBHelpers.ControllerPoll Poll { get; set; }
 
         public USBControllerType Type { get { return USBControllerType.UHCI; } }
+
+        public USBHelpers.ControllerPoll Poll { get; set; }
 
         public ushort IOBase { get; set; }
 
@@ -56,8 +57,6 @@ namespace Sharpen.Drivers.USB
         public UHCITransmitDescriptor *TransmitPool { get; set; }
 
         public UHCIQueueHead * FirstHead { get; set; }
-
-        public USBHelpers.DeviceControl Prepare { get; set; }
     }
 
 
@@ -164,6 +163,7 @@ namespace Sharpen.Drivers.USB
 
             UHCIController uhciDev = new UHCIController();
             uhciDev.IOBase = (ushort)dev.BAR4.Address;
+            uhciDev.Poll = Poll;
             
 
             Console.Write("[UHCI] Initalize at 0x");
@@ -213,7 +213,6 @@ namespace Sharpen.Drivers.USB
             Sharpen.USB.USB.RegisterController(uhciDev);
 
             probe(uhciDev);
-            uhciDev.Poll = Poll;
         }
 
         /// <summary>
@@ -748,7 +747,6 @@ namespace Sharpen.Drivers.USB
                 USBDevice dev = new USBDevice();
                 dev.Controller = uhciDev;
                 dev.Control = Control;
-                dev.PrepareInterrupt = PrepareInterrupt;
 
                 /**
                  * Root hub
@@ -758,7 +756,8 @@ namespace Sharpen.Drivers.USB
                 dev.State = USBDeviceState.ATTACHED;
                 dev.Speed = (lowSpeed) ? USBDeviceSpeed.LOW_SPEED : USBDeviceSpeed.HIGH_SPEED;
 
-                dev.Init();
+                if (!dev.Init())
+                    Heap.Free(dev);
             }
         }
     }

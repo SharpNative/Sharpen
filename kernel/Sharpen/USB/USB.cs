@@ -40,25 +40,28 @@ namespace Sharpen.USB
         }
 
 
-        public static void Poll()
+        public static unsafe void Poll()
         {
-            
-            for (int i = 0; i < Controllers.Count; i++)
+            while(true)
             {
-                IUSBController controller = (IUSBController)Controllers.Item[i];
-
-                controller?.Poll(controller);
+                for (int i = 0; i < Controllers.Count; i++)
+                {
+                    IUSBController controller = (IUSBController)Controllers.Item[i];
+                    
+                    //tada
+                    controller?.Poll(controller);
+                }
+                
+                for (int i = 0; i < Devices.Count; i++)
+                {
+                    USBDevice device = (USBDevice)Devices.Item[i];
+                    
+                    if (device.State == USBDeviceState.CONFIGURED)
+                        device.Driver?.Poll(device);
+                }
+                
+                MultiTasking.Tasking.CurrentTask.CurrentThread.Sleep(0, 100);
             }
-
-            for (int i = 0; i < Devices.Count; i++)
-            {
-                USBDevice device = (USBDevice)Devices.Item[i];
-
-                if (device.State == USBDeviceState.CONFIGURED)
-                    device.Driver?.Poll(device);
-            }
-
-            MultiTasking.Tasking.CurrentTask.CurrentThread.Sleep(0, 100);
         }
     }
 }

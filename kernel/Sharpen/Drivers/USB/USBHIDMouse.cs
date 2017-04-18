@@ -71,7 +71,8 @@ namespace Sharpen.Drivers.USB
         /// <param name="device"></param>
         public void Poll(USBDevice device)
         {
-            if(mTransfer->Executed)
+            Console.WriteLine("YES");
+            if (mTransfer->Executed)
             {
                 if(mTransfer->Success)
                 {

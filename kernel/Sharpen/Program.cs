@@ -48,9 +48,10 @@ namespace Sharpen
             initPCIDevices();
             Keyboard.Init();
             
-            initUSB();
             
             Tasking.Init();
+
+            initUSB();
 
             initStorage();
             initNetworking();
@@ -109,9 +110,11 @@ namespace Sharpen
             USB.USB.Init();
             USB.USBDrivers.Init();
 
-            UHCI.Init();
 
             USBHIDMouse.Init();
+
+
+            UHCI.Init();
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using Sharpen.Collections;
+using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,9 +39,9 @@ namespace Sharpen.USB
             for(int i = 0; i < mDriverList.Count; i++)
             {
                 IUSBDriver driver = (IUSBDriver)mDriverList.Item[i];
-
+                
                 IUSBDriver loadedDriver = driver.Load(device);
-
+                
                 if (driver != null)
                     return loadedDriver;
             }
