@@ -57,9 +57,6 @@
     <Compile Include="Drivers\USB\USBHub.cs" />
     <Compile Include="Net\TCPSocketDevice.cs" />
     <Compile Include="Net\TCPFS.cs" />
-    <Compile Include="USB\USB.cs" />
-    <Compile Include="USB\USBController.cs" />
-    <Compile Include="USB\USBDevice.cs" />
     <Compile Include="Arch\X86\X86SignalContext.cs" />
     <Compile Include="Collections\Bucket.cs" />
     <Compile Include="Collections\StringDictionary.cs" />
@@ -140,6 +137,9 @@
     <Compile Include="USB\IUSBDriver.cs" />
     <Compile Include="USB\USBDrivers.cs" />
     <Compile Include="USB\USBExtras.cs" />
+    <Compile Include="USB\USB.cs" />
+    <Compile Include="USB\USBController.cs" />
+    <Compile Include="USB\USBDevice.cs" />
     <Compile Include="Utilities\Array.cs" />
     <Compile Include="Utilities\Byte.cs" />
     <Compile Include="Drivers\Other\VboxDev.cs" />
