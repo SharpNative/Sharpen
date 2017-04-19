@@ -98,12 +98,12 @@ namespace Sharpen.MultiTasking
         {
             m_sleepUntilFullTicks = fullTicks;
             m_sleepUntilSubTicks = subTicks;
-
+            
             /**
              * If we're the only thread that and we are sleeping, we have nowhere to switch to
              * when we have a taskswitch that happens.
              * This case can only happen if we're the KernelTask with all threads sleeping but this one, so we just wait here
-            **/
+             */
             if (OwningTask == Tasking.KernelTask && OwningTask.SleepingThreadCount == OwningTask.ThreadCount - 1)
             {
                 while (!Awake())
@@ -116,7 +116,13 @@ namespace Sharpen.MultiTasking
             {
                 AddFlag(ThreadFlags.SLEEPING);
                 OwningTask.SleepingThreadCount++;
+
+                // Will return when waiting is done
                 Tasking.Yield();
+
+                // Returned from waiting
+                OwningTask.SleepingThreadCount--;
+                RemoveFlag(ThreadFlags.SLEEPING);
             }
 
             return 0;
@@ -157,16 +163,12 @@ namespace Sharpen.MultiTasking
             // If the full ticks are greater than the fullticks we needed to sleep until, we know we're done sleeping
             if (PIT.FullTicks > m_sleepUntilFullTicks)
             {
-                RemoveFlag(ThreadFlags.SLEEPING);
-                OwningTask.SleepingThreadCount--;
                 return true;
             }
 
             // If the full ticks are the same, and the subticks are greater, we know we're done sleeping
             if (PIT.FullTicks == m_sleepUntilFullTicks && PIT.SubTicks > m_sleepUntilSubTicks)
             {
-                RemoveFlag(ThreadFlags.SLEEPING);
-                OwningTask.SleepingThreadCount--;
                 return true;
             }
 
