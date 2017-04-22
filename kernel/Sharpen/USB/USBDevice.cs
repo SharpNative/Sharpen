@@ -158,13 +158,6 @@ namespace Sharpen.USB
             return transfer->Success;
         }
 
-
-        private static void Sleep(int cnt)
-        {
-            for (int i = 0; i < cnt; i++)
-                PortIO.In32(0x80);
-        }
-
         /// <summary>
         /// Initalize device
         /// </summary>
@@ -196,7 +189,7 @@ namespace Sharpen.USB
 
             Address = tempAdr;
 
-            //Tasking.CurrentTask.CurrentThread.Sleep(0, 20);
+            Tasking.CurrentTask.CurrentThread.Sleep(0, 20);
 
             /**
              * Get descriptor
@@ -204,6 +197,7 @@ namespace Sharpen.USB
 
             if (!Request(TYPE_DEVICETOHOST, REQ_GET_DESCRIPTOR, (DESC_DEVICE << 8) | 0, 0, (ushort)sizeof(USBDeviceDescriptor), data))
                 return false;
+            
 
             /**
              * Load languages and set default
@@ -231,19 +225,20 @@ namespace Sharpen.USB
                 if (!Request(TYPE_DEVICETOHOST, REQ_GET_DESCRIPTOR, (ushort)((DESC_CONFIGURATION << 8) | i), 0, 4, (byte*)Util.ObjectToVoidPtr(buffer)))
                     continue;
 
+
                 if (!Request(TYPE_DEVICETOHOST, REQ_GET_DESCRIPTOR, (ushort)((DESC_CONFIGURATION << 8) | i), 0, descBuf->TotalLength, (byte*)Util.ObjectToVoidPtr(buffer)))
                     continue;
                 
                 // Prevent overflow
                 if (descBuf->TotalLength > 512)
                     continue;
-
+                
                 ConfigValue = descBuf->ConfigurationValue;
 
                 int remaining = descBuf->TotalLength - descBuf->Length;
                 byte* dataStart = ptrToBuf + descBuf->Length;
-
-                while(remaining > 0)
+                
+                while (remaining > 0)
                 {
                     int len = dataStart[0];
                     int type = dataStart[1];
@@ -262,7 +257,7 @@ namespace Sharpen.USB
                 }
             }
 
-            if(ConfigValue != 0 && InterfaceDesc != null && EndPointDesc != null)
+            if (ConfigValue != 0 && InterfaceDesc != null && EndPointDesc != null)
             {
 
                 if (!Request(TYPE_HOSTTODEVICE, REQ_SET_CONFIGURATION, ConfigValue, 0, 0, null))
@@ -272,9 +267,9 @@ namespace Sharpen.USB
                  * Init driver here
                  */
                 State = USBDeviceState.CONFIGURED;
-                
+
                 IUSBDriver result = USBDrivers.LoadDriver(this);
-                
+
                 if (result == null)
                 {
                     Console.Write("[USB] No driver found for device with name ");
@@ -311,7 +306,7 @@ namespace Sharpen.USB
                 return null;
 
             int len = *(byte*)Util.ObjectToVoidPtr(buf);
-
+            
             /**
              * Load full object
              */
@@ -320,26 +315,30 @@ namespace Sharpen.USB
             if (!Request(TYPE_DEVICETOHOST, REQ_GET_DESCRIPTOR, (ushort)((DESC_STRING << 8) | entryIndex), languageID, (ushort)(len), (byte*)Util.ObjectToVoidPtr(buffer)))
                 return null;
 
+            if (len == 0)
+                return "";
+
+
             /**
              * Set string
              */
             USBStringDescriptor* ptr = (USBStringDescriptor*)Util.ObjectToVoidPtr(buffer);
             char* entryData = (char*)ptr + 2;
-
+            
             int size = (len - sizeof(USBStringDescriptor)) / 2;
             char* str = (char*)Heap.Alloc(size);
-
+            
             int i = 0;
             for (; i < size; i++)
                 str[i] = entryData[i * 2];
             str[i] = (char)0x00;
-
+            
             /**
              * Free unused shizzle
              */
             Heap.Free(buffer);
             Heap.Free(buf);
-
+            
             return Util.CharPtrToString(str);
         }
 

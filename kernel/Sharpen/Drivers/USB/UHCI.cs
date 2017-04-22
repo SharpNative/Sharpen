@@ -230,7 +230,7 @@ namespace Sharpen.Drivers.USB
             /**
              * Wait for 60 ms
              */
-            //Tasking.CurrentTask.CurrentThread.Sleep(0, 60);
+            Tasking.CurrentTask.CurrentThread.Sleep(0, 60);
 
             /**
              * Unset reset bit
@@ -242,7 +242,7 @@ namespace Sharpen.Drivers.USB
              */
             for(int i =0; i < 15; i++)
             {
-                //Tasking.CurrentTask.CurrentThread.Sleep(0, 60);
+                Tasking.CurrentTask.CurrentThread.Sleep(0, 10);
 
                 ushort status = PortIO.In16((ushort)(uhciDev.IOBase + port));
 
@@ -270,17 +270,7 @@ namespace Sharpen.Drivers.USB
 
             }
         }
-
-        /// <summary>
-        /// Sleep for X ms
-        /// </summary>
-        /// <param name="cnt"></param>
-        private static void Sleep(int cnt)
-        {
-            for (int i = 0; i < cnt; i++)
-                PortIO.In32(0x80);
-        }
-
+        
 
         /// <summary>
         /// Set bit on port

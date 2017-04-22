@@ -58,10 +58,10 @@ namespace Sharpen.Drivers.USB
             mTransfer->Length = 3;
             mTransfer->Executed = false;
             mTransfer->Success = false;
-            
+
 
             device.PrepareInterrupt(device, mTransfer);
-            
+
 
             return this;
         }
