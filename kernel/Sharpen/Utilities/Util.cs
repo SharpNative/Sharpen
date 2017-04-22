@@ -1,4 +1,5 @@
 ﻿using Sharpen.Arch;
+using Sharpen.Mem;
 using System;
 
 namespace Sharpen.Utilities
@@ -55,6 +56,20 @@ namespace Sharpen.Utilities
         public static unsafe extern void* MethodToPtr(Action method);
 
         /// <summary>
+        /// Uses a volatile pointer to write a 32bit value to an address, this is because C# doesn't support this
+        /// </summary>
+        /// <param name="address">The address</param>
+        /// <param name="value">The value</param>
+        public static unsafe extern void WriteVolatile32(uint address, uint value);
+
+        /// <summary>
+        /// Uses a volatile pointer to read a 32bit value from an address, this is because C# doesn't support this
+        /// </summary>
+        /// <param name="address">The address</param>
+        /// <returns>The value</returns>
+        public static unsafe extern uint ReadVolatile32(uint address);
+
+        /// <summary>
         /// Prints a stack trace
         /// </summary>
         /// <param name="maxFrames">Maximum amount of frames to display</param>
@@ -88,6 +103,50 @@ namespace Sharpen.Utilities
                 Console.WriteHex(eip);
                 Console.WriteLine(")");
             }
+        }
+
+        /// <summary>
+        /// Finds a BIOS structure
+        /// </summary>
+        /// <param name="checkPtr">The signature check pointer</param>
+        /// <param name="checkSize">The signature check size</param>
+        /// <param name="start">The starting address</param>
+        /// <param name="end">The ending address</param>
+        /// <param name="size">The size of the structure</param>
+        /// <returns>The pointer to the structure if found, otherwise null</returns>
+        public static unsafe void* FindStructure(char* checkPtr, int checkSize, void* start, void* end, int size)
+        {
+            uint current = (uint)start;
+            while (current < (uint)end)
+            {
+                if (Memory.Compare((char*)current, checkPtr, checkSize) && ZeroCheckSum((byte*)current, (uint)size))
+                {
+                    return (void*)current;
+                }
+
+                current += 16;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Checksum
+        /// </summary>
+        /// <param name="address">The address</param>
+        /// <param name="length">The length</param>
+        /// <returns>If the check was successfull</returns>
+        public static unsafe bool ZeroCheckSum(void* address, uint length)
+        {
+            byte check = 0;
+
+            byte* ptr = (byte*)address;
+            for (int i = 0; i < length; i++)
+            {
+                check += *ptr++;
+            }
+
+            return (check == 0);
         }
     }
 }

@@ -165,7 +165,9 @@ namespace Sharpen.Drivers.Char
         /// <summary>
         /// Handler for comport 1 and 3
         /// </summary>
-        private static unsafe void Handler13(Regs* regsPtr)
+        /// <param name="regsPtr">Registers</param>
+        /// <returns>Registers</returns>
+        private static unsafe Regs* Handler13(Regs* regsPtr)
         {
             SerialPortComport port;
 
@@ -175,16 +177,20 @@ namespace Sharpen.Drivers.Char
                 port = comports[2];
 
             if (port.Address == 0)
-                return;
+                return regsPtr;
 
-            while(hasReceived(port.Address))
+            while (hasReceived(port.Address))
                 port.Buffer.WriteByte(read(port.Address));
+
+            return regsPtr;
         }
 
         /// <summary>
         /// Handler for comports 2 and 4
         /// </summary>
-        private static unsafe void Handler24(Regs* regsPtr)
+        /// <param name="regsPtr">Registers</param>
+        /// <returns>Registers</returns>
+        private static unsafe Regs* Handler24(Regs* regsPtr)
         {
             SerialPortComport port;
 
@@ -194,10 +200,12 @@ namespace Sharpen.Drivers.Char
                 port = comports[3];
 
             if (port.Address == 0)
-                return;
+                return regsPtr;
 
             while (hasReceived(port.Address))
                 port.Buffer.WriteByte(read(port.Address));
+
+            return regsPtr;
         }
         
         /// <summary>
@@ -225,6 +233,8 @@ namespace Sharpen.Drivers.Char
             
             IRQ.SetHandler(3, Handler24);
             IRQ.SetHandler(4, Handler13);
+            IOApicManager.CreateISARedirection(3, 3);
+            IOApicManager.CreateISARedirection(4, 4);
         }
     }
 }

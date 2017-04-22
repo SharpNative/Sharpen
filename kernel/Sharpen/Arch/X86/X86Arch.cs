@@ -1,4 +1,7 @@
-﻿namespace Sharpen.Arch
+﻿using Sharpen.Drivers.Power;
+using Sharpen.Mem;
+
+namespace Sharpen.Arch
 {
     sealed class X86Arch
     {
@@ -18,7 +21,20 @@
             GDT.Init();
             PIC.Remap();
             IDT.Init();
-            PIT.Init();
+            IRQ.Init();
+
+            PhysicalMemoryManager.Init();
+            Paging.Init();
+            Heap.InitRealHeap();
+            
+            IOApicManager.Init();
+            Acpi.Init();
+            LocalApic.InitLocalAPIC();
+            IOApicManager.InitIOApics();
+            MPTable.Init();
+
+            CMOS.UpdateTime();
+            Time.FullTicks = Time.CalculateEpochTime();
         }
     }
 }

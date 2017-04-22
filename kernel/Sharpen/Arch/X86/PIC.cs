@@ -25,21 +25,7 @@
 
         // Single / cascade mode
         public const byte PIC_CASCADE = 0x04;
-
-        /// <summary>
-        /// Sends an EOI signal
-        /// </summary>
-        /// <param name="irq">The IRQ number</param>
-        public static void SendEOI(byte irq)
-        {
-            // Slave EOI if irq belongs to slave
-            if (irq >= 8)
-                PortIO.Out8(SLAVE_PIC_CMD, PIC_EOI);
-
-            // EOI to master
-            PortIO.Out8(MASTER_PIC_CMD, PIC_EOI);
-        }
-
+        
         /// <summary>
         /// Remaps the IRQs
         /// </summary>
@@ -63,9 +49,9 @@
             PortIO.Out8(MASTER_PIC_DATA, PIC_8086);
             PortIO.Out8(SLAVE_PIC_DATA, PIC_8086);
             
-            // No masks
-            PortIO.Out8(MASTER_PIC_DATA, 0);
-            PortIO.Out8(SLAVE_PIC_DATA, 0);
+            // Mask PIC IRQs because we're going to use the APIC
+            PortIO.Out8(MASTER_PIC_DATA, 0xFF);
+            PortIO.Out8(SLAVE_PIC_DATA, 0xFF);
         }
     }
 }

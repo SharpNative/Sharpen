@@ -18,16 +18,8 @@ namespace Sharpen.Mem
             // Bit array to store which addresses are free
             bitmap = new BitArray(4096 * 1024 / 4);
             mutex = new Mutex();
-            uint aligned = Paging.Align((uint)Heap.CurrentEnd);
-
-            Console.Write("[PMM] Bitmap at ");
-            Console.WriteHex((int)Utilities.Util.ObjectToVoidPtr(bitmap));
-            Console.Write(", heap at ");
-            Console.WriteHex((int)Heap.CurrentEnd);
-            Console.Write(", marking 0 - ");
-            Console.WriteHex(aligned);
-            Console.WriteLine("");
-
+            uint aligned = Paging.AlignUp((uint)Heap.CurrentEnd);
+            
             Set(0, aligned);
             IsInitialized = true;
         }
@@ -74,7 +66,7 @@ namespace Sharpen.Mem
         /// <returns>The start address</returns>
         public static unsafe void* AllocRange(int size)
         {
-            size = (int)Paging.Align((uint)size) / 0x1000;
+            size = (int)Paging.AlignUp((uint)size) / 0x1000;
             mutex.Lock();
             int firstFree = bitmap.FindFirstFreeRange(size, true);
             mutex.Unlock();
@@ -89,8 +81,8 @@ namespace Sharpen.Mem
         /// <param name="size">The size of the range</param>
         public static void Set(int address, uint size)
         {
-            uint start = Paging.Align((uint)address);
-            size = Paging.Align(size);
+            uint start = Paging.AlignUp((uint)address);
+            size = Paging.AlignUp(size);
             mutex.Lock();
             for (uint i = start; i < size; i += 0x1000)
             {

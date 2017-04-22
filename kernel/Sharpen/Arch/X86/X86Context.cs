@@ -109,7 +109,7 @@ namespace Sharpen.Arch
         /// </summary>
         public void Dispose()
         {
-            Paging.FreeVirtual(Address, Size);
+            Paging.UnMap(Address, Size);
         }
     }
 }

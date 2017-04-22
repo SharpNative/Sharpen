@@ -114,6 +114,16 @@ inline void* Sharpen_Utilities_Util_MethodToPtr_1action_t_(action_t ptr)
     return ptr;
 }
 
+inline void Sharpen_Utilities_Util_WriteVolatile32_2uint32_t_uint32_t_(uint32_t address, uint32_t value)
+{
+    *(volatile uint32_t volatile*)address = value;
+}
+
+inline uint32_t Sharpen_Utilities_Util_ReadVolatile32_1uint32_t_(uint32_t address)
+{
+    return *(volatile uint32_t volatile*)address;
+}
+
 inline void* Sharpen_SymbolTable_getSymbolTable_0(void)
 {
     extern void* kernelsymbols;

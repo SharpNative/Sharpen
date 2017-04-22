@@ -147,9 +147,22 @@ namespace Sharpen.Drivers.Net
             /**
              * Read and set interrupt
              */
-            int interrupt = (PCI.PCIReadWord(dev, 0x3C) & 0xFF);
-            IRQ.SetHandler(interrupt, handler);
+            /*int interrupt = (PCI.PCIReadWord(dev, 0x3C) & 0xFF);
+            int intPIN = PCI.PCIReadWord(dev, 0x3C) >> 8;
+            //IRQ.SetHandler(interrupt, handler);
 
+            Console.Write("PCNET2(");
+            Console.WriteNum(interrupt);
+            Console.Write(',');
+            Console.WriteNum(intPIN);
+            Console.Write(',');
+            Console.WriteNum(dev.Bus);
+            Console.Write(',');
+            Console.WriteNum(dev.Slot);
+            Console.Write(',');
+            Console.WriteNum(dev.Function);
+            Console.Write(")");*/
+            
 
             // Enable card
             writeCSR(0, 0x41);

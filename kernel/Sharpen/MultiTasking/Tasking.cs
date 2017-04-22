@@ -20,7 +20,7 @@ namespace Sharpen.MultiTasking
             kernel.AddThread(new Thread());
             kernel.Name = "Kernel";
             kernel.CMDLine = "kernel";
-
+            
             KernelTask = kernel;
             CurrentTask = kernel;
             kernel.NextTask = kernel;
@@ -141,11 +141,12 @@ namespace Sharpen.MultiTasking
 
             // Sleeping and stopped processes
             Task next = current.NextTask;
-            while (next.IsSleeping() && !next.HasFlag(Task.TaskFlag.STOPPED))
+            while (!next.HasFlag(Task.TaskFlag.STOPPED))
             {
                 next.AwakeThreads();
                 if (!next.IsSleeping() && !next.HasFlag(Task.TaskFlag.STOPPED))
                     break;
+
                 next = next.NextTask;
             }
 
@@ -156,21 +157,22 @@ namespace Sharpen.MultiTasking
         /// <summary>
         /// Scheduler
         /// </summary>
-        /// <param name="regsPtr">Old stack</param>
-        /// <returns>New stack</returns>
-        private static unsafe Regs* scheduler(Regs* regsPtr)
+        /// <param name="context">Old context</param>
+        /// <returns>New context</returns>
+        public static unsafe void* Scheduler(void* context)
         {
             Task oldTask = CurrentTask;
-            oldTask.StoreThreadContext(regsPtr);
+            
+            oldTask.StoreThreadContext(context);
             oldTask.SwitchToNextThread();
-
+            
             Task nextTask = GetNextTask();
             if (oldTask != nextTask)
             {
                 nextTask.PrepareContext();
             }
 
-            void* stack = nextTask.RestoreThreadContext();
+            void* newContext = nextTask.RestoreThreadContext();
             CurrentTask = nextTask;
             
             // Cleanup old task
@@ -181,7 +183,7 @@ namespace Sharpen.MultiTasking
             }
 
             // Return the next task context
-            return (Regs*)stack;
+            return newContext;
         }
 
         /// <summary>

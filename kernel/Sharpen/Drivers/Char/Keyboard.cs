@@ -103,7 +103,8 @@ namespace Sharpen.Drivers.Char
 
             // Install the IRQ handler
             IRQ.SetHandler(1, handler);
-
+            IOApicManager.CreateISARedirection(1, 1);
+            
             Device device = new Device();
             device.Name = "keyboard";
             device.Node = new Node();
@@ -153,7 +154,7 @@ namespace Sharpen.Drivers.Char
         /// Keyboard IRQ handler
         /// </summary>
         /// <param name="regsPtr"></param>
-        private static unsafe void handler(Regs* regsPtr)
+        private static unsafe Regs* handler(Regs* regsPtr)
         {
             byte scancode = PortIO.In8(0x60);
 
@@ -194,6 +195,8 @@ namespace Sharpen.Drivers.Char
                     readingchar = 0;
                 }
             }
+
+            return regsPtr;
         }
     }
 }

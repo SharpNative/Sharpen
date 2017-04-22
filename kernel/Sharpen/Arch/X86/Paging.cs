@@ -169,17 +169,13 @@ namespace Sharpen.Arch
         /// <returns>The virtual address</returns>
         public static void* MapToVirtual(PageDirectory* directory, int phys, int size, PageFlags flags)
         {
-            int sizeAligned = (int)Align((uint)size) / 0x1000;
+            int sizeAligned = (int)AlignUp((uint)size) / 0x1000;
             int free = bitmap.FindFirstFreeRange(sizeAligned, true);
             int virt = free * 0x1000;
             
             for (int i = 0; i < sizeAligned; i++)
             {
                 int offset = i * 0x1000;
-
-                if (!PhysicalMemoryManager.IsFree((void*)(phys + offset)))
-                    Panic.DoPanic("Physical address is already in use!");
-                
                 MapPage(directory, phys + offset, virt + offset, flags);
                 PhysicalMemoryManager.Set(phys + offset);
             }
@@ -221,11 +217,11 @@ namespace Sharpen.Arch
         }
 
         /// <summary>
-        /// Aligns the size or address to make it page aligned
+        /// Aligns the size or address up to make it page aligned
         /// </summary>
         /// <param name="x">The size or address</param>
         /// <returns>The aligned size or address</returns>
-        public static uint Align(uint x)
+        public static uint AlignUp(uint x)
         {
             if ((x & 0x00000FFF) > 0)
             {
@@ -237,6 +233,16 @@ namespace Sharpen.Arch
         }
 
         /// <summary>
+        /// Aligns the size or address down to make it page aligned
+        /// </summary>
+        /// <param name="x">The size or address</param>
+        /// <returns>The aligned size or address</returns>
+        public static uint AlignDown(uint x)
+        {
+            return (x & 0xFFFFF000);
+        }
+
+        /// <summary>
         /// Allocates a virtual address range
         /// </summary>
         /// <param name="size">The size</param>
@@ -244,7 +250,7 @@ namespace Sharpen.Arch
         public static void* AllocateVirtual(int size)
         {
             // Page align size
-            uint sizeAligned = Align((uint)size);
+            uint sizeAligned = AlignUp((uint)size);
 
             // Allocate
             int free = bitmap.FindFirstFreeRange((int)(sizeAligned / 0x1000), true);
@@ -269,10 +275,10 @@ namespace Sharpen.Arch
         /// </summary>
         /// <param name="address">The starting address</param>
         /// <param name="size">The size</param>
-        public static void FreeVirtual(void* address, int size)
+        public static void UnMap(void* address, int size)
         {
             // Page align size
-            uint sizeAligned = Align((uint)size);
+            uint sizeAligned = AlignUp((uint)size);
             int start = (int)address / 0x1000;
             int addressStart = (int)address;
             int addressEnd = addressStart + (int)sizeAligned;
@@ -287,7 +293,7 @@ namespace Sharpen.Arch
             // Free virtual memory
             bitmap.ClearRange(start, (int)(sizeAligned / 0x1000));
         }
-
+        
         /// <summary>
         /// Clones a page directory and its tables
         /// </summary>
@@ -296,7 +302,7 @@ namespace Sharpen.Arch
         public static PageDirectory* CloneDirectory(PageDirectory* source)
         {
             // Note: sizeof(PageDirectory) is not neccesarily a page
-            int pageDirSizeAligned = (int)Align((uint)sizeof(PageDirectory));
+            int pageDirSizeAligned = (int)AlignUp((uint)sizeof(PageDirectory));
 
             // One block for the page directory and the page tables
             int allocated = (int)Heap.AlignedAlloc(0x1000, pageDirSizeAligned + 1024 * sizeof(PageTable));

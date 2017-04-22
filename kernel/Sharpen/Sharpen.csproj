@@ -52,6 +52,11 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Arch\LocalApic.cs" />
+    <Compile Include="Arch\IOApic.cs" />
+    <Compile Include="Arch\IOApicManager.cs" />
+    <Compile Include="Arch\MPTable.cs" />
+    <Compile Include="Arch\MPTableExtras.cs" />
     <Compile Include="Arch\PCIClassCodes.cs" />
     <Compile Include="Drivers\USB\USBHIDMouse.cs" />
     <Compile Include="Drivers\USB\USBHub.cs" />
@@ -88,7 +93,6 @@
     <Compile Include="Drivers\Net\PCNet2.cs" />
     <Compile Include="Drivers\Net\RTL8139.cs" />
     <Compile Include="Drivers\Power\AcpiDevice.cs" />
-    <Compile Include="Drivers\Power\AcpiHelper.cs" />
     <Compile Include="ErrorCode.cs" />
     <Compile Include="Exec\ELFLoader.cs" />
     <Compile Include="Exec\Loader.cs" />

@@ -224,7 +224,7 @@ namespace Sharpen.Exec
             context.CreateNewContext(false);
             newTask.AddThread(thread);
             newTask.AddUsedAddress(allocated);
-
+            
             // Task info
             newTask.Name = argvClone[0];
             newTask.CMDLine = Array.Join(argvClone, argc, " ");

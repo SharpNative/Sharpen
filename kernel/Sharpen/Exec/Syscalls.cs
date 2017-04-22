@@ -389,6 +389,7 @@ namespace Sharpen.Exec
             if (Tasking.CurrentTask.UID > 0)
                 return ErrorCode.EPERM;
 
+            Console.WriteLine("okaqsdkfjqsdf");
             Acpi.Shutdown();
             return ErrorCode.SUCCESS;
         }
@@ -413,8 +414,8 @@ namespace Sharpen.Exec
         /// <returns>The errorcode</returns>
         public static unsafe ErrorCode GetTimeOfDay(Time.Timeval* tv)
         {
-            tv->tv_sec = PIT.FullTicks;
-            tv->tv_usec = (PIT.SubTicks * 1000000 / PIT.Frequency);
+            tv->tv_sec = Time.FullTicks;
+            tv->tv_usec = (Time.SubTicks * 1000000 / Time.TicksPerSecond);
             return ErrorCode.SUCCESS;
         }
 

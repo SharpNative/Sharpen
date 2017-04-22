@@ -2,17 +2,23 @@
 {
     public sealed class IRQ
     {
-        // IRQ master offset (32 - 39)
+        // Offset
         public const byte MASTER_OFFSET = 32;
-
-        // IRQ slave offset (40 - 47)
         public const byte SLAVE_OFFSET = 40;
 
-        // Delegate of IRQ Handler
-        public unsafe delegate void IRQHandler(Regs* regsPtr);
-        
-        // IRQ handlers
-        private static IRQHandler[] handlers = { null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null };
+        // Delegate
+        public unsafe delegate Regs* IRQHandler(Regs* regsPtr);
+
+        // Handlers
+        private static IRQHandler[] handlers;
+
+        /// <summary>
+        /// Initializes interrupts requests
+        /// </summary>
+        public static void Init()
+        {
+            handlers = new IRQHandler[256 - MASTER_OFFSET];
+        }
 
         /// <summary>
         /// Sets an IRQ handler
@@ -25,9 +31,9 @@
         }
 
         /// <summary>
-        /// Removes an IRQ handler
+        /// Removes a  handler
         /// </summary>
-        /// <param name="num">The IRQ number</param>
+        /// <param name="num">The interrupt request number</param>
         public static void RemoveHandler(int num)
         {
             handlers[num] = null;
@@ -37,11 +43,15 @@
         /// IRQ handler
         /// </summary>
         /// <param name="regsPtr">Pointer to registers</param>
-        public static unsafe void Handler(Regs* regsPtr)
+        public static unsafe Regs* Handler(Regs* regsPtr)
         {
             int irqNum = regsPtr->IntNum - MASTER_OFFSET;
+
+            Regs* ret = regsPtr;
             handlers[irqNum]?.Invoke(regsPtr);
-            PIC.SendEOI((byte)irqNum);
+
+            LocalApic.SendEOI();
+            return ret;
         }
     }
 }

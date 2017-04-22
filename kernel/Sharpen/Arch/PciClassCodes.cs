@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Sharpen.Arch
+﻿namespace Sharpen.Arch
 {
     enum PCIClassCombinations
     {
@@ -30,15 +24,15 @@ namespace Sharpen.Arch
         /**
          * Class code 0x0C
          */
-         IEEE1304Controller     = 0x0C00,
-         ACCESSBusController    = 0x0C01,
-         SSAController          = 0x0C02,
-         USBController          = 0x0C03,
-         FIbreChannelController = 0x0C04,
-         SMBusController        = 0x0C05,
-         InfiniBandController   = 0x0C06,
-         IPMIIterface           = 0x0C07,
-         SERCOS                 = 0x0C08,
-         CANBus                 = 0x0C09
+        IEEE1304Controller      = 0x0C00,
+        ACCESSBusController     = 0x0C01,
+        SSAController           = 0x0C02,
+        USBController           = 0x0C03,
+        FIbreChannelController  = 0x0C04,
+        SMBusController         = 0x0C05,
+        InfiniBandController    = 0x0C06,
+        IPMIIterface            = 0x0C07,
+        SERCOS                  = 0x0C08,
+        CANBus                  = 0x0C09
     }
 }

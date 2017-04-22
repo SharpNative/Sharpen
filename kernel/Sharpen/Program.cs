@@ -3,7 +3,6 @@ using Sharpen.Drivers.Block;
 using Sharpen.Drivers.Char;
 using Sharpen.Drivers.Net;
 using Sharpen.Drivers.Other;
-using Sharpen.Drivers.Power;
 using Sharpen.Drivers.Sound;
 using Sharpen.Exec;
 using Sharpen.FileSystem;
@@ -39,20 +38,15 @@ namespace Sharpen
             Heap.InitTempHeap(heapStart);
             
             X86Arch.Init();
-            Acpi.Init();
-            initMemory();
             Random.Init();
             
             initFileSystems();
-            
             initPCIDevices();
             Keyboard.Init();
             
-            
             Tasking.Init();
-
+            
             initUSB();
-
             initStorage();
             initNetworking();
             runUserspace();
@@ -61,7 +55,7 @@ namespace Sharpen
             while (true)
                 CPU.HLT();
         }
-
+        
         /// <summary>
         /// Init PCI devices
         /// </summary>
@@ -137,20 +131,16 @@ namespace Sharpen
             DHCP.Init();
 
             // Network drivers
-            E1000.Init();
+            /*E1000.Init();
             PCNet2.Init();
-            RTL8139.Init();
+            RTL8139.Init();*/
             
             DHCP.Discover();
 
-            // Timer thread to see if the system hangs or not
-            //Thread abc = new Thread();
-            //abc.Context.CreateNewContext(Util.MethodToPtr(timer), 0, null, true);
-            //Tasking.KernelTask.AddThread(abc);
 
-            Thread packetHandler = new Thread();
-            packetHandler.Context.CreateNewContext(Util.MethodToPtr(USB.USB.Poll), 0, null, true);
-            Tasking.KernelTask.AddThread(packetHandler);
+            /*Thread packetHandler = new Thread();
+            packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest2), 0, null, true);
+            Tasking.KernelTask.AddThread(packetHandler);*/
 
 
         }
@@ -311,38 +301,7 @@ namespace Sharpen
 
             TCP.Free(con);
         }
-
-        /// <summary>
-        /// Timer thread
-        /// </summary>
-        private static void timer()
-        {
-            while(true)
-            {
-                int x = Console.X;
-                int y = Console.Y;
-                Console.X = 58;
-                Console.Y = 3;
-                byte att = Console.Attribute;
-                Console.Attribute = 0x5F;
-                Console.WriteHex(PIT.FullTicks);
-                Console.Attribute = att;
-                Console.X = x;
-                Console.Y = y;
-                CPU.HLT();
-            }
-        }
-
-        /// <summary>
-        /// Initializes memory-related components
-        /// </summary>
-        private static void initMemory()
-        {
-            PhysicalMemoryManager.Init();
-            Paging.Init();
-            Heap.InitRealHeap();
-        }
-
+        
         /// <summary>
         /// Processes the multiboot header
         /// </summary>

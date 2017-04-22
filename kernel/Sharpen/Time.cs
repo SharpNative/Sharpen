@@ -8,34 +8,15 @@
             public ulong tv_usec;
         }
 
-        /// <summary>
-        /// The current seconds
-        /// </summary>
+        public static uint SubTicks { get; set; }
+        public static uint FullTicks { get; set; }
+        public static uint TicksPerSecond { get; set; }
+        
         public static uint Seconds { get; set; }
-
-        /// <summary>
-        /// The current minutes
-        /// </summary>
         public static uint Minutes { get; set; }
-
-        /// <summary>
-        /// The current hours
-        /// </summary>
         public static uint Hours { get; set; }
-
-        /// <summary>
-        /// The current day (of the month)
-        /// </summary>
         public static uint Day { get; set; }
-
-        /// <summary>
-        /// The current month
-        /// </summary>
         public static uint Month { get; set; }
-
-        /// <summary>
-        /// The current year
-        /// </summary>
         public static uint Year { get; set; }
 
         /// <summary>
@@ -69,16 +50,16 @@
             {
                 days += m_daysPerMonth[i];
             }
-
+            
             // If february has passed and we're in a leap year
             // then: add the leap day
             if (Month > 1 && IsLeapYear(Year))
                 days++;
-
+            
             // Calculate the amount of total days of full years since 1970
             uint currentYear = 1970;
             cap = Year;
-            while(currentYear < cap)
+            while (currentYear < cap)
             {
                 if (IsLeapYear(currentYear))
                     days += 366;
@@ -87,7 +68,7 @@
 
                 currentYear++;
             }
-
+            
             return (daySecs + (days * 24 * 60 * 60));
         }
     }

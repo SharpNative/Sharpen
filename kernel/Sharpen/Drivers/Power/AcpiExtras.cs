@@ -3,7 +3,7 @@
 namespace Sharpen.Drivers.Power
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    unsafe struct RDSTH
+    unsafe struct RSDTH
     {
         public fixed char Signature[4];
         public uint Length;
@@ -19,7 +19,7 @@ namespace Sharpen.Drivers.Power
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    unsafe struct RDSP
+    unsafe struct RSDP
     {
         public fixed char Signature[8];
         public byte Checksum;
@@ -28,8 +28,7 @@ namespace Sharpen.Drivers.Power
         public uint RsdtAddress;
         public uint Length;
     }
-
-
+    
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct GenericAddressStructure
     {
@@ -43,14 +42,14 @@ namespace Sharpen.Drivers.Power
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct RSDT
     {
-        public RDSTH header;
-        public uint firstSDT;
+        public RSDTH Header;
+        public uint FirstSDT; // More can follow
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe struct FADT
     {
-        public RDSTH Header;
+        public RSDTH Header;
         public uint FirmwareCtrl;
         public uint Dsdt;
 
@@ -114,5 +113,64 @@ namespace Sharpen.Drivers.Power
         public GenericAddressStructure X_PMTimerBlock;
         public GenericAddressStructure X_GPE0Block;
         public GenericAddressStructure X_GPE1Block;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    struct MADT
+    {
+        public RSDTH Header;
+        public uint LocalControllerAddress;
+        public uint Flags;
+        // After the flags field, the rest of the table contains a variable length of records
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    struct ApicEntryHeader
+    {
+        public byte Type;
+        public byte Length;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    struct ApicLocalApic
+    {
+        public byte ProcessorID;
+        public byte APICID;
+        public uint Flags;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    struct ApicIOApic
+    {
+        public byte IOAPIC_ID;
+        public byte Reserved;
+        public uint IOAPICAddress;
+        public uint GlobalSystemInterruptBase;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    struct ApicInterruptSourceOverride
+    {
+        public byte BusSource;
+        public byte IRQSource;
+        public uint GlobalSystemInterrupt;
+        public ushort Flags;
+    }
+
+    enum ApicEntryHeaderType
+    {
+        LOCAL_APIC,
+        IO_APIC,
+        INTERRUPT_SOURCE_OVERRIDE,
+        NMI,
+        LOCAL_APIC_NMI,
+        LOCAL_APIC_ADDRESS_OVERRIDE,
+        IO_SAPIC,
+        LOCAL_SAPIC,
+        PLATFORM_INTERRUPT_SOURCES,
+        PROCESSOR_LOCAL_2XAPIC,
+        LOCAL_X2APIC_NMI,
+        GIC,
+        GICD
     }
 }

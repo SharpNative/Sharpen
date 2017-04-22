@@ -1,5 +1,4 @@
 ﻿using Sharpen.Arch;
-using Sharpen.Drivers.Char;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -7,9 +6,11 @@ namespace Sharpen.Drivers.Power
 {
     public sealed unsafe class Acpi
     {
-        private static RDSP* m_rdsp;
+        private static RSDP* m_rsdp;
         private static RSDT* m_rsdt;
         private static FADT* m_fadt;
+        private static MADT* m_madt;
+        private static RSDTH* m_dsdt;
 
         private static ushort SLP_TYPa;
         private static ushort SLP_TYPb;
@@ -17,33 +18,29 @@ namespace Sharpen.Drivers.Power
         private const uint SLP_EN = 1 << 13;
 
         /// <summary>
-        /// 
         /// Finds SLP_TYPa and SLP_TYPb
-        /// 
         /// </summary>
-        private static void SetTypes()
+        private static void setTypes()
         {
             // TODO: make this work though a AML interpreter/parser
-
-            bool s5Found = false;
-
-            uint dsdtLength = (m_fadt->Dsdt + 1) - 36;
-            byte* s5Address = (byte*)m_fadt->Dsdt + 36;
-
+            
+            m_dsdt = mapEntry((RSDTH*)m_fadt->Dsdt);
+            uint dsdtLength = m_dsdt->Length - (uint)sizeof(RSDTH);
+            byte* s5Address = (byte*)m_dsdt + sizeof(RSDTH);
+            
             if (dsdtLength > 0)
             {
-                while (dsdtLength > 0)
+                while (dsdtLength-- > 0)
                 {
                     if (Memory.Compare((char*)s5Address, (char*)Util.ObjectToVoidPtr("_S5_"), 4))
                     {
-                        s5Found = true;
                         break;
                     }
 
                     s5Address++;
                 }
 
-                if (!s5Found)
+                if (dsdtLength == 0)
                     Panic.DoPanic("Could not find S5 object!");
 
                 // Check S5 object structure
@@ -72,43 +69,150 @@ namespace Sharpen.Drivers.Power
         }
 
         /// <summary>
-        /// Get an entry from the RSDT
+        /// Parses the MADT
         /// </summary>
-        /// <param name="signature">The signature</param>
-        /// <returns>The entry</returns>
-        private static void* getEntry(string signature)
+        /// <param name="madt">The MADT</param>
+        private static void parseMADT(MADT* madt)
         {
-            if (m_rsdt == null)
-                return null;
+            LocalApic.SetLocalControllerAddress(madt->LocalControllerAddress);
 
-            uint n = (uint)(m_rsdt->header.Length - sizeof(RDSTH)) / 4;
+            // After the flags field, the rest of the table contains a variable length of records
+            uint current = (uint)madt + (uint)sizeof(MADT);
+            uint end = current + madt->Header.Length - (uint)sizeof(MADT);
 
-            for (uint i = 0; i < n; i++)
+            while (current < end)
             {
-                RDSTH* header = (RDSTH*)(m_rsdt->firstSDT + i);
+                ApicEntryHeader* header = (ApicEntryHeader*)current;
+                ApicEntryHeaderType type = (ApicEntryHeaderType)header->Type;
 
-                if (Memory.Compare((char*)header, (char*)Util.ObjectToVoidPtr(signature), 4))
-                    if (AcpiHelper.CheckSum(header, header->Length))
-                        return (void*)header;
+                switch (type)
+                {
+                    case ApicEntryHeaderType.LOCAL_APIC:
+                        ApicLocalApic* localAPIC = (ApicLocalApic*)(current + sizeof(ApicEntryHeader));
+                        Console.Write("[ACPI] Found CPU ");
+                        Console.WriteNum(localAPIC->ProcessorID);
+                        Console.Write('\n');
+                        break;
 
+                    case ApicEntryHeaderType.IO_APIC:
+                        ApicIOApic* IOApicStruct = (ApicIOApic*)(current + sizeof(ApicEntryHeader));
+
+                        Console.Write("[ACPI] Found IO APIC at ");
+                        Console.WriteHex(IOApicStruct->IOAPICAddress);
+                        Console.Write('\n');
+                        
+                        IOApic IOApic = new IOApic(IOApicStruct->IOAPIC_ID, (void*)IOApicStruct->IOAPICAddress, IOApicStruct->GlobalSystemInterruptBase);
+                        IOApicManager.Add(IOApic);
+
+                        break;
+
+                    case ApicEntryHeaderType.INTERRUPT_SOURCE_OVERRIDE:
+                        //ApicInterruptSourceOverride* intSourceOverride = (ApicInterruptSourceOverride*)(current + sizeof(ApicEntryHeader));
+                        
+                        //int polarity = intSourceOverride->Flags & 0x3;
+                        //int trigger = (intSourceOverride->Flags & (3 << 2)) >> 2;
+
+                        //Console.Write("Found interrupt override: ");
+                        //Console.WriteNum(intSourceOverride->BusSource);
+                        //Console.Write(' ');
+                        //Console.WriteNum(intSourceOverride->IRQSource);
+                        //Console.Write(' ');
+                        //Console.WriteNum((int)intSourceOverride->GlobalSystemInterrupt);
+                        //Console.Write(' ');
+                        //Console.WriteNum(polarity);
+                        //Console.Write(' ');
+                        //Console.WriteNum(trigger);
+                        //Console.Write('\n');
+                        
+                        break;
+                }
+
+                current += header->Length;
             }
-
-            return null;
         }
 
         /// <summary>
-        /// Find and set RDSP table
+        /// Maps an entry
         /// </summary>
-        public static void SetRDSP()
+        /// <param name="entry">The entry</param>
+        /// <returns>The mapped entry</returns>
+        private static RSDTH* mapEntry(RSDTH* entry)
         {
-            RDSP *rdsp = AcpiHelper.FindRSDP();
+            // Align address down so we can get the offset
+            uint down = Paging.AlignDown((uint)entry);
+            uint offset = (uint)entry - down;
 
-            if (rdsp == null)
-                return;
+            // If we don't have enough to map the header, add an extra page
+            int mapSize = 0x1000;
+            if (mapSize - offset < sizeof(RSDTH))
+            {
+                mapSize += 0x1000;
+            }
 
-            m_rdsp = (RDSP*)Heap.Alloc(sizeof(RDSP));
+            // Actual accessible size after mapping
+            uint accessibleSize = (uint)mapSize - offset;
 
-            Memory.Memcpy(m_rdsp, rdsp, sizeof(RDSP));
+            // Map header, if we don't have enough yet, we can map more
+            void* mapped = Paging.MapToVirtual(Paging.CurrentDirectory, (int)entry, mapSize, Paging.PageFlags.Present);
+            RSDTH* header = (RSDTH*)((uint)mapped + offset);
+
+            // Length is bigger than what we already can access using the mapping?
+            // then unmap and map more
+            if (header->Length > accessibleSize)
+            {
+                Paging.UnMap(mapped, mapSize);
+                mapped = Paging.MapToVirtual(Paging.CurrentDirectory, (int)entry, (int)Paging.AlignUp(header->Length + offset), Paging.PageFlags.Present);
+                header = (RSDTH*)((uint)mapped + offset);
+            }
+
+            return header;
+        }
+
+        /// <summary>
+        /// Unmaps an entry
+        /// </summary>
+        /// <param name="entry">The entry</param>
+        private static void unMapEntry(RSDTH* entry)
+        {
+            // Align address down, get size of entry and unmap
+            uint down = Paging.AlignDown((uint)entry);
+            uint offset = (uint)entry - down;
+            Paging.UnMap((void*)down, (int)(entry->Length + offset));
+        }
+
+        /// <summary>
+        /// Compares a signature of a header with a string
+        /// </summary>
+        /// <param name="rsdth">The header</param>
+        /// <param name="signature">The signature to check for</param>
+        /// <returns>If the signature matches</returns>
+        private static bool compareSignature(RSDTH* rsdth, string signature)
+        {
+            return (rsdth->Signature[0] == signature[0] &&
+                rsdth->Signature[1] == signature[1] &&
+                rsdth->Signature[2] == signature[2] &&
+                rsdth->Signature[3] == signature[3]);
+        }
+
+        /// <summary>
+        /// Finds the RSDP
+        /// </summary>
+        /// <returns>The RSDP</returns>
+        private static unsafe RSDP* findRSDP()
+        {
+            char* checkPtr = (char*)Util.ObjectToVoidPtr("RSD PTR ");
+            RSDP* rsdp = (RSDP*)Util.FindStructure(checkPtr, 8, (void*)0x000E0000, (void*)0x000FFFFF, sizeof(RSDT));
+
+            // Search the rdsp through bios data when the rdsp is not found in the ebda
+            if (rsdp == null)
+            {
+                ushort* adr = (ushort*)0x040E;
+                byte* ebdap = (byte*)((*adr) << 4);
+
+                rsdp = (RSDP*)Util.FindStructure(checkPtr, 8, ebdap, (void*)0x000A0000, sizeof(RSDT));
+            }
+
+            return rsdp;
         }
 
         /// <summary>
@@ -116,23 +220,46 @@ namespace Sharpen.Drivers.Power
         /// </summary>
         public static void SetTables()
         {
-            RSDT* rsdt = null;
-            FADT* fadt = null;
-            m_rsdt = (RSDT*)Heap.Alloc(sizeof(RSDT));
-            m_fadt = (FADT*)Heap.Alloc(sizeof(FADT));
+            m_rsdt = (RSDT*)mapEntry((RSDTH*)m_rsdp->RsdtAddress);
+            if (m_rsdt == null)
+                Panic.DoPanic("RSDT not found!");
 
+            // Entry count
+            uint entries = (uint)(m_rsdt->Header.Length - sizeof(RSDTH)) / 4;
+            uint* addresses = (uint*)((uint)m_rsdt + (uint)sizeof(RSDTH));
+            
+            for (uint i = 0; i < entries; i++)
+            {
+                RSDTH* header = (RSDTH*)addresses[i];
+                RSDTH* mapped = mapEntry(header);
 
-            rsdt = (RSDT*)m_rdsp->RsdtAddress;
-            if (rsdt == null)
-                Panic.DoPanic("RDST not found!");
+                // Found a valid entry
+                if (Util.ZeroCheckSum(mapped, mapped->Length))
+                {
+                    if (compareSignature(mapped, "FACP"))
+                    {
+                        m_fadt = (FADT*)mapped;
+                    }
+                    else if (compareSignature(mapped, "APIC"))
+                    {
+                        m_madt = (MADT*)mapped;
+                    }
+                }
+                // Invalid entry
+                else
+                {
+                    unMapEntry(mapped);
+                }
+            }
 
-            Memory.Memcpy(m_rsdt, rsdt, sizeof(RSDT));
-
-            fadt = (FADT*)getEntry("FACP");
-            if (fadt == null)
+            // Check if the needed entries have been found
+            if (m_fadt == null)
                 Panic.DoPanic("FACP not found!");
 
-            Memory.Memcpy(m_fadt, fadt, sizeof(FADT));
+            if (m_madt == null)
+                Panic.DoPanic("MADT not found!");
+
+            parseMADT(m_madt);
         }
 
         /// <summary>
@@ -140,12 +267,12 @@ namespace Sharpen.Drivers.Power
         /// </summary>
         public static void Init()
         {
-            SetRDSP();
-            if (m_rdsp == null)
-                return;
+            m_rsdp = findRSDP();
+            if (m_rsdp == null)
+                Panic.DoPanic("No RSDP found");
 
             SetTables();
-            SetTypes();
+            setTypes();
             Enable();
         }
 
@@ -165,6 +292,10 @@ namespace Sharpen.Drivers.Power
             PortIO.Out8((ushort)m_fadt->SMI_CommandPort, m_fadt->AcpiDisable);
         }
 
+        /// <summary>
+        /// Sleeps a couple of ns
+        /// </summary>
+        /// <param name="cnt"></param>
         private static void Sleep(int cnt)
         {
             for (int i = 0; i < cnt; i++)
@@ -177,7 +308,7 @@ namespace Sharpen.Drivers.Power
         public static void Reboot()
         {
             // If we have a REV 2 header, then we can just extract it
-            if(m_fadt->Header.Revision >= 2)
+            if (m_fadt->Header.Revision >= 2)
             {
                 PortIO.Out8((ushort)m_fadt->ResetReg.Address, m_fadt->ResetValue);
             }
@@ -199,9 +330,9 @@ namespace Sharpen.Drivers.Power
         /// </summary>
         public static void Shutdown()
         {
-            for (;;) ;
             // Try 1 through the pm1a control block
             PortIO.Out16((ushort)m_fadt->PM1aControlBlock, (ushort)(SLP_TYPa | SLP_EN));
+
             // Try 2 through the pm1b control block
             PortIO.Out16((ushort)m_fadt->PM1aControlBlock, (ushort)(SLP_TYPb | SLP_EN));
         }

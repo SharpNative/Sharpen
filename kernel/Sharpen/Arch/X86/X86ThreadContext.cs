@@ -172,7 +172,7 @@ namespace Sharpen.Arch.X86
             m_sysRegs->ESI = 0;
             m_sysRegs->EDI = 0;
 
-            return (ISignalContext)context;
+            return context;
         }
 
         /// <summary>

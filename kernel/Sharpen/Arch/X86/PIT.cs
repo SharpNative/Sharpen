@@ -2,153 +2,57 @@
 {
     public sealed class PIT
     {
-        /// <summary>
-        /// Timer frequency in Hz
-        /// </summary>
-        public static uint Frequency
-        {
-            get
-            {
-                return m_frequency;
-            }
-
-            set
-            {
-                m_frequency = value;
-
-                // Send command to change
-                PortIO.Out8(PIT_CMD, (byte)(Channel(0) | Access(3) | Operating(3) | Mode(0)));
-
-                // Send divisor
-                ushort divisor = (ushort)(PIT_OSCILLATOR / value);
-                PortIO.Out8(PIT_DATA, (byte)(divisor & 0xFF));
-                PortIO.Out8(PIT_DATA, (byte)((divisor >> 8) & 0xFF));
-            }
-        }
-
         // In MHz
-        public const uint PIT_OSCILLATOR = 1193180;
+        public const uint PIT_FREQUENCY = 1193180;
 
-        // PIT channel 0 data port
-        // We use channel 0 because it is linked to IRQ 0
-        public const ushort PIT_DATA = 0x40;
-
-        // PIT mode / command port
+        // Ports
+        public const ushort PIT_DATA_0 = 0x40;
+        public const ushort PIT_DATA_1 = 0x41;
+        public const ushort PIT_DATA_2 = 0x42;
         public const ushort PIT_CMD = 0x43;
 
-        // Frequency in Hz
-        private static uint m_frequency;
+        public const byte PIT_MODE_IOTC = 0x0;
+        public const byte PIT_MODE_ONESHOT = 0x2;
+        public const byte PIT_MODE_RATE = 0x4;
+        public const byte PIT_MODE_SQUARE = 0x6;
+        public const byte PIT_MODE_SOFTSTROBE = 0x8;
+        public const byte PIT_MODE_HARDSTROBE = 0xA;
 
-        // Timer ticks
-        public static uint SubTicks { get; private set; } = 0;
-        public static uint FullTicks { get; private set; } = 0;
-
-        #region Helpers
-
+        public const byte PIT_ACCESS_LATCHCOUNT = 0x0;
+        public const byte PIT_ACCESS_LOBYTE = 0x10;
+        public const byte PIT_ACCESS_HIBYTE = 0x20;
+        public const byte PIT_ACCESS_LOHIBYTE = 0x30;
+        
         /// <summary>
-        /// Used to indicate the channel
+        /// Prepares the PIT to sleep a couple of ms
         /// </summary>
-        /// <param name="a"></param>
-        /// <returns></returns>
-        public static int Channel(int a)
+        /// <param name="us">The microseconds</param>
+        /// <returns>The sleep divisor</returns>
+        public static uint PrepareSleep(uint us)
         {
-            // 0 -> channel 0
-            // 1 -> channel 1
-            // 2 -> channel 2
-            // 3 -> readback command
-            return (a << 0x6);
+            // Initialize PIT
+            PortIO.Out8(PIT_CMD, PIT_DATA_2 | PIT_MODE_IOTC | PIT_ACCESS_LOHIBYTE);
+            uint sleepDivisor = PIT_FREQUENCY / (1000000 / us);
+            return sleepDivisor;
         }
 
         /// <summary>
-        /// Access mode
+        /// Sleeps
         /// </summary>
-        /// <param name="a"></param>
-        /// <returns></returns>
-        public static int Access(int a)
+        /// <param name="sleepDivisor">The sleep divisor</param>
+        public static void Sleep(uint sleepDivisor)
         {
-            // 0 -> Latch count value command
-            // 1 -> lowbyte only
-            // 2 -> highbyte only
-            // 3 -> lowbyte / highbyte
-            return (a << 0x4);
-        }
+            // Write sleep divisor
+            PortIO.Out8(PIT_DATA_2, (byte)(sleepDivisor & 0xFF));
+            PortIO.Out8(PIT_DATA_2, (byte)(sleepDivisor >> 8));
 
-        /// <summary>
-        /// Operating mode
-        /// </summary>
-        /// <param name="a"></param>
-        /// <returns></returns>
-        public static int Operating(int a)
-        {
-            // 0 -> Interrupt on terminal count
-            // 1 -> Hardware retriggerable oneshot
-            // 2 -> Rate generator
-            // 3 -> Square wave generator
-            // 4 -> Software triggered strobe
-            // 5 -> Hardware triggered strobe
-            // 6 -> Mode 2 (Rate generator)
-            // 7 -> Mode 3 (Square wave generator)
-            return (a << 0x1);
-        }
+            // Reset PIT counter and start
+            byte controlByte = PortIO.In8(0x61);
+            PortIO.Out8(0x61, (byte)(controlByte & ~1));
+            PortIO.Out8(0x61, (byte)(controlByte | 1));
 
-        /// <summary>
-        /// BCD / Binary mode
-        /// </summary>
-        /// <param name="a"></param>
-        /// <returns></returns>
-        public static int Mode(int a)
-        {
-            // 0 -> 16bit binary
-            // 1 -> fourdigit BCD
-            return a;
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Initializes the PIT
-        /// </summary>
-        public static unsafe void Init()
-        {
-            // Set frequency in one second
-            Frequency = 1000;
-            CMOS.UpdateTime();
-            FullTicks = Time.CalculateEpochTime();
-
-            // Install the IRQ handler
-            IRQ.SetHandler(0, Handler);
-        }
-
-        /// <summary>
-        /// PIT handler
-        /// </summary>
-        /// <param name="regsPtr">Pointer to registers</param>
-        private static unsafe void Handler(Regs* regsPtr)
-        {
-            // Update ticks
-            SubTicks++;
-
-            // One second
-            if (SubTicks == m_frequency)
-            {
-                // Update ticks
-                SubTicks = 0;
-                FullTicks++;
-                
-                Time.Seconds++;
-                if (Time.Seconds == 60)
-                {
-                    Time.Seconds = 0;
-                    Time.Minutes++;
-
-                    // Re-read the CMOS time every hour
-                    if (Time.Minutes == 60)
-                    {
-                        CMOS.UpdateTime();
-                        FullTicks = Time.CalculateEpochTime();
-                    }
-                }
-            }
+            // Wait until the PIT counter reaches zero
+            while ((PortIO.In8(0x61) & 0x20) == 0) ;
         }
     }
 }

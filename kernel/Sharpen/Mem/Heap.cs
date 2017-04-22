@@ -57,10 +57,6 @@ namespace Sharpen.Mem
         /// <param name="start">The start address</param>
         public static unsafe void InitTempHeap(void* start)
         {
-            Console.Write("[HEAP] Temporary start at ");
-            Console.WriteHex((int)start);
-            Console.Write('\n');
-
             CurrentEnd = start;
         }
 
@@ -82,7 +78,7 @@ namespace Sharpen.Mem
         private static int getRequiredPageCount(int size)
         {
             // Calculate the required amount of pages (round up to nearest page)
-            int required = (int)Paging.Align((uint)size) / 0x1000;
+            int required = (int)Paging.AlignUp((uint)size) / 0x1000;
 
 #if HEAP_DEBUG_DESCRIPTOR
             Console.Write("[HEAP] Required page count: ");
@@ -537,7 +533,7 @@ namespace Sharpen.Mem
             {
                 uint address = (uint)CurrentEnd;
                 if (align)
-                    address = Paging.Align(address);
+                    address = Paging.AlignUp(address);
 
                 // At least 4byte align
                 if ((address & 3) != 0)

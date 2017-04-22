@@ -66,7 +66,7 @@ namespace Sharpen.MultiTasking
         public int TimeLeft { get; set; }
 
         // Uptime
-        public uint Uptime { get { return PIT.FullTicks - m_launchTime; } }
+        public uint Uptime { get { return Time.FullTicks - m_launchTime; } }
         private uint m_launchTime;
 
         // Signals
@@ -105,7 +105,7 @@ namespace Sharpen.MultiTasking
             // Other data
             GID = Tasking.CurrentTask.GID;
             UID = Tasking.CurrentTask.UID;
-            m_launchTime = PIT.FullTicks;
+            m_launchTime = Time.FullTicks;
             Name = "Nameless";
             CMDLine = "";
 
@@ -333,8 +333,9 @@ namespace Sharpen.MultiTasking
                 {
                     next.Awake();
                 }
+                next = next.NextThread;
             }
-            while (next.NextThread != FirstThread);
+            while (next != FirstThread);
         }
 
         /// <summary>
@@ -347,7 +348,7 @@ namespace Sharpen.MultiTasking
             {
                 next = next.NextThread;
             }
-
+            
             CurrentThread = next;
         }
 

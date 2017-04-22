@@ -141,7 +141,7 @@ namespace Sharpen.Drivers.Net
              * Read IRQ number
              */
             m_irq_num = (ushort)PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
-            IRQ.SetHandler(m_irq_num, handler);
+            //IRQ.SetHandler(m_irq_num, handler);
 
             /**
              * Enable bus mastering

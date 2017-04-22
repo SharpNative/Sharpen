@@ -98,13 +98,13 @@ namespace Sharpen.MultiTasking
         {
             m_sleepUntilFullTicks = fullTicks;
             m_sleepUntilSubTicks = subTicks;
-            
+
             /**
              * If we're the only thread that and we are sleeping, we have nowhere to switch to
              * when we have a taskswitch that happens.
              * This case can only happen if we're the KernelTask with all threads sleeping but this one, so we just wait here
              */
-            if (OwningTask == Tasking.KernelTask && OwningTask.SleepingThreadCount == OwningTask.ThreadCount - 1)
+            if (OwningTask == Tasking.KernelTask && OwningTask.ThreadCount == 1)
             {
                 while (!Awake())
                 {
@@ -120,9 +120,8 @@ namespace Sharpen.MultiTasking
                 // Will return when waiting is done
                 Tasking.Yield();
 
-                // Returned from waiting
+                // Sleeping flag will be removed by Awake()
                 OwningTask.SleepingThreadCount--;
-                RemoveFlag(ThreadFlags.SLEEPING);
             }
 
             return 0;
@@ -138,10 +137,10 @@ namespace Sharpen.MultiTasking
         {
             // 1,000,000 usec = 1 second
             // 1,000,000 usec = PIT.Frequency subticks
-            uint fullTicks = PIT.FullTicks + seconds;
-            uint subTicks = PIT.SubTicks + (PIT.Frequency * usec / 1000000);
-            fullTicks += subTicks / PIT.Frequency;
-            subTicks %= PIT.Frequency;
+            uint fullTicks = Time.FullTicks + seconds;
+            uint subTicks = Time.SubTicks + (Time.TicksPerSecond * usec / 1000000);
+            fullTicks += subTicks / Time.TicksPerSecond;
+            subTicks %= Time.TicksPerSecond;
             return SleepUntil(fullTicks, subTicks);
         }
 
@@ -161,20 +160,22 @@ namespace Sharpen.MultiTasking
         public bool Awake()
         {
             // If the full ticks are greater than the fullticks we needed to sleep until, we know we're done sleeping
-            if (PIT.FullTicks > m_sleepUntilFullTicks)
+            if (Time.FullTicks > m_sleepUntilFullTicks)
             {
+                RemoveFlag(ThreadFlags.SLEEPING);
                 return true;
             }
 
             // If the full ticks are the same, and the subticks are greater, we know we're done sleeping
-            if (PIT.FullTicks == m_sleepUntilFullTicks && PIT.SubTicks > m_sleepUntilSubTicks)
+            if (Time.FullTicks == m_sleepUntilFullTicks && Time.SubTicks > m_sleepUntilSubTicks)
             {
+                RemoveFlag(ThreadFlags.SLEEPING);
                 return true;
             }
 
             return false;
         }
-
+        
         /// <summary>
         /// Returns from a signal (restores original context)
         /// </summary>
@@ -206,7 +207,7 @@ namespace Sharpen.MultiTasking
         {
             while (m_currentSignalContext != null)
                 Tasking.Yield();
-            
+
             m_signalMutex.Lock();
             m_currentSignalContext = Context.ProcessSignal(action);
             m_signalMutex.Unlock();

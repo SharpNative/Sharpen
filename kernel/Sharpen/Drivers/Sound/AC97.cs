@@ -53,14 +53,27 @@ namespace Sharpen.Drivers.Sound
         /// <param name="dev">PCI Device</param>
         private static unsafe void InitHandler(PciDevice dev)
         {
+            
             m_dev = dev;
             m_nambar = (ushort)dev.BAR0.Address;
             m_nabmbar = (ushort)dev.BAR1.Address;
 
             // Set IRQ handler
-            uint irqNum = PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
-            IRQ.SetHandler((int)irqNum, IRQHandler);
+            /*uint irqNum = PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
+            int intPIN = PCI.PCIReadWord(dev, 0x3C) >> 8;
 
+            //IRQ.SetHandler((int)irqNum, IRQHandler);
+            Console.Write("AC97(");
+            Console.WriteNum(dev.Bus);
+            Console.Write(',');
+            Console.WriteNum(dev.Slot);
+            Console.Write(")");*/
+
+            /*int irq = 32+((dev.Slot << 2) | (intPIN - 1));
+            Console.WriteNum(irq);
+            Console.WriteLine("");
+            IOApicManager.blar(11, (uint)irq);*/
+            
             // Enable all interrupts
             PortIO.Out8((ushort)(m_nabmbar + CR), (byte)(CR_FEIE | CR_IOCE | CR_LVBIE));
 

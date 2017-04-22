@@ -252,7 +252,7 @@ namespace Sharpen.Drivers.Net
              */
             m_register_base = (uint)Paging.MapToVirtual(Paging.KernelDirectory, (int)m_register_base, 20 * 0x1000, Paging.PageFlags.Writable | Paging.PageFlags.Present);
             
-            IRQ.SetHandler(m_irq_num, handler);
+            //IRQ.SetHandler(m_irq_num, handler);
 
             readMac();
             start();

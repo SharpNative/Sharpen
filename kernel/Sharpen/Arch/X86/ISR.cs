@@ -64,7 +64,7 @@ namespace Sharpen.Arch
             int isrNum = regsPtr->IntNum;
             
             // If the kernel caused this, do a panic
-            if (Tasking.CurrentTask != null && Tasking.CurrentTask.PID == 0)
+            if (Tasking.CurrentTask == null || Tasking.CurrentTask.PID == 0)
             {
                 Panic.DoPanic(errorCodes[isrNum], regsPtr);
             }
