@@ -12,14 +12,20 @@ namespace Sharpen.Drivers.Block
 
         public static void Init()
         {
-            if(findAHCIDevice() != null)
+            PciDevice device = findAHCIDevice();
+
+            if (device != null)
             {
                 Console.WriteLine("[AHCI] Device detected, pauzing kernel...");
                 for (;;) ;
             }
             
 
+
         }
+
+
+
 
         private static PciDevice findAHCIDevice()
         {

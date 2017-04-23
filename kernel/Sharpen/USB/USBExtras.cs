@@ -136,6 +136,8 @@ namespace Sharpen.USB
     public unsafe struct USBTransfer
     {
 
+        public int ID { get; set; }
+
         public USBDeviceRequest Request { get; set; }
 
         public byte *Data { get; set; }
