@@ -84,7 +84,7 @@ namespace Sharpen.Drivers.Power
             outNode.Flags = NodeFlags.FILE;
 
             IDCookie cookie = new IDCookie(functionID);
-            outNode.Cookie = (ICookie)cookie;
+            outNode.Cookie = cookie;
 
             return outNode;
         }

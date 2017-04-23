@@ -25,11 +25,11 @@ namespace Sharpen.FileSystem
             cookie.Fifo = fifo;
 
             // Configure
-            readEnd.Cookie = (ICookie)cookie;
+            readEnd.Cookie = cookie;
             readEnd.GetSize = getSizeImpl;
             readEnd.Read = readImpl;
             readEnd.Close = closeImpl;
-            writeEnd.Cookie = (ICookie)cookie;
+            writeEnd.Cookie = cookie;
             writeEnd.GetSize = getSizeImpl;
             writeEnd.Write = writeImpl;
             writeEnd.Close = closeImpl;

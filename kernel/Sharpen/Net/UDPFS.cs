@@ -27,7 +27,7 @@ namespace Sharpen.Net
             dev.Node.Flags = NodeFlags.DIRECTORY;
             
             IDCookie cookie = new IDCookie((int)OPT.LIST);
-            dev.Node.Cookie = (ICookie)cookie;
+            dev.Node.Cookie = cookie;
             
             NetFS.RegisterDevice(dev);
         }
@@ -74,7 +74,7 @@ namespace Sharpen.Net
             node.FindDir = findDirImpl;
 
             IDCookie cookie = new IDCookie((int)opt);
-            node.Cookie = (ICookie)cookie;
+            node.Cookie = cookie;
 
             return node;
         }

@@ -421,7 +421,7 @@ namespace Sharpen.Drivers.Block
                 dev.Node.Write = writeImpl;
 
                 IDCookie cookie = new IDCookie(i);
-                dev.Node.Cookie = (ICookie)cookie;
+                dev.Node.Cookie = cookie;
 
                 DevFS.RegisterDevice(dev);
             }

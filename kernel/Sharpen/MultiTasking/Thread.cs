@@ -106,7 +106,7 @@ namespace Sharpen.MultiTasking
              */
             if (OwningTask == Tasking.KernelTask && OwningTask.ThreadCount == OwningTask.SleepingThreadCount + 1)
             {
-                while (!Awake())
+                while (!hasSleepTimeExpired())
                 {
                     // Wait for all interrupts, not just a task switch...
                     CPU.HLT();
@@ -119,14 +119,11 @@ namespace Sharpen.MultiTasking
 
                 // Will return when waiting is done
                 Tasking.Yield();
-
-                // Sleeping flag will be removed by Awake()
-                OwningTask.SleepingThreadCount--;
             }
 
             return 0;
         }
-
+        
         /// <summary>
         /// Sleeps some time
         /// </summary>
@@ -154,25 +151,29 @@ namespace Sharpen.MultiTasking
         }
 
         /// <summary>
+        /// Returns true if the sleeping time has expired
+        /// </summary>
+        /// <returns>If the sleeping time has expired</returns>
+        private bool hasSleepTimeExpired()
+        {
+            // If the full ticks are greater than the fullticks we needed to sleep until, we know we're done sleeping
+            // If the full ticks are the same, and the subticks are greater, we know we're done sleeping
+            return ((Time.FullTicks > m_sleepUntilFullTicks) || (Time.FullTicks == m_sleepUntilFullTicks && Time.SubTicks > m_sleepUntilSubTicks));
+        }
+
+        /// <summary>
         /// Wakes the thread up
         /// </summary>
         /// <returns>Returns true if the thread has waken up</returns>
         public bool Awake()
         {
-            // If the full ticks are greater than the fullticks we needed to sleep until, we know we're done sleeping
-            if (Time.FullTicks > m_sleepUntilFullTicks)
+            if (hasSleepTimeExpired())
             {
                 RemoveFlag(ThreadFlags.SLEEPING);
+                OwningTask.SleepingThreadCount--;
                 return true;
             }
-
-            // If the full ticks are the same, and the subticks are greater, we know we're done sleeping
-            if (Time.FullTicks == m_sleepUntilFullTicks && Time.SubTicks > m_sleepUntilSubTicks)
-            {
-                RemoveFlag(ThreadFlags.SLEEPING);
-                return true;
-            }
-
+            
             return false;
         }
 

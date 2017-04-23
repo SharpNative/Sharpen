@@ -54,7 +54,7 @@ namespace Sharpen.FileSystem
             IDCookie cookie = new IDCookie(task.PID);
 
             Node taskNode = new Node();
-            taskNode.Cookie = (ICookie)cookie;
+            taskNode.Cookie = cookie;
             taskNode.Flags = NodeFlags.DIRECTORY;
             taskNode.FindDir = procFindDirImpl;
             taskNode.ReadDir = procReadDirImpl;
@@ -128,7 +128,7 @@ namespace Sharpen.FileSystem
 
             Node threadNode = new Node();
             threadNode.Flags = NodeFlags.FILE;
-            threadNode.Cookie = (ICookie)threadCookie;
+            threadNode.Cookie = threadCookie;
 
             return threadNode;
         }

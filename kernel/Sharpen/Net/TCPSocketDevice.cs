@@ -121,7 +121,8 @@ namespace Sharpen.Net
             node.Read = readImpl;
             node.Write = writeImpl;
             
-            node.Cookie = (ICookie)sock;
+            // TODO: you need a cookie for this
+            //node.Cookie = sock;
 
             return node;
         }
@@ -155,7 +156,8 @@ namespace Sharpen.Net
             node.Read = readImpl;
             node.Write = writeImpl;
 
-            node.Cookie = (ICookie)sock;
+            // TODO: you need a cookie for this
+            //node.Cookie = sock;
 
             return node;
         }

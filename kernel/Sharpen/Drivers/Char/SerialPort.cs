@@ -40,7 +40,7 @@ namespace Sharpen.Drivers.Char
             dev.Node.GetSize = getSizeImpl;
 
             IDCookie cookie = new IDCookie(num);
-            dev.Node.Cookie = (ICookie)cookie;
+            dev.Node.Cookie = cookie;
 
             DevFS.RegisterDevice(dev);
         }
