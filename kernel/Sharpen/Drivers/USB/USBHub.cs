@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Mem;
+using Sharpen.MultiTasking;
 using Sharpen.USB;
 using System;
 using System.Collections.Generic;
@@ -42,8 +43,8 @@ namespace Sharpen.Drivers.USB
         /**
          * Status bitmasks
          */
-        const ushort USB_HUB_STATUS_POWER = 0x0100;
-        const ushort USB_HUB_STATUS_RESET = 0x0010;
+        const ushort USB_HUB_PORT_CONNECTION = 0x01;
+        const ushort USB_HUB_PORT_ENABLE = 0x02;
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct USBHubDescriptor
@@ -83,35 +84,31 @@ namespace Sharpen.Drivers.USB
             /**
              * Reset port
              */
-            if (device.Request(USBDevice.TYPE_HOSTTODEVICE | USBDevice.TYPE_CLASS | USBDevice.TYPE_OTHER,
+            if (!device.Request(USBDevice.TYPE_HOSTTODEVICE | USBDevice.TYPE_CLASS | USBDevice.TYPE_OTHER,
                 USBDevice.REQ_SET_FEATURE, USB_HUB_FEATURE_RESET, (ushort)(port + 1), 0, null))
                 return false;
 
             /**
              * Wait a maximum of 150ms for port to reset
              */
-            for(int i = 0; i < 15; i++)
+            for (int i = 0; i < 15; i++)
             {
-                Sleep(1);
+                Tasking.CurrentTask.CurrentThread.Sleep(0, 10000);
+
 
                 uint status = ReadStatus(device, port);
 
                 if (status == 0)
                     continue;
-
-
                 
-                /**
-                 * We need an acknowledge for power or reset
-                 */
-                if ((status & USB_HUB_STATUS_RESET) > 0)
+                if ((status & USB_HUB_PORT_CONNECTION) > 0)
                     return true;
 
 
-                if ((status & USB_HUB_STATUS_POWER) > 0)
+                if ((status & USB_HUB_PORT_ENABLE) > 0)
                     return true;
             }
-
+            
             return false;
         }
 
@@ -125,7 +122,7 @@ namespace Sharpen.Drivers.USB
         {
             uint* status = (uint*)Heap.Alloc(sizeof(uint));
 
-            if(device.Request(USBDevice.TYPE_DEVICETOHOST | USBDevice.TYPE_CLASS | USBDevice.TYPE_OTHER, USBDevice.REQ_GET_STATUS, 0, (ushort)(port + 1), 1, (byte *)status))
+            if(!device.Request(USBDevice.TYPE_DEVICETOHOST | USBDevice.TYPE_CLASS | USBDevice.TYPE_OTHER, USBDevice.REQ_GET_STATUS, 0, (ushort)(port + 1), 1, (byte *)status))
             {
                 Heap.Free(status);
 
@@ -142,7 +139,7 @@ namespace Sharpen.Drivers.USB
         private unsafe void Probe(USBDevice device)
         {
             int numPorts = descriptor->NumPorts;
-
+            
             /**
              * Do we need to power ports manually? then enable power on all devices
              */
@@ -155,22 +152,24 @@ namespace Sharpen.Drivers.USB
                         continue;
 
                     // Note: this does wait powertime * 10 ms
-                    Sleep(descriptor->PowerTime);
+                    Tasking.CurrentTask.CurrentThread.Sleep(0, (uint)descriptor->PowerTime * 10000);
                 }
             }
+
 
             /**
              * We can now reset port and wait
              */
-             for(int i = 0; i < numPorts; i++)
+            for(int i = 0; i < numPorts; i++)
             {
 
                 if (!ResetPort(device, i))
                     continue;
-
+                
                 uint status = ReadStatus(device, i);
+                
 
-                if((status & 0x2) > 0)
+                if((status & USB_HUB_PORT_ENABLE) > 0)
                 {
                     /**
                      * Port enable, we can init here now!
@@ -195,9 +194,10 @@ namespace Sharpen.Drivers.USB
              * Loaad descriptor
              */
             descriptor = (USBHubDescriptor*)Heap.Alloc(sizeof(USBHubDescriptor));
-
+            
             if (!device.Request(USBDevice.TYPE_DEVICETOHOST | USBDevice.TYPE_CLASS | USBDevice.TYPE_DEV, USBDevice.REQ_GET_DESCRIPTOR, (USB_HUB_DESCRIPTOR_TYPE << 8) | 0, 0, (ushort)sizeof(USBHubDescriptor), (byte *)descriptor))
                 return false;
+            
 
             Probe(device);
 

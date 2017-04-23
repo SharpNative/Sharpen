@@ -36,13 +36,13 @@ namespace Sharpen.USB
         /// <returns></returns>
         public static unsafe IUSBDriver LoadDriver(USBDevice device)
         {
-            for(int i = 0; i < mDriverList.Count; i++)
+            for (int i = 0; i < mDriverList.Count; i++)
             {
                 IUSBDriver driver = (IUSBDriver)mDriverList.Item[i];
                 
                 IUSBDriver loadedDriver = driver.Load(device);
                 
-                if (driver != null)
+                if (loadedDriver != null)
                     return loadedDriver;
             }
 

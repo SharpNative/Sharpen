@@ -3,34 +3,21 @@ using Sharpen.USB;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.USB
 {
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct MouseLocation
+    unsafe class USBHIDKeyboard: IUSBDriver
     {
-        public byte Buttons;
-        public byte MovementX;
-        public byte MovementY;
-    }
-
-
-    unsafe class USBHIDMouse : IUSBDriver
-    {
-
-
         private USBTransfer* mTransfer;
 
-        private MouseLocation* mLocation;
+        private byte* Data;
 
         public static void Init()
         {
-            USBHIDMouse mouse = new USBHIDMouse();
-            USBDrivers.RegisterDriver(mouse);
+            USBHIDKeyboard keyboard = new USBHIDKeyboard();
+            USBDrivers.RegisterDriver(keyboard);
         }
 
         public void Close(USBDevice device)
@@ -40,37 +27,36 @@ namespace Sharpen.Drivers.USB
 
         public unsafe IUSBDriver Load(USBDevice device)
         {
+
             USBInterfaceDescriptor* desc = device.InterfaceDesc;
             if (!(desc->Class == (byte)USBClassCodes.HID &&
                 desc->SubClass == 0x01 &&
-                desc->Protocol == 0x02))
+                desc->Protocol == 0x01))
                 return null;
 
             device.Classifier = USBDeviceClassifier.FUNCTION;
 
+            USBHIDKeyboard kb = new USBHIDKeyboard();
+            kb.initDevice(device);
+            return kb;
+        }
+
+        public unsafe void initDevice(USBDevice device)
+        {
             mTransfer = (USBTransfer*)Heap.Alloc(sizeof(USBTransfer));
-            mLocation = (MouseLocation*)Heap.Alloc(sizeof(MouseLocation));
+            Data = (byte*)Heap.Alloc(8);
 
             /**
              * Prepare poll transfer
              */
-            mTransfer->Data = (byte *)mLocation;
-            mTransfer->Length = 3;
+            mTransfer->Data = (byte*)Data;
+            mTransfer->Length = 8;
             mTransfer->Executed = false;
             mTransfer->Success = false;
 
-
-
-            device.PrepareInterrupt(device, mTransfer);
-
-
-            return this;
+            //device.PrepareInterrupt(device, mTransfer);
         }
 
-        /// <summary>
-        /// Driver poll
-        /// </summary>
-        /// <param name="device"></param>
         public void Poll(USBDevice device)
         {
             if (mTransfer->Executed)
@@ -78,9 +64,8 @@ namespace Sharpen.Drivers.USB
                 if (mTransfer->Success)
                 {
                     /**
-                     * Todo: Handle mouse events here!
+                     * Todo: Handle keyboard events here!
                      */
-                    Console.WriteLine("Mouse move!");
                 }
 
 

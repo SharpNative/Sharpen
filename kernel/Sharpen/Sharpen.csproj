@@ -58,6 +58,7 @@
     <Compile Include="Arch\MPTable.cs" />
     <Compile Include="Arch\MPTableExtras.cs" />
     <Compile Include="Arch\PCIClassCodes.cs" />
+    <Compile Include="Drivers\USB\USBHIDKeyboard.cs" />
     <Compile Include="Drivers\USB\USBHIDMouse.cs" />
     <Compile Include="Drivers\USB\USBHub.cs" />
     <Compile Include="Net\TCPSocketDevice.cs" />

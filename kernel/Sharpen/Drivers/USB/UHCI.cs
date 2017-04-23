@@ -211,9 +211,10 @@ namespace Sharpen.Drivers.USB
              */
             PortIO.Out16((ushort)(uhciDev.IOBase + REG_USBCMD), USBCMD_RS);
 
-            Sharpen.USB.USB.RegisterController(uhciDev);
 
             probe(uhciDev);
+
+            Sharpen.USB.USB.RegisterController(uhciDev);
         }
 
         /// <summary>
@@ -306,7 +307,7 @@ namespace Sharpen.Drivers.USB
             UHCIController controller = (UHCIController)dev.Controller;
             
             uint endp = (uint)(dev.EndPointDesc->Address & 0xF);
-
+            
             UHCITransmitDescriptor* td = GetTransmit(controller);
             if(td == null)
             {
@@ -471,7 +472,6 @@ namespace Sharpen.Drivers.USB
         {
             USBTransfer *transfer = head->Transfer;
             
-
             UHCITransmitDescriptor* td = head->Transmit;
             
             if((head->Element & ~0xF) == 0)
