@@ -31,7 +31,7 @@ namespace Sharpen.Net
             node.Close = closeImpl;
 
             UDPSocketCookie cookie = new UDPSocketCookie(sock);
-            node.Cookie = (ICookie)cookie;
+            node.Cookie = cookie;
 
             return node;
         }

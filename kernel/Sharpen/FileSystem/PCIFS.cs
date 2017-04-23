@@ -62,7 +62,7 @@ namespace Sharpen.FileSystem
             IDCookie cookie = new IDCookie((int)key);
 
             Node outNode = new Node();
-            outNode.Cookie = (ICookie)cookie;
+            outNode.Cookie = cookie;
             outNode.Flags = NodeFlags.DIRECTORY;
             outNode.ReadDir = deviceReadDir;
             outNode.FindDir = deviceFindDir;
@@ -242,7 +242,7 @@ namespace Sharpen.FileSystem
             Node node = new Node();
 
             IDCookie cookie = new IDCookie((int)key);
-            node.Cookie = (ICookie)cookie;
+            node.Cookie = cookie;
 
             if (type == 0)
             {

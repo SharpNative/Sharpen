@@ -74,7 +74,7 @@ namespace Sharpen.FileSystem
              */
             Fat16Cookie rootCookie = new Fat16Cookie();
             rootCookie.Cluster = 0xFFFFFFFF;
-            p.Node.Cookie = (ICookie)rootCookie;
+            p.Node.Cookie = rootCookie;
 
             VFS.AddMountPoint(p);
         }
@@ -187,7 +187,7 @@ namespace Sharpen.FileSystem
             cookie.DirEntry = dirEntry;
             cookie.Cluster = cluster;
             cookie.Num = num;
-            node.Cookie = (ICookie)cookie;
+            node.Cookie = cookie;
 
             /**
              * Is it a directory?

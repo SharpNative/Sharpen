@@ -111,7 +111,7 @@ namespace Sharpen.FileSystem
             node.Size = 4;
 
             IDCookie cookie = new IDCookie((int)opt);
-            node.Cookie = (ICookie)cookie;
+            node.Cookie = cookie;
 
             return node;
         }
