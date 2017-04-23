@@ -104,7 +104,7 @@ namespace Sharpen.MultiTasking
              * when we have a taskswitch that happens.
              * This case can only happen if we're the KernelTask with all threads sleeping but this one, so we just wait here
              */
-            if (OwningTask == Tasking.KernelTask && OwningTask.ThreadCount == 1)
+            if (OwningTask == Tasking.KernelTask && OwningTask.ThreadCount == OwningTask.SleepingThreadCount + 1)
             {
                 while (!Awake())
                 {
@@ -175,7 +175,7 @@ namespace Sharpen.MultiTasking
 
             return false;
         }
-        
+
         /// <summary>
         /// Returns from a signal (restores original context)
         /// </summary>
