@@ -52,15 +52,15 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Drivers\Power\Acpica.cs" />
     <Compile Include="Arch\LocalApic.cs" />
     <Compile Include="Arch\IOApic.cs" />
     <Compile Include="Arch\IOApicManager.cs" />
-    <Compile Include="Arch\MPTable.cs" />
-    <Compile Include="Arch\MPTableExtras.cs" />
     <Compile Include="Arch\PCIClassCodes.cs" />
     <Compile Include="Drivers\USB\USBHIDKeyboard.cs" />
     <Compile Include="Drivers\USB\USBHIDMouse.cs" />
     <Compile Include="Drivers\USB\USBHub.cs" />
+    <Compile Include="Synchronisation\Spinlock.cs" />
     <Compile Include="Net\TCPSocketDevice.cs" />
     <Compile Include="Net\TCPFS.cs" />
     <Compile Include="Arch\X86\X86SignalContext.cs" />
@@ -94,7 +94,7 @@
     <Compile Include="Drivers\Net\PCNet2.cs" />
     <Compile Include="Drivers\Net\RTL8139.cs" />
     <Compile Include="Drivers\Power\AcpiDevice.cs" />
-    <Compile Include="ErrorCode.cs" />
+    <Compile Include="Exec\ErrorCode.cs" />
     <Compile Include="Exec\ELFLoader.cs" />
     <Compile Include="Exec\Loader.cs" />
     <Compile Include="Exec\Syscalls.cs" />
@@ -138,15 +138,15 @@
     <Compile Include="Arch\X86\PIT.cs" />
     <Compile Include="Arch\X86\Regs.cs" />
     <Compile Include="Arch\X86\Syscall.cs" />
-    <Compile Include="SymbolTable.cs" />
+    <Compile Include="Utilities\SymbolTable.cs" />
     <Compile Include="USB\IUSBDriver.cs" />
     <Compile Include="USB\USBDrivers.cs" />
     <Compile Include="USB\USBExtras.cs" />
     <Compile Include="USB\USB.cs" />
     <Compile Include="USB\USBController.cs" />
     <Compile Include="USB\USBDevice.cs" />
-    <Compile Include="Utilities\Array.cs" />
-    <Compile Include="Utilities\Byte.cs" />
+    <Compile Include="Lib\Array.cs" />
+    <Compile Include="Lib\Byte.cs" />
     <Compile Include="Drivers\Other\VboxDev.cs" />
     <Compile Include="Drivers\Other\VboxDevExtras.cs" />
     <Compile Include="Drivers\Other\VboxDevFSDriver.cs" />
@@ -183,11 +183,11 @@
     <Compile Include="Arch\X86\Paging.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utilities\Int.cs" />
-    <Compile Include="Utilities\String.cs" />
+    <Compile Include="Lib\Int.cs" />
+    <Compile Include="Lib\String.cs" />
     <Compile Include="MultiTasking\TaskPriority.cs" />
     <Compile Include="Time.cs" />
-    <Compile Include="Mutex.cs" />
+    <Compile Include="Synchronisation\Mutex.cs" />
     <Compile Include="Utilities\Util.cs" />
   </ItemGroup>
   <ItemGroup>

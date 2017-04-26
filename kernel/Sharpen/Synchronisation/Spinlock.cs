@@ -1,11 +1,11 @@
-﻿namespace Sharpen
+﻿namespace Sharpen.Synchronisation
 {
-    sealed class Mutex
+    sealed class Spinlock
     {
         private int m_lock;
         
         /// <summary>
-        /// Locks the mutex
+        /// Locks the spinlock
         /// </summary>
         public unsafe void Lock()
         {
@@ -16,7 +16,7 @@
         }
 
         /// <summary>
-        /// Unlocks the mutex
+        /// Unlocks the spinlock
         /// </summary>
         public unsafe void Unlock()
         {
@@ -27,9 +27,9 @@
         }
 
         /// <summary>
-        /// Returns if the mutex is locked
+        /// Returns if the spinlock is locked
         /// </summary>
-        /// <returns>If the mutex is locked</returns>
+        /// <returns>If the spinlock is locked</returns>
         public bool IsLocked()
         {
             return (m_lock == 1);

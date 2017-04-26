@@ -2,6 +2,7 @@
 using Sharpen.Arch.X86;
 using Sharpen.Exec;
 using Sharpen.Mem;
+using Sharpen.Synchronisation;
 
 namespace Sharpen.MultiTasking
 {

@@ -1,7 +1,8 @@
 ﻿using Sharpen.Mem;
 using LibCS2C.Attributes;
+using Sharpen.Utilities;
 
-namespace Sharpen.Utilities
+namespace Sharpen.Lib
 {
     public sealed class String
     {

@@ -215,6 +215,7 @@ ModelManifest.xml
 kernel/C/build
 kernel/C/kernel
 kernel/C/symbols.asm
+kernel/acpica/acpica-*
 
 output.c
 output.h

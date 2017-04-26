@@ -1,0 +1,82 @@
+diff -Naur acpica-original/source/components/utilities/utclib.c acpica-unix-20170303/source/components/utilities/utclib.c
+--- acpica-original/source/components/utilities/utclib.c	2017-04-26 16:12:07.659722900 +0200
++++ acpica-unix-20170303/source/components/utilities/utclib.c	2017-04-26 16:11:14.760961900 +0200
+@@ -303,7 +303,7 @@
+  * DESCRIPTION: Copy arbitrary bytes of memory
+  *
+  ******************************************************************************/
+-
++#if 0
+ void *
+ memcpy (
+     void                    *Dest,
+@@ -324,7 +324,7 @@
+ 
+     return (Dest);
+ }
+-
++#endif
+ 
+ /*******************************************************************************
+  *
+@@ -339,7 +339,7 @@
+  * DESCRIPTION: Initialize a buffer to a known value.
+  *
+  ******************************************************************************/
+-
++#if 0
+ void *
+ memset (
+     void                    *Dest,
+@@ -358,7 +358,7 @@
+ 
+     return (Dest);
+ }
+-
++#endif
+ 
+ /*******************************************************************************
+  *
+diff -Naur acpica-original/source/include/platform/acenvex.h acpica-unix-20170303/source/include/platform/acenvex.h
+--- acpica-original/source/include/platform/acenvex.h	2017-04-26 16:12:08.126484900 +0200
++++ acpica-unix-20170303/source/include/platform/acenvex.h	2017-04-26 16:09:57.586308300 +0200
+@@ -160,7 +160,7 @@
+  * including these files.
+  *
+  *****************************************************************************/
+-
++#if 0
+ #if defined(_LINUX) || defined(__linux__)
+ #include "aclinuxex.h"
+ 
+@@ -176,6 +176,8 @@
+ #include "acefiex.h"
+ 
+ #endif
++#endif
++#include "acsharpenex.h"
+ 
+ #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+ #include "acgccex.h"
+diff -Naur acpica-original/source/include/platform/acenv.h acpica-unix-20170303/source/include/platform/acenv.h
+--- acpica-original/source/include/platform/acenv.h	2017-04-26 16:12:08.121589100 +0200
++++ acpica-unix-20170303/source/include/platform/acenv.h	2017-04-26 16:10:22.293248200 +0200
+@@ -289,7 +289,7 @@
+ #include "acintel.h"
+ 
+ #endif
+-
++#if 0
+ #if defined(_LINUX) || defined(__linux__)
+ #include "aclinux.h"
+ 
+@@ -349,7 +349,8 @@
+ 
+ #error Unknown target environment
+ #endif
+-
++#endif
++#include "acsharpen.h"
+ /*! [End] no source code translation !*/
+ 
+ 

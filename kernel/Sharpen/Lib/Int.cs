@@ -1,7 +1,8 @@
 ﻿using LibCS2C.Attributes;
 using Sharpen.Mem;
+using Sharpen.Utilities;
 
-namespace Sharpen.Utilities
+namespace Sharpen.Lib
 {
     public sealed class Int
     {

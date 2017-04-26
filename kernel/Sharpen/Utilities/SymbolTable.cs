@@ -1,6 +1,4 @@
-﻿using Sharpen.Utilities;
-
-namespace Sharpen
+﻿namespace Sharpen.Utilities
 {
     public sealed unsafe class SymbolTable
     {

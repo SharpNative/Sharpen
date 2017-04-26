@@ -131,7 +131,7 @@ namespace Sharpen.Arch
 
             // We now know how often the APIC timer has ticked in 10ms
             uint ticks = 0xFFFFFFFF - Read(LAPIC_TIMER_CURRENT_COUNT);
-            Time.TicksPerSecond = ticks / 10000;
+            Time.TicksPerSecond = 1000 / 10;
 
             // Start periodic APIC timer
             Write(LAPIC_LVT_TIMER, 32 | LAPIC_TIMER_MODE_PERIODIC);

@@ -1,8 +1,10 @@
-#include <stdint.h>
-
 /* Constants */
 #define NULL ((void*)0)
 #define SSE_XMM_SIZE 16
+
+#include <stdint.h>
+//#include <acpi.h>
+
 
 /* Prototypes */
 static void* calloc(int nitems, int size);
@@ -124,7 +126,7 @@ inline uint32_t Sharpen_Utilities_Util_ReadVolatile32_1uint32_t_(uint32_t addres
     return *(volatile uint32_t volatile*)address;
 }
 
-inline void* Sharpen_SymbolTable_getSymbolTable_0(void)
+inline void* Sharpen_Utilities_SymbolTable_getSymbolTable_0(void)
 {
     extern void* kernelsymbols;
     return (void*)&kernelsymbols;

@@ -1,5 +1,6 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Collections;
+using Sharpen.Synchronisation;
 
 namespace Sharpen.Mem
 {
@@ -84,7 +85,7 @@ namespace Sharpen.Mem
             uint start = Paging.AlignUp((uint)address);
             size = Paging.AlignUp(size);
             mutex.Lock();
-            for (uint i = start; i < size; i += 0x1000)
+            for (uint i = start; i < start + size; i += 0x1000)
             {
                 bitmap.SetBit((int)(i / 0x1000));
             }

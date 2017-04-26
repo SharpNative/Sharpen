@@ -45,7 +45,7 @@ namespace Sharpen
             // Message
             Console.WriteLine(str);
 
-            if (Tasking.CurrentTask != null)
+            if (Tasking.IsActive)
             {
                 Console.Write("\tPID: ");
                 Console.WriteNum(Tasking.CurrentTask.PID);

@@ -50,7 +50,7 @@ namespace Sharpen
             initStorage();
             initNetworking();
             runUserspace();
-            
+
             // Idle loop
             while (true)
                 CPU.HLT();

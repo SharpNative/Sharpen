@@ -69,7 +69,7 @@ namespace Sharpen.Arch
             IOApic IOApic = GetIOApicFor(src);
             if (IOApic == null)
             {
-                Console.Write("[IOAPIC] Could not setup ISA redirection (");
+                Console.Write("[IOAPIC] Could not setup ISA redirection: ");
                 Console.WriteNum((int)src);
                 Console.Write("->");
                 Console.WriteNum((int)dst);

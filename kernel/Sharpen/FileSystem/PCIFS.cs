@@ -1,6 +1,7 @@
 ﻿using Sharpen.Arch;
 using Sharpen.Collections;
 using Sharpen.FileSystem.Cookie;
+using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -14,7 +15,7 @@ namespace Sharpen.FileSystem
             public ushort Slot;
             public ushort Function;
 
-            public byte classCode;
+            public byte ClassCode;
             public byte SubClass;
             public byte ProgIntf;
 
@@ -290,7 +291,7 @@ namespace Sharpen.FileSystem
             info->Slot = dev.Slot;
             info->Function = dev.Function;
 
-            info->classCode = dev.classCode;
+            info->ClassCode = dev.classCode;
             info->SubClass = dev.SubClass;
             info->ProgIntf = dev.ProgIntf;
 

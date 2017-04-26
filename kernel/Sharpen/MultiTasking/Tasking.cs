@@ -7,6 +7,7 @@ namespace Sharpen.MultiTasking
     {
         public static Task KernelTask { get; private set; }
         public static Task CurrentTask { get; private set; }
+        public static bool IsActive { get; private set; }
 
         /// <summary>
         /// Initializes tasking
@@ -26,6 +27,7 @@ namespace Sharpen.MultiTasking
             kernel.NextTask = kernel;
 
             // Do initial task switch to setup kernel task
+            IsActive = true;
             Yield();
             Console.WriteLine("[Tasking] Initialized");
         }

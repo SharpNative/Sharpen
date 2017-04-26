@@ -1,4 +1,6 @@
-﻿namespace Sharpen.Collections
+﻿using Sharpen.Synchronisation;
+
+namespace Sharpen.Collections
 {
     class Dictionary
     {
