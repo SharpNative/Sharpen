@@ -2,14 +2,8 @@
 using Sharpen.Arch;
 using Sharpen.Mem;
 using Sharpen.MultiTasking;
+using Sharpen.Synchronisation;
 using Sharpen.USB;
-using Sharpen.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.USB
 {
