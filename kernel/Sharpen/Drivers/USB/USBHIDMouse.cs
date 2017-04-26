@@ -58,6 +58,7 @@ namespace Sharpen.Drivers.USB
             mTransfer->Length = 3;
             mTransfer->Executed = false;
             mTransfer->Success = false;
+            mTransfer->ID = 2;
 
 
 
@@ -80,10 +81,11 @@ namespace Sharpen.Drivers.USB
                     /**
                      * Todo: Handle mouse events here!
                      */
-                    Console.WriteLine("Mouse move!");
+                    Console.Write("Mouse mov:");
+                    Console.WriteHex(mLocation->MovementX);
+                    Console.WriteLine("");
                 }
-
-
+                
                 /**
                  * And again
                  */

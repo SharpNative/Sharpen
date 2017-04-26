@@ -53,8 +53,9 @@ namespace Sharpen.Drivers.USB
             mTransfer->Length = 8;
             mTransfer->Executed = false;
             mTransfer->Success = false;
+            mTransfer->ID = 1;
 
-            //device.PrepareInterrupt(device, mTransfer);
+            device.PrepareInterrupt(device, mTransfer);
         }
 
         public void Poll(USBDevice device)
@@ -66,8 +67,8 @@ namespace Sharpen.Drivers.USB
                     /**
                      * Todo: Handle keyboard events here!
                      */
+                    Console.WriteLine("TOBO");
                 }
-
 
                 /**
                  * And again
