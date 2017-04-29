@@ -13,7 +13,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         public unsafe static void Init()
         {
-            m_devices = new StringDictionary(5);
+            m_devices = new StringDictionary(8);
             
             MountPoint mp = new MountPoint();
             mp.Name = "devices";

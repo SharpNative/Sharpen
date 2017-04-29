@@ -417,6 +417,7 @@ namespace Sharpen.Drivers.Block
                 name[1] = 'D';
                 name[2] = 'D';
                 name[3] = (char)('0' + i);
+                name[4] = '\0';
                 dev.Name = Util.CharPtrToString(name);
                 
                 dev.Node = new Node();

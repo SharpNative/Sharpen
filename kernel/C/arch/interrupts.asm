@@ -60,7 +60,7 @@ extern Sharpen_Arch_LocalApic_timerHandler_1void__
     global Sharpen_Arch_IDT_Request%1_0
     Sharpen_Arch_IDT_Request%1_0:
         push 0
-        push (%1 + 32)
+        push %1
         jmp irq_common
 %endmacro
 

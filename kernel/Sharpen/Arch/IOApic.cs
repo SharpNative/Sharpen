@@ -109,7 +109,7 @@ namespace Sharpen.Arch
             entry |= IOAPIC_REDIR_DELIVERY_FIXED;
             entry |= IOAPIC_REDIR_DESTMODE_PHYS;
             entry |= IOAPIC_REDIR_INT_UNMASKED;
-            entry |= (ulong)((Id & 0xFF) << 56) | IOAPIC_REDIR_DESTMODE_PHYS;
+            entry |= ((ulong)(Id & 0xFF) << 56) | IOAPIC_REDIR_DESTMODE_PHYS;
             entry |= interrupt & 0xFF;
 
             Write(IOAPIC_REDIR + ((pin * 2) + 0), (uint)(entry & 0xFFFFFFFF));

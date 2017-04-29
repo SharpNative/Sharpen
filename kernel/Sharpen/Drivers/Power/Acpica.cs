@@ -12,6 +12,21 @@ namespace Sharpen.Power
     {
         #region Constants
 
+        // Address space (operation region) types
+        public const byte ACPI_ADR_SPACE_SYSTEM_MEMORY = 0;
+        public const byte ACPI_ADR_SPACE_SYSTEM_IO = 1;
+        public const byte ACPI_ADR_SPACE_PCI_CONFIG = 2;
+        public const byte ACPI_ADR_SPACE_EC = 3;
+        public const byte ACPI_ADR_SPACE_SMBUS = 4;
+        public const byte ACPI_ADR_SPACE_CMOS = 5;
+        public const byte ACPI_ADR_SPACE_PCI_BAR_TARGET = 6;
+        public const byte ACPI_ADR_SPACE_IPMI = 7;
+        public const byte ACPI_ADR_SPACE_GPIO = 8;
+        public const byte ACPI_ADR_SPACE_GSBUS = 9;
+        public const byte ACPI_ADR_SPACE_PLATFORM_COMM = 10;
+
+        public const uint ACPI_DEFAULT_HANDLER = 0;
+
         // Signal
         public const int ACPI_SIGNAL_FATAL = 0;
         public const int ACPI_SIGNAL_BREAKPOINT = 1;
@@ -604,6 +619,8 @@ namespace Sharpen.Power
                 *Value = PortIO.In16((ushort)Address);
             else if (Width == 32)
                 *Value = PortIO.In32((ushort)Address);
+            else
+                return AE_BAD_PARAMETER;
 
             return AE_OK;
         }
@@ -624,6 +641,8 @@ namespace Sharpen.Power
                 PortIO.Out16((ushort)Address, (ushort)Value);
             else if (Width == 32)
                 PortIO.Out32((ushort)Address, Value);
+            else
+                return AE_BAD_PARAMETER;
 
             return AE_OK;
         }
@@ -639,7 +658,7 @@ namespace Sharpen.Power
         [Plug("AcpiOsReadPciConfiguration")]
         public static int AcpiOsReadPciConfiguration(PciID* PciId, uint Register, ulong* Value, uint Width)
         {
-            *Value = PCI.PCIRead(PciId->Bus, PciId->Device, PciId->Function, (ushort)Register, Width);;
+            *Value = PCI.PCIRead(PciId->Bus, PciId->Device, PciId->Function, (ushort)Register, Width / 8);
             return AE_OK;
         }
 
@@ -654,7 +673,7 @@ namespace Sharpen.Power
         [Plug("AcpiOsWritePciConfiguration")]
         public static int AcpiOsWritePciConfiguration(PciID* PciId, uint Register, ulong Value, uint Width)
         {
-            PCI.PCIWrite(PciId->Bus, PciId->Device, PciId->Function, (ushort)Register, (uint)Value, Width);
+            PCI.PCIWrite(PciId->Bus, PciId->Device, PciId->Function, (ushort)Register, (uint)Value, Width / 8);
             return AE_OK;
         }
 
@@ -913,5 +932,17 @@ namespace Sharpen.Power
         /// <returns>Status</returns>
         [Extern("AcpiWalkResources")]
         public static extern int AcpiWalkResources(void* DeviceHandle, string Name, WalkResourceCallback UserFunction, void* Context);
+
+        /// <summary>
+        /// Install handlers for ACPI Operation Region events
+        /// </summary>
+        /// <param name="Device">A handle for the object for which an address space handler will be installed.</param>
+        /// <param name="SpaceId">The ID of the Address Space or Operation Region to be managed by this handler</param>
+        /// <param name="Handler">Address of the handler to be installed</param>
+        /// <param name="Setup">Address of a start/stop initialization/termination function</param>
+        /// <param name="Context">A context value that will be passed to the handler as a parameter</param>
+        /// <returns>Status</returns>
+        [Extern("AcpiInstallAddressSpaceHandler")]
+        public static extern int AcpiInstallAddressSpaceHandler(void* Device, byte SpaceId, void* Handler, void* Setup, void* Context);
     }
 }

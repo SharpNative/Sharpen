@@ -64,7 +64,7 @@ namespace Sharpen
             PCI.Init();
             PCIFS.Init();
 
-            //AC97.Init();
+            AC97.Init();
             VboxDev.Init();
         }
 
@@ -92,6 +92,11 @@ namespace Sharpen
             ATA.Init();
 
             Node hddNode = VFS.GetByAbsolutePath("devices://HDD0");
+            if (hddNode == null)
+            {
+                Panic.DoPanic("HDD0 not found");
+            }
+
             Fat16.Init(hddNode, "C");
             Tasking.KernelTask.CurrentDirectory = "C://";
         }
@@ -139,9 +144,9 @@ namespace Sharpen
             DHCP.Discover();
 
 
-            /*Thread packetHandler = new Thread();
-            packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest2), 0, null, true);
-            Tasking.KernelTask.AddThread(packetHandler);*/
+            //Thread packetHandler = new Thread();
+            //packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest), 0, null, true);
+            //Tasking.KernelTask.AddThread(packetHandler);
 
 
         }

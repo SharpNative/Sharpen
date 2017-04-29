@@ -69,7 +69,7 @@ namespace Sharpen.Drivers.Power
                         m_intSourceOverrides[intSourceOverride->IRQSource].GSI = intSourceOverride->GlobalSystemInterrupt;
                         m_intSourceOverrides[intSourceOverride->IRQSource].Polarity = (uint)(intSourceOverride->Flags & 0x3);
                         m_intSourceOverrides[intSourceOverride->IRQSource].Trigger = (uint)(intSourceOverride->Flags & (3 << 2)) >> 2;
-                        
+
                         break;
                 }
 
@@ -120,35 +120,48 @@ namespace Sharpen.Drivers.Power
             if (status != Acpica.AE_OK)
             {
                 Panic.DoPanic("[ACPI] Couldn't initialize ACPICA subsystem");
-                return;
             }
 
             status = Acpica.AcpiInitializeTables(null, 16, false);
             if (status != Acpica.AE_OK)
             {
                 Panic.DoPanic("[ACPI] Couldn't initialize tables");
-                return;
+            }
+
+            status = Acpica.AcpiInstallAddressSpaceHandler((void*)Acpica.ACPI_ROOT_OBJECT, Acpica.ACPI_ADR_SPACE_SYSTEM_MEMORY, (void*)Acpica.ACPI_DEFAULT_HANDLER, null, null);
+            if (status != Acpica.AE_OK)
+            {
+                Panic.DoPanic("[ACPI] Could not install address space handler for system memory");
+            }
+
+            status = Acpica.AcpiInstallAddressSpaceHandler((void*)Acpica.ACPI_ROOT_OBJECT, Acpica.ACPI_ADR_SPACE_SYSTEM_IO, (void*)Acpica.ACPI_DEFAULT_HANDLER, null, null);
+            if (status != Acpica.AE_OK)
+            {
+                Panic.DoPanic("[ACPI] Could not install address space handler for system IO");
+            }
+
+            status = Acpica.AcpiInstallAddressSpaceHandler((void*)Acpica.ACPI_ROOT_OBJECT, Acpica.ACPI_ADR_SPACE_PCI_CONFIG, (void*)Acpica.ACPI_DEFAULT_HANDLER, null, null);
+            if (status != Acpica.AE_OK)
+            {
+                Panic.DoPanic("[ACPI] Could not install address space handler for PCI");
             }
 
             status = Acpica.AcpiLoadTables();
             if (status != Acpica.AE_OK)
             {
                 Panic.DoPanic("[ACPI] Couldn't load tables");
-                return;
             }
 
             status = Acpica.AcpiEnableSubsystem(Acpica.ACPI_FULL_INITIALIZATION);
             if (status != Acpica.AE_OK)
             {
                 Panic.DoPanic("[ACPI] Couldn't enable subsystems:");
-                return;
             }
 
             status = Acpica.AcpiInitializeObjects(Acpica.ACPI_FULL_INITIALIZATION);
             if (status != Acpica.AE_OK)
             {
                 Panic.DoPanic("[ACPI] Couldn't initialize objects");
-                return;
             }
 
             // MADT table contains info about APIC, processors, ...
@@ -157,7 +170,6 @@ namespace Sharpen.Drivers.Power
             if (status != Acpica.AE_OK)
             {
                 Panic.DoPanic("[ACPI] Couldn't find MADT table");
-                return;
             }
 
             parseMADT((MADT*)table);

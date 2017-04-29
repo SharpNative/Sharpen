@@ -201,6 +201,8 @@ namespace Sharpen.Arch
         /// <param name="dev">The device</param>
         public static void PCISetInterruptHandler(PciDevice dev, IRQ.IRQHandler handler)
         {
+            // TODO: use MSI if supported
+
             // Get IRQ routing data from table
             PciIRQEntry irq = m_irqTable[(dev.Slot * PCI_PINS) + (dev.IRQPin - 1)];
             uint irqNum = irq.Irq;
@@ -215,11 +217,10 @@ namespace Sharpen.Arch
             IRQ.SetHandler(irqNum, handler);
             IOApicManager.CreateEntry(irqNum, irqNum, irq.Flags);
 
-            /*Console.Write("[PCI] Set to IRQ ");
+            // Info
+            Console.Write("[PCI] Set device to use IRQ ");
             Console.WriteNum((int)irqNum);
-            Console.Write(' ');
-            Console.WriteNum(dev.IRQPin);
-            Console.WriteLine("");*/
+            Console.Write('\n');
         }
 
         /// <summary>
@@ -300,7 +301,7 @@ namespace Sharpen.Arch
             Devices[foundIndex].Driver = driver;
             driver.Init(Devices[foundIndex]);
         }
-
+        
         /// <summary>
         /// Print the found devices
         /// </summary>
@@ -468,7 +469,7 @@ namespace Sharpen.Arch
         /// </summary>
         public static void Init()
         {
-            Devices = new PciDevice[PCI_BUS_DEV_MAX];
+            Devices = new PciDevice[300];
             setIRQRouting();
             probe();
             

@@ -223,11 +223,7 @@ namespace Sharpen.Drivers.Net
         {
             m_register_base = (uint)dev.BAR0.Address;
             m_flash_base = (uint)dev.BAR1.Address;
-
-            Console.Write("Im in slot: ");
-            Console.WriteNum(dev.Slot);
-            Console.WriteLine("");
-
+            
             /**
              * Check if there is a memory bar
              */
@@ -444,7 +440,6 @@ namespace Sharpen.Drivers.Net
         /// <returns></returns>
         private static unsafe bool handler()
         {
-            //Console.WriteLine("E1000 irq");
             /**
              * Read Interrupt control state
              */
@@ -462,7 +457,7 @@ namespace Sharpen.Drivers.Net
                 linkUp();
             
             /**
-             * Dit we receive a packet
+             * Did we receive a packet
              */
             if ((icr & REG_RXT0) > 0)
             {

@@ -77,8 +77,8 @@
         /// <param name="regsPtr">Pointer to registers</param>
         public static unsafe Regs* Handler(Regs* regsPtr)
         {
-            int irqNum = regsPtr->IntNum - MASTER_OFFSET;
-            
+            int irqNum = regsPtr->IntNum;
+
             if (handlers[irqNum] != null)
             {
                 // Loop through handlers to see who has sent interrupt
