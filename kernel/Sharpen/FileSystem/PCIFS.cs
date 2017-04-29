@@ -291,7 +291,7 @@ namespace Sharpen.FileSystem
             info->Slot = dev.Slot;
             info->Function = dev.Function;
 
-            info->ClassCode = dev.classCode;
+            info->ClassCode = dev.ClassCode;
             info->SubClass = dev.SubClass;
             info->ProgIntf = dev.ProgIntf;
 

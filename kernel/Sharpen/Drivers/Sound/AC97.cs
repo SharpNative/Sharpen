@@ -1,16 +1,17 @@
 ﻿using Sharpen.Arch;
+using Sharpen.FileSystem;
 using Sharpen.Lib;
 
 namespace Sharpen.Drivers.Sound
 {
     unsafe class AC97
     {
-        private const int BDBAR = 0x10;
-        private const int CIV = 0x14;
-        private const int LVI = 0x15;
-        private const int m_sr = 0x16;
-        private const int PICB = 0x18;
-        private const int CR = 0x1B;
+        private const int REG_BDBAR = 0x10;
+        private const int REG_CIV = 0x14;
+        private const int REG_LVI = 0x15;
+        private const int REG_SR = 0x16;
+        private const int REG_PICB = 0x18;
+        private const int REG_CR = 0x1B;
 
         private const int CR_RPBM = (1 << 0); // Run or Pause
         private const int CR_PR = (1 << 1); // Reset registers
@@ -37,7 +38,9 @@ namespace Sharpen.Drivers.Sound
         private static ushort m_nambar;
         private static ushort m_nabmbar;
         private static ushort m_lvi;
-        
+
+        private const int BDL_COUNT = 32;
+
         private unsafe struct BDL_Entry
         {
             public void* pointer;
@@ -51,34 +54,20 @@ namespace Sharpen.Drivers.Sound
         /// Driver initalization
         /// </summary>
         /// <param name="dev">PCI Device</param>
-        private static unsafe void InitHandler(PciDevice dev)
+        private static void initHandler(PciDevice dev)
         {
-            
             m_dev = dev;
             m_nambar = (ushort)dev.BAR0.Address;
             m_nabmbar = (ushort)dev.BAR1.Address;
 
             // Set IRQ handler
-            /*uint irqNum = PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
-            int intPIN = PCI.PCIReadWord(dev, 0x3C) >> 8;
+            PCI.PCISetInterruptHandler(dev, handler);
 
-            //IRQ.SetHandler((int)irqNum, IRQHandler);
-            Console.Write("AC97(");
-            Console.WriteNum(dev.Bus);
-            Console.Write(',');
-            Console.WriteNum(dev.Slot);
-            Console.Write(")");*/
-
-            /*int irq = 32+((dev.Slot << 2) | (intPIN - 1));
-            Console.WriteNum(irq);
-            Console.WriteLine("");
-            IOApicManager.blar(11, (uint)irq);*/
-            
             // Enable all interrupts
-            PortIO.Out8((ushort)(m_nabmbar + CR), (byte)(CR_FEIE | CR_IOCE | CR_LVBIE));
+            PortIO.Out8((ushort)(m_nabmbar + REG_CR), (CR_FEIE | CR_IOCE | CR_LVBIE));
 
             // Enable bus mastering
-            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, 0x05);
+            PCI.PCIEnableBusMastering(dev);
 
             // Volume
             ushort volume = 0x03 | (0x03 << 8);
@@ -86,52 +75,52 @@ namespace Sharpen.Drivers.Sound
             PortIO.Out16((ushort)(m_nambar + PCM_OUT_VOLUME), volume);
 
             // Buffers
-            m_bdls = new BDL_Entry[32];
-            m_bufs = new ushort[32][];
-            for (int i = 0; i < 32; i++)
+            m_bdls = new BDL_Entry[BDL_COUNT];
+            m_bufs = new ushort[BDL_COUNT][];
+            for (int i = 0; i < BDL_COUNT; i++)
             {
-                m_bufs[i] = new ushort[0x1000];
+                m_bufs[i] = new ushort[/*AudioFS.BufferSize*/0x1000];
                 fixed (void* ptr = m_bufs[i])
                 {
                     m_bdls[i].pointer = Paging.GetPhysicalFromVirtual(ptr);
                 }
 
                 // Length and interrupt-on-clear
-                m_bdls[i].cl = 0x1000 & 0xFFFF;
+                m_bdls[i].cl = /*AudioFS.BufferSize*/0x1000 & 0xFFFF;
                 m_bdls[i].cl |= CL_IOC;
             }
 
             // Tell BDL location
             fixed (void* ptr = m_bdls)
             {
-                PortIO.Out32((ushort)(m_nabmbar + BDBAR), (uint)Paging.GetPhysicalFromVirtual(ptr));
+                PortIO.Out32((ushort)(m_nabmbar + REG_BDBAR), (uint)Paging.GetPhysicalFromVirtual(ptr));
             }
 
-            // Set last valid index to 2
-            PortIO.Out8((ushort)(m_nabmbar + LVI), 2);
-            m_lvi = 2;
+            // Set last valid index
+            m_lvi = 0;
+            PortIO.Out8((ushort)(m_nabmbar + REG_LVI), (byte)m_lvi);
 
             // Set audio to playing
-            PortIO.Out8((ushort)(m_nabmbar + CR), (byte)(PortIO.In8((ushort)(m_nabmbar + CR)) | CR_RPBM));
+            PortIO.Out8((ushort)(m_nabmbar + REG_CR), (byte)(PortIO.In8((ushort)(m_nabmbar + REG_CR)) | CR_RPBM));
 
-            Console.WriteLine("[AC97] Initalized");
+            Console.WriteLine("[AC97] Initialized");
         }
 
         /// <summary>
         /// IRQ Handler
         /// </summary>
-        /// <param name="regsPtr">Register pointer</param>
-        private static unsafe void IRQHandler(Regs* regsPtr)
+        /// <returns>If we handled the irq</returns>
+        private static bool handler()
         {
-            ushort sr = PortIO.In16((ushort)(m_nabmbar + m_sr));
+            ushort sr = PortIO.In16((ushort)(m_nabmbar + REG_SR));
 
             if ((sr & SR_LVBCI) > 0)
             {
-                PortIO.Out16((ushort)(m_nabmbar + m_sr), SR_LVBCI);
+                PortIO.Out16((ushort)(m_nabmbar + REG_SR), SR_LVBCI);
             }
             else if ((sr & SR_BCIS) > 0)
             {
-                int tmp = m_lvi + 2;
+                /*int tmp = m_lvi + 2;
                 uint start = (uint)(tmp & (32 - 1));
 
                 // Fill buffer
@@ -143,28 +132,45 @@ namespace Sharpen.Drivers.Sound
                         shr = (ushort*)((int)ptr + i);
                     }
 
-                    Audio.RequestBuffer(128, shr);
+                    AudioFS.RequestBuffer(128, shr);
                 }
 
                 tmp = m_lvi + 1;
-                m_lvi = (ushort)((tmp) % 32);
+                m_lvi = (ushort)((tmp) % 32);*/
 
-                PortIO.Out8((ushort)(m_nabmbar + LVI), (byte)m_lvi);
-                PortIO.Out16((ushort)(m_nabmbar + m_sr), SR_BCIS);
+                // Load next one already
+                int next = m_lvi + 2;
+                if (next >= BDL_COUNT)
+                    next -= BDL_COUNT;
+
+                //AudioFS.RequestBuffer(AudioFS.BufferSize, m_bufs[next]);
+
+                // Set current one
+                m_lvi++;
+                if (m_lvi == BDL_COUNT)
+                    m_lvi = 0;
+
+                PortIO.Out8((ushort)(m_nabmbar + REG_LVI), (byte)m_lvi);
+                PortIO.Out16((ushort)(m_nabmbar + REG_SR), SR_BCIS);
             }
             else if ((sr & SR_FIFOE) > 0)
             {
-                PortIO.Out16((ushort)(m_nabmbar + m_sr), SR_FIFOE);
+                PortIO.Out16((ushort)(m_nabmbar + REG_SR), SR_FIFOE);
             }
+            else
+            {
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
         /// Called when the exit is called on the PCI
         /// </summary>
         /// <param name="dev">Reference to the device</param>
-        private static void ExitHander(PciDevice dev)
+        private static void exitHander(PciDevice dev)
         {
-
         }
 
         /// <summary>
@@ -174,11 +180,12 @@ namespace Sharpen.Drivers.Sound
         {
             PCI.PciDriver driver = new PCI.PciDriver();
             driver.Name = "AC97 Driver";
-            driver.Exit = ExitHander;
-            driver.Init = InitHandler;
+            driver.Exit = exitHander;
+            driver.Init = initHandler;
 
             PCI.RegisterDriver(0x8086, 0x2415, driver);
 
+            // TODO
             Audio.SoundDevice device = new Audio.SoundDevice();
             device.Name = "AC97 audio device";
             device.Writer = Writer;

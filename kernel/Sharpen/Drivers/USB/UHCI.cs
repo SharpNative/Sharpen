@@ -155,9 +155,7 @@ namespace Sharpen.Drivers.USB
                 Console.WriteLine("[UHCI] Only Portio supported");
             }
 
-            ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
-            cmd |= 0x04;
-            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, cmd);
+            PCI.PCIEnableBusMastering(dev);
 
             UHCIController uhciDev = new UHCIController();
             uhciDev.IOBase = (ushort)dev.BAR4.Address;

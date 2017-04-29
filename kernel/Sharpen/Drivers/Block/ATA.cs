@@ -395,8 +395,11 @@ namespace Sharpen.Drivers.Block
         {
             PciDevice pciDev = findIDEDevice();
             if (pciDev == null)
+            {
+                Console.WriteLine("[ATA] No ATA devices found");
                 return;
-
+            }
+            
             ATA_PRIMARY_IO = (ushort)((pciDev.BAR0.Address == 0x00 || pciDev.BAR0.Address == 0x01) ? 0x1F0 : pciDev.BAR0.Address);
             ATA_SECONDARY_IO = (ushort)((pciDev.BAR2.Address == 0x00 || pciDev.BAR2.Address == 0x01) ? 0x170 : pciDev.BAR2.Address);
             

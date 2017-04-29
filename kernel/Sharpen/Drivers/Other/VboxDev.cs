@@ -65,7 +65,7 @@ namespace Sharpen.Drivers.Other
 
             if (req->header.rc == 0)
             {
-                Console.WriteLine("[VMMDev] Initalized");
+                Console.WriteLine("[VMMDev] Initialized");
                 m_initalized = true;
             }
             else

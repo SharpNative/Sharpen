@@ -153,8 +153,8 @@ namespace Sharpen.Drivers.Char
         /// <summary>
         /// Keyboard IRQ handler
         /// </summary>
-        /// <param name="regsPtr"></param>
-        private static unsafe Regs* handler(Regs* regsPtr)
+        /// <returns></returns>
+        private static unsafe bool handler()
         {
             byte scancode = PortIO.In8(0x60);
 
@@ -196,7 +196,7 @@ namespace Sharpen.Drivers.Char
                 }
             }
 
-            return regsPtr;
+            return true;
         }
     }
 }

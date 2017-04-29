@@ -57,6 +57,7 @@
     <Compile Include="Arch\IOApic.cs" />
     <Compile Include="Arch\IOApicManager.cs" />
     <Compile Include="Arch\PCIClassCodes.cs" />
+    <Compile Include="Drivers\Power\AcpiObjects.cs" />
     <Compile Include="Drivers\USB\USBHIDKeyboard.cs" />
     <Compile Include="Drivers\USB\USBHIDMouse.cs" />
     <Compile Include="Drivers\USB\USBHub.cs" />

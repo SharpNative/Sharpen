@@ -237,3 +237,4 @@ trace*
 *.elf
 *.txtd
 *.vdi
+/scripts/usercompile - kopie.bat

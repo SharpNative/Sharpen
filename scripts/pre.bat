@@ -17,7 +17,7 @@ set USER_C_FLAGS=-Wall -O1 -std=c99
 
 rem Kernelspace
 set KERNEL_ASM_FLAGS=-f elf32
-set KERNEL_C_FLAGS=-Wall -O0 -fno-omit-frame-pointer -std=c99 -I../acpica/include -I../acpica/include/platform
+set KERNEL_C_FLAGS=-Wall -O2 -fno-omit-frame-pointer -std=c99
 set KERNEL_LD_FLAGS=-Tlinker.ld
 
 rem Utilities

@@ -6,7 +6,7 @@ namespace Sharpen.Drivers.Power
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct MADT
     {
-        public Acpica.ACPI_TABLE_HEADER Header;
+        public Acpica.TableHeader Header;
         public uint LocalControllerAddress;
         public uint Flags;
         // After the flags field, the rest of the table contains a variable length of records

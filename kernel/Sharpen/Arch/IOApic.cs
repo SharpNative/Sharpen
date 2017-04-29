@@ -66,7 +66,6 @@ namespace Sharpen.Arch
             if (readId != Id)
             {
                 Id = readId;
-                Write(IOAPIC_ID, (uint)(Id << 24));
             }
 
             Console.Write("[IOAPIC] IO Apic with ID ");
@@ -101,36 +100,20 @@ namespace Sharpen.Arch
         /// <summary>
         /// Create a redirection entry for an ISA IRQ
         /// </summary>
-        /// <param name="src">The source interrupt</param>
-        /// <param name="dst">The destination interrupt</param>
-        public void CreateISARedirection(uint src, uint dst)
+        /// <param name="pin">The source interrupt</param>
+        /// <param name="interrupt">The destination interrupt</param>
+        /// <param name="flags">The flags</param>
+        public void CreateRedirection(uint pin, uint interrupt, ulong flags)
         {
-            ulong entry = 0;
+            ulong entry = flags;
             entry |= IOAPIC_REDIR_DELIVERY_FIXED;
             entry |= IOAPIC_REDIR_DESTMODE_PHYS;
-            entry |= IOAPIC_REDIR_POLARITY_HIGH;
-            entry |= IOAPIC_REDIR_TRIGGER_EDGE;
             entry |= IOAPIC_REDIR_INT_UNMASKED;
-            entry |= (ulong)(Id & 0xFF) | ((ulong)IOAPIC_REDIR_DESTMODE_PHYS << 56);
-            entry |= (32 + dst) & 0xFF;
+            entry |= (ulong)((Id & 0xFF) << 56) | IOAPIC_REDIR_DESTMODE_PHYS;
+            entry |= interrupt & 0xFF;
 
-            Write(IOAPIC_REDIR + ((src * 2) + 0), (uint)(entry & 0xFFFFFFFF));
-            Write(IOAPIC_REDIR + ((src * 2) + 1), (uint)(entry >> 32));
-        }
-
-        public void blar(uint src, uint dst)
-        {
-            ulong entry = 0;
-            entry |= IOAPIC_REDIR_DELIVERY_FIXED;
-            entry |= IOAPIC_REDIR_DESTMODE_PHYS;
-            entry |= IOAPIC_REDIR_POLARITY_HIGH;
-            entry |= IOAPIC_REDIR_TRIGGER_EDGE;
-            entry |= IOAPIC_REDIR_INT_UNMASKED;
-            entry |= (ulong)(Id & 0xFF) | ((ulong)IOAPIC_REDIR_DESTMODE_PHYS << 56);
-            entry |= dst & 0xFF;
-
-            Write(IOAPIC_REDIR + ((src * 2) + 0), (uint)(entry & 0xFFFFFFFF));
-            Write(IOAPIC_REDIR + ((src * 2) + 1), (uint)(entry >> 32));
+            Write(IOAPIC_REDIR + ((pin * 2) + 0), (uint)(entry & 0xFFFFFFFF));
+            Write(IOAPIC_REDIR + ((pin * 2) + 1), (uint)(entry >> 32));
         }
     }
 }

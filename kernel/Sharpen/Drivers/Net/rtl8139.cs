@@ -1,4 +1,4 @@
-﻿#define RTL_DEBUG
+﻿// #define RTL_DEBUG
 
 using Sharpen.Arch;
 using Sharpen.Mem;
@@ -139,17 +139,14 @@ namespace Sharpen.Drivers.Net
             }
 
             /**
-             * Read IRQ number
+             * Set interrupt
              */
-            m_irq_num = (ushort)PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
-            //IRQ.SetHandler(m_irq_num, handler);
+            PCI.PCISetInterruptHandler(dev, handler);
 
             /**
              * Enable bus mastering
              */
-            ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
-            cmd |= 0x04;
-            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, cmd);
+            PCI.PCIEnableBusMastering(dev);
 
             /**
              * Enable device
@@ -353,8 +350,8 @@ namespace Sharpen.Drivers.Net
         /// <summary>
         /// Handle interrupt
         /// </summary>
-        /// <param name="regsPtr"></param>
-        private static unsafe void handler(Regs* regsPtr)
+        /// <returns>If this IRQ was handled by the device</returns>
+        private static unsafe bool handler()
         {
             ushort ISR = PortIO.In16((ushort)(m_io_base + REG_ISR));
 
@@ -388,6 +385,8 @@ namespace Sharpen.Drivers.Net
             }
 
             PortIO.Out16((ushort)(m_io_base + REG_ISR), ISR);
+
+            return true;
         }
 
         /// <summary>

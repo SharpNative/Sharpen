@@ -6,7 +6,15 @@ namespace Sharpen.Drivers.Power
 {
     public sealed unsafe class Acpi
     {
+        public struct ISAOverride
+        {
+            public uint GSI;
+            public uint Polarity;
+            public uint Trigger;
+        }
+
         private static MADT* m_madt;
+        private static ISAOverride[] m_intSourceOverrides;
 
         /// <summary>
         /// Parses the MADT
@@ -16,6 +24,14 @@ namespace Sharpen.Drivers.Power
         {
             m_madt = madt;
             LocalApic.SetLocalControllerAddress(madt->LocalControllerAddress);
+
+            m_intSourceOverrides = new ISAOverride[16];
+            for (uint i = 0; i < 16; i++)
+            {
+                m_intSourceOverrides[i].GSI = i;
+                m_intSourceOverrides[i].Polarity = IOApic.IOAPIC_REDIR_POLARITY_HIGH;
+                m_intSourceOverrides[i].Trigger = IOApic.IOAPIC_REDIR_TRIGGER_EDGE;
+            }
 
             // After the flags field, the rest of the table contains a variable length of records
             uint current = (uint)madt + (uint)sizeof(MADT);
@@ -50,26 +66,28 @@ namespace Sharpen.Drivers.Power
                     case ApicEntryHeaderType.INTERRUPT_SOURCE_OVERRIDE:
                         ApicInterruptSourceOverride* intSourceOverride = (ApicInterruptSourceOverride*)(current + sizeof(ApicEntryHeader));
 
-                        int polarity = intSourceOverride->Flags & 0x3;
-                        int trigger = (intSourceOverride->Flags & (3 << 2)) >> 2;
-
-                        Console.Write("Found interrupt override: ");
-                        Console.WriteNum(intSourceOverride->BusSource);
-                        Console.Write(' ');
-                        Console.WriteNum(intSourceOverride->IRQSource);
-                        Console.Write(' ');
-                        Console.WriteNum((int)intSourceOverride->GlobalSystemInterrupt);
-                        Console.Write(' ');
-                        Console.WriteNum(polarity);
-                        Console.Write(' ');
-                        Console.WriteNum(trigger);
-                        Console.Write('\n');
-
+                        m_intSourceOverrides[intSourceOverride->IRQSource].GSI = intSourceOverride->GlobalSystemInterrupt;
+                        m_intSourceOverrides[intSourceOverride->IRQSource].Polarity = (uint)(intSourceOverride->Flags & 0x3);
+                        m_intSourceOverrides[intSourceOverride->IRQSource].Trigger = (uint)(intSourceOverride->Flags & (3 << 2)) >> 2;
+                        
                         break;
                 }
 
                 current += header->Length;
             }
+        }
+
+        /// <summary>
+        /// Translate ISA IRQ to a redirection entry
+        /// </summary>
+        /// <param name="irq">The ISA IRQ number</param>
+        /// <returns>The override</returns>
+        public static ISAOverride GetISARedirection(uint irq)
+        {
+            if (irq >= 16)
+                Panic.DoPanic("Requested an ISA redirection for IRQ >= 16");
+
+            return m_intSourceOverrides[irq];
         }
 
         /// <summary>
@@ -101,50 +119,65 @@ namespace Sharpen.Drivers.Power
             int status = Acpica.AcpiInitializeSubsystem();
             if (status != Acpica.AE_OK)
             {
-                Panic.DoPanic("[ACPI] Could not initialize ACPICA subsystem");
+                Panic.DoPanic("[ACPI] Couldn't initialize ACPICA subsystem");
                 return;
             }
 
             status = Acpica.AcpiInitializeTables(null, 16, false);
             if (status != Acpica.AE_OK)
             {
-                Console.WriteHex(status);
-                Panic.DoPanic("[ACPI] Could not initialize tables");
+                Panic.DoPanic("[ACPI] Couldn't initialize tables");
                 return;
             }
 
             status = Acpica.AcpiLoadTables();
             if (status != Acpica.AE_OK)
             {
-                Panic.DoPanic("[ACPI] Could not load tables");
+                Panic.DoPanic("[ACPI] Couldn't load tables");
                 return;
             }
 
             status = Acpica.AcpiEnableSubsystem(Acpica.ACPI_FULL_INITIALIZATION);
             if (status != Acpica.AE_OK)
             {
-                Panic.DoPanic("[ACPI] Could not enable subsystems:");
+                Panic.DoPanic("[ACPI] Couldn't enable subsystems:");
                 return;
             }
 
             status = Acpica.AcpiInitializeObjects(Acpica.ACPI_FULL_INITIALIZATION);
             if (status != Acpica.AE_OK)
             {
-                Panic.DoPanic("[ACPI] Could not initialize objects");
+                Panic.DoPanic("[ACPI] Couldn't initialize objects");
                 return;
             }
 
-            Console.WriteLine("[ACPI] Initialized");
-
-            Acpica.ACPI_TABLE_HEADER* table;
+            // MADT table contains info about APIC, processors, ...
+            Acpica.TableHeader* table;
             status = Acpica.AcpiGetTable("APIC", 1, &table);
             if (status != Acpica.AE_OK)
             {
-                Panic.DoPanic("[ACPI] Could not find MADT table");
+                Panic.DoPanic("[ACPI] Couldn't find MADT table");
                 return;
             }
 
             parseMADT((MADT*)table);
+
+            // Set ACPI to APIC using the "_PIC" method, note that this method is not always present
+            // so we "can" ignore the AE_NOT_FOUND error
+            AcpiObjects.IntegerObject arg1;
+            arg1.Type = AcpiObjects.ObjectType.Integer;
+            arg1.Value = 1;
+            AcpiObjects.ObjectList args;
+            args.Count = 1;
+            args.Pointer = &arg1;
+            status = Acpica.AcpiEvaluateObject((void*)Acpica.ACPI_ROOT_OBJECT, "_PIC", &args, null);
+            if (status != Acpica.AE_NOT_FOUND && status != Acpica.AE_OK)
+            {
+                Panic.DoPanic("[ACPI] Couldn't call _PIC method");
+            }
+
+            // We are done here
+            Console.WriteLine("[ACPI] Initialized");
         }
 
         /// <summary>
