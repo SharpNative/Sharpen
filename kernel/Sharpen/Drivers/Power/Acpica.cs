@@ -792,7 +792,7 @@ namespace Sharpen.Power
         /// <param name="SleepState">Which sleep state to enter</param>
         /// <param name="RegaValue">Register A value</param>
         /// <param name="RegbValue">Register B value</param>
-        /// <returns></returns>
+        /// <returns>Status</returns>
         [Plug("AcpiOsEnterSleep")]
         public static int AcpiOsEnterSleep(byte SleepState, uint RegaValue, uint RegbValue)
         {
@@ -803,7 +803,7 @@ namespace Sharpen.Power
         /// Initialize all ACPICA globals and sub-components
         /// </summary>
         /// <returns>Status</returns>
-        [Extern("AcpiInitializeSubsystem")]
+        [Extern("AcpiInitializeSubsystem", true)]
         public static extern int AcpiInitializeSubsystem();
 
         /// <summary>
@@ -812,15 +812,15 @@ namespace Sharpen.Power
         /// <param name="InitialTableArray">Pointer to an array of pre-allocated memory to put tables. If null, the memory is allocated dynamically</param>
         /// <param name="InitialTableCount">Requested size of the array (if number of tables)</param>
         /// <param name="AllowResize">If resizing the pre-allocated memory is allowed. Ignored if InitialTableArray is null</param>
-        /// <returns></returns>
-        [Extern("AcpiInitializeTables")]
+        /// <returns>Status</returns>
+        [Extern("AcpiInitializeTables", true)]
         public static extern int AcpiInitializeTables(TableDesc* InitialTableArray, uint InitialTableCount, bool AllowResize);
 
         /// <summary>
         /// Load the ACPI tables and build internal ACPI namespace
         /// </summary>
         /// <returns>Status</returns>
-        [Extern("AcpiLoadTables")]
+        [Extern("AcpiLoadTables", true)]
         public static extern int AcpiLoadTables();
 
         /// <summary>
@@ -828,7 +828,7 @@ namespace Sharpen.Power
         /// </summary>
         /// <param name="Flags">Specifies how the subsystem should be initialized</param>
         /// <returns>Status</returns>
-        [Extern("AcpiEnableSubsystem")]
+        [Extern("AcpiEnableSubsystem", true)]
         public static extern int AcpiEnableSubsystem(uint Flags);
 
         /// <summary>
@@ -836,7 +836,7 @@ namespace Sharpen.Power
         /// </summary>
         /// <param name="Flags">Specifies how the subsystem should be initialized</param>
         /// <returns>Status</returns>
-        [Extern("AcpiInitializeObjects")]
+        [Extern("AcpiInitializeObjects", true)]
         public static extern int AcpiInitializeObjects(uint Flags);
 
         /// <summary>
@@ -846,7 +846,7 @@ namespace Sharpen.Power
         /// <param name="Instance">Which table instance, if multiple instances of this table are allowed. (One based)</param>
         /// <param name="Table">A pointer to where the address of the requested ACPI table is returned</param>
         /// <returns>Exception code</returns>
-        [Extern("AcpiGetTable")]
+        [Extern("AcpiGetTable", true)]
         public static extern int AcpiGetTable(string Signature, uint Instance, TableHeader** Table);
 
         /// <summary>
@@ -854,7 +854,7 @@ namespace Sharpen.Power
         /// </summary>
         /// <param name="SleepState">The sleep state (1-5)</param>
         /// <returns>Status</returns>
-        [Extern("AcpiEnterSleepStatePrep")]
+        [Extern("AcpiEnterSleepStatePrep", true)]
         public static extern int AcpiEnterSleepStatePrep(byte SleepState);
 
         /// <summary>
@@ -862,14 +862,14 @@ namespace Sharpen.Power
         /// </summary>
         /// <param name="SleepState">The sleep state (1-5)</param>
         /// <returns>Status</returns>
-        [Extern("AcpiEnterSleepState")]
+        [Extern("AcpiEnterSleepState", true)]
         public static extern int AcpiEnterSleepState(byte SleepState);
 
         /// <summary>
         /// Performs a system reset
         /// </summary>
         /// <returns>Status</returns>
-        [Extern("AcpiReset")]
+        [Extern("AcpiReset", true)]
         public static extern int AcpiReset();
 
         /// <summary>
@@ -879,7 +879,7 @@ namespace Sharpen.Power
         /// <param name="Pathname">Name or pathname to ACPI object</param>
         /// <param name="OutHandle">A pointer to a location where a handle to the object is to be returned</param>
         /// <returns></returns>
-        [Extern("AcpiGetHandle")]
+        [Extern("AcpiGetHandle", true)]
         public static extern int AcpiGetHandle(void* Parent, string Pathname, void** OutHandle);
 
         /// <summary>
@@ -890,7 +890,7 @@ namespace Sharpen.Power
         /// <param name="ExternalParams">List of parameters</param>
         /// <param name="ReturnBuffer">Where to put the return value of the method. If null, no value is returned</param>
         /// <returns></returns>
-        [Extern("AcpiEvaluateObject")]
+        [Extern("AcpiEvaluateObject", true)]
         public static extern int AcpiEvaluateObject(void* Handle, string Pathname, AcpiObjects.ObjectList* ExternalParams, AcpiObjects.BufferObject* ReturnBuffer);
 
         /// <summary>
@@ -901,7 +901,7 @@ namespace Sharpen.Power
         /// <param name="UserContext">A value that will be passed as a parameter to the user function each time it is invoked</param>
         /// <param name="ReturnValue">A pointer to a location where the return value is to be placed if the walk terminated early. If null, this is ignored</param>
         /// <returns>Status</returns>
-        [Extern("AcpiGetDevices")]
+        [Extern("AcpiGetDevices", true)]
         public static extern int AcpiGetDevices(string HID, WalkCallback UserFunction, void* UserContext, void** ReturnValue);
 
         /// <summary>
@@ -910,7 +910,7 @@ namespace Sharpen.Power
         /// <param name="Object">A handle to an ACPI object for which information is to be returned</param>
         /// <param name="OutBuffer">A pointer to a location where the device info pointer is returned</param>
         /// <returns>Status</returns>
-        [Extern("AcpiGetObjectInfo")]
+        [Extern("AcpiGetObjectInfo", true)]
         public static extern int AcpiGetObjectInfo(void* Object, AcpiObjects.DeviceInfo** OutBuffer);
 
         /// <summary>
@@ -919,7 +919,7 @@ namespace Sharpen.Power
         /// <param name="Device">A handle to a device object for which the IRQ routing table is to be returned</param>
         /// <param name="OutBuffer">A pointer to a location where the IRQ routing table is to be returned</param>
         /// <returns>Status</returns>
-        [Extern("AcpiGetIrqRoutingTable")]
+        [Extern("AcpiGetIrqRoutingTable", true)]
         public static extern int AcpiGetIrqRoutingTable(void* Device, AcpiObjects.Buffer* OutBuffer);
 
         /// <summary>
@@ -930,7 +930,7 @@ namespace Sharpen.Power
         /// <param name="UserFunction">Called for each resource</param>
         /// <param name="Context">Passed to UserFunction</param>
         /// <returns>Status</returns>
-        [Extern("AcpiWalkResources")]
+        [Extern("AcpiWalkResources", true)]
         public static extern int AcpiWalkResources(void* DeviceHandle, string Name, WalkResourceCallback UserFunction, void* Context);
 
         /// <summary>
@@ -942,7 +942,7 @@ namespace Sharpen.Power
         /// <param name="Setup">Address of a start/stop initialization/termination function</param>
         /// <param name="Context">A context value that will be passed to the handler as a parameter</param>
         /// <returns>Status</returns>
-        [Extern("AcpiInstallAddressSpaceHandler")]
+        [Extern("AcpiInstallAddressSpaceHandler", true)]
         public static extern int AcpiInstallAddressSpaceHandler(void* Device, byte SpaceId, void* Handler, void* Setup, void* Context);
     }
 }
