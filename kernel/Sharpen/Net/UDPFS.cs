@@ -19,17 +19,16 @@ namespace Sharpen.Net
         /// </summary>
         public static unsafe void Init()
         {
-            Device dev = new Device();
-            dev.Name = "udp";
-            dev.Node = new Node();
-            dev.Node.FindDir = findDirImpl;
-            dev.Node.ReadDir = readDirImpl;
-            dev.Node.Flags = NodeFlags.DIRECTORY;
+            Node node = new Node();
+            node.FindDir = findDirImpl;
+            node.ReadDir = readDirImpl;
+            node.Flags = NodeFlags.DIRECTORY;
             
             IDCookie cookie = new IDCookie((int)OPT.LIST);
-            dev.Node.Cookie = cookie;
-            
-            NetFS.RegisterDevice(dev);
+            node.Cookie = cookie;
+
+            RootPoint dev = new RootPoint("udp", node);
+            VFS.MountPointNetFS.AddEntry(dev);
         }
 
         /// <summary>

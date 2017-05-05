@@ -10,6 +10,7 @@ namespace Sharpen.FileSystem
         public FileMode FileMode;
         public int OpenFlags;
         public NodeFlags Flags;
+        public bool IsOpen;
 
         public FSRead Read;
         public FSWrite Write;
@@ -61,7 +62,6 @@ namespace Sharpen.FileSystem
         /// <returns>The clone</returns>
         public Node Clone()
         {
-            // We shouldn't copy the reference to the Open and Close method, because that's the task of the original node
             Node clone = new Node();
 
             // TODO: clone cookie? or is this the task of the filesystem implementation itself?
@@ -70,7 +70,10 @@ namespace Sharpen.FileSystem
             clone.FileMode = FileMode;
             clone.OpenFlags = OpenFlags;
             clone.Flags = Flags;
-            
+            clone.IsOpen = IsOpen;
+
+            clone.Open = Open;
+            clone.Close = Close;
             clone.Read = Read;
             clone.Write = Write;
             clone.Truncate = Truncate;

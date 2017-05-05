@@ -68,10 +68,9 @@ namespace pcii
         /// <param name="name">The directory name</param>
         private static void printDevice(string name)
         {
-            string tmp1 = String.Merge("pci://", name);
-            string tmp2 = String.Merge(tmp1, "/info");
+            string fileName = String.Merge("devices://pci/", name);
 
-            File file = new File(tmp2, File.FileMode.ReadOnly);
+            File file = new File(fileName, File.FileMode.ReadOnly);
             if (file.IsOpen)
             {
                 PCIFSInfo info = new PCIFSInfo();
@@ -94,13 +93,12 @@ namespace pcii
                 Console.Write("\t\xB3\t");
                 printHexWithPadding(info.ProgIntf, 2);
                 Console.Write("\t\xB3\n");
+
+                file.Close();
             }
-
-            file.Close();
+            
             Heap.Free(file);
-
-            Heap.Free(tmp1);
-            Heap.Free(tmp2);
+            Heap.Free(fileName);
         }
 
         /// <summary>
@@ -180,7 +178,7 @@ namespace pcii
             Console.WriteLine("\xB3  BUS  \xB3  SLOT \xB3  FUNC \xB3   VENDOR  \xB3   DEVICE  \xB3 CLASS \xB3  SUB  \xB3 INTF  \xB3");
             printSplitLine();
 
-            Directory dir = Directory.Open("pci://");
+            Directory dir = Directory.Open("devices://pci/");
 
             Directory.DirEntry entry = dir.Readdir();
             while (entry.Name[0] != '\0')

@@ -1,5 +1,4 @@
-﻿using Sharpen.FileSystem;
-using Sharpen.FileSystem.Cookie;
+﻿using Sharpen.FileSystem.Cookie;
 using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Net;
@@ -23,14 +22,13 @@ namespace Sharpen.FileSystem
         /// </summary>
         public static unsafe void Init()
         {
-            Device dev = new Device();
-            dev.Name = "info";
-            dev.Node = new Node();
-            dev.Node.FindDir = findDirImpl;
-            dev.Node.ReadDir = readDirImpl;
-            dev.Node.Flags = NodeFlags.DIRECTORY;
+            Node node = new Node();
+            node.FindDir = findDirImpl;
+            node.ReadDir = readDirImpl;
+            node.Flags = NodeFlags.DIRECTORY;
 
-            NetFS.RegisterDevice(dev);
+            RootPoint dev = new RootPoint("info", node);
+            VFS.MountPointNetFS.AddEntry(dev);
         }
 
         /// <summary>
@@ -124,7 +122,7 @@ namespace Sharpen.FileSystem
         private static unsafe DirEntry* makeByName(string str)
         {
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
-            Memory.Memcpy(entry->Name, Util.ObjectToVoidPtr(str), str.Length + 1);
+            String.CopyTo(entry->Name, str);
             return entry;
         }
 

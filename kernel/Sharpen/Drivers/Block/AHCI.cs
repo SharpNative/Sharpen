@@ -32,9 +32,9 @@ namespace Sharpen.Drivers.Block
             /**
              * Note: this cycles through PCI devices!
              */
-            for (int i = 0; i < PCI.DeviceNum; i++)
+            for (int i = 0; i < Pci.DeviceNum; i++)
             {
-                PciDevice dev = PCI.Devices[i];
+                PciDevice dev = Pci.Devices[i];
 
                 if (dev.CombinedClass == 0x0106 && dev.ProgIntf == 0x01)
                     return dev;

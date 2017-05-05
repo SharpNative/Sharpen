@@ -410,24 +410,24 @@ namespace Sharpen.Drivers.Block
             {
                 if (!Devices[i].Exists)
                     continue;
-                
-                Device dev = new Device();
+
                 char* name = (char*)Heap.Alloc(5);
                 name[0] = 'H';
                 name[1] = 'D';
                 name[2] = 'D';
                 name[3] = (char)('0' + i);
                 name[4] = '\0';
-                dev.Name = Util.CharPtrToString(name);
-                
-                dev.Node = new Node();
-                dev.Node.Read = readImpl;
-                dev.Node.Write = writeImpl;
+                string nameStr = Util.CharPtrToString(name);
+
+                Node node = new Node();
+                node.Read = readImpl;
+                node.Write = writeImpl;
 
                 IDCookie cookie = new IDCookie(i);
-                dev.Node.Cookie = cookie;
+                node.Cookie = cookie;
 
-                DevFS.RegisterDevice(dev);
+                RootPoint dev = new RootPoint(nameStr, node);
+                VFS.MountPointDevFS.AddEntry(dev);
             }
         }
 
@@ -478,9 +478,9 @@ namespace Sharpen.Drivers.Block
             /**
              * Note: this cycles through PCI devices!
              */
-            for (int i = 0; i < PCI.DeviceNum; i++)
+            for (int i = 0; i < Pci.DeviceNum; i++)
             {
-                PciDevice dev = PCI.Devices[i];
+                PciDevice dev = Pci.Devices[i];
 
                 if (dev.CombinedClass == 0x0101)
                     return dev;

@@ -1,4 +1,4 @@
-﻿ #define NETWORK_DEBUG
+﻿// #define NETWORK_DEBUG
 
 using Sharpen.Collections;
 using Sharpen.Lib;

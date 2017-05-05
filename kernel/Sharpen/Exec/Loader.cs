@@ -21,7 +21,7 @@ namespace Sharpen.Exec
             Node node = VFS.GetByAbsolutePath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
-
+            
             // Open and create buffer
             VFS.Open(node, (int)FileMode.O_RDONLY);
             byte[] buffer = new byte[node.Size];
@@ -35,7 +35,7 @@ namespace Sharpen.Exec
             // Fill buffer contents
             VFS.Read(node, 0, node.Size, buffer);
             VFS.Close(node);
-            
+
             // Pass execution to ELF loader
             int status = ELFLoader.Execute(buffer, node.Size, argv, flags);
             Heap.Free(buffer);

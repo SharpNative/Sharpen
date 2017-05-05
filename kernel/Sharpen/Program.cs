@@ -12,13 +12,13 @@ using Sharpen.Net;
 using Sharpen.MultiTasking;
 using Sharpen.Utilities;
 using Sharpen.Drivers.USB;
+using Sharpen.USB;
 
 namespace Sharpen
 {
     public sealed class Program
     {
         private static Multiboot.Header m_mbootHeader;
-        private static bool m_isMultiboot = false;
         private static uint m_memSize;
         private static unsafe void* heapStart;
 
@@ -39,8 +39,8 @@ namespace Sharpen
             
             X86Arch.Init();
             Random.Init();
-            
-            initFileSystems();
+
+            VFS.Init();
             initPCIDevices();
             Keyboard.Init();
             
@@ -49,11 +49,21 @@ namespace Sharpen
             initUSB();
             initStorage();
             initNetworking();
+            initSound();
             runUserspace();
 
             // Idle loop
             while (true)
                 CPU.HLT();
+        }
+
+        /// <summary>
+        /// Initializes sound and its drivers
+        /// </summary>
+        private static void initSound()
+        {
+            AudioFS.Init();
+            AC97.Init();
         }
         
         /// <summary>
@@ -61,28 +71,11 @@ namespace Sharpen
         /// </summary>
         private static void initPCIDevices()
         {
-            PCI.Init();
-            PCIFS.Init();
-
-            AC97.Init();
+            Pci.Init();
             VboxDev.Init();
+            PciFS.LoadDevices();
         }
-
-        /// <summary>
-        /// Initializes filesystems and VFS
-        /// </summary>
-        private static void initFileSystems()
-        {
-            VFS.Init();
-            DevFS.Init();
-            NullFS.Init();
-            RandomFS.Init();
-            STDOUT.Init();
-            SerialPort.Init();
-            NetFS.Init();
-            ProcFS.Init();
-        }
-
+        
         /// <summary>
         /// Initializes storage components
         /// </summary>
@@ -107,7 +100,7 @@ namespace Sharpen
         private static void initUSB()
         {
             USB.USB.Init();
-            USB.USBDrivers.Init();
+            USBDrivers.Init();
 
             USBHub.Init();
             USBHIDMouse.Init();
@@ -322,7 +315,6 @@ namespace Sharpen
             }
 
             // Bring the header to a safe location
-            m_isMultiboot = true;
             fixed (Multiboot.Header* destination = &m_mbootHeader)
             {
                 Memory.Memcpy(destination, header, sizeof(Multiboot.Header));
@@ -346,7 +338,7 @@ namespace Sharpen
                     Multiboot.Module* module = mods[i];
 
                     // Move the heap end
-                    if ((int)module->End > (int)heapStart)
+                    if ((uint)module->End > (uint)heapStart)
                     {
                         heapStart = module->End;
                     }
@@ -361,7 +353,7 @@ namespace Sharpen
         /// <summary>
         /// Runs the userspace
         /// </summary>
-        private static void runUserspace()
+        private static unsafe void runUserspace()
         {
             // Initial process, usage: init [program]
             string[] argv = new string[3];
