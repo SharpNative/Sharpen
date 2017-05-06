@@ -385,7 +385,10 @@ namespace Sharpen.MultiTasking
         /// <returns>The new PID (zero for child, >0 for childs PID)</returns>
         public int Fork()
         {
-            return Tasking.SetForkingThread(CurrentThread);
+            Task newTask = Clone();
+            newTask.AddThread(CurrentThread.Clone());
+            Tasking.ScheduleTask(newTask);
+            return (newTask.PID != PID ? newTask.PID : 0);
         }
 
         /// <summary>

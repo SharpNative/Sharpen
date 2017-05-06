@@ -4,7 +4,7 @@ ALIGN 4
 global start
 extern init
 extern end
-extern Sharpen_Program_KernelMain_3struct_struct_Sharpen_Multiboot_Header__uint32_t_uint32_t_
+extern Sharpen_Program_KernelMain_3struct_struct_Sharpen_Multiboot_Header__uint32_t_void__
 
 section .multiboot
 mboot:
@@ -31,7 +31,7 @@ start:
     ; Call .cctors
     call init
     ; Go to kernel main
-    call Sharpen_Program_KernelMain_3struct_struct_Sharpen_Multiboot_Header__uint32_t_uint32_t_
+    call Sharpen_Program_KernelMain_3struct_struct_Sharpen_Multiboot_Header__uint32_t_void__
 
     ; Should actually never be able to get here
     ; this is here, just in case...

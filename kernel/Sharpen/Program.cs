@@ -28,9 +28,9 @@ namespace Sharpen
         /// <param name="header">The multiboot header</param>
         /// <param name="magic">The magic</param>
         /// <param name="end">The end address of the kernel</param>
-        public static unsafe void KernelMain(Multiboot.Header* header, uint magic, uint end)
+        public static unsafe void KernelMain(Multiboot.Header* header, uint magic, void* end)
         {
-            heapStart = (void*)end;
+            heapStart = end;
             Console.Clear();
             X86Arch.EarlyInit();
 
@@ -45,7 +45,7 @@ namespace Sharpen
             Keyboard.Init();
             
             Tasking.Init();
-            
+
             initUSB();
             initStorage();
             initNetworking();
