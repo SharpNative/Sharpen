@@ -192,8 +192,8 @@ namespace Sharpen.FileSystem
             info.Pid = task.PID;
 
             // Copy name and cmdline
-            String.CopyTo(info.Name, task.Name);
-            String.CopyTo(info.CMDLine, task.CMDLine);
+            String.CopyTo(info.Name, task.Name, 64);
+            String.CopyTo(info.CMDLine, task.CMDLine, 256);
 
             if (size > sizeof(ProcFSInfo))
                 size = (uint)sizeof(ProcFSInfo);
