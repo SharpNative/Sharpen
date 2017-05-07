@@ -205,35 +205,10 @@ namespace Sharpen.Drivers.USB
              * Enable device
              */
             PortIO.Out16((ushort)(uhciDev.IOBase + REG_USBCMD), USBCMD_RS);
-
-            //TestLogic(uhciDev);
-
+            
             probe(uhciDev);
 
             Sharpen.USB.USB.RegisterController(uhciDev);
-        }
-
-        private static void TestLogic(UHCIController control)
-        {
-
-            var head = GetQueueHead(control);
-            var head2 = GetQueueHead(control);
-            InsertHead(control, head);
-            InsertHead(control, head2);
-
-            PrintQueue(0, head);
-            PrintQueue(1, head2);
-            
-            RemoveHead(control, head2);
-
-            head2 = GetQueueHead(control);
-            PrintQueue(0, head);
-            PrintQueue(1, head2);
-
-            InsertHead(control, head2);
-
-            PrintQueue(0, head);
-            PrintQueue(1, head2);
         }
 
         public static void PrintQueue(int num, UHCIQueueHead *head)
@@ -246,6 +221,8 @@ namespace Sharpen.Drivers.USB
             Console.WriteHex((int)head->Next);
             Console.Write(", Prev = ");
             Console.WriteHex((int)head->Previous);
+            Console.Write(", ELEM = ");
+            Console.WriteHex((int)head->Element);
             Console.WriteLine("");
         }
 
@@ -508,14 +485,7 @@ namespace Sharpen.Drivers.USB
             USBTransfer *transfer = head->Transfer;
             
             UHCITransmitDescriptor* td = head->Transmit;
-
-
-            //Console.WriteLine("Test:");
-            //Console.WriteHex((int)head);
-            //Console.WriteLine("");
-            //Console.WriteHex((int)head->Head);
-            //Console.WriteLine("");
-
+            
             if ((head->Element & ~0xF) == 0)
             {
                 transfer->Executed = true;
@@ -604,23 +574,15 @@ namespace Sharpen.Drivers.USB
                     end = end->Next;
                 else
                     break;
-
-
+            
             head->Head = TD_POINTER_TERMINATE;
             head->Previous = end;
             head->Next = null;
 
             end->Next = head;
             end->Head = (int)Paging.GetPhysicalFromVirtual(head) | TD_POINTER_QH;
-            end->Element = TD_POINTER_TERMINATE;
-
+            
             m_mutex.Unlock();
-            //Console.WriteHex((int)controller.FirstHead);
-            //Console.WriteLine("");
-            //Console.WriteHex((int)end);
-            //Console.WriteLine("");
-            //Console.WriteHex((int)head);
-            //Console.WriteLine("");
         }
 
         public static void RemoveHead(UHCIController controller, UHCIQueueHead* head)

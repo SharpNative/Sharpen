@@ -81,9 +81,8 @@ namespace Sharpen.Drivers.USB
                     /**
                      * Todo: Handle mouse events here!
                      */
-                    Console.Write("Mouse mov:");
-                    Console.WriteHex(mLocation->MovementX);
-                    Console.WriteLine("");
+
+                    
                 }
                 
                 /**

@@ -1,18 +1,47 @@
-﻿using Sharpen.Mem;
+﻿using Sharpen.Drivers.Char;
+using Sharpen.Mem;
 using Sharpen.USB;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Sharpen.Drivers.USB
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public unsafe struct KeyboardHIDStruct
+    {
+        /// <summary>
+        /// Modifier keys
+        /// </summary>
+        public byte Modifier { get; set; }
+
+        /// <summary>
+        /// Reserved field
+        /// </summary>
+        public byte Reserved { get; set; }
+
+        public fixed byte Keys[6];
+    }
+
     unsafe class USBHIDKeyboard: IUSBDriver
     {
+        public const byte LEFT_CTRL = (1 << 0);
+        public const byte LEFT_SHIFT = (1 << 1);
+        public const byte LEFT_ALT = (1 << 2);
+        public const byte LEFT_GUI = (1 << 3);
+        public const byte RIGHT_CTRL = (1 << 4);
+        public const byte RIGHT_SHIFT = (1 << 5);
+        public const byte RIGHT_ALT = (1 << 6);
+        public const byte RIGHT_GUI = (1 << 7);
+
         private USBTransfer* mTransfer;
 
-        private byte* Data;
+        private KeyboardHIDStruct* Data;
+
+        private static bool mShift = false;
 
         public static void Init()
         {
@@ -44,7 +73,7 @@ namespace Sharpen.Drivers.USB
         public unsafe void initDevice(USBDevice device)
         {
             mTransfer = (USBTransfer*)Heap.Alloc(sizeof(USBTransfer));
-            Data = (byte*)Heap.Alloc(8);
+            Data = (KeyboardHIDStruct *)Heap.Alloc(sizeof(KeyboardHIDStruct));
 
             /**
              * Prepare poll transfer
@@ -58,16 +87,29 @@ namespace Sharpen.Drivers.USB
             device.PrepareInterrupt(device, mTransfer);
         }
 
+        public void HandleData()
+        {
+            mShift = ((Data->Modifier & LEFT_SHIFT) > 0) || ((Data->Modifier & RIGHT_SHIFT) > 0);
+
+            for (int i = 0; i < 6; i++)
+                if (Data->Keys[i] != 0x00)
+                    HandleKey(Data->Keys[i]);
+        }
+
+        public void HandleKey(byte code)
+        {
+
+
+            // Wait for timeouts etc
+        }
+
         public void Poll(USBDevice device)
         {
             if (mTransfer->Executed)
             {
                 if (mTransfer->Success)
                 {
-                    /**
-                     * Todo: Handle keyboard events here!
-                     */
-                    Console.WriteLine("TOBO");
+                    HandleData();
                 }
 
                 /**
