@@ -40,6 +40,7 @@ namespace Sharpen.FileSystem
 
         private static uint m_sectorOffset;
         private static byte* m_fatTable;
+        private static int m_fatClusterSize;
 
         private const byte LFN = 0x0F;
 
@@ -129,7 +130,8 @@ namespace Sharpen.FileSystem
             uint size = (uint)fatRegionSize * 512;
 
             m_fatTable = (byte*)Heap.Alloc((int)size);
-            
+            m_fatClusterSize = fatRegionSize * 256;
+
             var beginFatTable = m_beginLBA + m_bpb->ReservedSectors;
 
             for (uint i = 0; i < fatRegionSize; i++)
@@ -277,6 +279,9 @@ namespace Sharpen.FileSystem
         /// <param name="value">Fat value</param>
         private static unsafe void changeClusterValue(uint cluster, ushort value)
         {
+            // Set cache
+            *(ushort*)(m_fatTable + (cluster * 2)) = value;
+
             int beginFat = m_beginLBA + m_bpb->ReservedSectors;
             uint clusters = (cluster / 256);
             uint adr = (uint)(beginFat + clusters);
@@ -351,60 +356,19 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         private static ushort findNextFreeCluster()
         {
-            int beginFat = m_beginLBA + m_bpb->ReservedSectors;
-            uint adr = (uint)(beginFat);
 
-            byte[] fatBuffer = new byte[512];
-            m_dev.Read(m_dev, adr, 512, fatBuffer);
-
-            byte* fatPointer = (byte*)Util.ObjectToVoidPtr(fatBuffer);
-            ushort* curPointer = (ushort*)(fatPointer);
-
-            uint offset = 0;
-            uint offsetSector = 0;
-
-            ushort offsetCluster = 0;
-            ushort freeSector = 0;
-
-            /**
-             * 
-             * Find free cluster?
-             * 
-             */ 
-            for (int i = 0; i < m_fatSize; i++)
+            for(ushort i = 0; i < m_fatClusterSize; i++)
             {
-                if(offset >= 256)
+
+                ushort cluster = *(ushort *)(m_fatTable + (i * 2));
+
+                if (cluster == 0x0000)
                 {
-                    offsetSector++;
-
-                    /**
-                     * Read new sector
-                     */
-                    m_dev.Read(m_dev, adr + offsetSector, 512, fatBuffer);
-
-                    curPointer = (ushort*)(fatPointer);
-
-                    offset = 0;
+                    return i;
                 }
-
-                if (*curPointer == 0x0000)
-                {
-                    freeSector = offsetCluster;
-                    break;
-                }
-
-                
-                offset++;
-                curPointer++;
-                offsetCluster++;
             }
 
-            Heap.Free(fatPointer);
-
-            /**
-             * If freeSector is zero, it is full
-            */
-            return freeSector;
+            return 0;
         }
 
         /// <summary>
