@@ -68,8 +68,8 @@ namespace Sharpen.Drivers.Power
 
                         m_intSourceOverrides[intSourceOverride->IRQSource].GSI = intSourceOverride->GlobalSystemInterrupt;
                         m_intSourceOverrides[intSourceOverride->IRQSource].Polarity = (uint)(intSourceOverride->Flags & 0x3);
-                        m_intSourceOverrides[intSourceOverride->IRQSource].Trigger = (uint)(intSourceOverride->Flags & (3 << 2)) >> 2;
-
+                        m_intSourceOverrides[intSourceOverride->IRQSource].Trigger = (uint)((intSourceOverride->Flags >> 2) & 0x3);
+                        
                         break;
                 }
 

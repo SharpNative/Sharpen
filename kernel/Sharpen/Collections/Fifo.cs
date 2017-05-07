@@ -17,6 +17,7 @@ namespace Sharpen.Collections
         /// Creates a fifo buffer
         /// </summary>
         /// <param name="size">The size of the buffer</param>
+        /// <param name="wait">If the FIFO should wait when the buffer is full until more data has been added</param>
         public Fifo(int size, bool wait)
         {
             m_buffer = new byte[size];
@@ -105,7 +106,7 @@ namespace Sharpen.Collections
                     return i;
                 }
             }
-            
+
             return size;
         }
 
@@ -124,7 +125,7 @@ namespace Sharpen.Collections
                 if (!WriteByte(*current++))
                     return i;
             }
-            
+
             return size;
         }
 

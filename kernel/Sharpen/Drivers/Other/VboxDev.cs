@@ -102,12 +102,12 @@ namespace Sharpen.Drivers.Other
         /// </summary>
         public static void Init()
         {
-            PCI.PciDriver driver = new PCI.PciDriver();
+            Pci.PciDriver driver = new Pci.PciDriver();
             driver.Name = "VboxDev driver";
             driver.Exit = exitHander;
             driver.Init = initHandler;
 
-            PCI.RegisterDriver(0x80EE, 0xCAFE, driver);
+            Pci.RegisterDriver(0x80EE, 0xCAFE, driver);
         }
 
         #region Functions

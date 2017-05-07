@@ -2,7 +2,6 @@
 using Sharpen.FileSystem.Cookie;
 using Sharpen.Lib;
 using Sharpen.Mem;
-using Sharpen.Utilities;
 
 namespace Sharpen.Drivers.Other
 {
@@ -17,18 +16,17 @@ namespace Sharpen.Drivers.Other
         };
 
         /// <summary>
-        /// Initializes the Filesystem node for VboxDev
+        /// Initializes the FileSystem node for VboxDev
         /// </summary>
         public static unsafe void Init()
         {
-            Device device = new Device();
-            device.Name = "VMMDEV";
-            device.Node = new Node();
-            device.Node.Flags = NodeFlags.DIRECTORY | NodeFlags.DEVICE;
-            device.Node.FindDir = findDirImpl;
-            device.Node.ReadDir = readDirImpl;
+            Node node = new Node();
+            node.Flags = NodeFlags.DIRECTORY | NodeFlags.DEVICE;
+            node.FindDir = findDirImpl;
+            node.ReadDir = readDirImpl;
 
-            DevFS.RegisterDevice(device);
+            RootPoint dev = new RootPoint("VMMDEV", node);
+            VFS.MountPointDevFS.AddEntry(dev);
 
             Console.WriteLine("[VMMDev] FsDevice registered under VMMDEV");
         }
@@ -45,11 +43,7 @@ namespace Sharpen.Drivers.Other
                 return null;
             
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
-
-            int i = 0;
-            for (; CommandNames[index][i] != '\0'; i++)
-                entry->Name[i] = CommandNames[index][i];
-            entry->Name[i] = '\0';
+            String.CopyTo(entry->Name, CommandNames[index]);
 
             return entry;
         }
@@ -67,7 +61,7 @@ namespace Sharpen.Drivers.Other
             {
                 function = VboxDevRequestTypes.VMMDevReq_GetSessionId;
             }
-            else if(name.Equals("powerstate"))
+            else if (name.Equals("powerstate"))
             {
                 function = VboxDevRequestTypes.VMMDevReq_SetPowerStatus;
             }

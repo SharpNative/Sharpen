@@ -5,15 +5,17 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{276EC47D-5BC8-4007-8F51-C424C61B8893}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{2F350DD5-7E4B-4778-A77E-EA1F53937935}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SharpenLib</RootNamespace>
-    <AssemblyName>SharpenLib</AssemblyName>
+    <RootNamespace>play</RootNamespace>
+    <AssemblyName>play</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -21,21 +23,22 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <NoWarn>CS0626</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="LibCS2C">
       <HintPath>..\..\..\tools\libcs2c\LibCS2C.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpenLib">
+      <HintPath>..\..\SharpenLib\SharpenLib\bin\Release\SharpenLib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -47,24 +50,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IO\Console.cs" />
-    <Compile Include="IO\Directory.cs" />
-    <Compile Include="IO\File.cs" />
-    <Compile Include="Mem\Heap.cs" />
-    <Compile Include="Mem\Memory.cs" />
-    <Compile Include="Utilities\Util.cs" />
-    <Compile Include="Utilities\Array.cs" />
-    <Compile Include="Process.cs" />
-    <Compile Include="..\..\..\kernel\Sharpen\Lib\String.cs">
-      <Link>Utilities\String.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\kernel\Sharpen\Lib\Int.cs">
-      <Link>Utilities\Int.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\kernel\Sharpen\Lib\Byte.cs">
-      <Link>Utilities\Byte.cs</Link>
-    </Compile>
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -74,7 +64,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <Target Name="AfterBuild">
-    <CompileProjectTask Path="$(MSBuildProjectFullPath)" SourceOutPath="C/output.c" HeaderOutPath="C/output.h" HeaderFiles="$(SolutionDir)header.h" InitSuffix="_SharpenLib" />
+  <Target Name="Build">
+    <CompileProjectTask Path="$(MSBuildProjectFullPath)" SourceOutPath="C/output.c" HeaderOutPath="C/output.h" AfterBuildWorkingDir="$(SolutionDir)" AfterBuildCommand="$(SolutionDir)compile.bat" HeaderFiles="$(SolutionDir)../SharpenLib/SharpenLib/C/output.h" />
   </Target>
 </Project>

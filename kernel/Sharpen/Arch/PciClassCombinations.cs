@@ -1,6 +1,6 @@
 ﻿namespace Sharpen.Arch
 {
-    enum PCIClassCombinations
+    enum PciClassCombinations
     {
         /**
          * Class code 0x00

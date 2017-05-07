@@ -17,7 +17,7 @@ namespace Sharpen.Arch
 
         public ushort Vendor;
         public ushort Device;
-        public PCI.PciDriver Driver;
+        public Pci.PciDriver Driver;
         public PciBar BAR0;
         public PciBar BAR1;
         public PciBar BAR2;
@@ -39,7 +39,7 @@ namespace Sharpen.Arch
     }
 
 
-    public unsafe class PCI
+    public unsafe class Pci
     {
         public const ushort COMMAND = 0x04;
 
@@ -132,7 +132,7 @@ namespace Sharpen.Arch
         /// <param name="offset">Offset</param>
         /// <param name="size">The size of the data to read</param>
         /// <returns>The read data</returns>
-        public static uint PCIRead(ushort bus, ushort slot, ushort function, ushort offset, uint size)
+        public static uint Read(ushort bus, ushort slot, ushort function, ushort offset, uint size)
         {
             uint address = generateAddress(bus, slot, function, offset);
 
@@ -155,9 +155,9 @@ namespace Sharpen.Arch
         /// <param name="offset">Offset</param>
         /// <param name="size">The size of the data to read</param>
         /// <returns>The read data</returns>
-        public static uint PCIRead(PciDevice dev, ushort offset, uint size)
+        public static uint Read(PciDevice dev, ushort offset, uint size)
         {
-            return PCIRead(dev.Bus, dev.Slot, dev.Function, offset, size);
+            return Read(dev.Bus, dev.Slot, dev.Function, offset, size);
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace Sharpen.Arch
         /// <param name="offset">Offset</param>
         /// <param name="value">The value to write</param>
         /// <param name="size">The size of the data to write</param>
-        public static void PCIWrite(ushort bus, ushort slot, ushort function, ushort offset, uint value, uint size)
+        public static void Write(ushort bus, ushort slot, ushort function, ushort offset, uint value, uint size)
         {
             uint address = generateAddress(bus, slot, function, offset);
 
@@ -190,19 +190,17 @@ namespace Sharpen.Arch
         /// <param name="offset">Offset</param>
         /// <param name="value">The value to write</param>
         /// <param name="size">The size of the data to write</param>
-        public static void PCIWrite(PciDevice dev, ushort offset, uint value, uint size)
+        public static void Write(PciDevice dev, ushort offset, uint value, uint size)
         {
-            PCIWrite(dev.Bus, dev.Slot, dev.Function, offset, value, size);
+            Write(dev.Bus, dev.Slot, dev.Function, offset, value, size);
         }
         
         /// <summary>
         /// Sets an interrupt handler for a PCI device
         /// </summary>
         /// <param name="dev">The device</param>
-        public static void PCISetInterruptHandler(PciDevice dev, IRQ.IRQHandler handler)
+        public static void SetInterruptHandler(PciDevice dev, IRQ.IRQHandler handler)
         {
-            // TODO: use MSI if supported
-
             // Get IRQ routing data from table
             PciIRQEntry irq = m_irqTable[(dev.Slot * PCI_PINS) + (dev.IRQPin - 1)];
             uint irqNum = irq.Irq;
@@ -227,22 +225,22 @@ namespace Sharpen.Arch
         /// Enables bus mastering for a PCI device
         /// </summary>
         /// <param name="dev"></param>
-        public static void PCIEnableBusMastering(PciDevice dev)
+        public static void EnableBusMastering(PciDevice dev)
         {
-            ushort cmd = (ushort)PCIRead(dev, COMMAND, 2);
+            ushort cmd = (ushort)Read(dev, COMMAND, 2);
             cmd |= (1 << 2);
-            PCIWrite(dev.Bus, dev.Slot, dev.Function, COMMAND, cmd, 2);
+            Write(dev.Bus, dev.Slot, dev.Function, COMMAND, cmd, 2);
         }
 
         /// <summary>
         /// Enables IO space for a PCI device
         /// </summary>
         /// <param name="dev"></param>
-        public static void PCIEnableIOSpace(PciDevice dev)
+        public static void EnableIOSpace(PciDevice dev)
         {
-            ushort cmd = (ushort)PCIRead(dev, COMMAND, 2);
+            ushort cmd = (ushort)Read(dev, COMMAND, 2);
             cmd |= (1 << 0);
-            PCIWrite(dev.Bus, dev.Slot, dev.Function, COMMAND, cmd, 2);
+            Write(dev.Bus, dev.Slot, dev.Function, COMMAND, cmd, 2);
         }
 
         /// <summary>
@@ -254,7 +252,7 @@ namespace Sharpen.Arch
         /// <returns>Device ID</returns>
         public static ushort GetDeviceID(ushort bus, ushort device, ushort function)
         {
-            return (ushort)PCIRead(bus, device, function, 0x2, 2);
+            return (ushort)Read(bus, device, function, 0x2, 2);
         }
 
         /// <summary>
@@ -266,7 +264,7 @@ namespace Sharpen.Arch
         /// <returns>Vendor ID</returns>
         private static ushort GetVendorID(ushort bus, ushort device, ushort function)
         {
-            return (ushort)PCIRead(bus, device, function, 0x0, 2);
+            return (ushort)Read(bus, device, function, 0x0, 2);
         }
 
         /// <summary>
@@ -486,7 +484,7 @@ namespace Sharpen.Arch
         {
             for (byte device = 0; device < PCI_BUS_DEV_MAX; device++)
             {
-                uint headerType = PCIRead(bus, device, 0, CONFIG_HEADER_TYPE, 1);
+                uint headerType = Read(bus, device, 0, CONFIG_HEADER_TYPE, 1);
                 uint functionCount = (uint)(((headerType & CONFIG_HEADER_MUTLI_FUNC) > 0) ? 8 : 1);
 
                 for (byte i = 0; i < functionCount; i++)
@@ -506,12 +504,12 @@ namespace Sharpen.Arch
         {
             PciBar ret = new PciBar();
 
-            uint address = PCIRead(bus, device, function, offset, 4);
+            uint address = Read(bus, device, function, offset, 4);
 
-            PCIWrite(bus, device, function, offset, 0xFFFFFFFF, 4);
-            uint mask = PCIRead(bus, device, function, offset, 4);
+            Write(bus, device, function, offset, 0xFFFFFFFF, 4);
+            uint mask = Read(bus, device, function, offset, 4);
 
-            PCIWrite(bus, device, function, offset, address, 4);
+            Write(bus, device, function, offset, address, 4);
 
             if ((address & BAR_64) > 0)
             {
@@ -570,13 +568,13 @@ namespace Sharpen.Arch
             dev.BAR3 = GetBar(bus, device, function, BAR3);
             dev.BAR4 = GetBar(bus, device, function, BAR4);
             dev.BAR5 = GetBar(bus, device, function, BAR5);
-            dev.Type = (byte)PCIRead(bus, device, function, CONFIG_HEADER_TYPE, 1);
-            dev.ClassCode = (byte)PCIRead(bus, device, function, CONFIG_CLASS_CODE, 1);
-            dev.SubClass = (byte)PCIRead(bus, device, function, CONFIG_SUB_CLASS, 1);
-            dev.ProgIntf = (byte)PCIRead(bus, device, function, CONFIG_PROG_INTF, 1);
+            dev.Type = (byte)Read(bus, device, function, CONFIG_HEADER_TYPE, 1);
+            dev.ClassCode = (byte)Read(bus, device, function, CONFIG_CLASS_CODE, 1);
+            dev.SubClass = (byte)Read(bus, device, function, CONFIG_SUB_CLASS, 1);
+            dev.ProgIntf = (byte)Read(bus, device, function, CONFIG_PROG_INTF, 1);
             dev.CombinedClass = dev.ClassCode << 8 | dev.SubClass;
-            dev.IRQPin = (byte)PCIRead(bus, device, function, IRQPIN, 1);
-            dev.IRQLine = (byte)PCIRead(bus, device, function, IRQLINE, 1);
+            dev.IRQPin = (byte)Read(bus, device, function, IRQPIN, 1);
+            dev.IRQLine = (byte)Read(bus, device, function, IRQLINE, 1);
 
             Devices[m_currentdevice++] = dev;
         }

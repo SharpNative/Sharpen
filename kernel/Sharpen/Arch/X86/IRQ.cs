@@ -6,13 +6,11 @@
         public const byte MASTER_OFFSET = 32;
         public const byte SLAVE_OFFSET = 40;
 
-        // Delegate
-        public unsafe delegate bool IRQHandler();
+        public const int IRQ_MAX_SHARING = 3;
 
         // Handlers
+        public unsafe delegate bool IRQHandler();
         private static IRQHandler[][] handlers;
-
-        public const int IRQ_MAX_SHARING = 3;
 
         /// <summary>
         /// Initializes interrupts requests
@@ -75,10 +73,10 @@
         /// IRQ handler
         /// </summary>
         /// <param name="regsPtr">Pointer to registers</param>
-        public static unsafe Regs* Handler(Regs* regsPtr)
+        public static unsafe void Handler(Regs* regsPtr)
         {
             int irqNum = regsPtr->IntNum;
-
+            
             if (handlers[irqNum] != null)
             {
                 // Loop through handlers to see who has sent interrupt
@@ -92,7 +90,6 @@
             }
 
             LocalApic.SendEOI();
-            return regsPtr;
         }
     }
 }

@@ -3,7 +3,6 @@
 #define SSE_XMM_SIZE 16
 
 #include <stdint.h>
-//#include <acpi.h>
 
 
 /* Prototypes */
@@ -75,9 +74,8 @@ void Sharpen_Mem_Memory_Memclear_2void__int32_t_(void* ptr, int num)
 static void* calloc(int nitems, int size)
 {
     void* ptr = malloc(nitems * size);
-    if(ptr == NULL)
-        return NULL;
-    memset(ptr, 0, nitems * size);
+    if(ptr != NULL)
+        memset(ptr, 0, nitems * size);
     return ptr;
 }
 

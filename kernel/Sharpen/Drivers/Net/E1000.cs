@@ -227,7 +227,7 @@ namespace Sharpen.Drivers.Net
             /**
              * Check if there is a memory bar
              */
-            if ((dev.BAR0.flags & PCI.BAR_IO) > 0)
+            if ((dev.BAR0.flags & Pci.BAR_IO) > 0)
             {
                 Console.WriteLine("[E1000] Device not MMIO!");
                 return;
@@ -238,13 +238,13 @@ namespace Sharpen.Drivers.Net
             /**
              * Enable bus mastering
              */
-            PCI.PCIEnableBusMastering(dev);
+            Pci.EnableBusMastering(dev);
             
             /**
              * Map device
              */
             m_register_base = (uint)Paging.MapToVirtual(Paging.KernelDirectory, (int)m_register_base, 20 * 0x1000, Paging.PageFlags.Writable | Paging.PageFlags.Present);
-            PCI.PCISetInterruptHandler(dev, handler);
+            Pci.SetInterruptHandler(dev, handler);
             
             readMac();
             start();
@@ -497,15 +497,15 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         public static void Init()
         {
-            PCI.PciDriver driver = new PCI.PciDriver();
+            Pci.PciDriver driver = new Pci.PciDriver();
             driver.Name = "E1000 Driver";
             driver.Exit = exitHandler;
             driver.Init = initHandler;
 
-            PCI.RegisterDriver(MANUID_INTEL, DEVID_EMU, driver);
-            PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EM, driver);
-            PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EMA, driver);
-            PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EMAF, driver);
+            Pci.RegisterDriver(MANUID_INTEL, DEVID_EMU, driver);
+            Pci.RegisterDriver(MANUID_INTEL, DEVID_82545EM, driver);
+            Pci.RegisterDriver(MANUID_INTEL, DEVID_82545EMA, driver);
+            Pci.RegisterDriver(MANUID_INTEL, DEVID_82545EMAF, driver);
         }
     }
 }

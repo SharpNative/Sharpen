@@ -9,13 +9,12 @@ namespace Sharpen.FileSystem
         /// </summary>
         public unsafe static void Init()
         {
-            Device device = new Device();
-            device.Name = "random";
-            device.Node = new Node();
-            device.Node.Read = readImpl;
-            device.Node.Size = 0xFFFFFFFF;
+            Node node = new Node();
+            node.Read = readImpl;
+            node.Size = 0xFFFFFFFF;
 
-            DevFS.RegisterDevice(device);
+            RootPoint dev = new RootPoint("random", node);
+            VFS.MountPointDevFS.AddEntry(dev);
         }
 
         /// <summary>
@@ -59,12 +58,10 @@ namespace Sharpen.FileSystem
 
             if (left >= 2)
                 buffer[i + 1] = (byte)((rand >> 8) & 0xFF);
-
-
+            
             if (left >= 3)
                 buffer[i + 2] = (byte)((rand >> 16) & 0xFF);
-
-
+            
             if (left >= 4)
                 buffer[i + 3] = (byte)((rand >> 24) & 0xFF);
 

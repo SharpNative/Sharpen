@@ -56,33 +56,32 @@ namespace Sharpen.FileSystem
         /// <summary>
         /// Init and mount FAT on device
         /// </summary>
-        /// <param name="dev">Device node</param>
+        /// <param name="deviceNode">Device node</param>
         /// <param name="name">Name</param>
-        public static unsafe void Init(Node dev, string name)
+        public static unsafe void Init(Node deviceNode, string name)
         {
-            m_dev = dev;
+            m_dev = deviceNode;
 
-            initFAT(dev);
+            initFAT(deviceNode);
 
             /**
              * Create and add mountpoint
              */
-            MountPoint p = new MountPoint();
-            p.Name = name;
-            p.Node = new Node();
-            p.Node.ReadDir = readDirImpl;
-            p.Node.FindDir = findDirImpl;
-            p.Node.Truncate = truncateImpl;
-            p.Node.Flags = NodeFlags.DIRECTORY;
+            Node node = new Node();
+            node.ReadDir = readDirImpl;
+            node.FindDir = findDirImpl;
+            node.Truncate = truncateImpl;
+            node.Flags = NodeFlags.DIRECTORY;
 
             /**
              * Root cookie
              */
             Fat16Cookie rootCookie = new Fat16Cookie();
             rootCookie.Cluster = 0xFFFFFFFF;
-            p.Node.Cookie = rootCookie;
+            node.Cookie = rootCookie;
 
-            VFS.AddMountPoint(p);
+            RootPoint dev = new RootPoint(name, node);
+            VFS.RootMountPoint.AddEntry(dev);
         }
         
         /// <summary>
@@ -587,7 +586,7 @@ namespace Sharpen.FileSystem
                 }
 
                 m_dev.Read(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
-                Memory.Memcpy((void *)((int)Util.ObjectToVoidPtr(buf) + offsetInSector), (void *)((int)Util.ObjectToVoidPtr(buffer) + currentOffset), sizeTemp);
+                Memory.Memcpy((byte*)Util.ObjectToVoidPtr(buf) + offsetInSector, (byte*)Util.ObjectToVoidPtr(buffer) + currentOffset, sizeTemp);
 
                 m_dev.Write(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
 
@@ -596,6 +595,8 @@ namespace Sharpen.FileSystem
                 offsetInCluster++;
                 offsetInSector = 0;
             }
+
+            Heap.Free(buf);
             
             return currentOffset;
         }
@@ -668,12 +669,14 @@ namespace Sharpen.FileSystem
                     sizeInSectors++;
                 }
 
-                Memory.Memcpy((void*)((int)Util.ObjectToVoidPtr(buffer) + currentOffset), (void*)((int)Util.ObjectToVoidPtr(buf) + offsetInSector), sizeTemp);
+                Memory.Memcpy((byte*)Util.ObjectToVoidPtr(buffer) + currentOffset, (byte*)Util.ObjectToVoidPtr(buf) + offsetInSector, sizeTemp);
                 currentOffset += (uint)sizeTemp;
                 sizeLeft -= sizeTemp;
                 offsetInCluster++;
                 offsetInSector = 0;
             }
+
+            Heap.Free(buf);
 
             return size;
         }

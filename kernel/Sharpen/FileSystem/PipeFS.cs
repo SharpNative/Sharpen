@@ -21,7 +21,7 @@ namespace Sharpen.FileSystem
             Node readEnd = new Node();
             Node writeEnd = new Node();
 
-            Fifo fifo = new Fifo(DefaultPipeSize, true);
+            Fifo fifo = new Fifo(size, true);
             PipeFSCookie cookie = new PipeFSCookie();
             cookie.Fifo = fifo;
 

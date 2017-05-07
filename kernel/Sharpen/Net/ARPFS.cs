@@ -10,14 +10,13 @@ namespace Sharpen.Net
         /// </summary>
         public static unsafe void Init()
         {
-            Device dev = new Device();
-            dev.Name = "arp";
-            dev.Node = new Node();
-            dev.Node.FindDir = findDirImpl;
-            dev.Node.ReadDir = readDirImpl;
-            dev.Node.Flags = NodeFlags.DIRECTORY;
+            Node node = new Node();
+            node.FindDir = findDirImpl;
+            node.ReadDir = readDirImpl;
+            node.Flags = NodeFlags.DIRECTORY;
 
-            NetFS.RegisterDevice(dev);
+            RootPoint dev = new RootPoint("arp", node);
+            VFS.MountPointNetFS.AddEntry(dev);
         }
         
         /// <summary>

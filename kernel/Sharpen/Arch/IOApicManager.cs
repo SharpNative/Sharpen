@@ -84,10 +84,25 @@ namespace Sharpen.Arch
         {
             Acpi.ISAOverride irq = Acpi.GetISARedirection(src);
 
-            IOApic IOApic = GetIOApicFor(irq.GSI);
-            if (IOApic == null)
+            // Polarity and Trigger
+            ulong flags = 0;
+            if (irq.Polarity == 0 || irq.Polarity == 3)
+                flags |= IOApic.IOAPIC_REDIR_POLARITY_LOW;
+            else
+                flags |= IOApic.IOAPIC_REDIR_POLARITY_HIGH;
+
+            if (irq.Trigger == 0 || irq.Trigger == 1)
+                flags |= IOApic.IOAPIC_REDIR_TRIGGER_EDGE;
+            else
+                flags |= IOApic.IOAPIC_REDIR_TRIGGER_LEVEL;
+
+            // No override?
+            uint irqNum = (irq.GSI == 0) ? src : dst;
+
+            IOApic responsible = GetIOApicFor(irqNum);
+            if (responsible == null)
             {
-                Console.Write("[IOAPIC] No IO Apic was found responsible for ISA IRQ ");
+                Console.Write("[IOAPIC] No IO Apic was found responsible for pin ");
                 Console.WriteNum((int)src);
                 Console.Write("->");
                 Console.WriteNum((int)dst);
@@ -95,7 +110,7 @@ namespace Sharpen.Arch
                 return;
             }
 
-            IOApic.CreateRedirection(irq.GSI - IOApic.GlobalSystemInterruptBase, 32 + dst, irq.Polarity | irq.Trigger);
+            responsible.CreateRedirection(irqNum - responsible.GlobalSystemInterruptBase, 32 + dst, flags);
         }
     }
 }

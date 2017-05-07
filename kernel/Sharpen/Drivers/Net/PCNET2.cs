@@ -123,8 +123,8 @@ namespace Sharpen.Drivers.Net
             m_dev = dev;
             m_io_base = (ushort)(dev.BAR0.Address);
 
-            PCI.PCIEnableBusMastering(dev);
-            PCI.PCIEnableIOSpace(dev);
+            Pci.EnableBusMastering(dev);
+            Pci.EnableIOSpace(dev);
             
             /**
              * Read current mac
@@ -148,7 +148,7 @@ namespace Sharpen.Drivers.Net
             /**
              * Set interrupt
              */
-            PCI.PCISetInterruptHandler(dev, handler);
+            Pci.SetInterruptHandler(dev, handler);
             
 
             // Enable card
@@ -383,12 +383,12 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         public static void Init()
         {
-            PCI.PciDriver driver = new PCI.PciDriver();
+            Pci.PciDriver driver = new Pci.PciDriver();
             driver.Name = "PC-NET 2 driver Driver";
             driver.Exit = exitHandler;
             driver.Init = initHandler;
 
-            PCI.RegisterDriver(0x1022, 0x2000, driver);
+            Pci.RegisterDriver(0x1022, 0x2000, driver);
         }
     }
 }

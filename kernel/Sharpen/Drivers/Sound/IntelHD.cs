@@ -31,12 +31,12 @@ namespace Sharpen.Drivers.Sound
         /// </summary>
         public static void Init()
         {
-            PCI.PciDriver driver = new PCI.PciDriver();
+            Pci.PciDriver driver = new Pci.PciDriver();
             driver.Name = "Intel HD Driver";
             driver.Exit = exitHander;
             driver.Init = initHandler;
 
-            PCI.RegisterDriver(0x8086, 0x2668, driver);
+            Pci.RegisterDriver(0x8086, 0x2668, driver);
         }
     }
 }

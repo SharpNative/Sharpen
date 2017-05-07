@@ -132,7 +132,7 @@ namespace Sharpen.Drivers.Net
             /**
              * Check if I/O bar
              */
-            if ((dev.BAR0.flags & PCI.BAR_IO) == 0)
+            if ((dev.BAR0.flags & Pci.BAR_IO) == 0)
             {
                 Console.WriteLine("[RTL8139] RTL8139 should be an I/O bar, not a memory bar!");
                 return;
@@ -141,12 +141,12 @@ namespace Sharpen.Drivers.Net
             /**
              * Set interrupt
              */
-            PCI.PCISetInterruptHandler(dev, handler);
+            Pci.SetInterruptHandler(dev, handler);
 
             /**
              * Enable bus mastering
              */
-            PCI.PCIEnableBusMastering(dev);
+            Pci.EnableBusMastering(dev);
 
             /**
              * Enable device
@@ -435,12 +435,12 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         public static void Init()
         {
-            PCI.PciDriver driver = new PCI.PciDriver();
+            Pci.PciDriver driver = new Pci.PciDriver();
             driver.Name = "RTL8139 Driver";
             driver.Exit = exitHandler;
             driver.Init = initHandler;
 
-            PCI.RegisterDriver(0x10EC, 0x8139, driver);
+            Pci.RegisterDriver(0x10EC, 0x8139, driver);
         }
     }
 }

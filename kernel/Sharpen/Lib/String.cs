@@ -20,6 +20,33 @@ namespace Sharpen.Lib
         }
 
         /// <summary>
+        /// Copies a source string to a destination string
+        /// </summary>
+        /// <param name="dest">The destination string</param>
+        /// <param name="source">The source string</param>
+        public static unsafe void CopyTo(char* dest, string source)
+        {
+            int i = 0;
+            for (; source[i] != '\0'; i++)
+                dest[i] = source[i];
+            dest[i] = '\0';
+        }
+
+        /// <summary>
+        /// Copies a source string to a destination string
+        /// </summary>
+        /// <param name="dest">The destination string</param>
+        /// <param name="source">The source string</param>
+        /// <param name="max">The maximum length</param>
+        public static unsafe void CopyTo(char* dest, string source, int max)
+        {
+            int i = 0;
+            for (; source[i] != '\0' && i < max - 1; i++)
+                dest[i] = source[i];
+            dest[i] = '\0';
+        }
+
+        /// <summary>
         /// Clones a string
         /// </summary>
         /// <param name="text">The original string</param>

@@ -138,11 +138,11 @@ namespace Sharpen.Drivers.USB
             /**
              * Note: this cycles through PCI devices!
              */
-            for (int i = 0; i < PCI.DeviceNum; i++)
+            for (int i = 0; i < Pci.DeviceNum; i++)
             {
-                PciDevice dev = PCI.Devices[i];
+                PciDevice dev = Pci.Devices[i];
 
-                if (dev.CombinedClass == (int)PCIClassCombinations.USBController && dev.ProgIntf == INTF_UHCI)
+                if (dev.CombinedClass == (int)PciClassCombinations.USBController && dev.ProgIntf == INTF_UHCI)
                     initDevice(dev);
             }
 
@@ -150,12 +150,12 @@ namespace Sharpen.Drivers.USB
 
         private static void initDevice(PciDevice dev)
         {
-            if ((dev.BAR4.flags & PCI.BAR_IO) == 0)
+            if ((dev.BAR4.flags & Pci.BAR_IO) == 0)
             {
                 Console.WriteLine("[UHCI] Only Portio supported");
             }
 
-            PCI.PCIEnableBusMastering(dev);
+            Pci.EnableBusMastering(dev);
 
             UHCIController uhciDev = new UHCIController();
             uhciDev.IOBase = (ushort)dev.BAR4.Address;

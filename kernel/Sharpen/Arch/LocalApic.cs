@@ -134,7 +134,7 @@ namespace Sharpen.Arch
             Time.TicksPerSecond = 1000 / 10;
 
             // Start periodic APIC timer
-            Write(LAPIC_LVT_TIMER, 32 | LAPIC_TIMER_MODE_PERIODIC);
+            Write(LAPIC_LVT_TIMER, 32 | LAPIC_TIMER_MODE_PERIODIC | LAPIC_LVT_INT_UNMASKED);
             Write(LAPIC_TIMER_DIVISOR, 0x03);
             Write(LAPIC_TIMER_INIT_COUNT, ticks);
         }

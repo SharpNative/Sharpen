@@ -120,6 +120,34 @@ namespace Sharpen.IO
         }
 
         /// <summary>
+        /// Writes a buffer to a file
+        /// </summary>
+        /// <param name="buffer">The buffer</param>
+        /// <param name="size">The amount of bytes to write</param>
+        /// <returns>How many bytes were written</returns>
+        public unsafe int Write(byte[] buffer, int size)
+        {
+            if (m_fd < 0)
+                return 0;
+
+            return writeInternal(m_fd, Util.ObjectToVoidPtr(buffer), size);
+        }
+
+        /// <summary>
+        /// Writes a buffer to a file
+        /// </summary>
+        /// <param name="buffer">The buffer</param>
+        /// <param name="size">The amount of bytes to write</param>
+        /// <returns>How many bytes were written</returns>
+        public unsafe int Write(void* buffer, int size)
+        {
+            if (m_fd < 0)
+                return 0;
+
+            return writeInternal(m_fd, buffer, size);
+        }
+
+        /// <summary>
         /// Internal open method
         /// </summary>
         /// <param name="path">The path</param>
@@ -132,9 +160,20 @@ namespace Sharpen.IO
         /// </summary>
         /// <param name="fd">The file descriptor</param>
         /// <param name="buf">The buffer</param>
-        /// <param name="buf">The amount of bytes to read</param>
+        /// <param name="nbytes">The amount of bytes to read</param>
+        /// <returns>The amount of bytes read</returns>
         [Extern("read")]
         private static extern unsafe int readInternal(int fd, void* buf, int nbytes);
+
+        /// <summary>
+        /// Internal write method
+        /// </summary>
+        /// <param name="fd">The file descriptor</param>
+        /// <param name="buf">The buffer</param>
+        /// <param name="nbytes">The amount of bytes to write</param>
+        /// <returns>The amount of bytes written</returns>
+        [Extern("write")]
+        private static extern unsafe int writeInternal(int fd, void* buf, int nbytes);
 
         /// <summary>
         /// Internal stat method

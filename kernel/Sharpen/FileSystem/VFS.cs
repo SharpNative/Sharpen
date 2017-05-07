@@ -1,105 +1,68 @@
-﻿using Sharpen.Collections;
+﻿using Sharpen.Drivers.Char;
 using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.MultiTasking;
+using Sharpen.Net;
 using Sharpen.Utilities;
 
 namespace Sharpen.FileSystem
 {
     public enum FileWhence
     {
-        SEEK_SET = 0,
-        SEEK_CUR = 1,
-        SEEK_END = 2
+        SEEK_SET,
+        SEEK_CUR,
+        SEEK_END
     }
 
     public class VFS
     {
-        private static Dictionary m_dictionary;
+        // Commonly accessed mountpoints
+        public static ContainerFS RootMountPoint { get; private set; }
+        public static ContainerFS MountPointDevFS { get; private set; }
+        public static ContainerFS MountPointNetFS { get; private set; }
 
         /// <summary>
-        /// Initializes the VFS
+        /// Initializes VFS
         /// </summary>
-        public static unsafe void Init()
+        public static void Init()
         {
-            m_dictionary = new Dictionary();
-            
-            MountPoint mountPoint = new MountPoint();
-            mountPoint.Name = "mounts";
-            mountPoint.Node = new Node();
-            mountPoint.Node.ReadDir = readDirImpl;
+            // Container of all mountpoints
+            RootMountPoint = new ContainerFS();
 
-            AddMountPoint(mountPoint);
+            // DevFS
+            MountPointDevFS = new ContainerFS();
+            RootPoint devMount = new RootPoint("devices", MountPointDevFS.Node);
+            RootMountPoint.AddEntry(devMount);
+
+            // NetFS
+            MountPointNetFS = new ContainerFS();
+            RootPoint netMount = new RootPoint("net", MountPointNetFS.Node);
+            RootMountPoint.AddEntry(netMount);
+
+            // Initialize other filesystems
+            initFileSystems();
+
+            Console.WriteLine("[VFS] Initialized");
         }
 
         /// <summary>
-        /// FS readdir
+        /// Initialize filesystems
         /// </summary>
-        /// <param name="node">The node</param>
-        /// <param name="index">The index</param>
-        /// <returns>The directory entry</returns>
-        private static unsafe DirEntry* readDirImpl(Node node, uint index)
+        private static void initFileSystems()
         {
-            if (index >= m_dictionary.Count())
-                return null;
+            RandomFS.Init();
+            STDOUT.Init();
+            SerialPort.Init();
+            NullFS.Init();
+            ProcFS.Init();
+            PciFS.Init();
 
-            MountPoint dev = (MountPoint)m_dictionary.GetAt((int)index);
-            if (dev == null)
-                return null;
-
-            DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
-            int i = 0;
-            for (; dev.Name[i] != '\0'; i++)
-                entry->Name[i] = dev.Name[i];
-            entry->Name[i] = '\0';
-
-            return entry;
+            NetworkInfoFS.Init();
+            ARPFS.Init();
+            TCPFS.Init();
+            UDPFS.Init();
         }
-
-        /// <summary>
-        /// Generate hash from string
-        /// </summary>
-        /// <param name="inVal">Name</param>
-        /// <returns></returns>
-        private static long generateHash(string inVal)
-        {
-            long hash = 0;
-
-            // There can be 8 chars before the NULL-character
-            for (int i = 0; i <= 8; i++)
-            {
-                char c = inVal[i];
-                if (c == '\0')
-                    break;
-
-                hash <<= 3;
-                hash |= c;
-            }
-
-            return hash;
-        }
-
-        /// <summary>
-        /// Add mount to VFS
-        /// </summary>
-        /// <param name="mountPoint"></param>
-        public static void AddMountPoint(MountPoint mountPoint)
-        {
-            long key = generateHash(mountPoint.Name);
-            m_dictionary.Add(key, mountPoint);
-        }
-
-        /// <summary>
-        /// Find mount in VFS
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public static MountPoint FindMountByName(string name)
-        {
-            long key = generateHash(name);
-            return (MountPoint)m_dictionary.GetByKey(key);
-        }
-
+        
         /// <summary>
         /// Get node by path
         /// </summary>
@@ -127,17 +90,18 @@ namespace Sharpen.FileSystem
             string deviceName = path.Substring(0, index);
 
             // Find first mount
-            MountPoint mp = FindMountByName(deviceName);
+            RootPoint point = RootMountPoint.GetEntry(deviceName);
             Heap.Free(deviceName);
-            if (mp == null)
+            if (point == null)
                 return null;
+
+            Node lastNode = point.Node;
 
             // Possibly add a slash
             bool addedSlash = (path[pathLength - 1] != '/');
             if (addedSlash)
                 path = String.Merge(path, "/");
-
-            Node lastNode = mp.Node;
+            
             int parts = String.Count(path, '/') - 2;
 
             // Loop through the slashes
@@ -207,7 +171,7 @@ namespace Sharpen.FileSystem
                 // Everything else and not "./": add the part
                 else if(part[0] != '.' || part[1] != '\0')
                 {
-                    Memory.Memcpy((void*)((int)ptr + destOffset), Util.ObjectToVoidPtr(part), newOffset - offset);
+                    Memory.Memcpy((byte*)ptr + destOffset, Util.ObjectToVoidPtr(part), newOffset - offset);
                     destOffset += newOffset - offset + 1;
                     ptr[destOffset - 1] = '/';
                     partIndex++;
@@ -255,16 +219,16 @@ namespace Sharpen.FileSystem
         /// <returns>The absolute path</returns>
         public static string CreateAbsolutePath(string path)
         {
-            if (Tasking.CurrentTask.CurrentDirectory != null && !IsAbsolutePath(path))
+            if (IsAbsolutePath(path))
+            {
+                return ResolvePath(path);
+            }
+            else
             {
                 string merged = String.Merge(Tasking.CurrentTask.CurrentDirectory, path);
                 string resolved = ResolvePath(merged);
                 Heap.Free(merged);
                 return resolved;
-            }
-            else
-            {
-                return ResolvePath(path);
             }
         }
 
@@ -275,13 +239,12 @@ namespace Sharpen.FileSystem
         /// <param name="flags">The flags</param>
         public static void Open(Node node, int flags)
         {
-            node.FileMode = (FileMode)(flags & 0x3);
-            node.OpenFlags = flags;
-
-            if (node.Open == null)
+            if (node.IsOpen)
                 return;
 
-            node.Open(node);
+            node.FileMode = (FileMode)(flags & 0x3);
+            node.OpenFlags = flags;
+            node.Open?.Invoke(node);
         }
 
         /// <summary>
@@ -290,12 +253,11 @@ namespace Sharpen.FileSystem
         /// <param name="node">The node</param>
         public static void Close(Node node)
         {
-            node.FileMode = FileMode.O_NONE;
-
-            if (node.Close == null)
+            if (!node.IsOpen)
                 return;
 
-            node.Close(node);
+            node.FileMode = FileMode.O_NONE;
+            node.Close?.Invoke(node);
         }
 
         /// <summary>
@@ -335,8 +297,7 @@ namespace Sharpen.FileSystem
 
             return node.Truncate(node, size);
         }
-
-
+        
         /// <summary>
         /// Writes data to a node
         /// </summary>

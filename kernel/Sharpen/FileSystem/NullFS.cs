@@ -5,21 +5,18 @@ namespace Sharpen.FileSystem
 {
     class NullFS
     {
-        private static Node m_currentNode;
-
         /// <summary>
         /// Initializes Null device
         /// </summary>
         public unsafe static void Init()
         {
-            Device device = new Device();
-            device.Name = "null";
-            device.Node = new Node();
-            device.Node.Read = readImpl;
-            device.Node.Write = writeImpl;
-            device.Node.Size = 0xFFFFFFFF;
+            Node node = new Node();
+            node.Read = readImpl;
+            node.Write = writeImpl;
+            node.Size = 0xFFFFFFFF;
 
-            DevFS.RegisterDevice(device);
+            RootPoint dev = new RootPoint("null", node);
+            VFS.MountPointDevFS.AddEntry(dev);
         }
 
         /// <summary>
@@ -32,7 +29,7 @@ namespace Sharpen.FileSystem
         /// <returns>The amount of bytes read</returns>
         private unsafe static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
-            Memory.Memclear((char*)Util.ObjectToVoidPtr(buffer) + offset, (int)size);
+            Memory.Memclear((byte*)Util.ObjectToVoidPtr(buffer) + offset, (int)size);
             return size;
         }
 

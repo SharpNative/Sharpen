@@ -1,6 +1,5 @@
 ﻿using Sharpen.Lib;
 using Sharpen.Mem;
-using Sharpen.Utilities;
 
 namespace Sharpen.Collections
 {
@@ -9,7 +8,7 @@ namespace Sharpen.Collections
         public List m_index = new List();
         public List m_values = new List();
 
-        public int Count { get; private set; }
+        public uint Count { get; private set; }
 
         /// <summary>
         /// Adds a new key-value pair to the bucket
@@ -74,7 +73,7 @@ namespace Sharpen.Collections
         /// </summary>
         /// <param name="index">The index</param>
         /// <returns>The value</returns>
-        public object GetAt(int index)
+        public object GetAt(uint index)
         {
             return m_values.Item[index];
         }

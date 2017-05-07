@@ -107,20 +107,7 @@ namespace Sharpen.MultiTasking
             // End of critical section
             CPU.STI();
         }
-
-        /// <summary>
-        /// Forks the current task
-        /// </summary>
-        /// <returns>0 if child, PID if parent</returns>
-        public static int SetForkingThread(Thread thread)
-        {
-            int pid = thread.OwningTask.PID;
-            Task newTask = thread.OwningTask.Clone();
-            newTask.AddThread(thread.Clone());
-            ScheduleTask(newTask);
-            return (pid == CurrentTask.PID ? newTask.PID : 0);
-        }
-
+        
         /// <summary>
         /// Gets the next task for the scheduler
         /// </summary>
