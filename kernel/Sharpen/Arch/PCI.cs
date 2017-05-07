@@ -273,7 +273,7 @@ namespace Sharpen.Arch
         /// Register driver
         /// </summary>
         /// <param name="vendorID">VendorID</param>
-        /// <param name="deviceID">Bus ID</param>
+        /// <param name="deviceID">DeviceID</param>
         /// <param name="driver">Driver</param>
         public static void RegisterDriver(ushort vendorID, ushort deviceID, PciDriver driver)
         {

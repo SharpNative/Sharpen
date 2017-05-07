@@ -36,7 +36,7 @@ namespace Sharpen
 
             processMultiboot(header, magic);
             Heap.InitTempHeap(heapStart);
-            
+
             X86Arch.Init();
             Random.Init();
             
@@ -48,6 +48,7 @@ namespace Sharpen
             
             initUSB();
             initStorage();
+            
             initNetworking();
             runUserspace();
 
@@ -363,6 +364,7 @@ namespace Sharpen
         /// </summary>
         private static void runUserspace()
         {
+
             // Initial process, usage: init [program]
             string[] argv = new string[3];
             argv[0] = "C://exec/init";

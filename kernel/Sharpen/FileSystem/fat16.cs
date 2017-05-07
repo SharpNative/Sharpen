@@ -5,6 +5,11 @@ using Sharpen.Utilities;
 
 namespace Sharpen.FileSystem
 {
+    /**
+     * 
+     * TODO: Make use of fat cache for finding next free cluster, change values in cache when updated
+     * 
+     */
     unsafe class Fat16
     {
         private const int FirstPartitonEntry = 0x1BE;
@@ -34,6 +39,7 @@ namespace Sharpen.FileSystem
         private static uint m_fatSize;
 
         private static uint m_sectorOffset;
+        private static byte* m_fatTable;
 
         private const byte LFN = 0x0F;
 
@@ -117,6 +123,20 @@ namespace Sharpen.FileSystem
             long dataRegionSize = m_bpb->LargeAmountOfSectors - (m_bpb->ReservedSectors + fatRegionSize + rootDirSize);
 
             m_fatSize = (uint)dataRegionSize / m_bpb->SectorsPerCluster;
+
+            /**
+             * Cache fat table..
+             */
+            uint size = (uint)fatRegionSize * 512;
+
+            m_fatTable = (byte*)Heap.Alloc((int)size);
+            
+            var beginFatTable = m_beginLBA + m_bpb->ReservedSectors;
+
+            for (uint i = 0; i < fatRegionSize; i++)
+            {
+                dev.Read(dev, (uint)beginFatTable + i, 512, Util.PtrToArray(m_fatTable + (i * 512)));
+            }
 
             parseBoot();
         }
@@ -226,35 +246,14 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         public static unsafe ushort FindNextCluster(uint cluster)
         {
-            int beginFat = m_beginLBA + m_bpb->ReservedSectors;
-            
-            /**
-             * Calculate offsets
-             */
-            uint clusters = (cluster / 256);
-            uint adr = (uint)(beginFat + clusters);
-            uint offset = (cluster * 2) - (clusters * 512);
-            
-            /**
-             * Read sector
-             */
-            byte[] fatBuffer = new byte[512];
-            m_dev.Read(m_dev, adr, 512, fatBuffer);
+            ushort nextClusterCached = *(ushort*)(m_fatTable + (cluster * 2));
 
-            /**
-             * Get next cluster address
-             */
-            byte* ptr = (byte*)Util.ObjectToVoidPtr(fatBuffer);
-            ushort nextCluster = *(ushort*)(ptr + offset);
-
-            if (nextCluster >= FAT_EOF)
+            if (nextClusterCached >= FAT_EOF)
             {
-                Heap.Free(fatBuffer);
                 return 0xFFFF;
             }
-
-            Heap.Free(fatBuffer);
-            return nextCluster;
+            
+            return nextClusterCached;
         }
 
         /// <summary>

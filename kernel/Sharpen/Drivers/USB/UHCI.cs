@@ -559,10 +559,10 @@ namespace Sharpen.Drivers.USB
             
             if (transfer->Executed)
             {
-                if(transfer->ID > 0)
-                {
-                    PrintQueue(transfer->ID, head);
-                }
+                //if(transfer->ID > 0)
+                //{
+                //    PrintQueue(transfer->ID, head);
+                //}
 
                 head->Transfer = null;
                 
