@@ -39,5 +39,28 @@ namespace Sharpen
         /// <returns>On success, returns the PID of the child whose state changed, If WNOHANG then zero is returned, on error -1</returns>
         [Extern("waitpid")]
         public static unsafe extern int WaitPID(int pid, int* status, int options);
+
+        /// <summary>
+        /// Create a child process
+        /// </summary>
+        /// <returns>PID</returns>
+        [Extern("fork")]
+        public static unsafe extern int Fork();
+
+        /// <summary>
+        /// Replaces the current process with another executable
+        /// </summary>
+        /// <param name="path">Path to the executable</param>
+        /// <param name="argv">Arguments</param>
+        /// <param name="env">Environment variables</param>
+        /// <returns>Status</returns>
+        [Extern("execve")]
+        public static extern int Execve(string path, string[] argv, string[] env);
+
+        /// <summary>
+        /// Yields the process
+        /// </summary>
+        [Extern("sched_yield")]
+        public static extern void Yield();
     }
 }
