@@ -2,12 +2,19 @@
 
 namespace Sharpen.Net
 {
+    /// <summary>
+    /// Internet control message protocol
+    /// </summary>
     class ICMP
     {
+
         private const byte TYPE_ECHO_REQUEST = 8;
         private const byte TYPE_ECHO_REPLY = 0;
 
 
+        /// <summary>
+        /// Control message header
+        /// </summary>
         public unsafe struct ICMPHeader
         {
             public byte Type;
@@ -17,11 +24,22 @@ namespace Sharpen.Net
             public ushort SeqNum;
         }
 
+        /// <summary>
+        /// Register handler
+        /// </summary>
         public static unsafe void Init()
         {
             IPV4.RegisterHandler(0x01, handler);
         }
 
+        /// <summary>
+        /// Process request
+        /// </summary>
+        /// <param name="ip">IP</param>
+        /// <param name="id">ID</param>
+        /// <param name="seq">Sequence number</param>
+        /// <param name="data">Packet data</param>
+        /// <param name="length">Packet length</param>
         private static unsafe void EchoReply(byte[] ip, ushort id, ushort seq, byte *data, int length)
         {
             NetPacketDesc* packet = NetPacket.Alloc();
@@ -47,6 +65,12 @@ namespace Sharpen.Net
             NetPacket.Free(packet);
         }
 
+        /// <summary>
+        /// ICMP packet handler
+        /// </summary>
+        /// <param name="sourceIp">Source IP</param>
+        /// <param name="buffer">Packet buffer</param>
+        /// <param name="size">Packet size</param>
         private static unsafe void handler(byte[] sourceIp, byte* buffer, uint size)
         {
             ICMPHeader* hdr = (ICMPHeader*)buffer;
