@@ -220,7 +220,7 @@ namespace Sharpen.Drivers.USB
             Console.Write(", Next = ");
             Console.WriteHex((int)head->Next);
             Console.Write(", Prev = ");
-            Console.WriteHex((int)hea89d->Previous);
+            Console.WriteHex((int)head->Previous);
             Console.Write(", ELEM = ");
             Console.WriteHex((int)head->Element);
             Console.WriteLine("");
