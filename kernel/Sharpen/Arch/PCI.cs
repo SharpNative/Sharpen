@@ -78,6 +78,22 @@ namespace Sharpen.Arch
         public const ushort BAR4 = 0x20;
         public const ushort BAR5 = 0x24;
 
+        /**
+         * Command register
+         * 
+         * bit 7, and 11 to 15 are reserved
+         */
+        public const ushort CMD_IO_SPACE = (1 << 0);
+        public const ushort CMD_MEM_SPACE = (1 << 1);
+        public const ushort CMD_BUS_MASTER = (1 << 2);
+        public const ushort CMD_SPECIAL_CYCLES = (1 << 3);
+        public const ushort CMD_MEMORY_WRITE_INV = (1 << 4);
+        public const ushort CMD_VGA_PALLET_SNOOP = (1 << 5);
+        public const ushort CMD_PARITY_ERROR_RESP = (1 << 6);
+        public const ushort CMD_SERR_ENABLE = (1 << 8);
+        public const ushort CMD_FAST_BACK_TO_BACK_ENABLE = (1 << 9);
+        public const ushort CMD_INT_DISABLE = (1 << 10);
+
         public const int PCI_BUS_DEV_MAX = 32;
         public const int PCI_PINS = 4;
 
@@ -228,7 +244,7 @@ namespace Sharpen.Arch
         public static void EnableBusMastering(PciDevice dev)
         {
             ushort cmd = (ushort)Read(dev, COMMAND, 2);
-            cmd |= (1 << 2);
+            cmd |= CMD_BUS_MASTER;
             Write(dev.Bus, dev.Slot, dev.Function, COMMAND, cmd, 2);
         }
 
@@ -239,7 +255,7 @@ namespace Sharpen.Arch
         public static void EnableIOSpace(PciDevice dev)
         {
             ushort cmd = (ushort)Read(dev, COMMAND, 2);
-            cmd |= (1 << 0);
+            cmd |= CMD_IO_SPACE;
             Write(dev.Bus, dev.Slot, dev.Function, COMMAND, cmd, 2);
         }
 

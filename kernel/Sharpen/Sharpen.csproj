@@ -67,6 +67,7 @@
     <Compile Include="FileSystem\Cookie\PciDeviceCookie.cs" />
     <Compile Include="FileSystem\Cookie\ContainerCookie.cs" />
     <Compile Include="FileSystem\RootPoint.cs" />
+    <Compile Include="Input\KeyboardInput.cs" />
     <Compile Include="Synchronisation\Spinlock.cs" />
     <Compile Include="Net\TCPSocketDevice.cs" />
     <Compile Include="Net\TCPFS.cs" />

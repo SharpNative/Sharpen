@@ -39,7 +39,7 @@ namespace Sharpen.Drivers.USB
 
         private USBTransfer* mTransfer;
 
-        private KeyboardHIDStruct* Data;
+        private KeyboardHIDStruct* mData;
 
         private static bool mShift = false;
 
@@ -73,12 +73,12 @@ namespace Sharpen.Drivers.USB
         public unsafe void initDevice(USBDevice device)
         {
             mTransfer = (USBTransfer*)Heap.Alloc(sizeof(USBTransfer));
-            Data = (KeyboardHIDStruct *)Heap.Alloc(sizeof(KeyboardHIDStruct));
+            mData = (KeyboardHIDStruct *)Heap.Alloc(sizeof(KeyboardHIDStruct));
 
             /**
              * Prepare poll transfer
              */
-            mTransfer->Data = (byte*)Data;
+            mTransfer->Data = (byte*)mData;
             mTransfer->Length = 8;
             mTransfer->Executed = false;
             mTransfer->Success = false;
@@ -89,11 +89,11 @@ namespace Sharpen.Drivers.USB
 
         public void HandleData()
         {
-            mShift = ((Data->Modifier & LEFT_SHIFT) > 0) || ((Data->Modifier & RIGHT_SHIFT) > 0);
+            mShift = ((mData->Modifier & LEFT_SHIFT) > 0) || ((mData->Modifier & RIGHT_SHIFT) > 0);
 
             for (int i = 0; i < 6; i++)
-                if (Data->Keys[i] != 0x00)
-                    HandleKey(Data->Keys[i]);
+                if (mData->Keys[i] != 0x00)
+                    HandleKey(mData->Keys[i]);
         }
 
         public void HandleKey(byte code)

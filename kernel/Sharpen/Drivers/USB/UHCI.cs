@@ -127,14 +127,14 @@ namespace Sharpen.Drivers.USB
         const int TD_TOKEN_D_SHIFT = 19;
         const int TD_TOKEN_MAXLEN = 21;
 
-        private static Mutex m_mutex;
+        private static Mutex mMutex;
 
         /// <summary>
         /// 
         /// </summary>
         public static unsafe void Init()
         {
-            m_mutex = new Mutex();
+            mMutex = new Mutex();
             /**
              * Note: this cycles through PCI devices!
              */
@@ -454,7 +454,7 @@ namespace Sharpen.Drivers.USB
         /// <returns></returns>
         private static UHCIQueueHead* GetQueueHead(UHCIController dev)
         {
-            m_mutex.Lock();
+            mMutex.Lock();
             int i = 0;
             while (i < MAX_HEADS)
             {
@@ -464,14 +464,14 @@ namespace Sharpen.Drivers.USB
                     dev.QueueHeadPool[i].Next = null;
                     dev.QueueHeadPool[i].Previous = null;
 
-                    m_mutex.Unlock();
+                    mMutex.Unlock();
                     return (UHCIQueueHead*)(((int)dev.QueueHeadPool) + (sizeof(UHCIQueueHead) * i));
                 }
 
                 i++;
             }
 
-            m_mutex.Unlock();
+            mMutex.Unlock();
             return null;
         }
 
@@ -566,7 +566,7 @@ namespace Sharpen.Drivers.USB
         /// <param name="head"></param>
         public static void InsertHead(UHCIController controller, UHCIQueueHead* head)
         {
-            m_mutex.Lock();
+            mMutex.Lock();
             UHCIQueueHead* end = controller.FirstHead;
 
             while (true)
@@ -582,12 +582,12 @@ namespace Sharpen.Drivers.USB
             end->Next = head;
             end->Head = (int)Paging.GetPhysicalFromVirtual(head) | TD_POINTER_QH;
             
-            m_mutex.Unlock();
+            mMutex.Unlock();
         }
 
         public static void RemoveHead(UHCIController controller, UHCIQueueHead* head)
         {
-            m_mutex.Lock();
+            mMutex.Lock();
 
             /**
              * Set next to previous
@@ -622,7 +622,7 @@ namespace Sharpen.Drivers.USB
             }
 
             FreeHead(controller, head);
-            m_mutex.Unlock();
+            mMutex.Unlock();
         }
 
         public static void FreeHead(UHCIController controller, UHCIQueueHead* head)

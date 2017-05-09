@@ -59,7 +59,7 @@ namespace Sharpen.Drivers.USB
             public byte PWRMask;
         }
 
-        private USBHubDescriptor *descriptor;
+        private USBHubDescriptor *mDescriptor;
 
         public static void Init()
         {
@@ -138,12 +138,12 @@ namespace Sharpen.Drivers.USB
 
         private unsafe void Probe(USBDevice device)
         {
-            int numPorts = descriptor->NumPorts;
+            int numPorts = mDescriptor->NumPorts;
             
             /**
              * Do we need to power ports manually? then enable power on all devices
              */
-            if((descriptor->Characteristics & USB_HUB_POWER_MASK) == USB_HUB_POWER_PER_DEVICE)
+            if((mDescriptor->Characteristics & USB_HUB_POWER_MASK) == USB_HUB_POWER_PER_DEVICE)
             {
 
                 for(int i = 0; i < numPorts; i++)
@@ -152,7 +152,7 @@ namespace Sharpen.Drivers.USB
                         continue;
 
                     // Note: this does wait powertime * 10 ms
-                    Tasking.CurrentTask.CurrentThread.Sleep(0, (uint)descriptor->PowerTime * 10000);
+                    Tasking.CurrentTask.CurrentThread.Sleep(0, (uint)mDescriptor->PowerTime * 10000);
                 }
             }
 
@@ -193,9 +193,9 @@ namespace Sharpen.Drivers.USB
             /**
              * Loaad descriptor
              */
-            descriptor = (USBHubDescriptor*)Heap.Alloc(sizeof(USBHubDescriptor));
+            mDescriptor = (USBHubDescriptor*)Heap.Alloc(sizeof(USBHubDescriptor));
             
-            if (!device.Request(USBDevice.TYPE_DEVICETOHOST | USBDevice.TYPE_CLASS | USBDevice.TYPE_DEV, USBDevice.REQ_GET_DESCRIPTOR, (USB_HUB_DESCRIPTOR_TYPE << 8) | 0, 0, (ushort)sizeof(USBHubDescriptor), (byte *)descriptor))
+            if (!device.Request(USBDevice.TYPE_DEVICETOHOST | USBDevice.TYPE_CLASS | USBDevice.TYPE_DEV, USBDevice.REQ_GET_DESCRIPTOR, (USB_HUB_DESCRIPTOR_TYPE << 8) | 0, 0, (ushort)sizeof(USBHubDescriptor), (byte *)mDescriptor))
                 return false;
             
 
