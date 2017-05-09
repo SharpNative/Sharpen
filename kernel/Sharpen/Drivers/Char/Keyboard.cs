@@ -105,14 +105,13 @@ namespace Sharpen.Drivers.Char
             IRQ.SetHandler(1, handler);
             IOApicManager.CreateISARedirection(1, 1);
             
-            Device device = new Device();
-            device.Name = "keyboard";
-            device.Node = new Node();
-            device.Node.Read = readImpl;
-            device.Node.GetSize = getSizeImpl;
-            device.Node.Flags = NodeFlags.DEVICE | NodeFlags.FILE;
+            Node node = new Node();
+            node.Read = readImpl;
+            node.GetSize = getSizeImpl;
+            node.Flags = NodeFlags.DEVICE | NodeFlags.FILE;
 
-            DevFS.RegisterDevice(device);
+            RootPoint dev = new RootPoint("keyboard", node);
+            VFS.MountPointDevFS.AddEntry(dev);
         }
 
         /// <summary>
@@ -153,8 +152,8 @@ namespace Sharpen.Drivers.Char
         /// <summary>
         /// Keyboard IRQ handler
         /// </summary>
-        /// <param name="regsPtr"></param>
-        private static unsafe Regs* handler(Regs* regsPtr)
+        /// <returns></returns>
+        private static unsafe bool handler()
         {
             byte scancode = PortIO.In8(0x60);
 
@@ -196,7 +195,7 @@ namespace Sharpen.Drivers.Char
                 }
             }
 
-            return regsPtr;
+            return true;
         }
     }
 }

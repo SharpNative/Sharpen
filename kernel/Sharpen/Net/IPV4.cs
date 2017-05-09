@@ -1,6 +1,6 @@
 ﻿using Sharpen.Mem;
 using Sharpen.Utilities;
-using System;
+using Sharpen.Lib;
 using System.Runtime.InteropServices;
 
 namespace Sharpen.Net
@@ -10,12 +10,12 @@ namespace Sharpen.Net
     {
         public byte Version;
         public byte ServicesField;
-        public UInt16 totalLength;
-        public UInt16 ID;
-        public UInt16 FragmentOffset;
+        public ushort totalLength;
+        public ushort ID;
+        public ushort FragmentOffset;
         public byte TTL;
         public byte Protocol;
-        public UInt16 HeaderChecksum;
+        public ushort HeaderChecksum;
         public fixed byte Source[4];
         public fixed byte Destination[4];
     }
@@ -53,12 +53,12 @@ namespace Sharpen.Net
             byte[] ip = Util.PtrToArray(header->Source);
             
             // Fake ARP
-            if(!(ip[0] == 255 && ip[1] == 255 && ip[2] == 255 && ip[3] == 255))
+            if (!(ip[0] == 255 && ip[1] == 255 && ip[2] == 255 && ip[3] == 255))
             {
                 ARP.FindOrAdd(ip, mac);
             }
             
-            ushort sz = (ushort)(Utilities.Byte.ReverseBytes(header->totalLength) - sizeof(IPV4Header));
+            ushort sz = (ushort)(Byte.ReverseBytes(header->totalLength) - sizeof(IPV4Header));
             
             m_handlers[proto]?.Invoke(ip, buffer + sizeof(IPV4Header), sz);
         }
@@ -89,8 +89,8 @@ namespace Sharpen.Net
 
             header->Version = (4 << 4) | 5;
             header->ServicesField = 0;
-            header->totalLength = Utilities.Byte.ReverseBytes((ushort)(packet->end - packet->start));
-            header->ID = Utilities.Byte.ReverseBytes(0xa836); // TODO: FIX THIS!
+            header->totalLength = Byte.ReverseBytes((ushort)(packet->end - packet->start));
+            header->ID = Byte.ReverseBytes(0xa836); // TODO: FIX THIS!
             header->FragmentOffset = 0;
             header->TTL = 250;
             header->Protocol = protocol;

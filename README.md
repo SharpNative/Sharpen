@@ -1,6 +1,6 @@
 # Sharpen
 Project sharpen
 
-JIRA: https://jira.jeffdev.nl/projects/SHARP/issues
+JIRA: http://jira.jeffdev.nl/projects/SHARP/issues
 
-Documentation: https://doc.jeffdev.nl/display/SHAR
+Documentation: http://doc.jeffdev.nl/display/SHAR

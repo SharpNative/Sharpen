@@ -1,4 +1,5 @@
 ﻿using Sharpen.FileSystem.Cookie;
+using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.MultiTasking;
 using Sharpen.Utilities;
@@ -22,17 +23,13 @@ namespace Sharpen.FileSystem
         /// </summary>
         public unsafe static void Init()
         {
-            MountPoint mp = new MountPoint();
-            mp.Name = "proc";
-
             Node node = new Node();
             node.FindDir = rootFindDirImpl;
             node.ReadDir = rootReadDirImpl;
             node.Flags = NodeFlags.DIRECTORY;
 
-            mp.Node = node;
-
-            VFS.AddMountPoint(mp);
+            RootPoint dev = new RootPoint("proc", node);
+            VFS.RootMountPoint.AddEntry(dev);
         }
 
         /// <summary>
@@ -50,11 +47,9 @@ namespace Sharpen.FileSystem
             Task task = Tasking.GetTaskByPID(pid);
             if (task == null)
                 return null;
-
-            IDCookie cookie = new IDCookie(task.PID);
-
+            
             Node taskNode = new Node();
-            taskNode.Cookie = (ICookie)cookie;
+            taskNode.Cookie = new IDCookie(task.PID);
             taskNode.Flags = NodeFlags.DIRECTORY;
             taskNode.FindDir = procFindDirImpl;
             taskNode.ReadDir = procReadDirImpl;
@@ -84,12 +79,7 @@ namespace Sharpen.FileSystem
 
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
             string name = current.PID.ToString();
-
-            i = 0;
-            for (; name[i] != '\0'; i++)
-                entry->Name[i] = name[i];
-            entry->Name[i] = '\0';
-
+            String.CopyTo(entry->Name, name);
             Heap.Free(name);
 
             return entry;
@@ -123,12 +113,10 @@ namespace Sharpen.FileSystem
             int tid = int.Parse(name);
             if (tid < 0)
                 return null;
-
-            IDCookie threadCookie = new IDCookie(tid);
-
+            
             Node threadNode = new Node();
             threadNode.Flags = NodeFlags.FILE;
-            threadNode.Cookie = (ICookie)threadCookie;
+            threadNode.Cookie = new IDCookie(tid);
 
             return threadNode;
         }
@@ -172,10 +160,7 @@ namespace Sharpen.FileSystem
                 name = current.TID.ToString();
             }
 
-            int i = 0;
-            for (; name[i] != '\0'; i++)
-                entry->Name[i] = name[i];
-            entry->Name[i] = '\0';
+            String.CopyTo(entry->Name, name);
 
             // A new string is only created here when index != 0
             if (index != 0)
@@ -200,31 +185,21 @@ namespace Sharpen.FileSystem
             if (task == null)
                 return 0;
 
-            ProcFSInfo* info = (ProcFSInfo*)Heap.Alloc(sizeof(ProcFSInfo));
-            info->Uptime = task.Uptime;
-            info->Priority = (int)task.Priority;
-            info->ThreadCount = task.ThreadCount;
-            info->Pid = task.PID;
+            ProcFSInfo info = new ProcFSInfo();
+            info.Uptime = task.Uptime;
+            info.Priority = (int)task.Priority;
+            info.ThreadCount = task.ThreadCount;
+            info.Pid = task.PID;
 
-            // Copy name
-            int i = 0;
-            for (; task.Name[i] != '\0' && i < 63; i++)
-                info->Name[i] = task.Name[i];
-            info->Name[i] = '\0';
-
-            // Copy cmdline
-            i = 0;
-            for (; task.CMDLine[i] != '\0' && i < 255; i++)
-                info->CMDLine[i] = task.CMDLine[i];
-            info->CMDLine[i] = '\0';
+            // Copy name and cmdline
+            String.CopyTo(info.Name, task.Name, 64);
+            String.CopyTo(info.CMDLine, task.CMDLine, 256);
 
             if (size > sizeof(ProcFSInfo))
                 size = (uint)sizeof(ProcFSInfo);
 
-            Memory.Memcpy(Util.ObjectToVoidPtr(buffer), info, (int)size);
-
-            Heap.Free(info);
-
+            Memory.Memcpy(Util.ObjectToVoidPtr(buffer), &info, (int)size);
+            
             return size;
         }
     }

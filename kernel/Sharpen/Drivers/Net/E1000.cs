@@ -225,35 +225,27 @@ namespace Sharpen.Drivers.Net
             m_flash_base = (uint)dev.BAR1.Address;
             
             /**
-             * Read IRQ number
-             */
-            m_irq_num = (ushort)PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
-
-            m_packetBuffer = new byte[9500];
-
-            /**
-             * Enable bus mastering
-             */
-            ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
-            cmd |= 0x04;
-            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, cmd);
-
-            /**
              * Check if there is a memory bar
              */
-            if ((dev.BAR0.flags & PCI.BAR_IO) > 0)
+            if ((dev.BAR0.flags & Pci.BAR_IO) > 0)
             {
                 Console.WriteLine("[E1000] Device not MMIO!");
                 return;
             }
+
+            m_packetBuffer = new byte[9500];
+            
+            /**
+             * Enable bus mastering
+             */
+            Pci.EnableBusMastering(dev);
             
             /**
              * Map device
              */
             m_register_base = (uint)Paging.MapToVirtual(Paging.KernelDirectory, (int)m_register_base, 20 * 0x1000, Paging.PageFlags.Writable | Paging.PageFlags.Present);
+            Pci.SetInterruptHandler(dev, handler);
             
-            //IRQ.SetHandler(m_irq_num, handler);
-
             readMac();
             start();
 
@@ -284,7 +276,7 @@ namespace Sharpen.Drivers.Net
             linkUp();
             
             // Clearout multicast filter
-            for(int i = 0; i < 0x80; i++)
+            for (int i = 0; i < 0x80; i++)
             {
                 *(uint*)(m_register_base + REG_MULTICAST + (i * 4)) = 0;
             }
@@ -445,13 +437,15 @@ namespace Sharpen.Drivers.Net
         /// <summary>
         /// Handle interrupt
         /// </summary>
-        /// <param name="regsPtr"></param>
-        private static unsafe void handler(Regs* regsPtr)
+        /// <returns></returns>
+        private static unsafe bool handler()
         {
             /**
              * Read Interrupt control state
              */
             uint icr = *(uint*)(m_register_base + REG_ICR);
+            if (icr == 0)
+                return false;
             
             /**
              * Link status change or transmit empty? then say link is up!
@@ -463,19 +457,21 @@ namespace Sharpen.Drivers.Net
                 linkUp();
             
             /**
-             * Dit we receive a packet
+             * Did we receive a packet
              */
             if ((icr & REG_RXT0) > 0)
             {
                 receive();
             }
 
-            if ((icr & REG_RXO) > 0)
-                Console.WriteLine("Link still ok :)");
+            //if ((icr & REG_RXO) > 0)
+            //    Console.WriteLine("Link still ok :)");
 
             //Console.Write("ICR: ");
             //Console.WriteHex(icr);
             //Console.WriteLine("");
+
+            return true;
         }
 
         /// <summary>
@@ -501,15 +497,15 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         public static void Init()
         {
-            PCI.PciDriver driver = new PCI.PciDriver();
+            Pci.PciDriver driver = new Pci.PciDriver();
             driver.Name = "E1000 Driver";
             driver.Exit = exitHandler;
             driver.Init = initHandler;
 
-            PCI.RegisterDriver(MANUID_INTEL, DEVID_EMU, driver);
-            PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EM, driver);
-            PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EMA, driver);
-            PCI.RegisterDriver(MANUID_INTEL, DEVID_82545EMAF, driver);
+            Pci.RegisterDriver(MANUID_INTEL, DEVID_EMU, driver);
+            Pci.RegisterDriver(MANUID_INTEL, DEVID_82545EM, driver);
+            Pci.RegisterDriver(MANUID_INTEL, DEVID_82545EMA, driver);
+            Pci.RegisterDriver(MANUID_INTEL, DEVID_82545EMAF, driver);
         }
     }
 }

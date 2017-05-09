@@ -1,5 +1,5 @@
-﻿using Sharpen.Mem;
-using Sharpen.Utilities;
+﻿using Sharpen.Lib;
+using Sharpen.Mem;
 
 namespace Sharpen.Net
 {

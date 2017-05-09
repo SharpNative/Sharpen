@@ -47,7 +47,13 @@ namespace DumpSymbols
                 if (parts.Length != 3)
                     continue;
 
+                // Must start with "Sharpen."
                 string symbolName = parts[2].Replace('_', '.');
+                if (!symbolName.StartsWith("Sharpen."))
+                    continue;
+
+                // It is pointless keeping "Sharpen." since everything is in the "Sharpen" namespace
+                symbolName = symbolName.Substring("Sharpen.".Length);
 
                 // A symbol cannot start with .<number>, so using that we know where the possible arguments in the name start
                 for (int i = 0; i <= 9; i++)

@@ -189,7 +189,7 @@ namespace Sharpen.USB
 
             Address = tempAdr;
 
-            Tasking.CurrentTask.CurrentThread.Sleep(0, 20);
+            Tasking.CurrentTask.CurrentThread.Sleep(0, 20000);
 
             /**
              * Get descriptor

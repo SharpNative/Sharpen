@@ -388,8 +388,7 @@ namespace Sharpen.Exec
         {
             if (Tasking.CurrentTask.UID > 0)
                 return ErrorCode.EPERM;
-
-            Console.WriteLine("okaqsdkfjqsdf");
+            
             Acpi.Shutdown();
             return ErrorCode.SUCCESS;
         }
@@ -427,7 +426,7 @@ namespace Sharpen.Exec
         public static unsafe ErrorCode Pipe(int* pipefd)
         {
             Node[] nodes = new Node[2];
-            ErrorCode error = PipeFS.Create(nodes, 4096);
+            ErrorCode error = PipeFS.Create(nodes, PipeFS.DefaultPipeSize);
             if (error != ErrorCode.SUCCESS)
             {
                 Heap.Free(nodes);

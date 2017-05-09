@@ -1,4 +1,5 @@
 ﻿using Sharpen.Collections;
+using Sharpen.Exec;
 using Sharpen.FileSystem.Cookie;
 using Sharpen.Mem;
 using Sharpen.Utilities;
@@ -20,16 +21,16 @@ namespace Sharpen.FileSystem
             Node readEnd = new Node();
             Node writeEnd = new Node();
 
-            Fifo fifo = new Fifo(DefaultPipeSize, true);
+            Fifo fifo = new Fifo(size, true);
             PipeFSCookie cookie = new PipeFSCookie();
             cookie.Fifo = fifo;
 
             // Configure
-            readEnd.Cookie = (ICookie)cookie;
+            readEnd.Cookie = cookie;
             readEnd.GetSize = getSizeImpl;
             readEnd.Read = readImpl;
             readEnd.Close = closeImpl;
-            writeEnd.Cookie = (ICookie)cookie;
+            writeEnd.Cookie = cookie;
             writeEnd.GetSize = getSizeImpl;
             writeEnd.Write = writeImpl;
             writeEnd.Close = closeImpl;

@@ -1,7 +1,8 @@
 ﻿using LibCS2C.Attributes;
 using Sharpen.Mem;
+using Sharpen.Utilities;
 
-namespace Sharpen.Utilities
+namespace Sharpen.Lib
 {
     public sealed class Int
     {
@@ -9,7 +10,7 @@ namespace Sharpen.Utilities
         public const int MaxValue = 2147483647;
 
         /// <summary>
-        /// Parse string to in
+        /// Parse string to int
         /// </summary>
         /// <param name="value"></param>
         /// <returns>-1 when failed</returns>
@@ -30,9 +31,7 @@ namespace Sharpen.Utilities
             while ((c = value[index++]) != '\0')
             {
                 if (c >= '0' && c <= '9')
-                {
-                    res = res * 10 + c - '0';
-                }
+                    res = res * 10 + (c - '0');
                 else
                     return -1;
             }

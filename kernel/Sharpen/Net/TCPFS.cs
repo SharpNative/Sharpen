@@ -15,21 +15,20 @@ namespace Sharpen.Net
         }
 
         /// <summary>
-        /// Initializes UDP filesystem in NetFS
+        /// Initializes TCP filesystem in NetFS
         /// </summary>
         public static unsafe void Init()
         {
-            Device dev = new Device();
-            dev.Name = "tcp";
-            dev.Node = new Node();
-            dev.Node.FindDir = findDirImpl;
-            dev.Node.ReadDir = readDirImpl;
-            dev.Node.Flags = NodeFlags.DIRECTORY;
+            Node node = new Node();
+            node.FindDir = findDirImpl;
+            node.ReadDir = readDirImpl;
+            node.Flags = NodeFlags.DIRECTORY;
             
             IDCookie cookie = new IDCookie((int)OPT.LIST);
-            dev.Node.Cookie = (ICookie)cookie;
-            
-            NetFS.RegisterDevice(dev);
+            node.Cookie = cookie;
+
+            RootPoint dev = new RootPoint("tcp", node);
+            VFS.MountPointNetFS.AddEntry(dev);
         }
 
         /// <summary>
@@ -74,7 +73,7 @@ namespace Sharpen.Net
             node.FindDir = findDirImpl;
 
             IDCookie cookie = new IDCookie((int)opt);
-            node.Cookie = (ICookie)cookie;
+            node.Cookie = cookie;
 
             return node;
         }

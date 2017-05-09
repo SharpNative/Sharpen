@@ -395,8 +395,11 @@ namespace Sharpen.Drivers.Block
         {
             PciDevice pciDev = findIDEDevice();
             if (pciDev == null)
+            {
+                Console.WriteLine("[ATA] No ATA devices found");
                 return;
-
+            }
+            
             ATA_PRIMARY_IO = (ushort)((pciDev.BAR0.Address == 0x00 || pciDev.BAR0.Address == 0x01) ? 0x1F0 : pciDev.BAR0.Address);
             ATA_SECONDARY_IO = (ushort)((pciDev.BAR2.Address == 0x00 || pciDev.BAR2.Address == 0x01) ? 0x170 : pciDev.BAR2.Address);
             
@@ -407,23 +410,24 @@ namespace Sharpen.Drivers.Block
             {
                 if (!Devices[i].Exists)
                     continue;
-                
-                Device dev = new Device();
+
                 char* name = (char*)Heap.Alloc(5);
                 name[0] = 'H';
                 name[1] = 'D';
                 name[2] = 'D';
                 name[3] = (char)('0' + i);
-                dev.Name = Util.CharPtrToString(name);
-                
-                dev.Node = new Node();
-                dev.Node.Read = readImpl;
-                dev.Node.Write = writeImpl;
+                name[4] = '\0';
+                string nameStr = Util.CharPtrToString(name);
+
+                Node node = new Node();
+                node.Read = readImpl;
+                node.Write = writeImpl;
 
                 IDCookie cookie = new IDCookie(i);
-                dev.Node.Cookie = (ICookie)cookie;
+                node.Cookie = cookie;
 
-                DevFS.RegisterDevice(dev);
+                RootPoint dev = new RootPoint(nameStr, node);
+                VFS.MountPointDevFS.AddEntry(dev);
             }
         }
 
@@ -474,9 +478,9 @@ namespace Sharpen.Drivers.Block
             /**
              * Note: this cycles through PCI devices!
              */
-            for (int i = 0; i < PCI.DeviceNum; i++)
+            for (int i = 0; i < Pci.DeviceNum; i++)
             {
-                PciDevice dev = PCI.Devices[i];
+                PciDevice dev = Pci.Devices[i];
 
                 if (dev.CombinedClass == 0x0101)
                     return dev;

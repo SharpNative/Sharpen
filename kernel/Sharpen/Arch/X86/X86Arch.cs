@@ -31,7 +31,6 @@ namespace Sharpen.Arch
             Acpi.Init();
             LocalApic.InitLocalAPIC();
             IOApicManager.InitIOApics();
-            MPTable.Init();
 
             CMOS.UpdateTime();
             Time.FullTicks = Time.CalculateEpochTime();

@@ -1,8 +1,9 @@
-﻿#define RTL_DEBUG
+﻿// #define RTL_DEBUG
 
 using Sharpen.Arch;
 using Sharpen.Mem;
 using Sharpen.Net;
+using Sharpen.Synchronisation;
 using Sharpen.Utilities;
 
 namespace Sharpen.Drivers.Net
@@ -131,24 +132,21 @@ namespace Sharpen.Drivers.Net
             /**
              * Check if I/O bar
              */
-            if ((dev.BAR0.flags & PCI.BAR_IO) == 0)
+            if ((dev.BAR0.flags & Pci.BAR_IO) == 0)
             {
                 Console.WriteLine("[RTL8139] RTL8139 should be an I/O bar, not a memory bar!");
                 return;
             }
 
             /**
-             * Read IRQ number
+             * Set interrupt
              */
-            m_irq_num = (ushort)PCI.PCIRead(dev.Bus, dev.Slot, dev.Function, 0x3C, 1);
-            //IRQ.SetHandler(m_irq_num, handler);
+            Pci.SetInterruptHandler(dev, handler);
 
             /**
              * Enable bus mastering
              */
-            ushort cmd = PCI.PCIReadWord(dev, PCI.COMMAND);
-            cmd |= 0x04;
-            PCI.PCIWrite(dev.Bus, dev.Slot, dev.Function, PCI.COMMAND, cmd);
+            Pci.EnableBusMastering(dev);
 
             /**
              * Enable device
@@ -352,8 +350,8 @@ namespace Sharpen.Drivers.Net
         /// <summary>
         /// Handle interrupt
         /// </summary>
-        /// <param name="regsPtr"></param>
-        private static unsafe void handler(Regs* regsPtr)
+        /// <returns>If this IRQ was handled by the device</returns>
+        private static unsafe bool handler()
         {
             ushort ISR = PortIO.In16((ushort)(m_io_base + REG_ISR));
 
@@ -387,6 +385,8 @@ namespace Sharpen.Drivers.Net
             }
 
             PortIO.Out16((ushort)(m_io_base + REG_ISR), ISR);
+
+            return true;
         }
 
         /// <summary>
@@ -435,12 +435,12 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         public static void Init()
         {
-            PCI.PciDriver driver = new PCI.PciDriver();
+            Pci.PciDriver driver = new Pci.PciDriver();
             driver.Name = "RTL8139 Driver";
             driver.Exit = exitHandler;
             driver.Init = initHandler;
 
-            PCI.RegisterDriver(0x10EC, 0x8139, driver);
+            Pci.RegisterDriver(0x10EC, 0x8139, driver);
         }
     }
 }

@@ -1,8 +1,9 @@
-#include <stdint.h>
-
 /* Constants */
 #define NULL ((void*)0)
 #define SSE_XMM_SIZE 16
+
+#include <stdint.h>
+
 
 /* Prototypes */
 static void* calloc(int nitems, int size);
@@ -73,9 +74,8 @@ void Sharpen_Mem_Memory_Memclear_2void__int32_t_(void* ptr, int num)
 static void* calloc(int nitems, int size)
 {
     void* ptr = malloc(nitems * size);
-    if(ptr == NULL)
-        return NULL;
-    memset(ptr, 0, nitems * size);
+    if(ptr != NULL)
+        memset(ptr, 0, nitems * size);
     return ptr;
 }
 
@@ -124,7 +124,7 @@ inline uint32_t Sharpen_Utilities_Util_ReadVolatile32_1uint32_t_(uint32_t addres
     return *(volatile uint32_t volatile*)address;
 }
 
-inline void* Sharpen_SymbolTable_getSymbolTable_0(void)
+inline void* Sharpen_Utilities_SymbolTable_getSymbolTable_0(void)
 {
     extern void* kernelsymbols;
     return (void*)&kernelsymbols;

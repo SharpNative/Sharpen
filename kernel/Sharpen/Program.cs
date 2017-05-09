@@ -12,13 +12,13 @@ using Sharpen.Net;
 using Sharpen.MultiTasking;
 using Sharpen.Utilities;
 using Sharpen.Drivers.USB;
+using Sharpen.USB;
 
 namespace Sharpen
 {
     public sealed class Program
     {
         private static Multiboot.Header m_mbootHeader;
-        private static bool m_isMultiboot = false;
         private static uint m_memSize;
         private static unsafe void* heapStart;
 
@@ -28,32 +28,43 @@ namespace Sharpen
         /// <param name="header">The multiboot header</param>
         /// <param name="magic">The magic</param>
         /// <param name="end">The end address of the kernel</param>
-        public static unsafe void KernelMain(Multiboot.Header* header, uint magic, uint end)
+        public static unsafe void KernelMain(Multiboot.Header* header, uint magic, void* end)
         {
-            heapStart = (void*)end;
+            heapStart = end;
             Console.Clear();
             X86Arch.EarlyInit();
 
             processMultiboot(header, magic);
             Heap.InitTempHeap(heapStart);
-            
+
             X86Arch.Init();
             Random.Init();
-            
-            initFileSystems();
+
+            VFS.Init();
             initPCIDevices();
             Keyboard.Init();
             
             Tasking.Init();
-            
+
             initUSB();
             initStorage();
-            initNetworking();
-            runUserspace();
             
+            initNetworking();
+            initSound();
+            runUserspace();
+
             // Idle loop
             while (true)
                 CPU.HLT();
+        }
+
+        /// <summary>
+        /// Initializes sound and its drivers
+        /// </summary>
+        private static void initSound()
+        {
+            AudioFS.Init();
+            AC97.Init();
         }
         
         /// <summary>
@@ -61,28 +72,11 @@ namespace Sharpen
         /// </summary>
         private static void initPCIDevices()
         {
-            PCI.Init();
-            PCIFS.Init();
-
-            //AC97.Init();
+            Pci.Init();
             VboxDev.Init();
+            PciFS.LoadDevices();
         }
-
-        /// <summary>
-        /// Initializes filesystems and VFS
-        /// </summary>
-        private static void initFileSystems()
-        {
-            VFS.Init();
-            DevFS.Init();
-            NullFS.Init();
-            RandomFS.Init();
-            STDOUT.Init();
-            SerialPort.Init();
-            NetFS.Init();
-            ProcFS.Init();
-        }
-
+        
         /// <summary>
         /// Initializes storage components
         /// </summary>
@@ -92,6 +86,11 @@ namespace Sharpen
             ATA.Init();
 
             Node hddNode = VFS.GetByAbsolutePath("devices://HDD0");
+            if (hddNode == null)
+            {
+                Panic.DoPanic("HDD0 not found");
+            }
+
             Fat16.Init(hddNode, "C");
             Tasking.KernelTask.CurrentDirectory = "C://";
         }
@@ -102,10 +101,11 @@ namespace Sharpen
         private static void initUSB()
         {
             USB.USB.Init();
-            USB.USBDrivers.Init();
+            USBDrivers.Init();
 
-
+            USBHub.Init();
             USBHIDMouse.Init();
+            USBHIDKeyboard.Init();
 
 
             UHCI.Init();
@@ -131,16 +131,16 @@ namespace Sharpen
             DHCP.Init();
 
             // Network drivers
-            /*E1000.Init();
+            E1000.Init();
             PCNet2.Init();
-            RTL8139.Init();*/
+            RTL8139.Init();
             
             DHCP.Discover();
 
 
-            /*Thread packetHandler = new Thread();
-            packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest2), 0, null, true);
-            Tasking.KernelTask.AddThread(packetHandler);*/
+            //Thread packetHandler = new Thread();
+            //packetHandler.Context.CreateNewContext(Util.MethodToPtr(HttpTest), 0, null, true);
+            //Tasking.KernelTask.AddThread(packetHandler);
 
 
         }
@@ -316,7 +316,6 @@ namespace Sharpen
             }
 
             // Bring the header to a safe location
-            m_isMultiboot = true;
             fixed (Multiboot.Header* destination = &m_mbootHeader)
             {
                 Memory.Memcpy(destination, header, sizeof(Multiboot.Header));
@@ -340,7 +339,7 @@ namespace Sharpen
                     Multiboot.Module* module = mods[i];
 
                     // Move the heap end
-                    if ((int)module->End > (int)heapStart)
+                    if ((uint)module->End > (uint)heapStart)
                     {
                         heapStart = module->End;
                     }
@@ -355,8 +354,9 @@ namespace Sharpen
         /// <summary>
         /// Runs the userspace
         /// </summary>
-        private static void runUserspace()
+        private static unsafe void runUserspace()
         {
+
             // Initial process, usage: init [program]
             string[] argv = new string[3];
             argv[0] = "C://exec/init";

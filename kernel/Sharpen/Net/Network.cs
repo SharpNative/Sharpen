@@ -1,6 +1,7 @@
-﻿//#define NETWORK_DEBUG
+﻿ //#define NETWORK_DEBUG
 
 using Sharpen.Collections;
+using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.MultiTasking;
 using Sharpen.Utilities;
@@ -233,10 +234,11 @@ namespace Sharpen.Net
         /// <summary>
         /// Get hostname
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The hostname</returns>
         public static string GetHostName()
         {
-            return String.Clone("SHARPEN");
+            // TODO: set this in userspace on bootup dynamically
+            return "SHARPEN";
         }
     }
 }

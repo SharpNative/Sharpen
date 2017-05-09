@@ -1,9 +1,10 @@
 ﻿// These flags are used for debugging
-//#define HEAP_DEBUG
-//#define HEAP_DEBUG_DESCRIPTOR
+// #define HEAP_DEBUG
+// #define HEAP_DEBUG_DESCRIPTOR
 // #define HEAP_USE_MAGIC
 
 using Sharpen.Arch;
+using Sharpen.Synchronisation;
 using Sharpen.Utilities;
 
 namespace Sharpen.Mem

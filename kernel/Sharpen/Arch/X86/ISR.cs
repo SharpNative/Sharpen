@@ -1,4 +1,4 @@
-﻿// #define ALWAYS_DO_PANIC
+﻿ #define ALWAYS_DO_PANIC
 
 using Sharpen.MultiTasking;
 using Sharpen.Exec;
@@ -64,7 +64,7 @@ namespace Sharpen.Arch
             int isrNum = regsPtr->IntNum;
             
             // If the kernel caused this, do a panic
-            if (Tasking.CurrentTask == null || Tasking.CurrentTask.PID == 0)
+            if (!Tasking.IsActive || Tasking.CurrentTask.PID == 0)
             {
                 Panic.DoPanic(errorCodes[isrNum], regsPtr);
             }

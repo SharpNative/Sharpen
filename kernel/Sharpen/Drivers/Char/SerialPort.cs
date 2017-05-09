@@ -5,9 +5,16 @@ using Sharpen.FileSystem.Cookie;
 
 namespace Sharpen.Drivers.Char
 {
+    struct Comport
+    {
+        public string Name { get; set; }
+        public ushort Address { get; set; }
+        public Fifo Buffer { get; set; }
+    }
+
     public class SerialPort
     {
-        private static SerialPortComport[] comports;
+        private static Comport[] comports;
 
         /// <summary>
         /// Init device
@@ -30,19 +37,16 @@ namespace Sharpen.Drivers.Char
 
             comports[num].Buffer = new Fifo(256, true);
             
-            Device dev = new Device();
-            dev.Name = comports[num].Name;
-            dev.Node = new Node();
+            Node node = new Node();
             
-            dev.Node.Flags = NodeFlags.FILE;
-            dev.Node.Write = writeImpl;
-            dev.Node.Read = readImpl;
-            dev.Node.GetSize = getSizeImpl;
+            node.Flags = NodeFlags.FILE;
+            node.Write = writeImpl;
+            node.Read = readImpl;
+            node.GetSize = getSizeImpl;
+            node.Cookie = new IDCookie(num);
 
-            IDCookie cookie = new IDCookie(num);
-            dev.Node.Cookie = (ICookie)cookie;
-
-            DevFS.RegisterDevice(dev);
+            RootPoint dev = new RootPoint(comports[num].Name, node);
+            VFS.MountPointDevFS.AddEntry(dev);
         }
 
         /// <summary>
@@ -70,8 +74,7 @@ namespace Sharpen.Drivers.Char
 
             return i;
         }
-
-
+        
         /// <summary>
         /// Gets the size of the available data
         /// </summary>
@@ -165,11 +168,10 @@ namespace Sharpen.Drivers.Char
         /// <summary>
         /// Handler for comport 1 and 3
         /// </summary>
-        /// <param name="regsPtr">Registers</param>
-        /// <returns>Registers</returns>
-        private static unsafe Regs* Handler13(Regs* regsPtr)
+        /// <returns>If we handled the IRQ</returns>
+        private static unsafe bool Handler13()
         {
-            SerialPortComport port;
+            Comport port;
 
             if (comports[0].Address != 0 && hasReceived(comports[0].Address))
                 port = comports[0];
@@ -177,22 +179,21 @@ namespace Sharpen.Drivers.Char
                 port = comports[2];
 
             if (port.Address == 0)
-                return regsPtr;
+                return true;
 
             while (hasReceived(port.Address))
                 port.Buffer.WriteByte(read(port.Address));
 
-            return regsPtr;
+            return true;
         }
 
         /// <summary>
         /// Handler for comports 2 and 4
         /// </summary>
-        /// <param name="regsPtr">Registers</param>
-        /// <returns>Registers</returns>
-        private static unsafe Regs* Handler24(Regs* regsPtr)
+        /// <returns>If we handled the IRQ</returns>
+        private static unsafe bool Handler24()
         {
-            SerialPortComport port;
+            Comport port;
 
             if (comports[1].Address != 0 && hasReceived(comports[1].Address))
                 port = comports[1];
@@ -200,12 +201,12 @@ namespace Sharpen.Drivers.Char
                 port = comports[3];
 
             if (port.Address == 0)
-                return regsPtr;
+                return true;
 
             while (hasReceived(port.Address))
                 port.Buffer.WriteByte(read(port.Address));
 
-            return regsPtr;
+            return true;
         }
         
         /// <summary>
@@ -213,15 +214,15 @@ namespace Sharpen.Drivers.Char
         /// </summary>
         public static unsafe void Init()
         {
-            comports = new SerialPortComport[4];
+            comports = new Comport[4];
 
-            comports[0] = new SerialPortComport();
+            comports[0] = new Comport();
             comports[0].Name = "COM1";
-            comports[1] = new SerialPortComport();
+            comports[1] = new Comport();
             comports[1].Name = "COM2";
-            comports[2] = new SerialPortComport();
+            comports[2] = new Comport();
             comports[2].Name = "COM3";
-            comports[3] = new SerialPortComport();
+            comports[3] = new Comport();
             comports[3].Name = "COM4";
 
             readBda();

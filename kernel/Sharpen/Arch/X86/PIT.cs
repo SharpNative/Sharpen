@@ -24,7 +24,7 @@
         public const byte PIT_ACCESS_LOHIBYTE = 0x30;
         
         /// <summary>
-        /// Prepares the PIT to sleep a couple of ms
+        /// Prepares the PIT to sleep a couple of microseconds
         /// </summary>
         /// <param name="us">The microseconds</param>
         /// <returns>The sleep divisor</returns>

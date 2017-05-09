@@ -52,14 +52,23 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Drivers\Power\Acpica.cs" />
     <Compile Include="Arch\LocalApic.cs" />
     <Compile Include="Arch\IOApic.cs" />
     <Compile Include="Arch\IOApicManager.cs" />
-    <Compile Include="Arch\MPTable.cs" />
-    <Compile Include="Arch\MPTableExtras.cs" />
-    <Compile Include="Arch\PCIClassCodes.cs" />
+    <Compile Include="Arch\PciClassCombinations.cs" />
+    <Compile Include="Drivers\Power\AcpiObjects.cs" />
+    <Compile Include="Drivers\USB\USBHIDKeyboard.cs" />
+    <Compile Include="Drivers\USB\USBHIDKeyboardMap.cs" />
     <Compile Include="Drivers\USB\USBHIDMouse.cs" />
     <Compile Include="Drivers\USB\USBHub.cs" />
+    <Compile Include="FileSystem\ContainerFS.cs" />
+    <Compile Include="FileSystem\Cookie\AudioDataCookie.cs" />
+    <Compile Include="FileSystem\Cookie\PciDeviceCookie.cs" />
+    <Compile Include="FileSystem\Cookie\ContainerCookie.cs" />
+    <Compile Include="FileSystem\RootPoint.cs" />
+    <Compile Include="Input\KeyboardInput.cs" />
+    <Compile Include="Synchronisation\Spinlock.cs" />
     <Compile Include="Net\TCPSocketDevice.cs" />
     <Compile Include="Net\TCPFS.cs" />
     <Compile Include="Arch\X86\X86SignalContext.cs" />
@@ -92,13 +101,12 @@
     <Compile Include="Drivers\Net\E1000.cs" />
     <Compile Include="Drivers\Net\PCNet2.cs" />
     <Compile Include="Drivers\Net\RTL8139.cs" />
-    <Compile Include="Drivers\Power\AcpiDevice.cs" />
-    <Compile Include="ErrorCode.cs" />
+    <Compile Include="Exec\ErrorCode.cs" />
     <Compile Include="Exec\ELFLoader.cs" />
     <Compile Include="Exec\Loader.cs" />
     <Compile Include="Exec\Syscalls.cs" />
     <Compile Include="FileSystem\Fat16BPB.cs" />
-    <Compile Include="FileSystem\PCIFS.cs" />
+    <Compile Include="FileSystem\PciFS.cs" />
     <Compile Include="FileSystem\RandomFS.cs" />
     <Compile Include="FileSystem\NullFS.cs" />
     <Compile Include="FileSystem\PipeFS.cs" />
@@ -121,7 +129,6 @@
     <Compile Include="Net\ICMP.cs" />
     <Compile Include="Net\IPV4.cs" />
     <Compile Include="Net\ARP.cs" />
-    <Compile Include="Net\NetFS.cs" />
     <Compile Include="Net\NetPacket.cs" />
     <Compile Include="Net\Network.cs" />
     <Compile Include="FileSystem\NetworkInfoFS.cs" />
@@ -132,20 +139,20 @@
     <Compile Include="MultiTasking\FileDescriptors.cs" />
     <Compile Include="MultiTasking\Task.cs" />
     <Compile Include="MultiTasking\Tasking.cs" />
-    <Compile Include="Arch\PCI.cs" />
+    <Compile Include="Arch\Pci.cs" />
     <Compile Include="Arch\X86\PIC.cs" />
     <Compile Include="Arch\X86\PIT.cs" />
     <Compile Include="Arch\X86\Regs.cs" />
     <Compile Include="Arch\X86\Syscall.cs" />
-    <Compile Include="SymbolTable.cs" />
+    <Compile Include="Utilities\SymbolTable.cs" />
     <Compile Include="USB\IUSBDriver.cs" />
     <Compile Include="USB\USBDrivers.cs" />
     <Compile Include="USB\USBExtras.cs" />
     <Compile Include="USB\USB.cs" />
     <Compile Include="USB\USBController.cs" />
     <Compile Include="USB\USBDevice.cs" />
-    <Compile Include="Utilities\Array.cs" />
-    <Compile Include="Utilities\Byte.cs" />
+    <Compile Include="Lib\Array.cs" />
+    <Compile Include="Lib\Byte.cs" />
     <Compile Include="Drivers\Other\VboxDev.cs" />
     <Compile Include="Drivers\Other\VboxDevExtras.cs" />
     <Compile Include="Drivers\Other\VboxDevFSDriver.cs" />
@@ -153,8 +160,6 @@
     <Compile Include="Drivers\Power\AcpiExtras.cs" />
     <Compile Include="Drivers\Sound\IntelHD.cs" />
     <Compile Include="Drivers\Sound\AC97.cs" />
-    <Compile Include="FileSystem\DevFS.cs" />
-    <Compile Include="FileSystem\Device.cs" />
     <Compile Include="FileSystem\DirEntry.cs" />
     <Compile Include="Collections\Dictionary.cs" />
     <Compile Include="FileSystem\Fat16.cs" />
@@ -165,8 +170,6 @@
     <Compile Include="Drivers\Char\SerialPort.cs" />
     <Compile Include="Drivers\Char\Keyboard.cs" />
     <Compile Include="Drivers\Char\KeyboardMap.cs" />
-    <Compile Include="Drivers\Char\SerialPortExtras.cs" />
-    <Compile Include="FileSystem\MountPoint.cs" />
     <Compile Include="FileSystem\Node.cs" />
     <Compile Include="FileSystem\VFS.cs" />
     <Compile Include="Mem\Heap.cs" />
@@ -174,7 +177,7 @@
     <Compile Include="Collections\Fifo.cs" />
     <Compile Include="Collections\List.cs" />
     <Compile Include="Collections\BitArray.cs" />
-    <Compile Include="Lib\Audio.cs" />
+    <Compile Include="FileSystem\AudioFS.cs" />
     <Compile Include="Mem\Memory.cs" />
     <Compile Include="Multiboot.cs" />
     <Compile Include="Panic.cs" />
@@ -182,11 +185,11 @@
     <Compile Include="Arch\X86\Paging.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utilities\Int.cs" />
-    <Compile Include="Utilities\String.cs" />
+    <Compile Include="Lib\Int.cs" />
+    <Compile Include="Lib\String.cs" />
     <Compile Include="MultiTasking\TaskPriority.cs" />
     <Compile Include="Time.cs" />
-    <Compile Include="Mutex.cs" />
+    <Compile Include="Synchronisation\Mutex.cs" />
     <Compile Include="Utilities\Util.cs" />
   </ItemGroup>
   <ItemGroup>

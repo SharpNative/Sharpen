@@ -5,6 +5,11 @@ using Sharpen.Utilities;
 
 namespace Sharpen.FileSystem
 {
+    /**
+     * 
+     * TODO: Make use of fat cache for finding next free cluster, change values in cache when updated
+     * 
+     */
     unsafe class Fat16
     {
         private const int FirstPartitonEntry = 0x1BE;
@@ -34,6 +39,8 @@ namespace Sharpen.FileSystem
         private static uint m_fatSize;
 
         private static uint m_sectorOffset;
+        private static byte* m_fatTable;
+        private static int m_fatClusterSize;
 
         private const byte LFN = 0x0F;
 
@@ -50,33 +57,32 @@ namespace Sharpen.FileSystem
         /// <summary>
         /// Init and mount FAT on device
         /// </summary>
-        /// <param name="dev">Device node</param>
+        /// <param name="deviceNode">Device node</param>
         /// <param name="name">Name</param>
-        public static unsafe void Init(Node dev, string name)
+        public static unsafe void Init(Node deviceNode, string name)
         {
-            m_dev = dev;
+            m_dev = deviceNode;
 
-            initFAT(dev);
+            initFAT(deviceNode);
 
             /**
              * Create and add mountpoint
              */
-            MountPoint p = new MountPoint();
-            p.Name = name;
-            p.Node = new Node();
-            p.Node.ReadDir = readDirImpl;
-            p.Node.FindDir = findDirImpl;
-            p.Node.Truncate = truncateImpl;
-            p.Node.Flags = NodeFlags.DIRECTORY;
+            Node node = new Node();
+            node.ReadDir = readDirImpl;
+            node.FindDir = findDirImpl;
+            node.Truncate = truncateImpl;
+            node.Flags = NodeFlags.DIRECTORY;
 
             /**
              * Root cookie
              */
             Fat16Cookie rootCookie = new Fat16Cookie();
             rootCookie.Cluster = 0xFFFFFFFF;
-            p.Node.Cookie = (ICookie)rootCookie;
+            node.Cookie = rootCookie;
 
-            VFS.AddMountPoint(p);
+            RootPoint dev = new RootPoint(name, node);
+            VFS.RootMountPoint.AddEntry(dev);
         }
         
         /// <summary>
@@ -117,6 +123,21 @@ namespace Sharpen.FileSystem
             long dataRegionSize = m_bpb->LargeAmountOfSectors - (m_bpb->ReservedSectors + fatRegionSize + rootDirSize);
 
             m_fatSize = (uint)dataRegionSize / m_bpb->SectorsPerCluster;
+
+            /**
+             * Cache fat table..
+             */
+            uint size = (uint)fatRegionSize * 512;
+
+            m_fatTable = (byte*)Heap.Alloc((int)size);
+            m_fatClusterSize = fatRegionSize * 256;
+
+            var beginFatTable = m_beginLBA + m_bpb->ReservedSectors;
+
+            for (uint i = 0; i < fatRegionSize; i++)
+            {
+                dev.Read(dev, (uint)beginFatTable + i, 512, Util.PtrToArray(m_fatTable + (i * 512)));
+            }
 
             parseBoot();
         }
@@ -187,7 +208,7 @@ namespace Sharpen.FileSystem
             cookie.DirEntry = dirEntry;
             cookie.Cluster = cluster;
             cookie.Num = num;
-            node.Cookie = (ICookie)cookie;
+            node.Cookie = cookie;
 
             /**
              * Is it a directory?
@@ -226,35 +247,14 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         public static unsafe ushort FindNextCluster(uint cluster)
         {
-            int beginFat = m_beginLBA + m_bpb->ReservedSectors;
-            
-            /**
-             * Calculate offsets
-             */
-            uint clusters = (cluster / 256);
-            uint adr = (uint)(beginFat + clusters);
-            uint offset = (cluster * 2) - (clusters * 512);
-            
-            /**
-             * Read sector
-             */
-            byte[] fatBuffer = new byte[512];
-            m_dev.Read(m_dev, adr, 512, fatBuffer);
+            ushort nextClusterCached = *(ushort*)(m_fatTable + (cluster * 2));
 
-            /**
-             * Get next cluster address
-             */
-            byte* ptr = (byte*)Util.ObjectToVoidPtr(fatBuffer);
-            ushort nextCluster = *(ushort*)(ptr + offset);
-
-            if (nextCluster >= FAT_EOF)
+            if (nextClusterCached >= FAT_EOF)
             {
-                Heap.Free(fatBuffer);
                 return 0xFFFF;
             }
-
-            Heap.Free(fatBuffer);
-            return nextCluster;
+            
+            return nextClusterCached;
         }
 
         /// <summary>
@@ -279,6 +279,9 @@ namespace Sharpen.FileSystem
         /// <param name="value">Fat value</param>
         private static unsafe void changeClusterValue(uint cluster, ushort value)
         {
+            // Set cache
+            *(ushort*)(m_fatTable + (cluster * 2)) = value;
+
             int beginFat = m_beginLBA + m_bpb->ReservedSectors;
             uint clusters = (cluster / 256);
             uint adr = (uint)(beginFat + clusters);
@@ -353,60 +356,19 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         private static ushort findNextFreeCluster()
         {
-            int beginFat = m_beginLBA + m_bpb->ReservedSectors;
-            uint adr = (uint)(beginFat);
 
-            byte[] fatBuffer = new byte[512];
-            m_dev.Read(m_dev, adr, 512, fatBuffer);
-
-            byte* fatPointer = (byte*)Util.ObjectToVoidPtr(fatBuffer);
-            ushort* curPointer = (ushort*)(fatPointer);
-
-            uint offset = 0;
-            uint offsetSector = 0;
-
-            ushort offsetCluster = 0;
-            ushort freeSector = 0;
-
-            /**
-             * 
-             * Find free cluster?
-             * 
-             */ 
-            for (int i = 0; i < m_fatSize; i++)
+            for(ushort i = 0; i < m_fatClusterSize; i++)
             {
-                if(offset >= 256)
+
+                ushort cluster = *(ushort *)(m_fatTable + (i * 2));
+
+                if (cluster == 0x0000)
                 {
-                    offsetSector++;
-
-                    /**
-                     * Read new sector
-                     */
-                    m_dev.Read(m_dev, adr + offsetSector, 512, fatBuffer);
-
-                    curPointer = (ushort*)(fatPointer);
-
-                    offset = 0;
+                    return i;
                 }
-
-                if (*curPointer == 0x0000)
-                {
-                    freeSector = offsetCluster;
-                    break;
-                }
-
-                
-                offset++;
-                curPointer++;
-                offsetCluster++;
             }
 
-            Heap.Free(fatPointer);
-
-            /**
-             * If freeSector is zero, it is full
-            */
-            return freeSector;
+            return 0;
         }
 
         /// <summary>
@@ -588,7 +550,7 @@ namespace Sharpen.FileSystem
                 }
 
                 m_dev.Read(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
-                Memory.Memcpy((void *)((int)Util.ObjectToVoidPtr(buf) + offsetInSector), (void *)((int)Util.ObjectToVoidPtr(buffer) + currentOffset), sizeTemp);
+                Memory.Memcpy((byte*)Util.ObjectToVoidPtr(buf) + offsetInSector, (byte*)Util.ObjectToVoidPtr(buffer) + currentOffset, sizeTemp);
 
                 m_dev.Write(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
 
@@ -597,6 +559,8 @@ namespace Sharpen.FileSystem
                 offsetInCluster++;
                 offsetInSector = 0;
             }
+
+            Heap.Free(buf);
             
             return currentOffset;
         }
@@ -669,12 +633,14 @@ namespace Sharpen.FileSystem
                     sizeInSectors++;
                 }
 
-                Memory.Memcpy((void*)((int)Util.ObjectToVoidPtr(buffer) + currentOffset), (void*)((int)Util.ObjectToVoidPtr(buf) + offsetInSector), sizeTemp);
+                Memory.Memcpy((byte*)Util.ObjectToVoidPtr(buffer) + currentOffset, (byte*)Util.ObjectToVoidPtr(buf) + offsetInSector, sizeTemp);
                 currentOffset += (uint)sizeTemp;
                 sizeLeft -= sizeTemp;
                 offsetInCluster++;
                 offsetInSector = 0;
             }
+
+            Heap.Free(buf);
 
             return size;
         }

@@ -1,7 +1,8 @@
 ﻿using Sharpen.Mem;
 using LibCS2C.Attributes;
+using Sharpen.Utilities;
 
-namespace Sharpen.Utilities
+namespace Sharpen.Lib
 {
     public sealed class String
     {
@@ -16,6 +17,33 @@ namespace Sharpen.Utilities
             int i = 0;
             for (; text[i] != '\0'; i++) ;
             return i;
+        }
+
+        /// <summary>
+        /// Copies a source string to a destination string
+        /// </summary>
+        /// <param name="dest">The destination string</param>
+        /// <param name="source">The source string</param>
+        public static unsafe void CopyTo(char* dest, string source)
+        {
+            int i = 0;
+            for (; source[i] != '\0'; i++)
+                dest[i] = source[i];
+            dest[i] = '\0';
+        }
+
+        /// <summary>
+        /// Copies a source string to a destination string
+        /// </summary>
+        /// <param name="dest">The destination string</param>
+        /// <param name="source">The source string</param>
+        /// <param name="max">The maximum length</param>
+        public static unsafe void CopyTo(char* dest, string source, int max)
+        {
+            int i = 0;
+            for (; source[i] != '\0' && i < max - 1; i++)
+                dest[i] = source[i];
+            dest[i] = '\0';
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿namespace Sharpen
+﻿namespace Sharpen.Exec
 {
     public enum ErrorCode
     {

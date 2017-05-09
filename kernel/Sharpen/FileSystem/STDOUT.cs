@@ -7,13 +7,12 @@
         /// </summary>
         public static unsafe void Init()
         {
-            Device device = new Device();
-            device.Name = "stdout";
-            device.Node = new Node();
-            device.Node.Write = writeImpl;
-            device.Node.Flags = NodeFlags.DEVICE | NodeFlags.FILE;
+            Node node = new Node();
+            node.Write = writeImpl;
+            node.Flags = NodeFlags.DEVICE | NodeFlags.FILE;
 
-            DevFS.RegisterDevice(device);
+            RootPoint dev = new RootPoint("stdout", node);
+            VFS.MountPointDevFS.AddEntry(dev);
         }
 
         /// <summary>

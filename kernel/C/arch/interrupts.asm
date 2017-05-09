@@ -2,7 +2,7 @@ extern Sharpen_MultiTasking_Tasking_Scheduler_1void__
 extern Sharpen_Arch_Syscall_Handler_1struct_struct_Sharpen_Arch_RegsDirect__
 extern Sharpen_Arch_LocalApic_timerHandler_1void__
 
-%macro INT_COMMON 2
+%macro INT_COMMON 3
     extern %2
     global %1
     %1:
@@ -25,7 +25,11 @@ extern Sharpen_Arch_LocalApic_timerHandler_1void__
         ; Call interrupt handler
         push esp
         call %2
-        mov esp, eax
+        %if %3 = 0
+            mov esp, eax
+        %else
+            add esp, 4
+        %endif
 
         ; Reload original segment
         pop gs
@@ -60,13 +64,13 @@ extern Sharpen_Arch_LocalApic_timerHandler_1void__
     global Sharpen_Arch_IDT_Request%1_0
     Sharpen_Arch_IDT_Request%1_0:
         push 0
-        push (%1 + 32)
+        push %1
         jmp irq_common
 %endmacro
 
 ; Interrupt handlers
-INT_COMMON isr_common, Sharpen_Arch_ISR_Handler_1struct_struct_Sharpen_Arch_Regs__
-INT_COMMON irq_common, Sharpen_Arch_IRQ_Handler_1struct_struct_Sharpen_Arch_Regs__
+INT_COMMON isr_common, Sharpen_Arch_ISR_Handler_1struct_struct_Sharpen_Arch_Regs__, 0
+INT_COMMON irq_common, Sharpen_Arch_IRQ_Handler_1struct_struct_Sharpen_Arch_Regs__, 1
 
 ; ISR routines
 ISR_NO_ERROR 0

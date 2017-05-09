@@ -7,6 +7,7 @@ namespace Sharpen.MultiTasking
     {
         public static Task KernelTask { get; private set; }
         public static Task CurrentTask { get; private set; }
+        public static bool IsActive { get; private set; }
 
         /// <summary>
         /// Initializes tasking
@@ -26,6 +27,7 @@ namespace Sharpen.MultiTasking
             kernel.NextTask = kernel;
 
             // Do initial task switch to setup kernel task
+            IsActive = true;
             Yield();
             Console.WriteLine("[Tasking] Initialized");
         }
@@ -105,20 +107,7 @@ namespace Sharpen.MultiTasking
             // End of critical section
             CPU.STI();
         }
-
-        /// <summary>
-        /// Forks the current task
-        /// </summary>
-        /// <returns>0 if child, PID if parent</returns>
-        public static int SetForkingThread(Thread thread)
-        {
-            int pid = thread.OwningTask.PID;
-            Task newTask = thread.OwningTask.Clone();
-            newTask.AddThread(thread.Clone());
-            ScheduleTask(newTask);
-            return (pid == CurrentTask.PID ? newTask.PID : 0);
-        }
-
+        
         /// <summary>
         /// Gets the next task for the scheduler
         /// </summary>

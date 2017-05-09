@@ -58,6 +58,8 @@ namespace Sharpen.Drivers.USB
             mTransfer->Length = 3;
             mTransfer->Executed = false;
             mTransfer->Success = false;
+            mTransfer->ID = 2;
+
 
 
             device.PrepareInterrupt(device, mTransfer);
@@ -79,9 +81,10 @@ namespace Sharpen.Drivers.USB
                     /**
                      * Todo: Handle mouse events here!
                      */
+
+                    
                 }
-
-
+                
                 /**
                  * And again
                  */

@@ -9,13 +9,13 @@ echo Compiling..
 %CC% %KERNEL_C_FLAGS% kernel.c -c -o build\kernel.o
 
 echo Generating symbols...
-%LD% %KERNEL_LD_FLAGS% build\*.o -o kernel
+%LD% %KERNEL_LD_FLAGS% build\*.o ..\acpica\acpica.a -o kernel
 %NM% kernel -g > symbols.txt
 %DUMP_SYMBOLS% symbols.txt symbols.asm
 %AS% %KERNEL_ASM_FLAGS% symbols.asm -o build\symbols.o
 
 echo Linking kernel...
-%LD% %KERNEL_LD_FLAGS% -s build\*.o -o kernel
+%LD% %KERNEL_LD_FLAGS% -s build\*.o ..\acpica\acpica.a -o kernel
 
 echo Copying kernel...
 call ..\..\scripts\mount

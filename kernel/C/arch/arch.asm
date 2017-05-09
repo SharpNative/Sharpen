@@ -7,6 +7,6 @@ section .text
 %include "arch/portio.asm"
 %include "arch/memory.asm"
 %include "arch/paging.asm"
-%include "arch/mutex.asm"
+%include "arch/synchronisation.asm"
 %include "arch/usercode.asm"
 %include "arch/load.asm"

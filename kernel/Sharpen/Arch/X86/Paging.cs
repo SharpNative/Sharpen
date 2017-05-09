@@ -179,7 +179,7 @@ namespace Sharpen.Arch
                 MapPage(directory, phys + offset, virt + offset, flags);
                 PhysicalMemoryManager.Set(phys + offset);
             }
-
+            Paging.setDirectoryInternal(Paging.CurrentDirectoryPhysical);
             return (void*)virt;
         }
 
@@ -271,7 +271,7 @@ namespace Sharpen.Arch
         }
         
         /// <summary>
-        /// Frees an allocate virtual address range
+        /// Frees an allocate virtual address range and marks the corresponding physical addresses as free
         /// </summary>
         /// <param name="address">The starting address</param>
         /// <param name="size">The size</param>
@@ -279,17 +279,32 @@ namespace Sharpen.Arch
         {
             // Page align size
             uint sizeAligned = AlignUp((uint)size);
-            int start = (int)address / 0x1000;
-            int addressStart = (int)address;
+            int start = (int)AlignDown((uint)address) / 0x1000;
+            int addressStart = (int)AlignDown((uint)address);
             int addressEnd = addressStart + (int)sizeAligned;
-
+            
             // Free physical memory
             for (int i = addressStart; i < addressEnd; i += 0x1000)
             {
                 void* phys = GetPhysicalFromVirtual((void*)i);
                 PhysicalMemoryManager.Free(phys);
             }
+            
+            // Free virtual memory
+            bitmap.ClearRange(start, (int)(sizeAligned / 0x1000));
+        }
 
+        /// <summary>
+        /// Frees an allocate virtual address range
+        /// </summary>
+        /// <param name="address">The starting address</param>
+        /// <param name="size">The size</param>
+        public static void UnMapKeepPhysical(void* address, int size)
+        {
+            // Page align size
+            uint sizeAligned = AlignUp((uint)size);
+            int start = (int)AlignDown((uint)address) / 0x1000;
+            
             // Free virtual memory
             bitmap.ClearRange(start, (int)(sizeAligned / 0x1000));
         }
@@ -303,12 +318,12 @@ namespace Sharpen.Arch
         {
             // Note: sizeof(PageDirectory) is not neccesarily a page
             int pageDirSizeAligned = (int)AlignUp((uint)sizeof(PageDirectory));
-
+            
             // One block for the page directory and the page tables
             int allocated = (int)Heap.AlignedAlloc(0x1000, pageDirSizeAligned + 1024 * sizeof(PageTable));
             if (allocated == 0)
                 Panic.DoPanic("Couldn't clone page directory because there is no memory left");
-
+            
             PageDirectory* destination = (PageDirectory*)allocated;
             destination->PhysicalDirectory = (PageDirectory*)GetPhysicalFromVirtual((void*)allocated);
             for (int i = 0; i < 1024; i++)
@@ -331,7 +346,7 @@ namespace Sharpen.Arch
                 destination->PhysicalTables[i] = newTablePhysical | flags;
                 destination->VirtualTables[i] = (int)newTable;
             }
-
+            
             return destination;
         }
 
@@ -370,7 +385,7 @@ namespace Sharpen.Arch
              * Setting the virtual address with a getter and updating the CR3 with the physical address
              * also wont work, because it's not guaranteed you can read the page directory
              * as it may not be available in the current task.
-            **/
+             */
 
             CurrentDirectory = directoryVirtual;
             CurrentDirectoryPhysical = directoryPhysical;

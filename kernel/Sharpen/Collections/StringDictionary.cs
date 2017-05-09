@@ -1,5 +1,6 @@
-﻿using Sharpen.Mem;
-using Sharpen.Utilities;
+﻿using Sharpen.Lib;
+using Sharpen.Mem;
+using Sharpen.Synchronisation;
 
 namespace Sharpen.Collections
 {
@@ -110,9 +111,8 @@ namespace Sharpen.Collections
                 m_mutex.Unlock();
                 return null;
             }
-
+            
             object val = m_buckets[bucket].Get(key);
-
             m_mutex.Unlock();
 
             return val;
@@ -123,16 +123,16 @@ namespace Sharpen.Collections
         /// </summary>
         /// <param name="index">The index</param>
         /// <returns>The value</returns>
-        public object GetAt(int index)
+        public object GetAt(uint index)
         {
-            int currentIndex = 0;
+            uint currentIndex = 0;
             for (int i = 0; i < m_bucketCount; i++)
             {
                 Bucket bucket = m_buckets[i];
                 if (bucket == null)
                     continue;
 
-                int offset = index - currentIndex;
+                uint offset = index - currentIndex;
                 if (offset < bucket.Count)
                     return bucket.GetAt(offset);
                 

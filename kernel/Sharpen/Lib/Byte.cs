@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Sharpen.Utilities
+namespace Sharpen.Lib
 {
     public sealed class Byte
     {
@@ -105,21 +105,36 @@ namespace Sharpen.Utilities
             return result;
         }
 
-        public static UInt16 ReverseBytes(UInt16 value)
+        /// <summary>
+        /// Reverses bytes in an unsigned short
+        /// </summary>
+        /// <param name="value">The value</param>
+        /// <returns>The reversed value</returns>
+        public static ushort ReverseBytes(ushort value)
         {
-            UInt16 outVal = (UInt16)((value & 0xFF) << 8);
-            outVal |= (UInt16)((value & 0xFF00) >> 8);
+            ushort outVal = (ushort)((value & 0xFF) << 8);
+            outVal |= (ushort)((value & 0xFF00) >> 8);
             
             return outVal;
         }
 
-        public static UInt32 ReverseBytes(UInt32 value)
+        /// <summary>
+        /// Reverses bytes in an unsigned int
+        /// </summary>
+        /// <param name="value">The value</param>
+        /// <returns>The reversed value</returns>
+        public static uint ReverseBytes(uint value)
         {
             return (value & 0x000000FFU) << 24 | (value & 0x0000FF00U) << 8 |
                    (value & 0x00FF0000U) >> 8 | (value & 0xFF000000U) >> 24;
         }
 
-        public static UInt64 ReverseBytes(UInt64 value)
+        /// <summary>
+        /// Reverses bytes in an unsigned long
+        /// </summary>
+        /// <param name="value">The value</param>
+        /// <returns>The reversed value</returns>
+        public static ulong ReverseBytes(ulong value)
         {
             return (value & 0x00000000000000FFUL) << 56 | (value & 0x000000000000FF00UL) << 40 |
                    (value & 0x0000000000FF0000UL) << 24 | (value & 0x00000000FF000000UL) << 8 |

@@ -1,6 +1,6 @@
-﻿using Sharpen.Mem;
+﻿using Sharpen.Lib;
+using Sharpen.Mem;
 using Sharpen.Utilities;
-using System;
 using System.Runtime.InteropServices;
 
 namespace Sharpen.Net
@@ -17,7 +17,7 @@ namespace Sharpen.Net
     {
         public fixed byte Destination[6];
         public fixed byte Source[6];
-        public UInt16 Protocol;
+        public ushort Protocol;
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ namespace Sharpen.Net
             Memory.Memcpy(header->Destination, Util.ObjectToVoidPtr(dest), 6);
             Memory.Memcpy(header->Source, Util.ObjectToVoidPtr(src), 6);
 
-            header->Protocol = Utilities.Byte.ReverseBytes((ushort)protocol);
+            header->Protocol = Byte.ReverseBytes((ushort)protocol);
 
             return header;
         }

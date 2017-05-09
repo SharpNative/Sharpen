@@ -123,7 +123,8 @@ namespace Sharpen.Drivers.Net
             m_dev = dev;
             m_io_base = (ushort)(dev.BAR0.Address);
 
-            FixCommand();
+            Pci.EnableBusMastering(dev);
+            Pci.EnableIOSpace(dev);
             
             /**
              * Read current mac
@@ -145,23 +146,9 @@ namespace Sharpen.Drivers.Net
             InitCard();
 
             /**
-             * Read and set interrupt
+             * Set interrupt
              */
-            /*int interrupt = (PCI.PCIReadWord(dev, 0x3C) & 0xFF);
-            int intPIN = PCI.PCIReadWord(dev, 0x3C) >> 8;
-            //IRQ.SetHandler(interrupt, handler);
-
-            Console.Write("PCNET2(");
-            Console.WriteNum(interrupt);
-            Console.Write(',');
-            Console.WriteNum(intPIN);
-            Console.Write(',');
-            Console.WriteNum(dev.Bus);
-            Console.Write(',');
-            Console.WriteNum(dev.Slot);
-            Console.Write(',');
-            Console.WriteNum(dev.Function);
-            Console.Write(")");*/
+            Pci.SetInterruptHandler(dev, handler);
             
 
             // Enable card
@@ -185,6 +172,10 @@ namespace Sharpen.Drivers.Net
 
         }
 
+        /// <summary>
+        /// Copies the MAC address to a buffer
+        /// </summary>
+        /// <param name="mac">The buffer</param>
         private static unsafe void GetMac(byte* mac)
         {
             for (int i = 0; i < 6; i++)
@@ -209,13 +200,17 @@ namespace Sharpen.Drivers.Net
                 m_currentTransDesc = 0;
         }
         
-        private static unsafe void handler(Regs* regsPtr)
+        /// <summary>
+        /// IRQ handler
+        /// </summary>
+        /// <returns>If we handled the IRQ</returns>
+        private static unsafe bool handler()
         {
             // acknowledge IRQ
             uint csr0 = readCSR(0);
 
             if ((csr0 & CSR0_INTR) == 0)
-                return;
+                return false;
 
             writeCSR(0, csr0);
 
@@ -224,12 +219,12 @@ namespace Sharpen.Drivers.Net
                 Console.WriteLine("[PCNET] Init done");
 
                 m_init = true;
-                return;
+                return true;
             }
 
             // W00th?
             if (!m_init)
-                return;
+                return true;
 
             if ((csr0 & CSR0_ERR) != 0)
             {
@@ -242,7 +237,7 @@ namespace Sharpen.Drivers.Net
                 else
                     Console.WriteLine("[PCNET] Error: HELP :(");
 
-                return;
+                return true;
             }
 
             if((csr0 & CSR0_TINT) > 0)
@@ -277,11 +272,12 @@ namespace Sharpen.Drivers.Net
                         m_currentRescDesc = 0;
                 }
             }
+
+            return true;
         }
 
         private static void exitHandler(PciDevice dev)
         {
-
         }
 
         private static void SoftwareReset()
@@ -300,7 +296,7 @@ namespace Sharpen.Drivers.Net
 
             // sws style 2 please
             uint csr58 = readCSR(58);
-            csr58 &= 0xfff0;
+            csr58 &= 0xFFF0;
             csr58 |= 2;
             writeCSR(58, csr58);
         }
@@ -339,15 +335,9 @@ namespace Sharpen.Drivers.Net
 
         }
 
-        private static void FixCommand()
-        {
-
-            ushort cmd = PCI.PCIReadWord(m_dev, PCI.COMMAND);
-            cmd |= 0x05; // set bits 0 and 2
-
-            PCI.PCIWrite(m_dev.Bus, m_dev.Slot, m_dev.Function, PCI.COMMAND, cmd);
-        }
-
+        /// <summary>
+        /// Reads the MAC address
+        /// </summary>
         private static void ReadMac()
         {
             m_mac = new byte[6];
@@ -393,12 +383,12 @@ namespace Sharpen.Drivers.Net
         /// </summary>
         public static void Init()
         {
-            PCI.PciDriver driver = new PCI.PciDriver();
+            Pci.PciDriver driver = new Pci.PciDriver();
             driver.Name = "PC-NET 2 driver Driver";
             driver.Exit = exitHandler;
             driver.Init = initHandler;
 
-            PCI.RegisterDriver(0x1022, 0x2000, driver);
+            Pci.RegisterDriver(0x1022, 0x2000, driver);
         }
     }
 }

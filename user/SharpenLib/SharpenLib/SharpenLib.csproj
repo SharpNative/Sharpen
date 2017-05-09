@@ -55,13 +55,13 @@
     <Compile Include="Utilities\Util.cs" />
     <Compile Include="Utilities\Array.cs" />
     <Compile Include="Process.cs" />
-    <Compile Include="..\..\..\kernel\Sharpen\Utilities\String.cs">
+    <Compile Include="..\..\..\kernel\Sharpen\Lib\String.cs">
       <Link>Utilities\String.cs</Link>
     </Compile>
-    <Compile Include="..\..\..\kernel\Sharpen\Utilities\Int.cs">
+    <Compile Include="..\..\..\kernel\Sharpen\Lib\Int.cs">
       <Link>Utilities\Int.cs</Link>
     </Compile>
-    <Compile Include="..\..\..\kernel\Sharpen\Utilities\Byte.cs">
+    <Compile Include="..\..\..\kernel\Sharpen\Lib\Byte.cs">
       <Link>Utilities\Byte.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />

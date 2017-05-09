@@ -3,7 +3,7 @@
 
 using Sharpen.Mem;
 using Sharpen.Utilities;
-using System;
+using Sharpen.Lib;
 using System.Runtime.InteropServices;
 
 namespace Sharpen.Net
@@ -11,10 +11,10 @@ namespace Sharpen.Net
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe struct UDPHeader
     {
-        public UInt16 SourcePort;
-        public UInt16 DestinationPort;
-        public UInt16 Length;
-        public UInt16 Checksum;
+        public ushort SourcePort;
+        public ushort DestinationPort;
+        public ushort Length;
+        public ushort Checksum;
     }
 
     /// <summary>
@@ -157,8 +157,8 @@ namespace Sharpen.Net
         {
             UDPHeader* header = (UDPHeader*)buffer;
 
-            ushort destPort = Utilities.Byte.ReverseBytes(header->DestinationPort);
-            ushort sourcePort = Utilities.Byte.ReverseBytes(header->SourcePort);
+            ushort destPort = Byte.ReverseBytes(header->DestinationPort);
+            ushort sourcePort = Byte.ReverseBytes(header->SourcePort);
 
 #if UDP_DEBUG_PACKETS
             Console.Write("[UDP] Receive from ");
@@ -168,7 +168,7 @@ namespace Sharpen.Net
             Console.WriteLine("");
 #endif
 
-            m_handlers[destPort]?.Invoke(sourceIp, sourcePort, destPort, buffer + sizeof(UDPHeader), (uint)(Utilities.Byte.ReverseBytes(header->Length) - sizeof(UDPHeader)));
+            m_handlers[destPort]?.Invoke(sourceIp, sourcePort, destPort, buffer + sizeof(UDPHeader), (uint)(Byte.ReverseBytes(header->Length) - sizeof(UDPHeader)));
         }
 
         /// <summary>
@@ -179,15 +179,15 @@ namespace Sharpen.Net
         /// <param name="sourcePort">Source port</param>
         /// <param name="DestinationPort">Destination port</param>
         /// <returns>The pointer to the header</returns>
-        private static unsafe UDPHeader* addHeader(NetPacketDesc* packet, byte[] destIP, UInt16 sourcePort, UInt16 DestinationPort)
+        private static unsafe UDPHeader* addHeader(NetPacketDesc* packet, byte[] destIP, ushort sourcePort, ushort DestinationPort)
         {
             packet->start -= (short)sizeof(UDPHeader);
 
             UDPHeader* header = (UDPHeader*)(packet->buffer + packet->start);
 
-            header->SourcePort = Utilities.Byte.ReverseBytes(sourcePort);
-            header->DestinationPort = Utilities.Byte.ReverseBytes(DestinationPort);
-            header->Length = Utilities.Byte.ReverseBytes((ushort)(packet->end - packet->start));
+            header->SourcePort = Byte.ReverseBytes(sourcePort);
+            header->DestinationPort = Byte.ReverseBytes(DestinationPort);
+            header->Length = Byte.ReverseBytes((ushort)(packet->end - packet->start));
 
             header->Checksum = 0;
 
