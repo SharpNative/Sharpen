@@ -106,6 +106,7 @@ namespace Sharpen
             USBHub.Init();
             USBHIDMouse.Init();
             USBHIDKeyboard.Init();
+            USBHardDisk.Init();
 
 
             UHCI.Init();

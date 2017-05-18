@@ -4,6 +4,10 @@ using Sharpen.Utilities;
 
 namespace Sharpen.Arch
 {
+
+    /// <summary>
+    /// PCI device definition
+    /// </summary>
     public class PciDevice
     {
         public byte Bus;
@@ -31,6 +35,9 @@ namespace Sharpen.Arch
         public byte IRQLine;
     }
 
+    /// <summary>
+    /// PCI bar structure
+    /// </summary>
     public struct PciBar
     {
         public ulong Size;
@@ -43,6 +50,9 @@ namespace Sharpen.Arch
     {
         public const ushort COMMAND = 0x04;
 
+        /**
+         * Addresses
+         */
         public const ushort CONFIG_ADR = 0xCF8;
         public const ushort DATA_ADR = 0xCFC;
 
@@ -63,14 +73,20 @@ namespace Sharpen.Arch
         public const ushort CONFIG_LETENCY = 0x0D;
         public const ushort CONFIG_HEADER_TYPE = 0x0E;
         public const ushort CONFIG_BIST = 0x0F;
-
+        
         public const ushort IRQLINE = 0x3C;
         public const ushort IRQPIN = 0x3D;
 
+        /**
+         * PCI bar types
+         */
         public const ushort BAR_IO = 0x01;
         public const ushort BAR_LOWMEM = 0x02;
         public const ushort BAR_64 = 0x04;
 
+        /**
+         * PCI bars
+         */
         public const ushort BAR0 = 0x10;
         public const ushort BAR1 = 0x14;
         public const ushort BAR2 = 0x18;
@@ -121,6 +137,9 @@ namespace Sharpen.Arch
             public uint Flags;
         }
 
+        /// <summary>
+        /// Number of PCI devices
+        /// </summary>
         public static uint DeviceNum
         {
             get { return m_currentdevice; }
