@@ -1,4 +1,5 @@
 ﻿//#define __UHCI_DIAG
+using System;
 using Sharpen.Arch;
 using Sharpen.Mem;
 using Sharpen.MultiTasking;
@@ -338,7 +339,7 @@ namespace Sharpen.Drivers.USB
 
                 toggle ^= 1;
 
-                InitTransmit(td, prev, dev.Speed, dev.Address, 0, toggle, transfer[i].Type, transfer[i].Length, transfer[i].Data);
+                InitTransmit(td, prev, dev.Speed, dev.Address, transfer[i].Endpoint, toggle, transfer[i].Type, transfer[i].Length, transfer[i].Data);
                 prev = td;
             }
             
@@ -352,6 +353,7 @@ namespace Sharpen.Drivers.USB
             InsertHead(controller, qh);
             WaitForQueueHead(controller, qh);
         }
+        
 
         /// <summary>
         /// Prepare interrupt

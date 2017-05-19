@@ -148,6 +148,8 @@ namespace Sharpen.USB
         public bool Success { get; set; }
 
         public bool Executed { get; set; }
+
+        public uint Endpoint { get; internal set; }
     }
 
     public class USBHelpers
