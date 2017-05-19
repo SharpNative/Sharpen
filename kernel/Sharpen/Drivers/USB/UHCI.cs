@@ -4,6 +4,7 @@ using Sharpen.Mem;
 using Sharpen.MultiTasking;
 using Sharpen.Synchronisation;
 using Sharpen.USB;
+using Sharpen.Utilities;
 
 namespace Sharpen.Drivers.USB
 {
@@ -304,6 +305,52 @@ namespace Sharpen.Drivers.USB
             ushort status = PortIO.In16((ushort)(uhciDev.IOBase + port));
             status &= (ushort)~bit;
             PortIO.Out16((ushort)(uhciDev.IOBase + port), status);
+        }
+
+        /// <summary>
+        /// Transfer multi transfers (transactions)
+        /// </summary>
+        /// <param name="dev">Device</param>
+        /// <param name="transfer">Transfers</param>
+        /// <param name="length">Number of transfers</param>
+        private static unsafe void Transfer(USBDevice dev, USBTransfer[] transfer, int length)
+        {
+            USBTransfer* trans = (USBTransfer *)Util.ObjectToVoidPtr(transfer);
+
+            USBDeviceRequest request = trans->Request;
+            
+            UHCIController controller = (UHCIController)dev.Controller;
+
+            UHCITransmitDescriptor* td = GetTransmit(controller);
+
+            UHCITransmitDescriptor* head = td;
+            UHCITransmitDescriptor* prev = null;
+            
+            uint toggle = 0;
+
+            for(int i = 0; i < length; i++)
+            {
+
+                td = GetTransmit(controller);
+                if (td == null)
+                    return;
+                
+
+                toggle ^= 1;
+
+                InitTransmit(td, prev, dev.Speed, dev.Address, 0, toggle, transfer[i].Type, transfer[i].Length, transfer[i].Data);
+                prev = td;
+            }
+            
+
+            UHCIQueueHead* qh = GetQueueHead(controller);
+            qh->Element = (int)Paging.GetPhysicalFromVirtual(head);
+            qh->Head = 0;
+            qh->Transfer = trans;
+            qh->Transmit = head;
+
+            InsertHead(controller, qh);
+            WaitForQueueHead(controller, qh);
         }
 
         /// <summary>
@@ -786,6 +833,7 @@ namespace Sharpen.Drivers.USB
                 dev.Controller = uhciDev;
                 dev.Control = Control;
                 dev.PrepareInterrupt = PrepareInterrupt;
+                dev.Transfer = Transfer;
 
                 /**
                  * Root hub

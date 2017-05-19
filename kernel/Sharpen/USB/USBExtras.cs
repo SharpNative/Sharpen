@@ -135,6 +135,7 @@ namespace Sharpen.USB
 
     public unsafe struct USBTransfer
     {
+        public ushort Type { get; set; }
 
         public int ID { get; set; }
 
@@ -156,6 +157,8 @@ namespace Sharpen.USB
         public unsafe delegate void ControllerPoll(IUSBController controller);
 
         public unsafe delegate void DeviceControl(USBDevice dev, USBTransfer *transfer);
+
+        public unsafe delegate void Transfer(USBDevice dev, USBTransfer[] transfer, int length);
 
         public unsafe delegate void PrepareDevice(USBDevice dev, USBTransfer* transfer);
     }

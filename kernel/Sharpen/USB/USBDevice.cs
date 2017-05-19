@@ -81,6 +81,8 @@ namespace Sharpen.USB
         /// </summary>
         public USBHelpers.DeviceControl Control { get; set; }
 
+        public USBHelpers.Transfer Transfer { get; set; }
+
         /// <summary>
         /// Prepare device
         /// </summary>
