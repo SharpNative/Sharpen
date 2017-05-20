@@ -54,7 +54,7 @@ namespace Sharpen.FileSystem
         public uint Size;
     }
 
-    unsafe class SubDirectory
+    public unsafe class SubDirectory
     {
         public uint Length;
 

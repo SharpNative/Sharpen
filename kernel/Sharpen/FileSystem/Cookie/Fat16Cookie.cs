@@ -5,6 +5,8 @@
         public unsafe FatDirEntry* DirEntry;
         public uint Cluster;
         public uint Num;
+
+        public Fat16 FAT16;
         
         /// <summary>
         /// Cleans up

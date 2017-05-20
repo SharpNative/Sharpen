@@ -10,7 +10,7 @@ namespace Sharpen.FileSystem
      * TODO: Make use of fat cache for finding next free cluster, change values in cache when updated
      * 
      */
-    unsafe class Fat16
+    public unsafe class Fat16
     {
         private const int FirstPartitonEntry = 0x1BE;
 
@@ -26,21 +26,21 @@ namespace Sharpen.FileSystem
         private const int FAT_FREE = 0x00;
         private const int FAT_EOF = 0xFFF8;
 
-        private static Node m_dev;
-        private static int m_bytespersector;
-        private static int m_beginLBA;
-        private static int m_clusterBeginLBA;
-        private static int m_beginDataLBA;
+        private Node _Device;
+        private int m_bytespersector;
+        private int m_beginLBA;
+        private int m_clusterBeginLBA;
+        private int m_beginDataLBA;
 
 
-        private static Fat16BPB* m_bpb;
-        private static FatDirEntry* m_dirEntries;
-        private static uint m_numDirEntries;
-        private static uint m_fatSize;
+        private Fat16BPB* m_bpb;
+        private FatDirEntry* m_dirEntries;
+        private uint m_numDirEntries;
+        private uint m_fatSize;
 
-        private static uint m_sectorOffset;
-        private static byte* m_fatTable;
-        private static int m_fatClusterSize;
+        private uint m_sectorOffset;
+        private byte* m_fatTable;
+        private int m_fatClusterSize;
 
         private const byte LFN = 0x0F;
 
@@ -61,9 +61,18 @@ namespace Sharpen.FileSystem
         /// <param name="name">Name</param>
         public static unsafe void Init(Node deviceNode, string name)
         {
-            m_dev = deviceNode;
+            Fat16 fat = new Fat16();
+            fat.InitDevice(deviceNode, name);
 
-            initFAT(deviceNode);
+        }
+
+        public unsafe void InitDevice(Node deviceNode, string name)
+        {
+            _Device = deviceNode;
+
+            initFAT();
+
+
 
             /**
              * Create and add mountpoint
@@ -79,7 +88,10 @@ namespace Sharpen.FileSystem
              */
             Fat16Cookie rootCookie = new Fat16Cookie();
             rootCookie.Cluster = 0xFFFFFFFF;
+            rootCookie.FAT16 = this;
+
             node.Cookie = rootCookie;
+            
 
             RootPoint dev = new RootPoint(name, node);
             VFS.RootMountPoint.AddEntry(dev);
@@ -89,11 +101,11 @@ namespace Sharpen.FileSystem
         /// Intializes FAT device on device node
         /// </summary>
         /// <param name="dev">Device</param>
-        private static unsafe void initFAT(Node dev)
+        private unsafe void initFAT()
         {
             // Read first sector
             byte[] firstSector = new byte[512];
-            dev.Read(dev, 0, 512, firstSector);
+            _Device.Read(_Device, 0, 512, firstSector);
 
             // Get partition type from first entry
             // Detect if FAT16
@@ -115,7 +127,7 @@ namespace Sharpen.FileSystem
 
 
             byte[] bootSector = new byte[512];
-            dev.Read(dev, (uint)m_beginLBA, 512, bootSector);
+            _Device.Read(_Device, (uint)m_beginLBA, 512, bootSector);
             m_bpb = (Fat16BPB*)Util.ObjectToVoidPtr(bootSector);
             
             int fatRegionSize = m_bpb->NumFats * m_bpb->SectorsPerFat16;
@@ -136,7 +148,7 @@ namespace Sharpen.FileSystem
 
             for (uint i = 0; i < fatRegionSize; i++)
             {
-                dev.Read(dev, (uint)beginFatTable + i, 512, Util.PtrToArray(m_fatTable + (i * 512)));
+                _Device.Read(_Device, (uint)beginFatTable + i, 512, Util.PtrToArray(m_fatTable + (i * 512)));
             }
 
             parseBoot();
@@ -145,7 +157,7 @@ namespace Sharpen.FileSystem
         /// <summary>
         /// Parse direntries
         /// </summary>
-        private static unsafe void parseBoot()
+        private unsafe void parseBoot()
         {
             /**
              * Calculate first data start LBA
@@ -153,7 +165,7 @@ namespace Sharpen.FileSystem
             m_clusterBeginLBA = m_beginLBA + m_bpb->ReservedSectors + (m_bpb->NumFats * (int)m_bpb->SectorsPerFat16);
 
             byte[] buffer = new byte[512];
-            m_dev.Read(m_dev, (uint)(m_clusterBeginLBA), 512, buffer);
+            _Device.Read(_Device, (uint)(m_clusterBeginLBA), 512, buffer);
 
             /**
              * Fetch root directory to memory
@@ -171,7 +183,7 @@ namespace Sharpen.FileSystem
                 if (offset == 16)
                 {
                     sectorOffset++;
-                    m_dev.Read(m_dev, (uint)(m_clusterBeginLBA + sectorOffset), 512, buffer);
+                    _Device.Read(_Device, (uint)(m_clusterBeginLBA + sectorOffset), 512, buffer);
 
                     offset = 0;
                 }
@@ -199,7 +211,7 @@ namespace Sharpen.FileSystem
         /// <param name="cluster">Directory cluster</param>
         /// <param name="num">Direnty number</param>
         /// <returns></returns>
-        public static Node CreateNode(FatDirEntry* dirEntry, uint cluster, uint num)
+        public Node CreateNode(FatDirEntry* dirEntry, uint cluster, uint num)
         {
             Node node = new Node();
             node.Size = dirEntry->Size;
@@ -208,6 +220,8 @@ namespace Sharpen.FileSystem
             cookie.DirEntry = dirEntry;
             cookie.Cluster = cluster;
             cookie.Num = num;
+            cookie.FAT16 = this;
+
             node.Cookie = cookie;
 
             /**
@@ -235,7 +249,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="cluster">Cluster number</param>
         /// <returns></returns>
-        public static uint Data_clust_to_lba(uint cluster)
+        public uint Data_clust_to_lba(uint cluster)
         {
             return (uint)(m_beginDataLBA + (cluster - 2) * m_bpb->SectorsPerCluster);
         }
@@ -245,7 +259,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="cluster">Cluster number</param>
         /// <returns></returns>
-        public static unsafe ushort FindNextCluster(uint cluster)
+        public unsafe ushort FindNextCluster(uint cluster)
         {
             ushort nextClusterCached = *(ushort*)(m_fatTable + (cluster * 2));
 
@@ -262,7 +276,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="cluster"></param>
         /// <returns></returns>
-        public static unsafe uint CalculateFatOffset(uint cluster)
+        public unsafe uint CalculateFatOffset(uint cluster)
         {
             int beginFat = m_beginLBA + m_bpb->ReservedSectors;
             uint clusters = (cluster / 256);
@@ -277,7 +291,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="cluster">Cluster number</param>
         /// <param name="value">Fat value</param>
-        private static unsafe void changeClusterValue(uint cluster, ushort value)
+        private unsafe void changeClusterValue(uint cluster, ushort value)
         {
             // Set cache
             *(ushort*)(m_fatTable + (cluster * 2)) = value;
@@ -289,7 +303,7 @@ namespace Sharpen.FileSystem
 
 
             byte[] fatBuffer = new byte[512];
-            m_dev.Read(m_dev, adr, 512, fatBuffer);
+            _Device.Read(_Device, adr, 512, fatBuffer);
 
             byte* ptr = (byte*)Util.ObjectToVoidPtr(fatBuffer);
             ushort* pointer = (ushort*)(ptr + offset);
@@ -297,7 +311,7 @@ namespace Sharpen.FileSystem
             *pointer = value;
             
 
-            m_dev.Write(m_dev, adr, 512, fatBuffer);
+            _Device.Write(_Device, adr, 512, fatBuffer);
             
             Heap.Free(ptr);
         }
@@ -306,7 +320,7 @@ namespace Sharpen.FileSystem
         /// Find last cluster for file in FAT
         /// </summary>
         /// <returns>Last cluster of file in FAT</returns>
-        private static ushort findLastCluster(ushort cluster)
+        private ushort findLastCluster(ushort cluster)
         {
             ushort lastValue = cluster;
             ushort lastResult = cluster;
@@ -323,7 +337,7 @@ namespace Sharpen.FileSystem
         /// Find last cluster for file in FAT
         /// </summary>
         /// <returns>Last cluster of file in FAT</returns>
-        private static ushort findLastCluster(ushort cluster, uint offset)
+        private ushort findLastCluster(ushort cluster, uint offset)
         {
             ushort lastValue = cluster;
             ushort lastResult = cluster;
@@ -354,7 +368,7 @@ namespace Sharpen.FileSystem
         /// Find next free cluster in FAT
         /// </summary>
         /// <returns></returns>
-        private static ushort findNextFreeCluster()
+        private ushort findNextFreeCluster()
         {
 
             for(ushort i = 0; i < m_fatClusterSize; i++)
@@ -377,7 +391,7 @@ namespace Sharpen.FileSystem
         /// <param name="cluster">Start cluster</param>
         /// <param name="num">Direnty location</param>
         /// <param name="size">Size</param>
-        private static void SetFileSize(uint cluster, uint num, uint size)
+        private void SetFileSize(uint cluster, uint num, uint size)
         {
             uint offset = num * (uint)sizeof(FatDirEntry);
 
@@ -391,7 +405,7 @@ namespace Sharpen.FileSystem
                 realOffset = Data_clust_to_lba(cluster) + offsetSector;
 
             byte[] buf = new byte[512];
-            m_dev.Read(m_dev, realOffset, 512, buf);
+            _Device.Read(_Device, realOffset, 512, buf);
 
 
             byte* bufPtr = (byte*)Util.ObjectToVoidPtr(buf);
@@ -399,7 +413,7 @@ namespace Sharpen.FileSystem
 
             entry->Size = size;
             
-            m_dev.Write(m_dev, realOffset, 512, buf);
+            _Device.Write(_Device, realOffset, 512, buf);
 
             // Update dir entry if needed
             if (cluster == 0xFFFFFFFF)
@@ -414,7 +428,7 @@ namespace Sharpen.FileSystem
         /// <param name="cluster">Cluster number</param>
         /// <param name="testFor">Compare string</param>
         /// <returns></returns>
-        public static Node FindFileInDirectory(uint cluster, char* testFor)
+        public Node FindFileInDirectory(uint cluster, char* testFor)
         {
             SubDirectory dir = readDirectory(cluster);
             for (int i = 0; i < dir.Length; i++)
@@ -440,7 +454,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="cluster"></param>
         /// <returns></returns>
-        public static SubDirectory readDirectory(uint cluster)
+        public SubDirectory readDirectory(uint cluster)
         {
             SubDirectory outDir = new SubDirectory();
 
@@ -491,7 +505,7 @@ namespace Sharpen.FileSystem
         /// <param name="size">Size in bytes</param>
         /// <param name="buffer">Input buffer</param>
         /// <returns>Bytes written</returns>
-        private static uint writeFile(uint startCluster, uint offset, uint size, byte[] buffer)
+        private uint writeFile(uint startCluster, uint offset, uint size, byte[] buffer)
         {
             // Calculate starting cluster
             uint dataPerCluster = m_bpb->SectorsPerCluster;
@@ -515,7 +529,7 @@ namespace Sharpen.FileSystem
 
             // Read starting cluster
             byte[] buf = new byte[512];
-            m_dev.Read(m_dev, Data_clust_to_lba(startCluster), 512, buf);
+            _Device.Read(_Device, Data_clust_to_lba(startCluster), 512, buf);
 
             // Calculate size in sectors
             uint sizeInSectors = size / 512;
@@ -549,10 +563,10 @@ namespace Sharpen.FileSystem
                     sizeInSectors++;
                 }
 
-                m_dev.Read(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
+                _Device.Read(_Device, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
                 Memory.Memcpy((byte*)Util.ObjectToVoidPtr(buf) + offsetInSector, (byte*)Util.ObjectToVoidPtr(buffer) + currentOffset, sizeTemp);
 
-                m_dev.Write(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
+                _Device.Write(_Device, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
 
                 currentOffset += (uint)sizeTemp;
                 sizeLeft -= sizeTemp;
@@ -573,7 +587,7 @@ namespace Sharpen.FileSystem
         /// <param name="size">Size in bytes</param>
         /// <param name="buffer">Input buffer</param>
         /// <returns>Bytes read</returns>
-        private static uint readFile(uint startCluster, uint offset, uint size, byte[] buffer)
+        private uint readFile(uint startCluster, uint offset, uint size, byte[] buffer)
         {
             // Calculate starting cluster
             uint dataPerCluster = m_bpb->SectorsPerCluster;
@@ -597,7 +611,7 @@ namespace Sharpen.FileSystem
 
             // Read starting cluster
             byte[] buf = new byte[512];
-            m_dev.Read(m_dev, Data_clust_to_lba(startCluster), 512, buf);
+            _Device.Read(_Device, Data_clust_to_lba(startCluster), 512, buf);
 
             // Calculate size in sectors
             uint sizeInSectors = size / 512;
@@ -622,7 +636,7 @@ namespace Sharpen.FileSystem
                     offsetInCluster = 0;
                 }
 
-                m_dev.Read(m_dev, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
+                _Device.Read(_Device, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
 
                 int sizeTemp = (sizeLeft > 512) ? 512 : sizeLeft;
                 int sizeLeftinSector = 512;
@@ -660,7 +674,7 @@ namespace Sharpen.FileSystem
         /// <param name="num">Direntry number in cluster</param>
         /// <param name="size">File size</param>
         /// <returns>Changed size (=0 when error)</returns>
-        private static uint ResizeFile(FatDirEntry* direntry, uint cluster, uint num, uint size)
+        private uint ResizeFile(FatDirEntry* direntry, uint cluster, uint num, uint size)
         {
             uint realsize = size;
 
@@ -750,7 +764,7 @@ namespace Sharpen.FileSystem
                         uint toFreeLBA = Data_clust_to_lba(currentCluster);
                         
                         for(uint x = 0; x < m_bpb->SectorsPerCluster; x++)
-                            m_dev.Write(m_dev, toFreeLBA + x, m_bpb->BytesPerSector, buf);
+                            _Device.Write(_Device, toFreeLBA + x, m_bpb->BytesPerSector, buf);
 
                     }
 
@@ -785,7 +799,7 @@ namespace Sharpen.FileSystem
                  */
                 if (offset != 0)
                 {
-                    m_dev.Read(m_dev, lba + i, 512, readSec);
+                    _Device.Read(_Device, lba + i, 512, readSec);
                     Memory.Memcpy(Util.ObjectToVoidPtr(writeSec), Util.ObjectToVoidPtr(readSec), (int)offset);
                     Memory.Memclear((byte*)Util.ObjectToVoidPtr(writeSec) + offset, (int)(512 - offset));
                 }
@@ -795,7 +809,7 @@ namespace Sharpen.FileSystem
                 }
 
                 offset = 0;
-                m_dev.Write(m_dev, lba + i, 512, writeSec);
+                _Device.Write(_Device, lba + i, 512, writeSec);
             }
 
             /**
@@ -826,6 +840,9 @@ namespace Sharpen.FileSystem
         /// <returns></returns>
         private static Node findDirImpl(Node node, string name)
         {
+            Fat16Cookie cookie = (Fat16Cookie)node.Cookie;
+            Fat16 fat16 = cookie.FAT16; 
+            
             /**
              * Calculate lengths (and check if no LFN)
              */
@@ -866,7 +883,6 @@ namespace Sharpen.FileSystem
              * Find cluster number
              */
             uint cluster = 0xFFFFFFFF;
-            Fat16Cookie cookie = (Fat16Cookie)node.Cookie;
             if (cookie.DirEntry != null)
             {
                 FatDirEntry* entry = cookie.DirEntry;
@@ -875,7 +891,7 @@ namespace Sharpen.FileSystem
             /**
              * Find file in cluster (directory)
              */
-            Node nd = FindFileInDirectory(cluster, testFor);
+            Node nd = fat16.FindFileInDirectory(cluster, testFor);
 
             Heap.Free(testFor);
 
@@ -898,6 +914,7 @@ namespace Sharpen.FileSystem
             uint cluster = 0xFFFFFFFF;
 
             Fat16Cookie cookie = (Fat16Cookie)node.Cookie;
+            Fat16 fat = cookie.FAT16;
             if (cookie.DirEntry != null)
             {
                 FatDirEntry* entry = cookie.DirEntry;
@@ -907,7 +924,7 @@ namespace Sharpen.FileSystem
             /**
              * Read directory entries
              */
-            SubDirectory dir = readDirectory(cluster);
+            SubDirectory dir = fat.readDirectory(cluster);
 
             for (int i = 0; i < dir.Length; i++)
             {
@@ -996,6 +1013,7 @@ namespace Sharpen.FileSystem
              * Get directory entry from cookie "cache"
              */
             Fat16Cookie cookie = (Fat16Cookie)node.Cookie;
+            Fat16 fat = cookie.FAT16;
             FatDirEntry* entry = cookie.DirEntry;
 
             /*
@@ -1010,7 +1028,7 @@ namespace Sharpen.FileSystem
             if (offset + size > entry->Size)
                 size = entry->Size - offset;
 
-            return readFile(entry->ClusterNumberLo, offset, size, buffer);
+            return fat.readFile(entry->ClusterNumberLo, offset, size, buffer);
         }
 
         /// <summary>
@@ -1027,6 +1045,7 @@ namespace Sharpen.FileSystem
              * Get directory entry from cookie "cache"
              */
             Fat16Cookie cookie = (Fat16Cookie)node.Cookie;
+            Fat16 fat = cookie.FAT16;
             FatDirEntry* entry = cookie.DirEntry;
             
             uint totalSize = size + offset;
@@ -1036,14 +1055,14 @@ namespace Sharpen.FileSystem
              */
             if (entry->Size < totalSize)
             {
-                if (ResizeFile(entry, cookie.Cluster, cookie.Num, totalSize) == 0)
+                if (fat.ResizeFile(entry, cookie.Cluster, cookie.Num, totalSize) == 0)
                     return 0;
             }
             
             /**
              * Handle file writing
              */
-            return writeFile(entry->ClusterNumberLo, offset, size, buffer);
+            return fat.writeFile(entry->ClusterNumberLo, offset, size, buffer);
         }
         
         /// <summary>
@@ -1059,6 +1078,7 @@ namespace Sharpen.FileSystem
              */
             Fat16Cookie cookie = (Fat16Cookie)node.Cookie;
             FatDirEntry* entry = cookie.DirEntry;
+            Fat16 fat = cookie.FAT16;
 
             if (entry == null)
                 return 0;
@@ -1072,7 +1092,7 @@ namespace Sharpen.FileSystem
             /**
              * Resize file
              */
-            return ResizeFile(entry, cookie.Cluster, cookie.Num, size);
+            return fat.ResizeFile(entry, cookie.Cluster, cookie.Num, size);
         }
 
 
