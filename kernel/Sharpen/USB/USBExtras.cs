@@ -10,7 +10,8 @@ namespace Sharpen.USB
     public enum USBControllerType
     {
         OHCI,
-        UHCI
+        UHCI,
+        EHCI
     }
 
     public enum USBDeviceState

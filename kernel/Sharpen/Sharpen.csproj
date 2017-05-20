@@ -58,6 +58,7 @@
     <Compile Include="Arch\IOApicManager.cs" />
     <Compile Include="Arch\PciClassCombinations.cs" />
     <Compile Include="Drivers\Power\AcpiObjects.cs" />
+    <Compile Include="Drivers\USB\EHCI.cs" />
     <Compile Include="Drivers\USB\USBMSC.cs" />
     <Compile Include="Drivers\USB\USBHIDKeyboard.cs" />
     <Compile Include="Drivers\USB\USBHIDKeyboardMap.cs" />

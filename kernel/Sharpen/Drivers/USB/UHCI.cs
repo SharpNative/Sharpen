@@ -132,7 +132,7 @@ namespace Sharpen.Drivers.USB
         private static Mutex mMutex;
 
         /// <summary>
-        /// 
+        /// Initialize
         /// </summary>
         public static unsafe void Init()
         {

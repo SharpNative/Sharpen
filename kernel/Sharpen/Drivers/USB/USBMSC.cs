@@ -167,11 +167,13 @@ namespace Sharpen.Drivers.USB
             _DeviceNum = 0;
         }
 
+        /// <summary>
+        /// Intialize device
+        /// </summary>
+        /// <param name="device"></param>
+        /// <returns></returns>
         public unsafe bool Init(USBDevice device)
         {
-            // TODO: Read from descriptors
-            _EndPointIn = 0x01;
-            _EndPointOut = 0x02;
 
             _Device = device;
             _MuxLun = GetMaxLun();
@@ -186,9 +188,80 @@ namespace Sharpen.Drivers.USB
             return true;
         }
         
+        /// <summary>
+        /// Get endpoints from descriptor
+        /// </summary>
+        /// <returns></returns>
+        private unsafe bool GetEndpoints()
+        {
+            // @TODO: We should add this to USBDevice
+
+            byte[] buffer = new byte[512];
+            byte* ptrToBuf = (byte*)Util.ObjectToVoidPtr(buffer);
+            USBConfigurationDescriptor* descBuf = (USBConfigurationDescriptor*)ptrToBuf;
+
+
+            if (!_Device.Request(USBDevice.TYPE_DEVICETOHOST, USBDevice.REQ_GET_DESCRIPTOR, (ushort)((USBDevice.DESC_CONFIGURATION << 8)), 0, 4, (byte*)Util.ObjectToVoidPtr(buffer)))
+            {
+                Heap.Free(buffer);
+                return false;
+            }
+
+
+            if (!_Device.Request(USBDevice.TYPE_DEVICETOHOST, USBDevice.REQ_GET_DESCRIPTOR, (ushort)((USBDevice.DESC_CONFIGURATION << 8)), 0, descBuf->TotalLength, (byte*)Util.ObjectToVoidPtr(buffer)))
+            {
+                Heap.Free(buffer);
+                return false;
+            }
+
+
+            int remaining = descBuf->TotalLength - descBuf->Length;
+            byte* dataStart = ptrToBuf + descBuf->Length;
+
+
+            int endPointNum = 0;
+            while (remaining > 0)
+            {
+                int len = dataStart[0];
+                int type = dataStart[1];
+
+                if (type == USBDevice.DESC_ENDPOINT)
+                {
+                    if (endPointNum == 0)
+                        _EndPointIn = ((USBEndpointDescriptor*)dataStart)->Address & 0xF;
+                    else if (endPointNum == 1)
+                        _EndPointOut = ((USBEndpointDescriptor*)dataStart)->Address & 0xF;
+                    else
+                        break;
+
+                    endPointNum++;
+                }
+
+                dataStart += len;
+                remaining -= len;
+            }
+
+            Heap.Free(buffer);
+
+            if (endPointNum != 2)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// USB mass storage device initalize
+        /// </summary>
+        /// <returns>Success?</returns>
         private unsafe bool Initalize()
         {
-            // TODO: Read endpoint descriptors here
+
+            if(!GetEndpoints())
+            {
+                Console.WriteLine("[USB-MSC] Could not find endpoints");
+                
+                return false;
+            }
 
             SCSIInquiryData* inquiryResp = Inquiry();
             if (inquiryResp == null)
@@ -207,6 +280,8 @@ namespace Sharpen.Drivers.USB
                 Heap.Free(inquiryResp);
                 return false;
             }
+
+            // @TODO: We should wait till ready here with the test command
             
             if (!ReadCapacity())
             {
@@ -286,6 +361,13 @@ namespace Sharpen.Drivers.USB
             return cookie.USBMSC.ReadSector(offset, buffer, (int)size);
         }
 
+        /// <summary>
+        /// Read sector from device
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
         public unsafe uint ReadSector(uint offset, byte[] buffer, int size)
         {
 
@@ -310,6 +392,13 @@ namespace Sharpen.Drivers.USB
             return (uint)size;
         }
 
+        /// <summary>
+        /// Write sector to device
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
         public unsafe uint WriteSector(uint offset, byte[] buffer, int size)
         {
 
@@ -334,6 +423,10 @@ namespace Sharpen.Drivers.USB
             return (uint)size;
         }
 
+        /// <summary>
+        /// Inquiry command
+        /// </summary>
+        /// <returns>Result</returns>
         private unsafe SCSIInquiryData* Inquiry()
         {
             SCSIInquiryData* data = (SCSIInquiryData*)Heap.Alloc(sizeof(SCSIInquiryData));
@@ -510,6 +603,10 @@ namespace Sharpen.Drivers.USB
             return true;
         }
 
+        /// <summary>
+        /// Get max lun command
+        /// </summary>
+        /// <returns>Max lun</returns>
         private unsafe byte GetMaxLun()
         {
             byte* data = (byte*)Heap.Alloc(1);
