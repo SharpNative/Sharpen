@@ -264,7 +264,7 @@ namespace Sharpen.Drivers.USB
 
             USBMSCCookie cookie = (USBMSCCookie)node.Cookie;
 
-            return cookie.USBMSC.WriteSector(offset, buffer, size / 512);
+            return cookie.USBMSC.WriteSector(offset, buffer, (int)size);
         }
 
         /// <summary>
@@ -283,10 +283,10 @@ namespace Sharpen.Drivers.USB
 
             USBMSCCookie cookie = (USBMSCCookie)node.Cookie;
 
-            return cookie.USBMSC.ReadSector(offset, buffer, size / 512);
+            return cookie.USBMSC.ReadSector(offset, buffer, (int)size);
         }
 
-        public unsafe uint ReadSector(uint offset, byte[] buffer, uint size)
+        public unsafe uint ReadSector(uint offset, byte[] buffer, int size)
         {
 
             SCSIRead* cmd = (SCSIRead*)Heap.Alloc(sizeof(SCSIRead));
@@ -294,10 +294,11 @@ namespace Sharpen.Drivers.USB
             
             cmd->Opcode = SCSI_READ;
             cmd->LBA = (int)SwapBytes((offset));
-            cmd->Length = SwapBytes((ushort)(size));
+            cmd->Length = SwapBytes((ushort)(size / 512));
+
             
 
-            if (!Command((byte*)cmd, (byte)sizeof(SCSIReadCap), (byte*)Util.ObjectToVoidPtr(buffer), (byte)size, true))
+            if (!Command((byte*)cmd, (byte)sizeof(SCSIReadCap), (byte*)Util.ObjectToVoidPtr(buffer), size, true))
             {
                 Heap.Free(cmd);
 
@@ -306,10 +307,10 @@ namespace Sharpen.Drivers.USB
                 return 0;
             }
 
-            return size;
+            return (uint)size;
         }
 
-        public unsafe uint WriteSector(uint offset, byte[] buffer, uint size)
+        public unsafe uint WriteSector(uint offset, byte[] buffer, int size)
         {
 
             SCSIRead* cmd = (SCSIRead*)Heap.Alloc(sizeof(SCSIRead));
@@ -318,10 +319,10 @@ namespace Sharpen.Drivers.USB
             cmd->Opcode = SCSI_WRITE;
             cmd->Flags = 0x08;
             cmd->LBA = (int)SwapBytes((offset));
-            cmd->Length = SwapBytes((ushort)(size));
+            cmd->Length = SwapBytes((ushort)(size / 512));
 
 
-            if (!Command((byte*)cmd, (byte)sizeof(SCSIReadCap), (byte*)Util.ObjectToVoidPtr(buffer), (byte)size, false))
+            if (!Command((byte*)cmd, (byte)sizeof(SCSIReadCap), (byte*)Util.ObjectToVoidPtr(buffer), size, false))
             {
                 Heap.Free(cmd);
 
@@ -330,7 +331,7 @@ namespace Sharpen.Drivers.USB
                 return 0;
             }
 
-            return size;
+            return (uint)size;
         }
 
         private unsafe SCSIInquiryData* Inquiry()
@@ -343,7 +344,7 @@ namespace Sharpen.Drivers.USB
             cmd->Opcode = SCSI_INQUIRY;
             cmd->AllocLength = (byte)sizeof(SCSIInquiryData);
 
-            if (!Command((byte*)cmd, (byte)sizeof(SCSIReadCap), (byte*)data, (byte)sizeof(SCSIInquiryData), true))
+            if (!Command((byte*)cmd, (byte)sizeof(SCSIReadCap), (byte*)data, sizeof(SCSIInquiryData), true))
             {
                 Heap.Free(cmd);
                 Heap.Free(data);
@@ -374,7 +375,7 @@ namespace Sharpen.Drivers.USB
             cmd->PMI = 0;
             cmd->Control = 0;
 
-            if (!Command((byte*)cmd, (byte)sizeof(SCSIReadCap), (byte*)data, (byte)sizeof(SCSIReadCapData), true))
+            if (!Command((byte*)cmd, (byte)sizeof(SCSIReadCap), (byte*)data, sizeof(SCSIReadCapData), true))
             {
                 Heap.Free(cmd);
                 Heap.Free(data);
@@ -417,7 +418,7 @@ namespace Sharpen.Drivers.USB
         /// <param name="bufferLength">Data buffer length</param>
         /// <param name="In">In or out?</param>
         /// <returns></returns>
-        private unsafe bool Command(byte *cmdBlockData, byte cmdBlockLength, byte *buffer, byte bufferLength, bool In)
+        private unsafe bool Command(byte *cmdBlockData, byte cmdBlockLength, byte *buffer, int bufferLength, bool In)
         {
 
             USBTransfer* transfer = (USBTransfer*)Heap.Alloc(sizeof(USBTransfer));
