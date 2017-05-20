@@ -48,7 +48,16 @@ namespace Sharpen
 
             initUSB();
             initStorage();
-            
+
+            byte[] buffer = new byte[512];
+            buffer[0] = 0xAA;
+            buffer[1] = 0xFF;
+            buffer[2] = 0xFA;
+
+            Node node = VFS.GetByAbsolutePath("devices://USBD0");
+            node.Write(node, 0, 512, buffer);
+            node.Read(node, 0, 512, buffer);
+
             initNetworking();
             initSound();
             runUserspace();
@@ -106,7 +115,7 @@ namespace Sharpen
             USBHub.Init();
             USBHIDMouse.Init();
             USBHIDKeyboard.Init();
-            USBHardDisk.Init();
+            USBMSC.Init();
 
 
             UHCI.Init();

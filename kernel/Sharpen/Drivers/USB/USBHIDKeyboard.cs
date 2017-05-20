@@ -84,7 +84,7 @@ namespace Sharpen.Drivers.USB
             mTransfer->Success = false;
             mTransfer->ID = 1;
 
-            device.PrepareInterrupt(device, mTransfer);
+            //device.PrepareInterrupt(device, mTransfer);
         }
 
         public void HandleData()

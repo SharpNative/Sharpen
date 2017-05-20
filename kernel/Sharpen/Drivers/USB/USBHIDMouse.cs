@@ -62,7 +62,7 @@ namespace Sharpen.Drivers.USB
 
 
 
-            device.PrepareInterrupt(device, mTransfer);
+            //device.PrepareInterrupt(device, mTransfer);
 
 
             return this;

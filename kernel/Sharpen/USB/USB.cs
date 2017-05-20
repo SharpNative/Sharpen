@@ -17,7 +17,7 @@ namespace Sharpen.USB
 
         private static List Controllers;
         private static List Devices;
-
+        
         public unsafe static void Init()
         {
             Controllers = new List();

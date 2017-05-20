@@ -179,7 +179,7 @@ namespace Sharpen.Drivers.USB
                     newDevice.Controller = device.Controller;
                     newDevice.Control = device.Control;
                     newDevice.PrepareInterrupt = device.PrepareInterrupt;
-                    newDevice.Transfer = device.Transfer;
+                    newDevice.TransferOne = device.TransferOne;
 
                     newDevice.Port = (ushort)i;
 

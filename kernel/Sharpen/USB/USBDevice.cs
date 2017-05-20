@@ -81,7 +81,7 @@ namespace Sharpen.USB
         /// </summary>
         public USBHelpers.DeviceControl Control { get; set; }
 
-        public USBHelpers.Transfer Transfer { get; set; }
+        public USBHelpers.TransferOne TransferOne { get; set; }
 
         /// <summary>
         /// Prepare device
@@ -181,6 +181,7 @@ namespace Sharpen.USB
 
             MaxPacketSize = descriptor->MaxpacketSize0;
 
+            
             /**
              * Set new address
              */
@@ -212,7 +213,7 @@ namespace Sharpen.USB
                 Product = GetString(Languages[0], descriptor->ProductIndex);
                 SerialNumber = GetString(Languages[0], descriptor->SerialNumberIndex);
             }
-
+            
             /**
              * Get configurations
              */

@@ -309,46 +309,27 @@ namespace Sharpen.Drivers.USB
         }
 
         /// <summary>
-        /// Transfer multi transfers (transactions)
+        /// Transfer
         /// </summary>
         /// <param name="dev">Device</param>
         /// <param name="transfer">Transfers</param>
         /// <param name="length">Number of transfers</param>
-        private static unsafe void Transfer(USBDevice dev, USBTransfer[] transfer, int length)
+        private static unsafe void TransferOne(USBDevice dev, USBTransfer *transfer)
         {
-            USBTransfer* trans = (USBTransfer *)Util.ObjectToVoidPtr(transfer);
 
-            USBDeviceRequest request = trans->Request;
+            USBDeviceRequest request = transfer->Request;
             
             UHCIController controller = (UHCIController)dev.Controller;
 
             UHCITransmitDescriptor* td = GetTransmit(controller);
-
-            UHCITransmitDescriptor* head = td;
-            UHCITransmitDescriptor* prev = null;
             
-            uint toggle = 0;
-
-            for(int i = 0; i < length; i++)
-            {
-
-                td = GetTransmit(controller);
-                if (td == null)
-                    return;
-                
-
-                toggle ^= 1;
-
-                InitTransmit(td, prev, dev.Speed, dev.Address, transfer[i].Endpoint, toggle, transfer[i].Type, transfer[i].Length, transfer[i].Data);
-                prev = td;
-            }
+            InitTransmit(td, null, dev.Speed, dev.Address, transfer->Endpoint, dev.Toggle, (transfer->Type == 0) ? TRANS_PACKET_IN : TRANS_PACKET_OUT, transfer->Length, transfer->Data);
             
-
             UHCIQueueHead* qh = GetQueueHead(controller);
-            qh->Element = (int)Paging.GetPhysicalFromVirtual(head);
+            qh->Element = (int)Paging.GetPhysicalFromVirtual(td);
             qh->Head = 0;
-            qh->Transfer = trans;
-            qh->Transmit = head;
+            qh->Transfer = transfer;
+            qh->Transmit = td;
 
             InsertHead(controller, qh);
             WaitForQueueHead(controller, qh);
@@ -379,8 +360,7 @@ namespace Sharpen.Drivers.USB
              * Initalize read
              */
             InitTransmit(td, null, dev.Speed, dev.Address, endp, dev.Toggle, TRANS_PACKET_IN, transfer->Length, transfer->Data);
-
-
+            
             UHCIQueueHead* qh = GetQueueHead(controller);
             qh->Element = (int)Paging.GetPhysicalFromVirtual(head);
             qh->Head = 0;
@@ -835,7 +815,7 @@ namespace Sharpen.Drivers.USB
                 dev.Controller = uhciDev;
                 dev.Control = Control;
                 dev.PrepareInterrupt = PrepareInterrupt;
-                dev.Transfer = Transfer;
+                dev.TransferOne = TransferOne;
 
                 /**
                  * Root hub
