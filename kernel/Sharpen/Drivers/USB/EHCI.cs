@@ -28,15 +28,58 @@ namespace Sharpen.Drivers.USB
 
         public int* FrameList { get; set; }
 
-        public UHCIQueueHead* QueueHeadPool { get; set; }
+        public EHCIQueueHead* QueueHeadPool { get; set; }
 
-        public UHCITransmitDescriptor* TransmitPool { get; set; }
+        public EHCITransferDescriptor* TransferPool { get; set; }
+        
+        public EHCIQueueHead* FirstHead { get; set; }
 
-        public UHCIQueueHead* FirstHead { get; set; }
+        public EHCIQueueHead* AsyncQueueHead { get; set; }
+
+        public EHCIQueueHead* PeriodicQueuehead { get; set; }
 
         public int PortNum { get; set; }
     }
 
+    public unsafe struct EHCITransferDescriptor
+    {
+        public int NextLink { get; set; }
+
+        public int Reserved { get; set; }
+
+        public int Token { get; set; }
+
+        public int BufferPointer { get; set; }
+
+
+        public bool Allocated { get; set; }
+        public EHCITransferDescriptor* Previous { get; set; }
+        public EHCITransferDescriptor* Next { get; set; }
+    }
+
+    public unsafe struct EHCIQueueHead
+    {
+        public int Head { get; set; }
+        public int EPCharacteristics { get; set; }
+        public int EPCapabilities { get; set; }
+
+        public int CurLink { get; set; }
+
+
+        // Transfer descriptor
+        public int NextLink { get; set; }
+
+        public int Reserved { get; set; }
+
+        public int Token { get; set; }
+
+        public int BufferPointer { get; set; }
+
+        public bool Allocated { get; set; }
+        public USBTransfer* Transfer { get; set; }
+        public EHCIQueueHead* Previous { get; set; }
+        public EHCIQueueHead* Next { get; set; }
+    }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public unsafe struct EHCIHostCapRegister
@@ -56,6 +99,9 @@ namespace Sharpen.Drivers.USB
     
     public class EHCI
     {
+        const ushort MAX_HEADS = 16;
+        const ushort MAX_TRANSFERS = 32;
+
         const ushort INTF_EHCI = 0x20;
 
         const ushort REG_USBCMD = 0x00;
@@ -78,6 +124,14 @@ namespace Sharpen.Drivers.USB
         const int USBCMD_ASPMC = (2 << 8);
         const int USBCMD_ASPME = (1 << 11);
         const int USBCMD_ITC = (7 << 16);
+
+        const ushort ITC_1MICROFRAME = 0x01;
+        const ushort ITC_2MICROFRAMES = 0x02;
+        const ushort ITC_4MICROFRAMES = 0x04;
+        const ushort ITC_8MICROFRAMES = 0x08;
+        const ushort ITC_16MICROFRAMES = 0x10;
+        const ushort ITC_32MICROFRAMES = 0x20;
+        const ushort ITC_64MICROFRAMES = 0x40;
 
         const int PORTSC_CUR_STAT = (1 << 0);
         const int PORTSC_CON = (1 << 1);
@@ -106,6 +160,11 @@ namespace Sharpen.Drivers.USB
         const int INTR_AA_ENABLE = (1 << 5);
 
         const uint HCSPARAMS_PORTS_MASK = (0xF << 0);
+
+        const ushort FL_TERMINATE = (1 << 0);
+        const ushort FL_QUEUEHEAD = (1 << 1);
+
+        const ushort TD_TERMINATE = (1 << 0);
 
         private static Mutex mMutex;
 
@@ -313,6 +372,56 @@ namespace Sharpen.Drivers.USB
             }
         }
 
+        #region Head allocation
+
+        /// <summary>
+        /// Get Queue head item
+        /// </summary>
+        /// <param name="dev">Device</param>
+        /// <returns></returns>
+        private unsafe static EHCIQueueHead* GetQueueHead(EHCIController dev)
+        {
+            mMutex.Lock();
+            int i = 0;
+            while (i < MAX_HEADS)
+            {
+                if (!dev.QueueHeadPool[i].Allocated)
+                {
+                    dev.QueueHeadPool[i].Allocated = true;
+                    dev.QueueHeadPool[i].Next = null;
+                    dev.QueueHeadPool[i].Previous = null;
+
+                    mMutex.Unlock();
+                    return (EHCIQueueHead*)(((int)dev.QueueHeadPool) + (sizeof(EHCIQueueHead) * i));
+                }
+
+                i++;
+            }
+
+            mMutex.Unlock();
+            return null;
+        }
+        #endregion
+
+        private unsafe static EHCIQueueHead *AllocateEmptyQH(EHCIController controller)
+        {
+            EHCIQueueHead* queueHead = GetQueueHead(controller);
+            queueHead->Head = FL_TERMINATE;
+            queueHead->EPCapabilities = 0x00;
+            queueHead->EPCharacteristics = 0x00;
+            queueHead->CurLink = 0x00;
+            queueHead->NextLink = 0x00;
+            queueHead->Token = 0x00;
+            queueHead->BufferPointer = 0x00;
+            queueHead->Next = null;
+            queueHead->Previous = null;
+            queueHead->Transfer = null;
+
+            controller.AsyncQueueHead = queueHead;
+
+            return queueHead;
+        }
+
         private unsafe static void initDevice(PciDevice dev)
         {
 
@@ -335,12 +444,38 @@ namespace Sharpen.Drivers.USB
             controller.CapabilitiesRegisters = (EHCIHostCapRegister*)(controller.MemoryBase);
             controller.OperationalRegisters = controller.MemoryBase + (*controller.CapabilitiesRegisters).CapLength;
             controller.PortNum = ReadPorts(controller);
+            controller.QueueHeadPool = (EHCIQueueHead*)Heap.AlignedAlloc(0x1000, sizeof(EHCIQueueHead) * MAX_HEADS); 
+            controller.TransferPool = (EHCITransferDescriptor*)Heap.AlignedAlloc(0x1000, sizeof(EHCITransferDescriptor) * MAX_TRANSFERS);
+            controller.AsyncQueueHead = AllocateEmptyQH(controller);
 
-            Console.Write("[EHCI] Detected cap at 0x");
-            Console.WriteHex((long)barAddress);
-            Console.Write(" op at: ");
-            Console.WriteHex((long)barAddress + (*controller.CapabilitiesRegisters).CapLength);
-            Console.WriteLine("");
+            // Link to itself
+            controller.AsyncQueueHead[0].Head = (int)controller.AsyncQueueHead | FL_QUEUEHEAD;
+
+            controller.PeriodicQueuehead = AllocateEmptyQH(controller);
+
+            for (int i = 0; i < 1024; i++)
+                controller.FrameList[i] = FL_QUEUEHEAD | (int)controller.PeriodicQueuehead;
+
+            // Set device
+            * (int*)(controller.OperationalRegisters + REG_FRINDEX) = 0;
+            * (int *)(controller.OperationalRegisters + REG_PERIODICLISTBASE) = (int)Paging.GetPhysicalFromVirtual(controller.FrameList);
+            *(int*)(controller.OperationalRegisters + REG_ASYNCLISTADDR) = (int)Paging.GetPhysicalFromVirtual(controller.AsyncQueueHead);
+            *(int*)(controller.OperationalRegisters + REG_CTRLDSSEGMENT) = 0;
+            
+            // Reset status
+            *(int*)(controller.OperationalRegisters + REG_USBSTS) = 0x3F;
+
+
+            // enable device
+            *(int*)(controller.OperationalRegisters + REG_USBCMD) = USBCMD_PSE | USBCMD_RUN | USBCMD_ASPME | (ITC_8MICROFRAMES << USBCMD_ITC);
+
+            // Wait till done
+            while ((*(int*)(controller.OperationalRegisters + REG_USBSTS) & (1 << 12)) > 0)
+                CPU.HLT();
+
+            Console.Write("[EHCI] Detected with ");
+            Console.WriteHex(controller.PortNum);
+            Console.WriteLine(" ports");
 
             probe(controller);
         }

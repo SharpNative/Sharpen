@@ -92,6 +92,7 @@ namespace Sharpen
             }
 
             Fat16.Init(hddNode, "C");
+
             Tasking.KernelTask.CurrentDirectory = "C://";
         }
 
@@ -110,7 +111,7 @@ namespace Sharpen
 
 
             UHCI.Init();
-            EHCI.Init();
+            //EHCI.Init();
         }
 
         /// <summary>
