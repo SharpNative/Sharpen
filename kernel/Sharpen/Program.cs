@@ -110,6 +110,7 @@ namespace Sharpen
 
 
             UHCI.Init();
+            EHCI.Init();
         }
 
         /// <summary>

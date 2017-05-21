@@ -561,7 +561,7 @@ namespace Sharpen.Drivers.USB
                 transfer->Endpoint = (uint)(In ? _EndPointIn : _EndPointOut);
                 transfer->Data = buffer;
                 transfer->Type = (ushort)(In ? 0 : 1);
-                transfer->Length = bufferLength;
+                transfer->Length = (uint)bufferLength;
 
                 _Device.TransferOne(_Device, transfer);
 

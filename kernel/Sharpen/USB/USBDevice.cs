@@ -64,7 +64,7 @@ namespace Sharpen.USB
 
         public USBDeviceSpeed Speed { get; set; }
 
-        public ushort Port { get; set; }
+        public uint Port { get; set; }
 
         public uint MaxPacketSize { get; set; } = 8;
 

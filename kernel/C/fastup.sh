@@ -1,1 +1,1 @@
-sudo /usr/local/src/qemu/build/i386-softmmu/qemu-system-i386 ../../os.img -soundhw ac97 -m 256 -D qemu.log -net nic,model=pcnet -usbdevice mouse -usbdevice disk:"../../usbb.img"
+sudo /usr/local/src/qemu/build/i386-softmmu/qemu-system-i386 ../../os.img -soundhw ac97 -m 256 -D qemu.log -net nic,model=pcnet -usbdevice mouse  -device usb-ehci,id=ehci -device usb-storage,bus=ehci.0,drive=usbstick -drive if=none,id=usbstick,file="../../usbb.img"
