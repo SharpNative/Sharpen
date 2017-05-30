@@ -170,12 +170,26 @@ namespace Sharpen.Exec
         {
             if (path.Length == 0)
                 return -(int)ErrorCode.EINVAL;
-            
-            Node node = VFS.GetByPath(path);
-            if (node == null)
-                return -(int)ErrorCode.ENOENT;
-            
-            VFS.Open(node, flags);
+
+            Node node = null;
+
+            // Check if O_CREATE
+            if((flags & 0x0200) > 0)
+            {
+                node = VFS.GetOffsetNodeByPath(path, 1);
+
+                node = VFS.Create(node, "test");
+                if (node == null)
+                    return -(int)ErrorCode.ENOENT;
+            }
+            else
+            {
+                node = VFS.GetByPath(path);
+                if (node == null)
+                    return -(int)ErrorCode.ENOENT;
+
+                VFS.Open(node, flags);
+            }
             
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
             return descriptors.AddNode(node);

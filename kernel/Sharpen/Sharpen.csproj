@@ -67,8 +67,10 @@
     <Compile Include="Drivers\USB\USBMSCCookie.cs" />
     <Compile Include="FileSystem\ContainerFS.cs" />
     <Compile Include="FileSystem\Cookie\AudioDataCookie.cs" />
+    <Compile Include="FileSystem\Cookie\PacketFSCookie.cs" />
     <Compile Include="FileSystem\Cookie\PciDeviceCookie.cs" />
     <Compile Include="FileSystem\Cookie\ContainerCookie.cs" />
+    <Compile Include="FileSystem\PacketFS.cs" />
     <Compile Include="FileSystem\RootPoint.cs" />
     <Compile Include="Input\KeyboardInput.cs" />
     <Compile Include="Synchronisation\Spinlock.cs" />

@@ -16,12 +16,13 @@ namespace Sharpen.FileSystem
         public FSWrite Write;
         public FSTruncate Truncate;
         public FSOpen Open;
+        public FSCreate Create;
         public FSClose Close;
         public FSFindDir FindDir;
         public FSReaddir ReadDir;
         public FSGetSize GetSize;
         public FSIOCtl IOCtl;
-        
+
         public unsafe delegate uint FSRead(Node node, uint offset, uint size, byte[] buffer);
         public unsafe delegate uint FSWrite(Node node, uint offset, uint size, byte[] buffer);
         public unsafe delegate uint FSTruncate(Node node, uint size);
@@ -31,6 +32,7 @@ namespace Sharpen.FileSystem
         public unsafe delegate DirEntry* FSReaddir(Node node, uint index);
         public unsafe delegate uint FSGetSize(Node node);
         public unsafe delegate int FSIOCtl(Node node, int request, void* arg);
+        public unsafe delegate Node FSCreate(Node node, string name);
 
         /// <summary>
         /// Creates the stat structure
@@ -81,6 +83,7 @@ namespace Sharpen.FileSystem
             clone.ReadDir = ReadDir;
             clone.GetSize = GetSize;
             clone.IOCtl = IOCtl;
+            clone.Create = Create;
             
             return clone;
         }

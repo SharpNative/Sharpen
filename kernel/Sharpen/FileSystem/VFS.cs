@@ -77,11 +77,29 @@ namespace Sharpen.FileSystem
         }
 
         /// <summary>
+        /// Get node by path
+        /// </summary>
+        /// <param name="path">The path</param>
+        /// <returns>The node</returns>
+        public static unsafe Node GetOffsetNodeByPath(string path, int offset)
+        {
+            path = CreateAbsolutePath(path);
+            Node node = GetByAbsolutePath(path, offset);
+            Heap.Free(path);
+            return node;
+        }
+
+        public static unsafe Node GetByAbsolutePath(string path)
+        {
+            return GetByAbsolutePath(path, 0);
+        }
+
+        /// <summary>
         /// Get node by absolute path
         /// </summary>
         /// <param name="path">The absolute path</param>
         /// <returns>The node</returns>
-        public static unsafe Node GetByAbsolutePath(string path)
+        public static unsafe Node GetByAbsolutePath(string path, int offsetEnd)
         {
             int index = path.IndexOf("://");
             int pathLength = path.Length;
@@ -103,6 +121,7 @@ namespace Sharpen.FileSystem
                 path = String.Merge(path, "/");
             
             int parts = String.Count(path, '/') - 2;
+            parts -= offsetEnd;
 
             // Loop through the slashes
             int offset = index + 3;
@@ -241,11 +260,25 @@ namespace Sharpen.FileSystem
         {
             if (node.IsOpen)
                 return;
-
+            
             node.FileMode = (FileMode)(flags & 0x3);
             node.OpenFlags = flags;
             node.Open?.Invoke(node);
         }
+
+        /// <summary>
+        /// Create a node
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="name">Filename to create</param>
+        public static Node Create(Node node, string name)
+        {
+            if (node.Create == null)
+                return null;
+
+            return node.Create(node, name);
+        }
+
 
         /// <summary>
         /// Closes a node

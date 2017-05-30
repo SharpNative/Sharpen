@@ -85,7 +85,7 @@ namespace Sharpen
             AHCI.Init();
             ATA.Init();
 
-            Node hddNode = VFS.GetByAbsolutePath("devices://HDD0");
+            Node hddNode = VFS.GetByAbsolutePath("devices://HDD0", 0);
             if (hddNode == null)
             {
                 Panic.DoPanic("HDD0 not found");
@@ -93,6 +93,8 @@ namespace Sharpen
 
             Fat16.Init(hddNode, "C");
             Tasking.KernelTask.CurrentDirectory = "C://";
+
+            PacketFS.Init();
         }
 
         /// <summary>
