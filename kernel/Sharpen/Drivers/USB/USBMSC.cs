@@ -255,13 +255,15 @@ namespace Sharpen.Drivers.USB
         /// <returns>Success?</returns>
         private unsafe bool Initalize()
         {
+            _EndPointIn = 1;
+            _EndPointOut = 2;
 
-            if(!GetEndpoints())
-            {
-                Console.WriteLine("[USB-MSC] Could not find endpoints");
+            //if(!GetEndpoints())
+            //{
+            //    Console.WriteLine("[USB-MSC] Could not find endpoints");
                 
-                return false;
-            }
+            //    return false;
+            //}
 
             SCSIInquiryData* inquiryResp = Inquiry();
             if (inquiryResp == null)
@@ -298,7 +300,7 @@ namespace Sharpen.Drivers.USB
             }
 
             // We can mount it here :D
-
+            
             int deviceNum = _DeviceNum++;
 
             char* name = (char*)Heap.Alloc(6);
@@ -561,7 +563,7 @@ namespace Sharpen.Drivers.USB
                 transfer->Endpoint = (uint)(In ? _EndPointIn : _EndPointOut);
                 transfer->Data = buffer;
                 transfer->Type = (ushort)(In ? 0 : 1);
-                transfer->Length = bufferLength;
+                transfer->Length = (uint)bufferLength;
 
                 _Device.TransferOne(_Device, transfer);
 
