@@ -22,7 +22,7 @@ namespace init
             File.Pipe(fd);
 
             // Child process
-            var pid = Process.Fork();
+            int pid = Process.Fork();
             
             if (pid == 0)
             {
@@ -43,8 +43,9 @@ namespace init
                 File.Close(fd[0]);
 
                 char[] input = new char[1024];
-                int index = 0;
+                byte[] outb = new byte[3];
 
+                int index = 0;
                 while (true)
                 {
                     uint size = fdin.GetSize();
@@ -52,8 +53,7 @@ namespace init
                     {
                         byte[] buffer = new byte[size];
                         fdin.Read(buffer, (int)size);
-                        byte[] outb = new byte[3];
-
+                        
                         for (int i = 0; i < size; i++)
                         {
                             char ch = (char)buffer[i];
@@ -67,7 +67,7 @@ namespace init
                                     outb[0] = (byte)'\b';
                                     outb[1] = (byte)' ';
                                     outb[2] = (byte)'\b';
-                                    fdout.Write(outb, 3 / sizeof(char));
+                                    fdout.Write(outb, 3);
                                 }
                             }
                             else if (ch == '\n')
@@ -77,14 +77,14 @@ namespace init
                                 index = 0;
 
                                 outb[0] = (byte)ch;
-                                fdout.Write(outb, 1 / sizeof(char));
+                                fdout.Write(outb, 1);
                             }
                             else
                             {
                                 input[index++] = ch;
 
                                 outb[0] = (byte)ch;
-                                fdout.Write(outb, 1 / sizeof(char));
+                                fdout.Write(outb, 1);
                             }
 
                             // Buffer full? Send it
@@ -106,8 +106,11 @@ namespace init
                         break;
                 }
 
-                Console.WriteHex(0xFf);
+                Heap.Free(input);
+                Heap.Free(outb);
             }
+            
+            Console.WriteLine("init: Child stopped");
         }
     }
 }
