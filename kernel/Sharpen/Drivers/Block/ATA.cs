@@ -377,7 +377,7 @@ namespace Sharpen.Drivers.Block
 
                 // NULL-terminated string
                 char* name = (char*)Heap.Alloc(40 + 1);
-                fixed(void* source = &result[pos])
+                fixed (void* source = &result[pos])
                 {
                     Memory.Memcpy(name, source, 40);
                 }

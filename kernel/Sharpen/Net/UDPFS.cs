@@ -1,5 +1,6 @@
 ﻿using Sharpen.FileSystem;
 using Sharpen.FileSystem.Cookie;
+using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -86,7 +87,7 @@ namespace Sharpen.Net
         private static unsafe DirEntry* makeByName(string str)
         {
             DirEntry* entry = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
-            Memory.Memcpy(entry->Name, Util.ObjectToVoidPtr(str), str.Length + 1);
+            String.CopyTo(entry->Name, str, 256);
             return entry;
         }
         
