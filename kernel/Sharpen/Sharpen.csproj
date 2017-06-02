@@ -52,6 +52,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Drivers\Block\NVMe.cs" />
     <Compile Include="Drivers\Power\Acpica.cs" />
     <Compile Include="Arch\LocalApic.cs" />
     <Compile Include="Arch\IOApic.cs" />
@@ -72,7 +73,6 @@
     <Compile Include="FileSystem\Cookie\ContainerCookie.cs" />
     <Compile Include="FileSystem\PacketFS.cs" />
     <Compile Include="FileSystem\RootPoint.cs" />
-    <Compile Include="Input\KeyboardInput.cs" />
     <Compile Include="Synchronisation\Spinlock.cs" />
     <Compile Include="Net\TCPSocketDevice.cs" />
     <Compile Include="Net\TCPFS.cs" />

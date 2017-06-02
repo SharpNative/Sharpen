@@ -84,6 +84,7 @@ namespace Sharpen
         {
             AHCI.Init();
             ATA.Init();
+            NVMe.Init();
 
             Node hddNode = VFS.GetByAbsolutePath("devices://HDD0", 0);
             if (hddNode == null)
