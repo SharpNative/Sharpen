@@ -171,7 +171,8 @@ namespace Sharpen.Drivers.USB
             uhciDev.FrameList = (int*)Heap.AlignedAlloc(0x1000, sizeof(int) * 1024);
             uhciDev.QueueHeadPool = (UHCIQueueHead *)Heap.AlignedAlloc(0x1000, sizeof(UHCIQueueHead) * MAX_HEADS);
             uhciDev.TransmitPool = (UHCITransmitDescriptor*)Heap.AlignedAlloc(0x1000, sizeof(UHCITransmitDescriptor) * MAX_TRANSMIT);
-            
+            Memory.Memclear(uhciDev.QueueHeadPool, sizeof(UHCIQueueHead) * MAX_HEADS);
+            Memory.Memclear(uhciDev.TransmitPool, sizeof(UHCITransmitDescriptor) * MAX_TRANSMIT);
 
             UHCIQueueHead* head = GetQueueHead(uhciDev);
             head->Head = TD_POINTER_TERMINATE;
@@ -640,14 +641,7 @@ namespace Sharpen.Drivers.USB
              */
             if (head->Next != null)
             {
-                if (head->Previous != null)
-                {
-                    head->Next->Previous = head->Previous;
-                }
-                else
-                {
-                    head->Next->Previous = null;
-                }
+                head->Next->Previous = head->Previous;
             }
 
             FreeHead(controller, head);
