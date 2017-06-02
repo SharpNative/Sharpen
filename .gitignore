@@ -238,3 +238,7 @@ trace*
 *.txtd
 *.vdi
 /scripts/usercompile - kopie.bat
+
+*.bin
+*.rom
+*.DS_Store
