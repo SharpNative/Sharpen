@@ -53,6 +53,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Drivers\Block\NVMe.cs" />
+    <Compile Include="Drivers\Block\NVMeCookie.cs" />
     <Compile Include="Drivers\Power\Acpica.cs" />
     <Compile Include="Arch\LocalApic.cs" />
     <Compile Include="Arch\IOApic.cs" />

@@ -439,16 +439,34 @@ namespace Sharpen.Drivers.Block
         /// <param name="size">The size</param>
         /// <param name="buffer">The buffer</param>
         /// <returns>The amount of bytes written</returns>
-        private static uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
+        private static unsafe uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
         {
+
             // Only support sizes in magnitudes of 512
             if (size % 512 != 0)
                 return 0;
 
-            uint inSize = size / 512;
-
             IDCookie cookie = (IDCookie)node.Cookie;
-            return (uint)WriteSector(cookie.ID, offset, (byte)inSize, buffer);
+
+            byte* bufferPtr = (byte*)Util.ObjectToVoidPtr(buffer);
+
+            int sizeWrite = 0;
+            uint offsetInt = 0;
+            uint offsetSec = 0;
+            while (offsetInt < size)
+            {
+                int read = WriteSector(cookie.ID, offset + offsetSec, 1, Util.PtrToArray(bufferPtr + offsetInt));
+
+                if (read == 0)
+                    return (uint)sizeWrite;
+
+                sizeWrite += read;
+
+                offsetInt += 512;
+                offsetSec++;
+            }
+
+            return (uint)sizeWrite;
         }
 
         /// <summary>
@@ -459,16 +477,33 @@ namespace Sharpen.Drivers.Block
         /// <param name="size">The size</param>
         /// <param name="buffer">The buffer</param>
         /// <returns>The amount of bytes read</returns>
-        private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
+        private static unsafe uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             // Only support sizes in magnitudes of 512
             if (size % 512 != 0)
                 return 0;
 
-            uint inSize = size / 512;
-
             IDCookie cookie = (IDCookie)node.Cookie;
-            return (uint)ReadSector(cookie.ID, offset, (byte)inSize, buffer);
+
+            byte* bufferPtr = (byte *)Util.ObjectToVoidPtr(buffer);
+
+            int sizeRead = 0;
+            uint offsetInt = 0;
+            uint offsetSec = 0;
+            while (offsetInt < size)
+            {
+                int read = ReadSector(cookie.ID, offset + offsetSec, 1, Util.PtrToArray(bufferPtr + offsetInt));
+
+                if (read == 0)
+                    return (uint)sizeRead;
+
+                sizeRead += read;
+
+                offsetInt += 512;
+                offsetSec++;
+            }
+
+            return (uint)sizeRead;
         }
 
 

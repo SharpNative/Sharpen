@@ -49,7 +49,7 @@ namespace Sharpen
             initUSB();
             initStorage();
             
-            initNetworking();
+            //initNetworking();
             initSound();
             runUserspace();
 
@@ -84,7 +84,10 @@ namespace Sharpen
         {
             AHCI.Init();
             ATA.Init();
+
+            Console.WriteLine("NVME INIT");
             NVMe.Init();
+            Console.WriteLine("NVME DONE");
 
             Node hddNode = VFS.GetByAbsolutePath("devices://HDD0", 0);
             if (hddNode == null)
@@ -95,6 +98,19 @@ namespace Sharpen
             Fat16.Init(hddNode, "C");
 
             Tasking.KernelTask.CurrentDirectory = "C://";
+
+            hddNode = VFS.GetByAbsolutePath("devices://NVME0", 0);
+            if (hddNode == null)
+            {
+                Panic.DoPanic("NVME0 not found");
+            }
+
+            byte[] buffer = new byte[512];
+
+            hddNode.Read(hddNode, 0, 512, buffer);
+
+            Console.WriteLine("NVME Fat");
+            Fat16.Init(hddNode, "N");
 
             PacketFS.Init();
         }

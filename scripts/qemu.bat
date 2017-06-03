@@ -5,5 +5,5 @@ rem "C:\Program Files\qemu\qemu-system-i386.exe" -drive id=disk,file=..\..\os.im
 rem -usbdevice disk:..\..\usbb.img
 rem -drive if=none,id=usbstick,file=..\..\usbb.img -device usb-uhci,id=uhci -device usb-storage,bus=uhci.0,drive=usbstick
 
-"C:\Program Files\qemu\qemu-system-i386.exe" ..\..\os.img -soundhw ac97 -net nic,model=e1000 -serial file:serial.txtd  -m 256 -D qemu.log -net tap,ifname=TAP  -usbdevice mouse -drive file=..\..\usbb.img,if=none,id=nvm -device nvme,drive=nvm,serial=1234
+"C:\Program Files\qemu\qemu-system-i386.exe" ..\..\os.img -soundhw ac97 -net nic,model=e1000 -serial file:serial.txtd  -m 256 -D qemu.log  -usbdevice mouse -drive file=..\..\usbb.img,if=none,id=nvm -device nvme,drive=nvm,serial=1234
 rem net dump,file=netdump.wcap

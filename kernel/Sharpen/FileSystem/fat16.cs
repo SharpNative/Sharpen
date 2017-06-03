@@ -145,11 +145,8 @@ namespace Sharpen.FileSystem
             m_fatClusterSize = fatRegionSize * 256;
 
             var beginFatTable = m_beginLBA + m_bpb->ReservedSectors;
-
-            for (uint i = 0; i < fatRegionSize; i++)
-            {
-                _Device.Read(_Device, (uint)beginFatTable + i, 512, Util.PtrToArray(m_fatTable + (i * 512)));
-            }
+            
+            _Device.Read(_Device, (uint)beginFatTable, (uint)fatRegionSize * 512, Util.PtrToArray(m_fatTable));
 
             parseBoot();
         }
@@ -617,12 +614,14 @@ namespace Sharpen.FileSystem
             uint sizeInSectors = size / 512;
             if (sizeInSectors == 0)
                 sizeInSectors++;
+            
 
             uint offsetInCluster = sectorsOffset;
             uint offsetInSector = StartOffset;
             uint currentCluster = startCluster;
             uint currentOffset = 0;
             int sizeLeft = (int)size;
+
 
             for (int i = 0; i < sizeInSectors; i++)
             {
