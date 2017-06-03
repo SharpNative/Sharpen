@@ -82,7 +82,7 @@ namespace Sharpen
         /// </summary>
         private static void initStorage()
         {
-            //AHCI.Init();
+            AHCI.Init();
             ATA.Init();
             //NVMe.Init();
 
