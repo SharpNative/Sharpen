@@ -286,7 +286,7 @@ namespace Sharpen.Drivers.Block
             DoIdentify();
             CreateQueues();
 
-            
+
 
             char* name = (char*)Heap.Alloc(6);
             name[0] = 'N';
@@ -309,16 +309,9 @@ namespace Sharpen.Drivers.Block
             RootPoint dev = new RootPoint(nameStr, node);
             VFS.MountPointDevFS.AddEntry(dev);
 
-            Console.Write("[NVME] Init at 0x");
-            Console.WriteHex(mAddress & 0xFFFFFFFF);
-            Console.Write(", vers = ");
-            Console.WriteNum(mVersion / 100);
-            Console.Write(".0");
-            Console.WriteNum(mVersion % 100);
-            Console.Write(", Stride = ");
-            Console.WriteNum(mStride);
-            Console.Write(", TO = ");
-            Console.WriteNum(mTimeout);
+            Console.Write("[NVME] Init with serialnumber ");
+            for(int i = 0; i < 20; i++)
+                Console.Write(mSerialNumber[i]);
             Console.WriteLine("");
         }
 
@@ -377,9 +370,7 @@ namespace Sharpen.Drivers.Block
             if (MIN_QUEUE_DEPTH > mQueueSize)
                 mQueueSize = MIN_QUEUE_DEPTH;
         }
-
-        static int i = 0;
-
+        
         /// <summary>
         /// Read write operation
         /// </summary>
@@ -538,10 +529,8 @@ namespace Sharpen.Drivers.Block
             mRegs->ControllerStatus = 0x00;
             mRegs->AdminQueueAttribs = (uint)((uint)(mQueueSize - 1) & AQA_ASQS_MASK);
             mRegs->AdminQueueAttribs |= (uint)(((mQueueSize - 1) & AQA_ACQS_SHIFT) << AQA_ACQS_SHIFT);
-
-            var sqa = (ulong)Paging.GetPhysicalFromVirtual(mAdminQueue.SubmissionQueue);
             
-            mRegs->AdminSubmissionQueueAddress = sqa;
+            mRegs->AdminSubmissionQueueAddress = (ulong)Paging.GetPhysicalFromVirtual(mAdminQueue.SubmissionQueue);
             mRegs->AdminCompletionQueueAddress = (ulong)Paging.GetPhysicalFromVirtual(mAdminQueue.CompletionQueue);
         }
 
@@ -556,6 +545,7 @@ namespace Sharpen.Drivers.Block
                     
                     if(item->CommandID == cid)
                     {
+
 
                         return item;
                     }
@@ -709,7 +699,6 @@ namespace Sharpen.Drivers.Block
                 return 0;
 
             uint inSize = size / 512;
-
 
             NVMeCookie cookie = (NVMeCookie)node.Cookie;
             return (uint)cookie.NVMe.RWOperation(NVMe_RW_OP.READ, (byte *)Util.ObjectToVoidPtr(buffer), offset, inSize);
