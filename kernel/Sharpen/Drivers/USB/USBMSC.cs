@@ -340,8 +340,27 @@ namespace Sharpen.Drivers.USB
                 return 0;
 
             USBMSCCookie cookie = (USBMSCCookie)node.Cookie;
+            
 
-            return cookie.USBMSC.WriteSector(offset, buffer, (int)size);
+            byte* bufferPtr = (byte*)Util.ObjectToVoidPtr(buffer);
+
+            int sizeRead = 0;
+            uint offsetInt = 0;
+            uint offsetSec = 0;
+            while (offsetInt < size)
+            {
+                int read = (int)cookie.USBMSC.WriteSector(offset + offsetSec, Util.PtrToArray(bufferPtr + offsetInt), 512);
+
+                if (read == 0)
+                    return (uint)sizeRead;
+
+                sizeRead += read;
+
+                offsetInt += 512;
+                offsetSec++;
+            }
+
+            return (uint)sizeRead;
         }
 
         /// <summary>
@@ -352,15 +371,34 @@ namespace Sharpen.Drivers.USB
         /// <param name="size">The size</param>
         /// <param name="buffer">The buffer</param>
         /// <returns>The amount of bytes read</returns>
-        private static uint readImpl(Node node, uint offset, uint size, byte[] buffer)
+        private static unsafe uint readImpl(Node node, uint offset, uint size, byte[] buffer)
         {
             // Only support sizes in magnitudes of 512
             if (size % 512 != 0)
                 return 0;
-
+            
             USBMSCCookie cookie = (USBMSCCookie)node.Cookie;
 
-            return cookie.USBMSC.ReadSector(offset, buffer, (int)size);
+
+            byte* bufferPtr = (byte*)Util.ObjectToVoidPtr(buffer);
+
+            int sizeRead = 0;
+            uint offsetInt = 0;
+            uint offsetSec = 0;
+            while (offsetInt < size)
+            {
+                int read = (int)cookie.USBMSC.ReadSector(offset + offsetSec, Util.PtrToArray(bufferPtr + offsetInt), 512);
+
+                if (read == 0)
+                    return (uint)sizeRead;
+
+                sizeRead += read;
+
+                offsetInt += 512;
+                offsetSec++;
+            }
+
+            return (uint)sizeRead;
         }
 
         /// <summary>

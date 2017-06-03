@@ -275,7 +275,7 @@ namespace Sharpen.Drivers.Block
             mRegs = (NVMe_Registers*)mAddressVirtual;
 
             Pci.EnableBusMastering(mDevice);
-            
+
             // TODO: Make this map the right size
             mTailsAndHeads = (int*)Paging.MapToVirtual(Paging.CurrentDirectory, mAddress + 0x1000, 0x4000, Paging.PageFlags.Present | Paging.PageFlags.Writable);
 
@@ -349,7 +349,7 @@ namespace Sharpen.Drivers.Block
         /// </summary>
         private void CreateQueues()
         {
-            
+
             var queue = CreateQueue(1);
 
             if (queue == null)
@@ -380,7 +380,6 @@ namespace Sharpen.Drivers.Block
         /// <returns></returns>
         public int RWOperation(NVMe_RW_OP op, byte *buffer, uint lba, uint blocks)
         {
-            
             void* adr = Heap.Alloc(0x1000);
 
 
@@ -392,7 +391,7 @@ namespace Sharpen.Drivers.Block
 
             item->Slba = lba;
             item->Nlb = (ushort)(blocks - 1);
-            item->Prp1 = (uint)adr;
+            item->Prp1 = (uint)Paging.GetPhysicalFromVirtual(adr);
 
             int cid = SubmitCMD(mIOQueue, (NVMe_Submission_Item*)item);
             
@@ -408,6 +407,7 @@ namespace Sharpen.Drivers.Block
 
             Memory.Memcpy(buffer, adr, (int)blocks * 512);
 
+            Heap.Free(item);
             Heap.Free(adr);
 
             return (int)blocks * 512;
@@ -415,8 +415,8 @@ namespace Sharpen.Drivers.Block
 
         private unsafe int Identify(int nsID, int cns, void *adr)
         {
-            NVMe_Identify_Cmd* item = (NVMe_Identify_Cmd*)Heap.Alloc(sizeof(NVMe_Submission_Item));
-            Memory.Memclear(item, sizeof(NVMe_Submission_Item));
+            NVMe_Identify_Cmd* item = (NVMe_Identify_Cmd*)Heap.Alloc(sizeof(NVMe_Identify_Cmd));
+            Memory.Memclear(item, sizeof(NVMe_Identify_Cmd));
             
             item->Opcode = ADMIN_OPCODE_IDENTIFY;
             item->NSID = (uint)nsID;
@@ -425,35 +425,12 @@ namespace Sharpen.Drivers.Block
 
             int cid = SubmitCMD(mAdminQueue, (NVMe_Submission_Item*)item);
 
+            Heap.Free(item);
+
             NVMe_Completion_Item *compItem = PollAndWait(mAdminQueue, cid);
 
             return compItem->Status;
         }
-
-        #region Byte swapping
-        private ulong SwapBytes(ulong inLong)
-        {
-            ulong x = (ulong)inLong;
-            x = (x & 0x00000000FFFFFFFF) << 32 | (x & 0xFFFFFFFF00000000) >> 32;
-            x = (x & 0x0000FFFF0000FFFF) << 16 | (x & 0xFFFF0000FFFF0000) >> 16;
-            x = (x & 0x00FF00FF00FF00FF) << 8 | (x & 0xFF00FF00FF00FF00) >> 8;
-            return x;
-        }
-
-        private uint SwapBytes(uint inInt)
-        {
-            return ((inInt & 0x000000FF) << 24)
-                | ((inInt & 0x0000FF00) << 8)
-                | ((inInt & 0x00FF0000) >> 8)
-                | ((inInt & 0xFF000000) >> 24);
-        }
-
-        private ushort SwapBytes(ushort inShort)
-        {
-            return (ushort)(((inShort & 0x00FF) << 8)
-                | ((inShort & 0xFF00) >> 8));
-        }
-        #endregion
 
         private int CreateSubmissionQueue(NVMe_Queue queue)
         {
@@ -470,6 +447,8 @@ namespace Sharpen.Drivers.Block
             item->CqID = (ushort)queue.SQID;
 
             int cid = SubmitCMD(mAdminQueue, (NVMe_Submission_Item*)item);
+
+            Heap.Free(item);
 
             NVMe_Completion_Item* compItem = PollAndWait(mAdminQueue, cid);
 
@@ -490,6 +469,8 @@ namespace Sharpen.Drivers.Block
             item->CqFlags = (ushort)(QUEUE_PHYS_CONFIG | SQ_PRIO_MEDIUM);
 
             int cid = SubmitCMD(mAdminQueue, (NVMe_Submission_Item*)item);
+
+            Heap.Free(item);
 
             NVMe_Completion_Item* compItem = PollAndWait(mAdminQueue, cid);
 
@@ -543,13 +524,12 @@ namespace Sharpen.Drivers.Block
                 {
                     var item = (NVMe_Completion_Item*)((int)queue.CompletionQueue + (sizeof(NVMe_Completion_Item) * i));
                     
+
                     if(item->CommandID == cid)
-                    {
-
-
                         return item;
-                    }
                 }
+
+                Tasking.CurrentTask.CurrentThread.Sleep(0, 100);
             }
         }
 
@@ -578,6 +558,7 @@ namespace Sharpen.Drivers.Block
                 tail = 0;
 
             queue.Tail = tail;
+
             *queue.TailPtr = tail;
 
             if (++CurrentCID >= 65535)
@@ -637,7 +618,7 @@ namespace Sharpen.Drivers.Block
 
             uint tail = (uint)mTailsAndHeads + (uint)((2 * sqID) * (sizeof(int) << mStride));
             uint head = (uint)mTailsAndHeads + (uint)((2 * sqID + 1) * (sizeof(int) << mStride));
-
+            
             queue.TailPtr = (int *)tail;
             queue.HeadPtr = (int *)head;
 
@@ -699,7 +680,7 @@ namespace Sharpen.Drivers.Block
                 return 0;
 
             uint inSize = size / 512;
-
+            
             NVMeCookie cookie = (NVMeCookie)node.Cookie;
             return (uint)cookie.NVMe.RWOperation(NVMe_RW_OP.READ, (byte *)Util.ObjectToVoidPtr(buffer), offset, inSize);
         }

@@ -49,7 +49,7 @@ namespace Sharpen
             initUSB();
             initStorage();
             
-            //initNetworking();
+            initNetworking();
             initSound();
             runUserspace();
 
@@ -82,7 +82,7 @@ namespace Sharpen
         /// </summary>
         private static void initStorage()
         {
-            AHCI.Init();
+            //AHCI.Init();
             ATA.Init();
             NVMe.Init();
 
@@ -94,7 +94,11 @@ namespace Sharpen
 
             Fat16.Init(hddNode, "C");
 
-            Tasking.KernelTask.CurrentDirectory = "C://";
+            Node nvmeNode = VFS.GetByAbsolutePath("devices://NVME0", 0);
+
+            Fat16.Init(nvmeNode, "N");
+
+            Tasking.KernelTask.CurrentDirectory = "N://";
             
             PacketFS.Init();
         }
