@@ -84,7 +84,7 @@ namespace Sharpen
         {
             //AHCI.Init();
             ATA.Init();
-            NVMe.Init();
+            //NVMe.Init();
 
             Node hddNode = VFS.GetByAbsolutePath("devices://HDD0", 0);
             if (hddNode == null)
@@ -93,12 +93,6 @@ namespace Sharpen
             }
 
             Fat16.Init(hddNode, "C");
-
-            Node nvmeNode = VFS.GetByAbsolutePath("devices://NVME0", 0);
-
-            Fat16.Init(nvmeNode, "N");
-
-            Tasking.KernelTask.CurrentDirectory = "N://";
             
             PacketFS.Init();
         }
