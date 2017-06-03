@@ -49,7 +49,7 @@ namespace Sharpen
             initUSB();
             initStorage();
             
-            initNetworking();
+            //initNetworking();
             initSound();
             runUserspace();
 

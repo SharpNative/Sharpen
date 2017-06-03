@@ -420,7 +420,7 @@ namespace Sharpen.Drivers.Block
             
             item->Opcode = ADMIN_OPCODE_IDENTIFY;
             item->NSID = (uint)nsID;
-            item->PRP1 = (ulong)adr;
+            item->PRP1 = (ulong)Paging.GetPhysicalFromVirtual(adr);
             item->CNS = (uint)cns;
 
             int cid = SubmitCMD(mAdminQueue, (NVMe_Submission_Item*)item);
