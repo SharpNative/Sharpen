@@ -3,14 +3,14 @@ using Sharpen.Lib;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
-namespace Sharpen.FileSystem
+namespace Sharpen.FileSystem.Filesystems
 {
     /**
      * 
      * TODO: Make use of fat cache for finding next free cluster, change values in cache when updated
      * 
      */
-    public unsafe class Fat16
+    public unsafe class Fat16: IFilesystem
     {
         private const int FirstPartitonEntry = 0x1BE;
 
@@ -54,19 +54,26 @@ namespace Sharpen.FileSystem
 
         #region Initialization
 
+        public static void Register()
+        {
+            Disk.RegisterFilesystem(new Fat16(), "fat16b");
+        }
+
         /// <summary>
         /// Init and mount FAT on device
         /// </summary>
         /// <param name="deviceNode">Device node</param>
         /// <param name="name">Name</param>
-        public static unsafe void Init(Node deviceNode, string name)
+        public unsafe Node Init(Node deviceNode)
         {
-            Fat16 fat = new Fat16();
-            fat.InitDevice(deviceNode, name);
 
+
+            Fat16 fat = new Fat16();
+
+            return fat.InitDevice(deviceNode);
         }
 
-        public unsafe void InitDevice(Node deviceNode, string name)
+        public unsafe Node InitDevice(Node deviceNode)
         {
             _Device = deviceNode;
 
@@ -92,9 +99,7 @@ namespace Sharpen.FileSystem
 
             node.Cookie = rootCookie;
             
-
-            RootPoint dev = new RootPoint(name, node);
-            VFS.RootMountPoint.AddEntry(dev);
+            return node;
         }
         
         /// <summary>

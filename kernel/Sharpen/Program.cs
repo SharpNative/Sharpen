@@ -13,6 +13,8 @@ using Sharpen.MultiTasking;
 using Sharpen.Utilities;
 using Sharpen.Drivers.USB;
 using Sharpen.USB;
+using Sharpen.FileSystem.ParitionTables;
+using Sharpen.FileSystem.Filesystems;
 
 namespace Sharpen
 {
@@ -82,17 +84,31 @@ namespace Sharpen
         /// </summary>
         private static void initStorage()
         {
+            Disk.Init();
+
+            // Init partition schemes
+            GPT.Register();
+            MBR.Register();
+
+            // Init filesystems
+            Fat16.Register();
+
+            
             AHCI.Init();
             ATA.Init();
             //NVMe.Init();
 
-            Node hddNode = VFS.GetByAbsolutePath("devices://HDD0", 0);
-            if (hddNode == null)
-            {
-                Panic.DoPanic("HDD0 not found");
-            }
+            for (;;) ;
 
-            Fat16.Init(hddNode, "C");
+            //Node hddNode = VFS.GetByAbsolutePath("devices://HDI0", 0);
+            //if (hddNode == null)
+            //{
+            //    Panic.DoPanic("HDI0 not found");
+            //}
+
+            //Fat16.Init(hddNode, "C");
+
+            //Tasking.CurrentTask.CurrentDirectory = "C://";
             
             PacketFS.Init();
         }

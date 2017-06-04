@@ -1,4 +1,6 @@
-﻿namespace Sharpen.FileSystem.Cookie
+﻿using Sharpen.FileSystem.Filesystems;
+
+namespace Sharpen.FileSystem.Cookie
 {
     public class Fat16Cookie : ICookie
     {

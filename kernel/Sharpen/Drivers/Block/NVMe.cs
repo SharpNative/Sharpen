@@ -306,6 +306,8 @@ namespace Sharpen.Drivers.Block
 
             node.Cookie = cookie;
 
+
+            Disk.InitalizeNode(node, nameStr);
             RootPoint dev = new RootPoint(nameStr, node);
             VFS.MountPointDevFS.AddEntry(dev);
 

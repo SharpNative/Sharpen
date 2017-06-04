@@ -411,10 +411,11 @@ namespace Sharpen.Drivers.Block
                 if (!Devices[i].Exists)
                     continue;
 
+
                 char* name = (char*)Heap.Alloc(5);
                 name[0] = 'H';
                 name[1] = 'D';
-                name[2] = 'D';
+                name[2] = 'I';
                 name[3] = (char)('0' + i);
                 name[4] = '\0';
                 string nameStr = Util.CharPtrToString(name);
@@ -425,6 +426,9 @@ namespace Sharpen.Drivers.Block
 
                 IDCookie cookie = new IDCookie(i);
                 node.Cookie = cookie;
+
+
+                Disk.InitalizeNode(node, nameStr);
 
                 RootPoint dev = new RootPoint(nameStr, node);
                 VFS.MountPointDevFS.AddEntry(dev);

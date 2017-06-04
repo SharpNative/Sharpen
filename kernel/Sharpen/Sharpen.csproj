@@ -72,7 +72,12 @@
     <Compile Include="FileSystem\Cookie\PacketFSCookie.cs" />
     <Compile Include="FileSystem\Cookie\PciDeviceCookie.cs" />
     <Compile Include="FileSystem\Cookie\ContainerCookie.cs" />
+    <Compile Include="FileSystem\Disk.cs" />
+    <Compile Include="FileSystem\Filesystems\IFilesystem.cs" />
+    <Compile Include="FileSystem\ParitionTables\GPT.cs" />
+    <Compile Include="FileSystem\ParitionTables\IPartitionTable.cs" />
     <Compile Include="FileSystem\PacketFS.cs" />
+    <Compile Include="FileSystem\ParitionTables\MBR.cs" />
     <Compile Include="FileSystem\RootPoint.cs" />
     <Compile Include="Synchronisation\Spinlock.cs" />
     <Compile Include="Net\TCPSocketDevice.cs" />
@@ -111,7 +116,7 @@
     <Compile Include="Exec\ELFLoader.cs" />
     <Compile Include="Exec\Loader.cs" />
     <Compile Include="Exec\Syscalls.cs" />
-    <Compile Include="FileSystem\Fat16BPB.cs" />
+    <Compile Include="FileSystem\Filesystems\Fat16BPB.cs" />
     <Compile Include="FileSystem\PciFS.cs" />
     <Compile Include="FileSystem\RandomFS.cs" />
     <Compile Include="FileSystem\NullFS.cs" />
@@ -168,7 +173,7 @@
     <Compile Include="Drivers\Sound\AC97.cs" />
     <Compile Include="FileSystem\DirEntry.cs" />
     <Compile Include="Collections\Dictionary.cs" />
-    <Compile Include="FileSystem\Fat16.cs" />
+    <Compile Include="FileSystem\Filesystems\Fat16.cs" />
     <Compile Include="Console.cs" />
     <Compile Include="Arch\X86\GDT.cs" />
     <Compile Include="Drivers\Block\ATA.cs" />
