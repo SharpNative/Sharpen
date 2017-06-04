@@ -129,6 +129,7 @@ namespace Sharpen.Exec
         public static int Read(int descriptor, byte[] buffer, uint size)
         {
             FileDescriptors descriptors = Tasking.CurrentTask.FileDescriptors;
+            
 
             Node node = descriptors.GetNode(descriptor);
             if (node == null)

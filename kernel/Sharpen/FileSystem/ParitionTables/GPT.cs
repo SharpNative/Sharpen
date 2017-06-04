@@ -1,4 +1,5 @@
-﻿using Sharpen.FileSystem.PartitionTables;
+﻿using System;
+using Sharpen.FileSystem.PartitionTables;
 using Sharpen.Mem;
 using Sharpen.Utilities;
 
@@ -32,6 +33,14 @@ namespace Sharpen.FileSystem.ParitionTables
             Heap.Free(buf);
 
             return same;
+        }
+
+        public void ReadPartitions(Node node, string name)
+        {
+
+            Console.WriteLine("[GPT] Reading of GPT not implemented.");
+
+            // TODO: Implement this
         }
     }
 }

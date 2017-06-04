@@ -69,11 +69,12 @@
     <Compile Include="Drivers\USB\USBMSCCookie.cs" />
     <Compile Include="FileSystem\ContainerFS.cs" />
     <Compile Include="FileSystem\Cookie\AudioDataCookie.cs" />
+    <Compile Include="FileSystem\Cookie\IMBRCookie.cs" />
     <Compile Include="FileSystem\Cookie\PacketFSCookie.cs" />
     <Compile Include="FileSystem\Cookie\PciDeviceCookie.cs" />
     <Compile Include="FileSystem\Cookie\ContainerCookie.cs" />
-    <Compile Include="FileSystem\Disk.cs" />
     <Compile Include="FileSystem\Filesystems\IFilesystem.cs" />
+    <Compile Include="FileSystem\Disk.cs" />
     <Compile Include="FileSystem\ParitionTables\GPT.cs" />
     <Compile Include="FileSystem\ParitionTables\IPartitionTable.cs" />
     <Compile Include="FileSystem\PacketFS.cs" />

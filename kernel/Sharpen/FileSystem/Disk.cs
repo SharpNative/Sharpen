@@ -1,6 +1,7 @@
 ﻿using Sharpen.Collections;
 using Sharpen.FileSystem.Filesystems;
 using Sharpen.FileSystem.PartitionTables;
+using Sharpen.Utilities;
 
 namespace Sharpen.FileSystem
 {
@@ -24,6 +25,7 @@ namespace Sharpen.FileSystem
         /// </summary>
         public static void Init()
         {
+
             mFilesystems = new StringDictionary(6);
             mPartitionTables = new List();
         }
@@ -39,6 +41,13 @@ namespace Sharpen.FileSystem
         private static IPartitionTable GetParitionTable(Node node)
         {
 
+            for(int i = 0; i < mPartitionTables.Count; i++)
+            {
+                IPartitionTable table = (IPartitionTable)mPartitionTables.Item[i];
+
+                if (table.isType(node))
+                    return table;
+            }
 
             return null;
         }
@@ -67,6 +76,7 @@ namespace Sharpen.FileSystem
         /// <param name="name">Name</param>
         public static void RegisterFilesystem(IFilesystem filesystem, string name)
         {
+
             if (mFilesystems.Get(name) != null)
                 return;
 
@@ -102,7 +112,7 @@ namespace Sharpen.FileSystem
             if (point != null)
                 return DiskMountResult.MOUNT_POINT_ALREADY_USED;
 
-            RootPoint dev = new RootPoint(name, node);
+            RootPoint dev = new RootPoint(name, retNode);
             VFS.RootMountPoint.AddEntry(dev);
 
             return DiskMountResult.SUCCESS;
@@ -113,12 +123,15 @@ namespace Sharpen.FileSystem
         /// </summary>
         /// <param name="node">Disk node</param>
         /// <param name="nodeName">Node name</param>
-        public static void InitalizeNode(Node node, string nodeName)
+        public static unsafe void InitalizeNode(Node node, string nodeName)
         {
-            IPartitionTable table = GetParitionTable(node);
             
+            IPartitionTable table = GetParitionTable(node);
 
-                
+            if (table == null)
+                return;
+
+            table.ReadPartitions(node, nodeName);
         }
 
         #endregion

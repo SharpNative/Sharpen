@@ -8,6 +8,8 @@ namespace Sharpen.FileSystem.Filesystems
     /**
      * 
      * TODO: Make use of fat cache for finding next free cluster, change values in cache when updated
+     * TODO: LFN (Long file names)
+     * TODO: Cleanup
      * 
      */
     public unsafe class Fat16: IFilesystem
@@ -108,27 +110,7 @@ namespace Sharpen.FileSystem.Filesystems
         /// <param name="dev">Device</param>
         private unsafe void initFAT()
         {
-            // Read first sector
-            byte[] firstSector = new byte[512];
-            _Device.Read(_Device, 0, 512, firstSector);
-
-            // Get partition type from first entry
-            // Detect if FAT16
-            if (firstSector[FirstPartitonEntry + ENTRYTYPE] != 0x06)
-                return;
-
-            /*
-             * 
-             * LBA = (C × HPC + H) × SPT + (S - 1)
-             * C, H and S are the cylinder number, the head number, and the sector number
-             * LBA is the logical block address
-             * HPC is the maximum number of heads per cylinder (reported by disk drive, typically 16 for 28-bit LBA)
-             * SPT is the maximum number of sectors per track (reported by disk drive, typically 63 for 28-bit LBA)
-             * 
-             */
-            //m_beginLBA = (cylinder * hpc + BeginHead) * spt + (Sector - 1);
-            int off = FirstPartitonEntry + ENTRYNUMSECTORSBETWEEN;
-            m_beginLBA = firstSector[off + 3] << 24 | firstSector[off + 2] << 16 | firstSector[off + 1] << 8 | firstSector[off];
+            m_beginLBA = 0;
 
 
             byte[] bootSector = new byte[512];
@@ -141,9 +123,7 @@ namespace Sharpen.FileSystem.Filesystems
 
             m_fatSize = (uint)dataRegionSize / m_bpb->SectorsPerCluster;
 
-            /**
-             * Cache fat table..
-             */
+            // Cache fat table table
             uint size = (uint)fatRegionSize * 512;
 
             m_fatTable = (byte*)Heap.Alloc((int)size);
@@ -161,42 +141,25 @@ namespace Sharpen.FileSystem.Filesystems
         /// </summary>
         private unsafe void parseBoot()
         {
+
             /**
              * Calculate first data start LBA
              */
             m_clusterBeginLBA = m_beginLBA + m_bpb->ReservedSectors + (m_bpb->NumFats * (int)m_bpb->SectorsPerFat16);
 
-            byte[] buffer = new byte[512];
-            _Device.Read(_Device, (uint)(m_clusterBeginLBA), 512, buffer);
+            // Fetch root directory from memory
+            byte[] buffer = new byte[m_bpb->NumDirEntries * sizeof(FatDirEntry)];
 
-            /**
-             * Fetch root directory to memory
-             */
-            m_dirEntries = (FatDirEntry*)Heap.Alloc(m_bpb->NumDirEntries * sizeof(FatDirEntry));
+            m_dirEntries = (FatDirEntry*)Util.ObjectToVoidPtr(buffer);
+
+
+            uint sectorSize = (uint)m_bpb->NumDirEntries / 16;
             
-            FatDirEntry* curBufPtr = (FatDirEntry*)Util.ObjectToVoidPtr(buffer);
-            int sectorOffset = 0;
-            int offset = 0;
-            for (int i = 0; i < m_bpb->NumDirEntries; i++)
-            {
-                /*
-                 * 512 / sizeof fatentry == 16
-                 */
-                if (offset == 16)
-                {
-                    sectorOffset++;
-                    _Device.Read(_Device, (uint)(m_clusterBeginLBA + sectorOffset), 512, buffer);
+            // Do we have a spare sector?
+            if (sectorSize * 16 != m_bpb->NumDirEntries)
+                sectorSize++;
 
-                    offset = 0;
-                }
-                
-                /**
-                 * @TODO: Maybe copy this?
-                 */
-                m_dirEntries[i] = curBufPtr[offset];
-
-                offset++;
-            }
+            _Device.Read(_Device, (uint)(m_clusterBeginLBA), sectorSize * 512, buffer);
 
             m_numDirEntries = m_bpb->NumDirEntries;
             m_beginDataLBA = m_clusterBeginLBA + ((m_bpb->NumDirEntries * 32) / m_bpb->BytesPerSector);
@@ -215,6 +178,7 @@ namespace Sharpen.FileSystem.Filesystems
         /// <returns></returns>
         public Node CreateNode(FatDirEntry* dirEntry, uint cluster, uint num)
         {
+
             Node node = new Node();
             node.Size = dirEntry->Size;
 
@@ -280,6 +244,7 @@ namespace Sharpen.FileSystem.Filesystems
         /// <returns></returns>
         public unsafe uint CalculateFatOffset(uint cluster)
         {
+
             int beginFat = m_beginLBA + m_bpb->ReservedSectors;
             uint clusters = (cluster / 256);
             uint adr = (uint)((beginFat * 512) + clusters * 512);
@@ -295,9 +260,11 @@ namespace Sharpen.FileSystem.Filesystems
         /// <param name="value">Fat value</param>
         private unsafe void changeClusterValue(uint cluster, ushort value)
         {
-            // Set cache
+
+            // update cache item
             *(ushort*)(m_fatTable + (cluster * 2)) = value;
 
+            // Update disk
             int beginFat = m_beginLBA + m_bpb->ReservedSectors;
             uint clusters = (cluster / 256);
             uint adr = (uint)(beginFat + clusters);
@@ -324,6 +291,7 @@ namespace Sharpen.FileSystem.Filesystems
         /// <returns>Last cluster of file in FAT</returns>
         private ushort findLastCluster(ushort cluster)
         {
+
             ushort lastValue = cluster;
             ushort lastResult = cluster;
             while (lastResult != 0xFFFF)
@@ -341,6 +309,7 @@ namespace Sharpen.FileSystem.Filesystems
         /// <returns>Last cluster of file in FAT</returns>
         private ushort findLastCluster(ushort cluster, uint offset)
         {
+
             ushort lastValue = cluster;
             ushort lastResult = cluster;
 
@@ -395,11 +364,13 @@ namespace Sharpen.FileSystem.Filesystems
         /// <param name="size">Size</param>
         private void SetFileSize(uint cluster, uint num, uint size)
         {
+
             uint offset = num * (uint)sizeof(FatDirEntry);
 
             uint offsetSector = offset / 512;
             offset -= offsetSector * 512;
 
+            // Read dir entry part
             uint realOffset = 0;
             if (cluster == 0xFFFFFFFF)
                 realOffset = (uint)(m_clusterBeginLBA + offsetSector);
@@ -432,9 +403,12 @@ namespace Sharpen.FileSystem.Filesystems
         /// <returns></returns>
         public Node FindFileInDirectory(uint cluster, char* testFor)
         {
+
             SubDirectory dir = readDirectory(cluster);
+
             for (int i = 0; i < dir.Length; i++)
             {
+
                 FatDirEntry entry = dir.DirEntries[i];
 
                 if (entry.Name[0] == 0 || entry.Name[0] == 0xE5 || entry.Attribs == 0xF || (entry.Attribs & 0x08) > 0)
@@ -458,6 +432,7 @@ namespace Sharpen.FileSystem.Filesystems
         /// <returns></returns>
         public SubDirectory readDirectory(uint cluster)
         {
+
             SubDirectory outDir = new SubDirectory();
 
             if (cluster == 0xFFFFFFFF)
@@ -468,6 +443,8 @@ namespace Sharpen.FileSystem.Filesystems
             else
             {
                 byte[] buffer = new byte[m_bpb->NumDirEntries * sizeof(FatDirEntry)];
+                
+                // To-do why does this read that mutch?
                 readFile(cluster, 0, (uint)(m_bpb->NumDirEntries * sizeof(FatDirEntry)), buffer);
 
                 FatDirEntry* entries = (FatDirEntry*)Heap.Alloc(m_bpb->NumDirEntries * sizeof(FatDirEntry));
@@ -511,6 +488,8 @@ namespace Sharpen.FileSystem.Filesystems
         {
             // Calculate starting cluster
             uint dataPerCluster = m_bpb->SectorsPerCluster;
+            uint bytesPerCluster = dataPerCluster * 512;
+
             uint sectorsOffset = (uint)((int)offset / 512);
 
             uint clusterOffset = sectorsOffset / dataPerCluster;
@@ -543,6 +522,8 @@ namespace Sharpen.FileSystem.Filesystems
             uint currentCluster = startCluster;
             uint currentOffset = 0;
             int sizeLeft = (int)size;
+
+
 
             for (int i = 0; i < sizeInSectors; i++)
             {
@@ -576,6 +557,7 @@ namespace Sharpen.FileSystem.Filesystems
                 offsetInSector = 0;
             }
 
+
             Heap.Free(buf);
             
             return currentOffset;
@@ -591,9 +573,11 @@ namespace Sharpen.FileSystem.Filesystems
         /// <returns>Bytes read</returns>
         private uint readFile(uint startCluster, uint offset, uint size, byte[] buffer)
         {
+
             // Calculate starting cluster
             uint dataPerCluster = m_bpb->SectorsPerCluster;
             uint sectorsOffset = (uint)((int)offset / 512);
+            uint bytesPerCluster = dataPerCluster * 512;
 
             uint clusterOffset = sectorsOffset / dataPerCluster;
 
@@ -612,51 +596,42 @@ namespace Sharpen.FileSystem.Filesystems
             sectorsOffset = sectorsOffset - (clusterOffset * m_bpb->SectorsPerCluster);
 
             // Read starting cluster
-            byte[] buf = new byte[512];
-            _Device.Read(_Device, Data_clust_to_lba(startCluster), 512, buf);
-
-            // Calculate size in sectors
-            uint sizeInSectors = size / 512;
-            if (sizeInSectors == 0)
-                sizeInSectors++;
+            byte[] buf = new byte[bytesPerCluster];
+            _Device.Read(_Device, Data_clust_to_lba(startCluster), bytesPerCluster, buf);
             
-
-            uint offsetInCluster = sectorsOffset;
-            uint offsetInSector = StartOffset;
+            uint offsetinCluster = (sectorsOffset * 512) + StartOffset;
             uint currentCluster = startCluster;
             uint currentOffset = 0;
-            int sizeLeft = (int)size;
+            uint sizeLeft = size;
 
-
-            for (int i = 0; i < sizeInSectors; i++)
+            while (sizeLeft > 0)
             {
-                if (offsetInCluster == m_bpb->SectorsPerCluster)
-                {
-                    currentCluster = FindNextCluster(currentCluster);
+                // Get size to copy for this sector
+                uint sizeTemp = bytesPerCluster;
+                if (sizeLeft < bytesPerCluster)
+                    sizeTemp = sizeLeft;
 
-                    if (currentCluster == 0xFFFF)
-                        return currentOffset;
+                // Copy the read bytes
+                Memory.Memcpy((byte*)Util.ObjectToVoidPtr(buffer) + currentOffset, (byte*)Util.ObjectToVoidPtr(buf) + offsetinCluster, (int)sizeTemp);
 
-                    offsetInCluster = 0;
-                }
-
-                _Device.Read(_Device, Data_clust_to_lba(currentCluster) + offsetInCluster, 512, buf);
-
-                int sizeTemp = (sizeLeft > 512) ? 512 : sizeLeft;
-                int sizeLeftinSector = 512;
-                sizeLeftinSector -= (int)offsetInSector;
-                if (sizeLeft > sizeLeftinSector)
-                {
-                    sizeTemp = sizeLeftinSector;
-                    sizeInSectors++;
-                }
-
-                Memory.Memcpy((byte*)Util.ObjectToVoidPtr(buffer) + currentOffset, (byte*)Util.ObjectToVoidPtr(buf) + offsetInSector, sizeTemp);
-                currentOffset += (uint)sizeTemp;
+                // Advance a step
+                currentOffset += sizeTemp;
                 sizeLeft -= sizeTemp;
-                offsetInCluster++;
-                offsetInSector = 0;
+                
+                // Do we need to read another cluster?
+                if (sizeLeft == 0)
+                    break;
+
+                currentCluster = FindNextCluster(currentCluster);
+                
+                // Have we reached the end?
+                if (currentCluster == 0xFFFF)
+                    break;
+;
+
+                _Device.Read(_Device, Data_clust_to_lba(currentCluster), bytesPerCluster, buf);
             }
+            
 
             Heap.Free(buf);
 
@@ -902,6 +877,48 @@ namespace Sharpen.FileSystem.Filesystems
             return nd;
         }
 
+        private static void GetName(SubDirectory dir, int i, char *outName)
+        {
+            FatDirEntry entry = dir.DirEntries[i];
+
+            /**
+             * Calculate length and offsets
+             */
+            string nameStr = Util.CharPtrToString(entry.Name);
+            int fnLength = nameStr.IndexOf(' ');
+
+            if (fnLength > 8 || fnLength == -1)
+                fnLength = 8;
+
+            int offset = 0;
+            for (int z = 0; z < fnLength; z++)
+                outName[offset++] = entry.Name[z];
+
+
+            // Is it a file?
+            if ((dir.DirEntries[i].Attribs & ATTRIB_SUBDIR) == 0)
+            {
+                nameStr = Util.CharPtrToString(entry.Name + 8);
+                int extLength = nameStr.IndexOf(' ');
+                if (extLength == -1)
+                    extLength = 3;
+
+                if (extLength != 0)
+                {
+                    outName[offset++] = '.';
+
+
+                    for (int z = 0; z < extLength; z++)
+                        outName[offset++] = entry.Name[z + 8];
+                }
+            }
+
+            outName[offset] = '\0';
+
+            for (int z = 0; z < offset; z++)
+                outName[z] = String.ToLower(outName[z]);
+        }
+
         /// <summary>
         /// Filesystem read directory implementation
         /// </summary>
@@ -948,37 +965,14 @@ namespace Sharpen.FileSystem.Filesystems
                     DirEntry* outDir = (DirEntry*)Heap.Alloc(sizeof(DirEntry));
                     outDir->Reclen = (ushort)sizeof(DirEntry);
 
-                    /**
-                     * Calculate length and offsets
-                     */
-                    string nameStr = Util.CharPtrToString(entry.Name);
-                    int fnLength = nameStr.IndexOf(' ');
+                    GetName(dir, i, outDir->Name);
 
-                    if (fnLength > 8 || fnLength == -1)
-                        fnLength = 8;
-
-                    int offset = 0;
-                    for (int z = 0; z < fnLength; z++)
-                        outDir->Name[offset++] = entry.Name[z];
 
                     /**
                      * Directory or file?
                      */
                     if ((dir.DirEntries[i].Attribs & ATTRIB_SUBDIR) == 0)
                     {
-                        nameStr = Util.CharPtrToString(entry.Name + 8);
-                        int extLength = nameStr.IndexOf(' ');
-                        if (extLength == -1)
-                            extLength = 3;
-
-                        if (extLength != 0)
-                        {
-                            outDir->Name[offset++] = '.';
-
-
-                            for (int z = 0; z < extLength; z++)
-                                outDir->Name[offset++] = entry.Name[z + 8];
-                        }
 
                         outDir->Type = (byte)DT_Type.DT_REG;
                     }
@@ -987,12 +981,6 @@ namespace Sharpen.FileSystem.Filesystems
                         outDir->Type = (byte)DT_Type.DT_DIR;
                     }
 
-
-
-                    outDir->Name[offset] = '\0';
-
-                    for (int z = 0; z < offset; z++)
-                        outDir->Name[z] = String.ToLower(outDir->Name[z]);
 
                     return outDir;
                 }
@@ -1032,7 +1020,11 @@ namespace Sharpen.FileSystem.Filesystems
             if (offset + size > entry->Size)
                 size = entry->Size - offset;
 
-            return fat.readFile(entry->ClusterNumberLo, offset, size, buffer);
+            //Util.PrintStackTrace(6);
+            
+            uint read = fat.readFile(entry->ClusterNumberLo, offset, size, buffer);
+
+            return read;
         }
 
         /// <summary>

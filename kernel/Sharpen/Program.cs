@@ -82,7 +82,7 @@ namespace Sharpen
         /// <summary>
         /// Initializes storage components
         /// </summary>
-        private static void initStorage()
+        private static unsafe void initStorage()
         {
             Disk.Init();
 
@@ -98,18 +98,12 @@ namespace Sharpen
             ATA.Init();
             //NVMe.Init();
 
-            for (;;) ;
+            Node hddNode = VFS.GetByAbsolutePath("devices://HDI0p0", 0);
 
-            //Node hddNode = VFS.GetByAbsolutePath("devices://HDI0", 0);
-            //if (hddNode == null)
-            //{
-            //    Panic.DoPanic("HDI0 not found");
-            //}
-
-            //Fat16.Init(hddNode, "C");
-
-            //Tasking.CurrentTask.CurrentDirectory = "C://";
+            Disk.Mount(hddNode, "C", "fat16b");
             
+            Tasking.CurrentTask.CurrentDirectory = "C://";
+
             PacketFS.Init();
         }
 

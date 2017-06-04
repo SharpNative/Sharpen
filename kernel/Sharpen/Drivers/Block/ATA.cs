@@ -406,7 +406,8 @@ namespace Sharpen.Drivers.Block
             Devices = new IDE_Device[4];
             probe();
 
-            for (int i = 0; i < 4; i++)
+            // TODO: disk 2 says it exists but it not, this will cause a hang
+            for (int i = 0; i < 1; i++)
             {
                 if (!Devices[i].Exists)
                     continue;
@@ -426,8 +427,7 @@ namespace Sharpen.Drivers.Block
 
                 IDCookie cookie = new IDCookie(i);
                 node.Cookie = cookie;
-
-
+                
                 Disk.InitalizeNode(node, nameStr);
 
                 RootPoint dev = new RootPoint(nameStr, node);

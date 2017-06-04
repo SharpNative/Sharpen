@@ -54,10 +54,25 @@ namespace Sharpen.FileSystem.Filesystems
         public uint Size;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public unsafe struct FatLFNEntry
+    {
+        public byte Order;
+        public fixed char FirstChars[10];
+        public byte Attribute;
+        public byte EntryType;
+        public byte Checksum;
+        public fixed char SecondChars[6];
+        public fixed byte Zeroes[2];
+        public fixed char FinalChars[2];
+    }
+
     public unsafe class SubDirectory
     {
         public uint Length;
 
         public FatDirEntry *DirEntries;
+
+
     }
 }

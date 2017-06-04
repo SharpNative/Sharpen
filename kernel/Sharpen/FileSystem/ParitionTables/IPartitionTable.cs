@@ -10,5 +10,7 @@ namespace Sharpen.FileSystem.PartitionTables
     {
 
         bool isType(Node node);
+
+        void ReadPartitions(Node node, string name);
     }
 }

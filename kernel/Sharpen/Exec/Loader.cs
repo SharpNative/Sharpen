@@ -17,7 +17,7 @@ namespace Sharpen.Exec
         {
             if (argv == null)
                 Panic.DoPanic("argv == null");
-
+            
             Node node = VFS.GetByAbsolutePath(path);
             if (node == null)
                 return -(int)ErrorCode.ENOENT;
@@ -31,7 +31,7 @@ namespace Sharpen.Exec
                 VFS.Close(node);
                 return -(int)ErrorCode.ENOMEM;
             }
-
+            
             // Fill buffer contents
             VFS.Read(node, 0, node.Size, buffer);
             VFS.Close(node);
