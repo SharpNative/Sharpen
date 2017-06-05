@@ -35,11 +35,14 @@ namespace Sharpen
             heapStart = end;
             Console.Clear();
             X86Arch.EarlyInit();
-
+            
             processMultiboot(header, magic);
             Heap.InitTempHeap(heapStart);
 
+
             X86Arch.Init();
+
+
             Random.Init();
 
             VFS.Init();
@@ -48,9 +51,13 @@ namespace Sharpen
             
             Tasking.Init();
 
+            BootParams.Init(Util.CharPtrToString((char*)header->CMDLine));
+            
             initUSB();
             initStorage();
-            
+
+            mountBootPartition();
+
             //initNetworking();
             initSound();
             runUserspace();
@@ -98,13 +105,40 @@ namespace Sharpen
             ATA.Init();
             //NVMe.Init();
 
-            Node hddNode = VFS.GetByAbsolutePath("devices://HDI0p0", 0);
-
-            Disk.Mount(hddNode, "C", "fat16b");
-            
-            Tasking.CurrentTask.CurrentDirectory = "C://";
 
             PacketFS.Init();
+        }
+
+        private static void mountBootPartition()
+        {
+
+            string bootDevice = BootParams.GetParam("--bootdev");
+            string bootFS = BootParams.GetParam("--boottype");
+
+            if (bootDevice == null)
+                Panic.DoPanic("No bootdevice specified.");
+
+            if (bootFS == null)
+                Panic.DoPanic("No boot filesystem specified.");
+
+            Console.Write("[Init] Mounting bootdevice ");
+            Console.Write(bootDevice);
+            Console.Write(":");
+            Console.Write(bootFS);
+            Console.WriteLine("");
+
+            Node hddNode = VFS.GetByAbsolutePath(bootDevice, 0);
+
+            if (hddNode == null)
+                Panic.DoPanic("Bootdevice not found.");
+
+            DiskMountResult res = Disk.Mount(hddNode, "C", bootFS);
+
+            if(res != DiskMountResult.SUCCESS)
+                Panic.DoPanic("Failed to mount bootdevice.");
+
+
+            Tasking.CurrentTask.CurrentDirectory = "C://";
         }
 
         /// <summary>

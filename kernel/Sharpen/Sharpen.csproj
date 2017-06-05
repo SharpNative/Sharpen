@@ -80,6 +80,7 @@
     <Compile Include="FileSystem\PacketFS.cs" />
     <Compile Include="FileSystem\ParitionTables\MBR.cs" />
     <Compile Include="FileSystem\RootPoint.cs" />
+    <Compile Include="Lib\BootParams.cs" />
     <Compile Include="Synchronisation\Spinlock.cs" />
     <Compile Include="Net\TCPSocketDevice.cs" />
     <Compile Include="Net\TCPFS.cs" />
