@@ -25,6 +25,21 @@ namespace Sharpen.FileSystem
         }
 
         /// <summary>
+        /// Remove a entry
+        /// </summary>
+        /// <param name="name">Name of entry</param>
+        /// <returns>Success?</returns>
+        public bool RemoveEntry(string name)
+        {
+            if (m_children.Get(name) == null)
+                return false;
+
+            m_children.Remove(name);
+
+            return true;
+        }
+
+        /// <summary>
         /// Adds an entry
         /// </summary>
         /// <param name="entry">The entry</param>

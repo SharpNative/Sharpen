@@ -175,6 +175,14 @@ namespace Sharpen.Arch
                     ret = Syscalls.Unlink(Util.CharPtrToString((char*)regsPtr->EBX));
                     break;
 
+                case Syscalls.SYS_MOUNT:
+                    ret = Syscalls.Mount(Util.CharPtrToString((char*)regsPtr->EBX), Util.CharPtrToString((char*)regsPtr->ECX), Util.CharPtrToString((char*)regsPtr->EDX));
+                    break;
+
+                case Syscalls.SYS_UMOUNT:
+                    ret = Syscalls.Umount(Util.CharPtrToString((char*)regsPtr->EBX));
+                    break;
+
                 default:
                     Console.Write("Unhandled syscall ");
                     Console.WriteNum(function);

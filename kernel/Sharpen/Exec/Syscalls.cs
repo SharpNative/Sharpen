@@ -45,9 +45,11 @@ namespace Sharpen.Exec
         public const int SYS_MKDIR = 31;
         public const int SYS_RMDIR = 32;
         public const int SYS_UNLINK = 33;
+        public const int SYS_MOUNT = 36;
+        public const int SYS_UMOUNT = 37;
 
         // Highest syscall number
-        public const int SYSCALL_MAX = 33;
+        public const int SYSCALL_MAX = 37;
 
         #endregion
 
@@ -627,6 +629,52 @@ namespace Sharpen.Exec
         {
             // TODO: implement (needs splitting the path and passing the directory name to the parent directory in VFS)
             return -1;
+        }
+
+        /// <summary>
+        /// Mount a device
+        /// </summary>
+        /// <param name="devicePath">Path to device</param>
+        /// <param name="mountname">Name of mount , eg "D"</param>
+        /// <param name="fsType">Filesystem type, eg "Fat16b"</param>
+        /// <returns>Success?</returns>
+        public static unsafe int Mount(string devicePath, string mountname, string fsType)
+        {
+            if (mountname.IndexOf(":") > 0)
+                return -(int)ErrorCode.ENOTDIR;
+            
+            Node node = VFS.GetByAbsolutePath(devicePath);
+
+            if (node == null)
+                return -(int)ErrorCode.ENOENT;
+
+            // TODO: maybe check if block device?
+
+            DiskMountResult res = Disk.Mount(node, mountname, fsType);
+
+            if (res == DiskMountResult.FS_TYPE_NOT_FOUND)
+                return -(int)ErrorCode.ENODEV;
+
+            if (res == DiskMountResult.MOUNT_POINT_ALREADY_USED)
+                return -(int)ErrorCode.EBUSY;
+
+            if (res == DiskMountResult.INIT_FAIL)
+                return -(int)ErrorCode.ENODEV;
+            
+            return 0;
+        }
+
+        /// <summary>
+        /// Unmount a device
+        /// </summary>
+        /// <param name="mountname">Name of mount , eg "D"</param>
+        /// <returns>Success?</returns>
+        public static unsafe int Umount(string mountname)
+        {
+
+            bool removed = VFS.RootMountPoint.RemoveEntry(mountname);
+
+            return removed ? 0 : -(int)ErrorCode.EINVAL;
         }
 
         /// <summary>
