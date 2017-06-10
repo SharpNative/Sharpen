@@ -50,6 +50,27 @@ namespace Sharpen.Drivers.Block
 
         public fixed byte Vendor[96];
     }
+    
+    public enum AHCI_FIS
+    {
+        REG_H2D = 0x27,
+        REG_D2H = 0x4,
+        DMA_ACT = 0x39,
+        DMA_SETUP = 0x41,
+        TYPE_DATA = 0x46,
+        TYPE_BIST = 0x58,
+        PIO_SETUP = 0x5F,
+        DEV_BITS = 0xA1
+    }
+
+    public enum AHCI_PORT_TYPE
+    {
+        NO,
+        SATA,
+        SATAPI,
+        SEMB,
+        PM
+    }
 
     unsafe struct AHCI_Command_header
     {
@@ -75,6 +96,22 @@ namespace Sharpen.Drivers.Block
 
         private const int CAP_NUM_PORTS_MASK = 0x1F;
 
+        private const int SSTS_DET_NO = 0x00;
+        private const int SSTS_DET_NO_COM = 0x01;
+        private const int SSTS_DET_COM = 0x03;
+        private const int SSTS_DET_OFF = 0x04;
+
+        private const int SSTS_SPD_NO = (0x00 << 4);
+        private const int SSTS_SPD_GEN1 = (0x01 << 4);
+        private const int SSTS_SPD_GEN2 = (0x03 << 4);
+        private const int SSTS_SPD_GEN3 = (0x04 << 4);
+
+        private const int SSTS_IPM_NO = (0x00 << 8);
+        private const int SSTS_IPM_ACTIVE = (0x01 << 8);
+        private const int SSTS_IPM_PARTIAL = (0x02 << 8);
+        private const int SSTS_IPM_SLUMBER = (0x06 << 8);
+        private const int SSTS_IPM_DEVSLEEP = (0x08 << 8);
+
         private static int mID;
 
         private PciDevice mPciDevice;
@@ -99,7 +136,7 @@ namespace Sharpen.Drivers.Block
              */
             if ((mPciDevice.BAR5.flags & Pci.BAR_IO) > 0)
             {
-                Console.WriteLine("[E1000] Device not MMIO!");
+                Console.WriteLine("[AHCI] Device not MMIO!");
                 return;
             }
 
@@ -137,8 +174,9 @@ namespace Sharpen.Drivers.Block
 
 
             // Note: 1k alligned?
-            CmdHeaders = (AHCI_Command_header *) Heap.Alloc(sizeof(AHCI_Command_header) * NUM_CMD_HEADERS);
+            AHCI_Command_header * CmdHeaders = (AHCI_Command_header *) Heap.Alloc(sizeof(AHCI_Command_header) * NUM_CMD_HEADERS);
 
+            
 
         }
 
