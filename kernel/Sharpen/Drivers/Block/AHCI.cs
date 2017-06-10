@@ -11,10 +11,10 @@ namespace Sharpen.Drivers.Block
 
     unsafe struct AHCI_Port_registers
     {
-        public uint CLB;
-        public uint CLBU;
-        public uint FB;
-        public uint FBU;
+        public uint CLB; // 4
+        public uint CLBU; // 8
+        public uint FB; // 12
+        public uint FBU; // 16
         public uint IS;
         public uint IE;
         public uint CMD;
@@ -72,6 +72,100 @@ namespace Sharpen.Drivers.Block
         PM
     }
 
+    unsafe struct AHCI_Command_table_entry
+    {
+        public fixed byte CFIS[64];
+
+        public fixed byte ACMD[16];
+
+        public fixed byte Res[48];
+    }
+
+    unsafe struct AHCI_PRDT_Entry
+    {
+        public uint DBA;
+        public uint DBAU;
+
+        public int Res;
+
+        public int Misc;
+    }
+
+    unsafe struct AHCI_REG_H2D
+    {
+
+        // DWORD 0
+        public byte FisType;
+        public byte Options;
+        public byte Command;
+        public byte Feature;
+
+        // DWORD1
+        public byte LBA0;
+        public byte LBA1;
+        public byte LBA2;
+        public byte Device;
+
+        // DWORD 2
+        public byte LBA3;
+        public byte LBA4;
+        public byte LBA5;
+        public byte FeatureExtended;
+
+        // DWORD 3
+        public byte CountLo;
+        public byte CountHi;
+        public byte ICC;
+        public byte Control;
+
+        // DWORD 4
+        public uint Res;
+    }
+
+    unsafe struct AHCI_REG_D2H
+    {
+
+        // DWORD 0
+        public byte FisType;
+        public byte Options;
+        public byte Status;
+        public byte Error;
+
+        // DWORD1
+        public byte LBA0;
+        public byte LBA1;
+        public byte LBA2;
+        public byte Device;
+
+        // DWORD 2
+        public byte LBA3;
+        public byte LBA4;
+        public byte LBA5;
+        public byte Res;
+
+        // DWORD 3
+        public byte CountLo;
+        public byte CountHi;
+        public byte ICC;
+        public ushort Res2;
+
+        // DWORD 4
+        public uint Res3;
+    }
+
+    unsafe struct AHCI_DATA
+    {
+
+        // DWORD 0
+        public byte FisType;
+
+        public byte Options;
+
+        public ushort Res;
+
+        // DWORD 1.. Data
+    }
+
     unsafe struct AHCI_Command_header
     {
         // DW 0 - Description info
@@ -87,7 +181,7 @@ namespace Sharpen.Drivers.Block
         // DW3 - Command table base address upper
         public uint CTBUA;
 
-        public fixed uint Res[4];
+        public fixed int Res[4];
     }
 
     unsafe struct AHCI_Received_FIS
@@ -140,6 +234,7 @@ namespace Sharpen.Drivers.Block
 
     unsafe class PortInfo
     {
+
         public AHCI_PORT_TYPE Type { get; set; }
 
         public AHCI_Command_header *CommandHeader;
@@ -208,10 +303,43 @@ namespace Sharpen.Drivers.Block
         private const int PxCMD_ICC_SLUMBER = 0x6;
         private const int PxCMD_ICC_DEVSLEEP = 0x8;
 
+        private const int PxIS_DHRS = (1 << 0);
+        private const int PxIS_PSS = (1 << 1);
+        private const int PxIS_DSS = (1 << 2);
+        private const int PxIS_SDBS = (1 << 3);
+        private const int PxIS_UFS = (1 << 4);
+        private const int PxIS_DPS = (1 << 5);
+        private const int PxIS_PCS = (1 << 6);
+        private const int PxIS_DMPS = (1 << 7);
+        private const int PxIS_PRCS = (1 << 22);
+        private const int PxIS_IPMS = (1 << 23);
+        private const int PxIS_OFS = (1 << 24);
+        private const int PxIS_INFS = (1 << 26);
+        private const int PxIS_IFS = (1 << 27);
+        private const int PxIS_HBDS = (1 << 28);
+        private const int PxIS_HBFS = (1 << 29);
+        private const int PxIS_TFES = (1 << 30);
+        private const int PxIS_CPDS = (1 << 31);
+
         private const uint SIG_SATA = 0x00000101;
         private const uint SIG_SATAPI = 0xEB140101;
         private const uint SIG_SEMB = 0xC33C0101;
         private const uint SIG_PM = 0x96690101;
+
+        private const byte ATA_CMD_READ_DMA = 0xC8;
+        private const byte ATA_CMD_WRITE_DMA = 0xCA;
+        private const byte ATA_CMD_READ_DMA_EX = 0x25;
+        private const byte ATA_CMD_WRITE_DMA_EX = 0x35;
+        private const byte ATA_CMD_PACKET = 0xA0;
+        private const byte ATA_CMD_FLUSH_CACHE = 0xE7;
+        private const byte ATA_CMD_IDENTIFY = 0xEC;
+        private const byte ATA_CMD_SET_FEATURES = 0xEF;
+
+        private const ushort CMD_HEAD_WRITE = (1 << 6);
+        private const ushort CMD_HEAD_READ = (0 << 6);
+
+        private const int ATA_DEV_BUSY = 0x80;
+        private const int ATA_DEV_DRQ = 0x08;
 
         private static int mID;
 
@@ -294,16 +422,18 @@ namespace Sharpen.Drivers.Block
         private AHCI_PORT_TYPE GetPortType(AHCI_Port_registers* portReg)
         {
 
+            // Check if there is a device attached on the port.
             if ((portReg->SSTS & SSTS_DET_MASK) == SSTS_DET_NO)
                 return AHCI_PORT_TYPE.NO;
             
-
+            // Check if port is active.
             if ((portReg->SSTS & SSTS_IPM_MASK) != SSTS_IPM_ACTIVE)
                 return AHCI_PORT_TYPE.NO;
             
 
             switch (portReg->SIG)
             {
+
                 case SIG_SATA:
                     return AHCI_PORT_TYPE.SATA;
 
@@ -329,9 +459,10 @@ namespace Sharpen.Drivers.Block
         {
 
             AHCI_Port_registers *portReg = mPorts + portInfo.PortNumber;
-
-            portInfo.PortRegisters = portReg;
-
+            
+            portInfo.CommandHeader = (AHCI_Command_header*)Heap.AlignedAlloc(4048, sizeof(AHCI_Command_header) * NUM_CMD_HEADERS);
+            Memory.Memclear(portInfo.CommandHeader, sizeof(AHCI_Command_header) * NUM_CMD_HEADERS);
+            
             portInfo.Type = GetPortType(portReg);
 
             // Port found?
@@ -367,33 +498,58 @@ namespace Sharpen.Drivers.Block
 
                 return;
             }
-
+            
             stopPort(portReg);
 
-            AHCI_Command_header * CmdHeaders = (AHCI_Command_header *) Heap.AlignedAlloc(1024, sizeof(AHCI_Command_header) * NUM_CMD_HEADERS);
-            Memory.Memclear(CmdHeaders, sizeof(AHCI_Command_header) * NUM_CMD_HEADERS);
-
-            AHCI_Command_header* Fises = (AHCI_Command_header*)Heap.AlignedAlloc(256, sizeof(AHCI_Received_FIS));
+            AHCI_Received_FIS* Fises = (AHCI_Received_FIS*)Heap.AlignedAlloc(256, sizeof(AHCI_Received_FIS));
             Memory.Memclear(Fises, sizeof(AHCI_Received_FIS));
 
-            portReg->CLB = (uint)CmdHeaders;
+            portReg->CLB = (uint)Paging.GetPhysicalFromVirtual(portInfo.CommandHeader);
             portReg->CLBU = 0x00;
 
-            portReg->FB = (uint)Fises;
+            portReg->FB = (uint)Paging.GetPhysicalFromVirtual(Fises);
             portReg->FBU = 0x00;
 
+            AHCI_Command_table_entry* cmdTable = (AHCI_Command_table_entry*)Heap.AlignedAlloc(128, sizeof(AHCI_Command_table_entry));
+            Memory.Memclear(cmdTable, sizeof(AHCI_Command_table_entry));
 
-            for(int i = 0; i < NUM_CMD_HEADERS; i++)
+            for (int i = 0; i < NUM_CMD_HEADERS; i++)
             {
 
-                CmdHeaders[i].Prdtl = 8;
-
-                CmdHeaders[i].CTBA = (uint)(CmdHeaders + i);
-                CmdHeaders[i].CTBUA = 0x00;
+                portInfo.CommandHeader[i].Prdtl = 0;
+                portInfo.CommandHeader[i].CTBA = (uint)cmdTable;
+                portInfo.CommandHeader[i].CTBUA = 0x00;
             }
 
-
             startPort(portReg);
+
+            byte* buf = (byte *)Heap.Alloc(512);
+            Memory.Memclear(buf, 512);
+
+            portInfo.PortRegisters = portReg;
+
+            ataRead(portInfo, 0, 1, buf);
+        }
+
+        /// <summary>
+        /// Find free command header on port
+        /// </summary>
+        /// <param name="port">Port info</param>
+        /// <returns>Command header number</returns>
+        private int findFreeCommandHeader(PortInfo port)
+        {
+
+            AHCI_Port_registers* portReg = port.PortRegisters;
+            
+            uint slotValues = (portReg->CI | portReg->SACT);
+            
+            // Find free slot.
+            for(int i = 0; i < NUM_CMD_HEADERS; i++)
+                if ((slotValues & (1 << i)) == 0)
+                    return i;
+
+            // No free slot found.
+            return -1;
         }
 
         /// <summary>
@@ -426,6 +582,96 @@ namespace Sharpen.Drivers.Block
             portReg->CMD &= ~(uint)(PxCMD_FRE);
         }
 
+        private int ataRead(PortInfo info, int offset, int count, byte *buffer)
+        {
+
+            AHCI_Port_registers* portReg = info.PortRegisters;
+
+            portReg->IS = 0;
+
+            int fullCount = count * 512;
+            
+            int headerNumber = findFreeCommandHeader(info);
+            if (headerNumber == -1)
+                return 0;
+
+            AHCI_Command_header* header = info.CommandHeader + headerNumber;
+            header->Options = (ushort)((sizeof(AHCI_REG_H2D) / 4) | CMD_HEAD_READ);
+            
+            int prdtl = (fullCount / 2024) + 1;
+            
+            byte* curBuf = buffer;
+            int curOffset = 0;
+            AHCI_Command_table_entry* cmdTable = (AHCI_Command_table_entry *)Heap.AlignedAlloc(128, sizeof(AHCI_Command_table_entry) + (sizeof(AHCI_PRDT_Entry) * prdtl));
+            
+
+            header->CTBA = (uint)Paging.GetPhysicalFromVirtual(cmdTable);
+
+            for(int i = 0; i < header->Prdtl - 1; i++)
+            {
+                AHCI_PRDT_Entry* entry = (AHCI_PRDT_Entry *)((int)cmdTable + sizeof(AHCI_Command_table_entry) + (sizeof(AHCI_PRDT_Entry) * i));
+
+                entry->DBA = (uint)curBuf;
+                entry->DBAU = 0x00;
+                entry->Misc = 2023;
+
+                curBuf += 2024;
+                curOffset += 2024;
+            }
+
+            AHCI_PRDT_Entry* lastEntry = (AHCI_PRDT_Entry*)((int)cmdTable + sizeof(AHCI_Command_table_entry) + (sizeof(AHCI_PRDT_Entry) * (prdtl - 1)));
+            lastEntry->DBA = (uint)curBuf;
+            lastEntry->DBAU = 0x00;
+            lastEntry->Misc = (fullCount - curOffset) - 1;
+            
+            AHCI_REG_H2D* fis = (AHCI_REG_H2D*)cmdTable->ACMD;
+            fis->FisType = (int)AHCI_FIS.REG_H2D;
+            fis->Command = ATA_CMD_READ_DMA_EX;
+            fis->Options = (1 << 7);
+
+            fis->LBA0 = (byte)(offset & 0xFF);
+            fis->LBA1 = (byte)((offset >> 8) & 0xFF);
+            fis->LBA2 = (byte)((offset >> 16) & 0xFF);
+            fis->Device = (1 << 6);
+
+            fis->LBA3 = 0x00;
+            fis->LBA4 = 0x00;
+            fis->LBA5 = 0x00;
+
+            fis->CountLo = (byte)(count & 0xFF);
+            fis->CountHi = (byte)((count >> 8) & 0xFF);
+
+            // Wait until port ready
+            while ((info.PortRegisters->TFD & (ATA_DEV_BUSY | ATA_DEV_DRQ)) > 0)
+                CPU.HLT();
+
+            info.PortRegisters->CI = (uint)(1 << headerNumber);
+
+            while (true)
+            {
+                if ((info.PortRegisters->CI & (1 << headerNumber)) == 0)
+                    break;
+
+                CPU.HLT();
+            }
+
+            if ((info.PortRegisters->IS & PxIS_TFES) > 0)
+                return 0;
+
+            Console.WriteHex(info.PortRegisters->IS);
+            Console.WriteLine("");
+
+            Console.WriteHex(buffer[0]);
+            Console.WriteHex(buffer[1]);
+            Console.WriteHex(buffer[2]);
+            Console.WriteLine("");
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Initalize "Driver"
+        /// </summary>
         public static void Init()
         {
             mID = 0;
