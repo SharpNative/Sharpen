@@ -526,7 +526,6 @@ namespace Sharpen.Drivers.Block
                 {
                     var item = (NVMe_Completion_Item*)((int)queue.CompletionQueue + (sizeof(NVMe_Completion_Item) * i));
                     
-
                     if(item->CommandID == cid)
                         return item;
                 }

@@ -1,1 +1,1 @@
-sudo qemu-system-i386 -soundhw ac97 -m 256 -D qemu.log -net nic,model=pcnet -usbdevice mouse   -drive id=disk,file=../../os.img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0 
+sudo qemu-system-i386 ../../os.img -soundhw ac97 -m 256 -D qemu.log -net nic,model=pcnet -usbdevice mouse   -drive id=disk,file=../../os_1.img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0 

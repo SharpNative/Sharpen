@@ -2,6 +2,7 @@
 using Sharpen.FileSystem;
 using Sharpen.FileSystem.Cookie;
 using Sharpen.Mem;
+using Sharpen.MultiTasking;
 using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
@@ -520,8 +521,7 @@ namespace Sharpen.Drivers.Block
 
             AHCI_Command_table_entry* cmdTable = (AHCI_Command_table_entry*)Heap.AlignedAlloc(128, sizeof(AHCI_Command_table_entry));
             Memory.Memclear(cmdTable, sizeof(AHCI_Command_table_entry));
-
-            Console.WriteLine("AD");
+            
             for (int i = 0; i < NUM_CMD_HEADERS; i++)
             {
 
@@ -684,7 +684,7 @@ namespace Sharpen.Drivers.Block
 
             // Wait until port ready
             while ((info.PortRegisters->TFD & (ATA_DEV_BUSY | ATA_DEV_DRQ)) > 0)
-                CPU.HLT();
+                Tasking.Yield();
 
             info.PortRegisters->CI = (uint)(1 << headerNumber);
             
@@ -694,7 +694,7 @@ namespace Sharpen.Drivers.Block
                 if ((info.PortRegisters->CI & (1 << headerNumber)) == 0)
                     break;
 
-                CPU.HLT();
+                Tasking.Yield();
             }
 
             if ((info.PortRegisters->IS & PxIS_TFES) > 0)
