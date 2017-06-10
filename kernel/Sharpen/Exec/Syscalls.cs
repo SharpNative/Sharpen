@@ -650,6 +650,9 @@ namespace Sharpen.Exec
 
             // TODO: maybe check if block device?
 
+            Console.WriteLine(devicePath);
+            Console.WriteLine(mountname);
+            Console.WriteLine(fsType);
             DiskMountResult res = Disk.Mount(node, mountname, fsType);
 
             if (res == DiskMountResult.FS_TYPE_NOT_FOUND)
