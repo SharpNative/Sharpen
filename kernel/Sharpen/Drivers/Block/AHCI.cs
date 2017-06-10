@@ -1,5 +1,8 @@
 ﻿using Sharpen.Arch;
+using Sharpen.FileSystem;
+using Sharpen.FileSystem.Cookie;
 using Sharpen.Mem;
+using Sharpen.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -179,7 +182,7 @@ namespace Sharpen.Drivers.Block
         public uint CTBA;
 
         // DW3 - Command table base address upper
-        public uint CTBUA;
+        public uint CTBAU;
 
         public fixed int Res[4];
     }
@@ -232,7 +235,7 @@ namespace Sharpen.Drivers.Block
         public fixed byte Reserved[96];
     }
 
-    unsafe class PortInfo
+    unsafe class AHCIPortInfo
     {
 
         public AHCI_PORT_TYPE Type { get; set; }
@@ -351,7 +354,7 @@ namespace Sharpen.Drivers.Block
         private AHCI_Port_registers* mPorts;
         private uint mSupportedPorts;
         
-        private PortInfo[] PortInfo;
+        private AHCIPortInfo[] PortInfo;
 
         public AHCI(PciDevice dev)
         {
@@ -404,10 +407,12 @@ namespace Sharpen.Drivers.Block
         /// </summary>
         private void initPorts()
         {
-            PortInfo = new PortInfo[mSupportedPorts];
+            PortInfo = new AHCIPortInfo[mSupportedPorts];
 
             for (int i = 0; i < mSupportedPorts; i++)
             {
+                PortInfo[i] = new AHCIPortInfo();
+
                 PortInfo[i].PortNumber = i;
 
                 initPort(PortInfo[i]);
@@ -455,13 +460,13 @@ namespace Sharpen.Drivers.Block
         /// Initalize port
         /// </summary>
         /// <param name="portInfo">Port info</param>
-        private void initPort(PortInfo portInfo)
+        private void initPort(AHCIPortInfo portInfo)
         {
 
             AHCI_Port_registers *portReg = mPorts + portInfo.PortNumber;
             
             portInfo.CommandHeader = (AHCI_Command_header*)Heap.AlignedAlloc(4048, sizeof(AHCI_Command_header) * NUM_CMD_HEADERS);
-            Memory.Memclear(portInfo.CommandHeader, sizeof(AHCI_Command_header) * NUM_CMD_HEADERS);
+            Memory.Memset(portInfo.CommandHeader, 0xFF, sizeof(AHCI_Command_header) * NUM_CMD_HEADERS);
             
             portInfo.Type = GetPortType(portReg);
 
@@ -513,22 +518,42 @@ namespace Sharpen.Drivers.Block
             AHCI_Command_table_entry* cmdTable = (AHCI_Command_table_entry*)Heap.AlignedAlloc(128, sizeof(AHCI_Command_table_entry));
             Memory.Memclear(cmdTable, sizeof(AHCI_Command_table_entry));
 
+            Console.WriteLine("AD");
             for (int i = 0; i < NUM_CMD_HEADERS; i++)
             {
 
                 portInfo.CommandHeader[i].Prdtl = 0;
                 portInfo.CommandHeader[i].CTBA = (uint)cmdTable;
-                portInfo.CommandHeader[i].CTBUA = 0x00;
+                portInfo.CommandHeader[i].CTBAU = 0x00;
             }
 
             startPort(portReg);
-
-            byte* buf = (byte *)Heap.Alloc(512);
-            Memory.Memclear(buf, 512);
-
+            
             portInfo.PortRegisters = portReg;
 
-            ataRead(portInfo, 0, 1, buf);
+
+            char* name = (char*)Heap.Alloc(5);
+            name[0] = 'H';
+            name[1] = 'D';
+            name[2] = 'A';
+            name[3] = (char)('0' + portInfo.PortNumber);
+            name[4] = '\0';
+            string nameStr = Util.CharPtrToString(name);
+
+            Node node = new Node();
+            node.Read = readImpl;
+            //node.Write = writeImpl;
+
+            AHCICookie cookie = new AHCICookie();
+            cookie.AHCI = this;
+            cookie.PortInfo = portInfo;
+
+            node.Cookie = cookie;
+
+            Disk.InitalizeNode(node, nameStr);
+
+            RootPoint dev = new RootPoint(nameStr, node);
+            VFS.MountPointDevFS.AddEntry(dev);
         }
 
         /// <summary>
@@ -536,7 +561,7 @@ namespace Sharpen.Drivers.Block
         /// </summary>
         /// <param name="port">Port info</param>
         /// <returns>Command header number</returns>
-        private int findFreeCommandHeader(PortInfo port)
+        private int findFreeCommandHeader(AHCIPortInfo port)
         {
 
             AHCI_Port_registers* portReg = port.PortRegisters;
@@ -582,10 +607,21 @@ namespace Sharpen.Drivers.Block
             portReg->CMD &= ~(uint)(PxCMD_FRE);
         }
 
-        private int ataRead(PortInfo info, int offset, int count, byte *buffer)
+        /// <summary>
+        /// ATA transfer
+        /// </summary>
+        /// <param name="info">AHCI port info</param>
+        /// <param name="offset">LBA</param>
+        /// <param name="count">Num of sectors</param>
+        /// <param name="buffer">Buffer ptr</param>
+        /// <param name="write">Write action?</param>
+        /// <returns></returns>
+        public int AtaTransfer(AHCIPortInfo info, int offset, int count, byte *buffer, bool write)
         {
 
             AHCI_Port_registers* portReg = info.PortRegisters;
+
+
 
             portReg->IS = 0;
 
@@ -596,16 +632,19 @@ namespace Sharpen.Drivers.Block
                 return 0;
 
             AHCI_Command_header* header = info.CommandHeader + headerNumber;
-            header->Options = (ushort)((sizeof(AHCI_REG_H2D) / 4) | CMD_HEAD_READ);
+            header->Options = (ushort)((sizeof(AHCI_REG_H2D) / 4) | ((write? CMD_HEAD_WRITE: CMD_HEAD_READ)));
             
+
             int prdtl = (fullCount / 2024) + 1;
+            header->Prdtl = (ushort)prdtl;
             
             byte* curBuf = buffer;
             int curOffset = 0;
             AHCI_Command_table_entry* cmdTable = (AHCI_Command_table_entry *)Heap.AlignedAlloc(128, sizeof(AHCI_Command_table_entry) + (sizeof(AHCI_PRDT_Entry) * prdtl));
-            
+            Memory.Memclear(cmdTable, sizeof(AHCI_Command_table_entry) + (sizeof(AHCI_PRDT_Entry) * prdtl));
 
             header->CTBA = (uint)Paging.GetPhysicalFromVirtual(cmdTable);
+
 
             for(int i = 0; i < header->Prdtl - 1; i++)
             {
@@ -624,7 +663,7 @@ namespace Sharpen.Drivers.Block
             lastEntry->DBAU = 0x00;
             lastEntry->Misc = (fullCount - curOffset) - 1;
             
-            AHCI_REG_H2D* fis = (AHCI_REG_H2D*)cmdTable->ACMD;
+            AHCI_REG_H2D* fis = (AHCI_REG_H2D*)cmdTable->CFIS;
             fis->FisType = (int)AHCI_FIS.REG_H2D;
             fis->Command = ATA_CMD_READ_DMA_EX;
             fis->Options = (1 << 7);
@@ -646,6 +685,7 @@ namespace Sharpen.Drivers.Block
                 CPU.HLT();
 
             info.PortRegisters->CI = (uint)(1 << headerNumber);
+            
 
             while (true)
             {
@@ -657,16 +697,62 @@ namespace Sharpen.Drivers.Block
 
             if ((info.PortRegisters->IS & PxIS_TFES) > 0)
                 return 0;
-
-            Console.WriteHex(info.PortRegisters->IS);
-            Console.WriteLine("");
-
-            Console.WriteHex(buffer[0]);
-            Console.WriteHex(buffer[1]);
-            Console.WriteHex(buffer[2]);
-            Console.WriteLine("");
-
+            
             return 0;
+        }
+
+
+        /// <summary>
+        /// Write method for filesystem
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="offset">The offset</param>
+        /// <param name="size">The size</param>
+        /// <param name="buffer">The buffer</param>
+        /// <returns>The amount of bytes written</returns>
+        private static unsafe uint writeImpl(Node node, uint offset, uint size, byte[] buffer)
+        {
+            // Only support sizes in magnitudes of 512
+            if (size % 512 != 0)
+                return 0;
+
+            uint sz = size / 512;
+
+            AHCICookie cookie = (AHCICookie)node.Cookie;
+
+            byte* bufferPtr = (byte*)Util.ObjectToVoidPtr(buffer);
+
+            if (cookie.AHCI.AtaTransfer(cookie.PortInfo, (int)offset, (int)sz, (byte*)Util.ObjectToVoidPtr(buffer), true) == 0)
+                return 0;
+
+            return (uint)size;
+        }
+
+
+        /// <summary>
+        /// Read method for filesystem
+        /// </summary>
+        /// <param name="node">The node</param>
+        /// <param name="offset">The offset</param>
+        /// <param name="size">The size</param>
+        /// <param name="buffer">The buffer</param>
+        /// <returns>The amount of bytes read</returns>
+        private static unsafe uint readImpl(Node node, uint offset, uint size, byte[] buffer)
+        {
+            // Only support sizes in magnitudes of 512
+            if (size % 512 != 0)
+                return 0;
+
+            uint sz = size / 512;
+
+            AHCICookie cookie = (AHCICookie)node.Cookie;
+
+            byte* bufferPtr = (byte*)Util.ObjectToVoidPtr(buffer);
+
+            if (cookie.AHCI.AtaTransfer(cookie.PortInfo, (int)offset, (int)sz, (byte*)Util.ObjectToVoidPtr(buffer), false) == 0)
+                return 0;
+
+            return (uint)size;
         }
 
         /// <summary>
