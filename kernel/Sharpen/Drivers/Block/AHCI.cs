@@ -344,6 +344,8 @@ namespace Sharpen.Drivers.Block
         private const int ATA_DEV_BUSY = 0x80;
         private const int ATA_DEV_DRQ = 0x08;
 
+        private static bool Read;
+
         private static int mID;
 
         private PciDevice mPciDevice;
@@ -358,6 +360,7 @@ namespace Sharpen.Drivers.Block
 
         public AHCI(PciDevice dev)
         {
+            Read = false;
             mPciDevice = dev;
         }
 
@@ -531,7 +534,7 @@ namespace Sharpen.Drivers.Block
             
             portInfo.PortRegisters = portReg;
 
-
+            
             char* name = (char*)Heap.Alloc(5);
             name[0] = 'H';
             name[1] = 'D';
@@ -644,13 +647,12 @@ namespace Sharpen.Drivers.Block
             Memory.Memclear(cmdTable, sizeof(AHCI_Command_table_entry) + (sizeof(AHCI_PRDT_Entry) * prdtl));
 
             header->CTBA = (uint)Paging.GetPhysicalFromVirtual(cmdTable);
-
-
+            
             for(int i = 0; i < header->Prdtl - 1; i++)
             {
                 AHCI_PRDT_Entry* entry = (AHCI_PRDT_Entry *)((int)cmdTable + sizeof(AHCI_Command_table_entry) + (sizeof(AHCI_PRDT_Entry) * i));
 
-                entry->DBA = (uint)curBuf;
+                entry->DBA = (uint)Paging.GetPhysicalFromVirtual(curBuf);
                 entry->DBAU = 0x00;
                 entry->Misc = 2023;
 
@@ -659,10 +661,10 @@ namespace Sharpen.Drivers.Block
             }
 
             AHCI_PRDT_Entry* lastEntry = (AHCI_PRDT_Entry*)((int)cmdTable + sizeof(AHCI_Command_table_entry) + (sizeof(AHCI_PRDT_Entry) * (prdtl - 1)));
-            lastEntry->DBA = (uint)curBuf;
+            lastEntry->DBA = (uint)Paging.GetPhysicalFromVirtual(curBuf);
             lastEntry->DBAU = 0x00;
             lastEntry->Misc = (fullCount - curOffset) - 1;
-            
+
             AHCI_REG_H2D* fis = (AHCI_REG_H2D*)cmdTable->CFIS;
             fis->FisType = (int)AHCI_FIS.REG_H2D;
             fis->Command = ATA_CMD_READ_DMA_EX;
@@ -697,7 +699,7 @@ namespace Sharpen.Drivers.Block
 
             if ((info.PortRegisters->IS & PxIS_TFES) > 0)
                 return 0;
-            
+
             return 0;
         }
 
