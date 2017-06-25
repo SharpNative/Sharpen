@@ -103,7 +103,7 @@ namespace Sharpen
             
             AHCI.Init();
             ATA.Init();
-            //NVMe.Init();
+            NVMe.Init();
 
 
             PacketFS.Init();
@@ -156,7 +156,7 @@ namespace Sharpen
 
 
             UHCI.Init();
-            //EHCI.Init();
+            EHCI.Init();
         }
 
         /// <summary>

@@ -43,61 +43,63 @@ namespace Sharpen.Drivers.USB
 
     public unsafe struct EHCITransferDescriptor
     {
-        public int NextLink { get; set; }
+        public int NextLink;
 
-        public int Reserved { get; set; }
+        public int Reserved;
 
-        public int Token { get; set; }
+        public int Token;
 
-        public int BufferPointer { get; set; }
+        public fixed int Buffer[5];
+        public fixed int ExtBuffer[5];
 
 
-        public bool Allocated { get; set; }
-        public EHCITransferDescriptor* Previous { get; set; }
-        public EHCITransferDescriptor* Next { get; set; }
+        public bool Allocated;
+        public EHCITransferDescriptor* Previous;
+        public EHCITransferDescriptor* Next;
     }
 
     public unsafe struct EHCIQueueHead
     {
-        public int Head { get; set; }
-        public int EPCharacteristics { get; set; }
-        public int EPCapabilities { get; set; }
+        public int Head;
+        public int EPCharacteristics;
+        public int EPCapabilities;
 
-        public int CurLink { get; set; }
+        public int CurLink;
 
 
         // Transfer descriptor
-        public int NextLink { get; set; }
+        public int NextLink;
 
-        public int Reserved { get; set; }
+        public int Reserved;
 
-        public int Token { get; set; }
+        public int Token;
 
-        public int BufferPointer { get; set; }
+        public int BufferPointer;
 
-        public bool Allocated { get; set; }
-        public USBTransfer* Transfer { get; set; }
-        public EHCIQueueHead* Previous { get; set; }
-        public EHCIQueueHead* Next { get; set; }
+        public bool Allocated;
+        public USBTransfer* Transfer;
+        public EHCITransferDescriptor* Transmit;
+        public EHCIQueueHead* Previous;
+        public EHCIQueueHead* Next;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public unsafe struct EHCIHostCapRegister
     {
-        public byte CapLength { get; set; }
+        public byte CapLength;
 
-        public byte Reserved { get; set; }
+        public byte Reserved;
 
-        public ushort HCIVersion { get; set; }
+        public ushort HCIVersion;
 
-        public int HCSParams { get; set; }
+        public int HCSParams;
 
-        public int HCCParams { get; set; }
+        public int HCCParams;
 
-        public long HCSPPortroute { get; set; }
+        public long HCSPPortroute;
     }
     
-    public class EHCI
+    public unsafe class EHCI
     {
         const ushort MAX_HEADS = 16;
         const ushort MAX_TRANSFERS = 32;
@@ -158,6 +160,37 @@ namespace Sharpen.Drivers.USB
         const int INTR_LFR = (1 << 3);
         const int INTR_HC_ERROR = (1 << 4);
         const int INTR_AA_ENABLE = (1 << 5);
+
+        const int QH_EC_ADDR_SHIFT = 0;
+        const int QH_EC_ADDR_MASK = 0x3F;
+        const int QH_I = (1 << 7);
+        const int QH_ENDP_SHIFT = (1 << 8);
+        const int QH_ENDP_MASK = 0xF;
+        const int QH_EPS_SHIFT = (1 << 12);
+        const int QH_EPS_MASK = 0x3;
+        const int QH_DTC = (1 << 14);
+        const int QH_H = (1 << 15);
+        const int QH_MAXLEN_SHIFT = 16;
+        const int QH_MAXLEN_MASK = 0xA;
+
+        const int TD_TOK_STATUS_SHIFT = 0;
+        const int TD_TOK_STATUS_MASK = 0x7F;
+        const int TD_TOK_STATUS_ACTIVE = (1 << 7);
+        const int TD_TOK_PID_OUT = (0 << 8) | (0 << 9);
+        const int TD_TOK_PID_IN = (1 << 8) | (0 << 9);
+        const int TD_TOK_PID_SETUP = (0 << 8) | (1 << 9);
+        const int TD_TOK_CERR_SHIFT = 10;
+        const int TD_TOK_CPAGE_SHIFT = 12;
+        const int TD_TOK_IOC_SHIFT = 15;
+        const int TD_TOK_TBTT_SHIFT = 16;
+        const int TD_TOK_TOGGLE_SHIFT = 31;
+        const int TD_TOK_PID_SHIFT = 8;
+
+
+
+        const ushort TRANS_PACKET_SETUP = 0x2D;
+        const ushort TRANS_PACKET_IN = 0x69;
+        const ushort TRANS_PACKET_OUT = 0xE1;
 
         const uint HCSPARAMS_PORTS_MASK = (0xF << 0);
 
@@ -320,8 +353,74 @@ namespace Sharpen.Drivers.USB
         /// <param name="transfer"></param>
         private unsafe static void Control(USBDevice dev, USBTransfer* transfer)
         {
-            transfer->Executed = true;
-            transfer->Success = false;
+
+            USBDeviceRequest request = transfer->Request;
+            transfer->Executed = false;
+
+            EHCIController controller = (EHCIController)dev.Controller;
+
+            EHCITransferDescriptor* td = AllocateEmptyTransmit(controller);
+
+            EHCITransferDescriptor* head = td;
+            EHCITransferDescriptor* prev = null;
+
+            USBDeviceRequest* a = (USBDeviceRequest*)Heap.Alloc(sizeof(USBDeviceRequest));
+            a->Request = request.Request;
+            a->Index = request.Index;
+            a->Length = request.Length;
+            a->Type = request.Type;
+            a->Value = request.Value;
+
+            InitTransmit(td, prev, dev.Speed, dev.Address, 0, 0, TRANS_PACKET_SETUP, (uint)sizeof(USBDeviceRequest), (byte*)a);
+            prev = td;
+
+            uint packetType = ((request.Type & USBDevice.TYPE_DEVICETOHOST) > 0) ? TRANS_PACKET_IN : TRANS_PACKET_OUT;
+
+            byte* ptr = transfer->Data;
+            uint packetSize = transfer->Length;
+            uint offset = 0;
+
+            uint toggle = 0;
+
+            uint remaining = packetSize;
+
+            while (remaining > 0)
+            {
+                td = AllocateEmptyTransmit(controller);
+                if (td == null)
+                    return;
+
+                packetSize = remaining;
+                if (packetSize > dev.MaxPacketSize)
+                    packetSize = dev.MaxPacketSize;
+
+                remaining -= packetSize;
+
+                toggle ^= 1;
+
+                InitTransmit(td, prev, dev.Speed, dev.Address, 0, toggle, packetType, packetSize, ptr + offset);
+                prev = td;
+
+                offset += packetSize;
+            }
+
+            td = AllocateEmptyTransmit(controller);
+            if (td == null)
+                return;
+
+            packetType = ((request.Type & USBDevice.TYPE_DEVICETOHOST) > 0) ? TRANS_PACKET_OUT : TRANS_PACKET_IN;
+
+            toggle = 1;
+            InitTransmit(td, prev, dev.Speed, dev.Address, 0, toggle, packetType, 0, null);
+
+            EHCIQueueHead* qh = AllocateEmptyQH(controller);
+
+            InitHead(qh, null, dev.Address, 0, packetSize);
+            qh->NextLink = (int)td;
+            qh->Transmit = td;
+
+            InsertHead(controller, qh);
+            WaitForQueueHead(controller, qh);
         }
 
         /// <summary>
@@ -363,7 +462,7 @@ namespace Sharpen.Drivers.USB
 
                 if (!dev.Init())
                 {
-                    Console.Write("[EHCI] Device init  failed on port ");
+                    Console.Write("[EHCI] Device init failed on port ");
                     Console.WriteNum(portNum);
                     Console.WriteLine("");
 
@@ -373,6 +472,34 @@ namespace Sharpen.Drivers.USB
         }
 
         #region Head allocation
+
+        /// <summary>
+        /// Get Transmit descriptor item
+        /// </summary>
+        /// <param name="dev">Device</param>
+        /// <returns></returns>
+        private unsafe static EHCITransferDescriptor* GetTransmitDescriptor(EHCIController dev)
+        {
+            mMutex.Lock();
+            int i = 0;
+            while (i < MAX_HEADS)
+            {
+                if (!dev.TransferPool[i].Allocated)
+                {
+                    dev.TransferPool[i].Allocated = true;
+                    dev.TransferPool[i].Next = null;
+                    dev.TransferPool[i].Previous = null;
+
+                    mMutex.Unlock();
+                    return (EHCITransferDescriptor*)(((int)dev.TransferPool) + (sizeof(EHCITransferDescriptor) * i));
+                }
+
+                i++;
+            }
+
+            mMutex.Unlock();
+            return null;
+        }
 
         /// <summary>
         /// Get Queue head item
@@ -403,6 +530,135 @@ namespace Sharpen.Drivers.USB
         }
         #endregion
 
+        private unsafe static EHCITransferDescriptor* AllocateEmptyTransmit(EHCIController controller)
+        {
+            EHCITransferDescriptor* queueHead = GetTransmitDescriptor(controller);
+
+            return queueHead;
+        }
+
+        private static void InitTransmit(EHCITransferDescriptor* td, EHCITransferDescriptor* previous,
+            USBDeviceSpeed speed, uint address, uint endp, uint toggle, uint type, uint len, byte* data)
+        {
+
+            td->NextLink = TD_TERMINATE;
+            td->Reserved = TD_TERMINATE;
+            td->Next = null;
+
+            // Add link
+            if (previous != null)
+            {
+                previous->NextLink = (int)td;
+                previous->Next = td;
+            }
+
+            // Set token
+            td->Token = (int)((toggle << TD_TOK_TOGGLE_SHIFT) |
+                        (len << TD_TOK_TBTT_SHIFT) |
+                        (3 << TD_TOK_CERR_SHIFT) |
+                        (type << TD_TOK_PID_SHIFT) |
+                        TD_TOK_STATUS_ACTIVE);
+
+            // Set data buffer
+            int ptr = (int)data;
+            td->Buffer[0] = ptr;
+            td->ExtBuffer[0] = (ptr >> 32);
+            ptr &= ~0xFFF;
+
+            for(int i = 1; i < 4; i++)
+            {
+                ptr += 0x1000;
+                td->Buffer[i] = ptr;
+                td->ExtBuffer[i] = (ptr >> 32);
+            }
+        }
+
+        /// <summary>
+        /// Insert head
+        /// </summary>
+        /// <param name="controller">UHCIController</param>
+        /// <param name="head"></param>
+        public static void InsertHead(EHCIController controller, EHCIQueueHead* head)
+        {
+            mMutex.Lock();
+            EHCIQueueHead* end = controller.FirstHead;
+
+            while (true)
+                if (end->Next != null)
+                    end = end->Next;
+                else
+                    break;
+
+            head->Head = TD_TERMINATE;
+            head->Previous = end;
+            head->Next = null;
+
+            end->Next = head;
+            end->Head = (int)Paging.GetPhysicalFromVirtual(head);
+
+            mMutex.Unlock();
+        }
+
+
+        public static void RemoveHead(EHCIController controller, EHCIQueueHead* head)
+        {
+            mMutex.Lock();
+
+            /**
+             * Set next to previous
+             */
+            if (head->Previous != null)
+            {
+                if (head->Next != null)
+                {
+                    head->Previous->Head = head->Head;
+                    head->Previous->Next = head->Next;
+                }
+                else
+                {
+                    head->Previous->Head = TD_TERMINATE;
+                    head->Previous->Next = null;
+                }
+            }
+
+            /**
+             * Set previous to next
+             */
+            if (head->Next != null)
+            {
+                head->Next->Previous = head->Previous;
+            }
+
+            head->Allocated = false;
+            mMutex.Unlock();
+        }
+
+        private static void InitHead(EHCIQueueHead* qh, EHCIQueueHead* previous, uint addr, uint endp, uint maxSize)
+        {
+
+            qh->NextLink = TD_TERMINATE;
+            qh->Reserved = TD_TERMINATE;
+            qh->Next = null;
+
+            // Add link
+            if (previous != null)
+            {
+                previous->NextLink = (int)qh | 1;
+                previous->Next = qh;
+            }
+
+            // Setup chars and caps
+            qh->EPCharacteristics = (int)(QH_DTC |
+                        (0x3 << QH_EPS_SHIFT) |
+                        (endp << QH_ENDP_SHIFT) |
+                        (maxSize << QH_MAXLEN_SHIFT) |
+                        (addr << QH_EC_ADDR_SHIFT));
+
+            qh->EPCapabilities = (1 << 30);
+
+            qh->Token = 0;
+        }
+
         private unsafe static EHCIQueueHead *AllocateEmptyQH(EHCIController controller)
         {
             EHCIQueueHead* queueHead = GetQueueHead(controller);
@@ -417,14 +673,70 @@ namespace Sharpen.Drivers.USB
             queueHead->Previous = null;
             queueHead->Transfer = null;
 
-            controller.AsyncQueueHead = queueHead;
-
             return queueHead;
+        }
+
+        /// <summary>
+        /// Process Queue Head
+        /// </summary>
+        /// <param name="device"></param>
+        /// <param name="head"></param>
+        public static void ProcessHead(EHCIController controller, EHCIQueueHead* head)
+        {
+            USBTransfer* transfer = head->Transfer;
+
+            EHCITransferDescriptor* td = head->Transmit;
+
+            Console.WriteHex(td->Token);
+            Console.WriteLine(" :)");
+
+            if (transfer->Executed)
+            {
+                //if(transfer->ID > 0)
+                //{
+                //    PrintQueue(transfer->ID, head);
+                //}
+
+                head->Transfer = null;
+
+                /**
+                 * We need to toggle endpoint state here
+                 */
+
+                /**
+                 * Remove head from schedule
+                 */
+                RemoveHead(controller, head);
+
+                /**
+                 * Free transmit descriptors
+                 */
+                EHCITransferDescriptor* tdE = td;
+
+                while (tdE != null)
+                {
+                    EHCITransferDescriptor* next = tdE->Next;
+                    FreeTransmit(controller, tdE);
+                    tdE = next;
+                }
+            }
+        }
+
+        public static void FreeTransmit(EHCIController controller, EHCITransferDescriptor* transmit)
+        {
+            transmit->Allocated = false;
+        }
+
+
+        public static void WaitForQueueHead(EHCIController controller, EHCIQueueHead* head)
+        {
+
+            while (!head->Transfer->Executed)
+                ProcessHead(controller, head);
         }
 
         private unsafe static void initDevice(PciDevice dev)
         {
-
             if ((dev.BAR0.flags & Pci.BAR_IO) != 0)
             {
                 Console.WriteLine("[EHCI] Only Memory mapped IO supported");
