@@ -26,7 +26,7 @@ namespace Sharpen.Drivers.USB
 
         public int OperationalRegisters { get; set; }
 
-        public int* FrameList { get; set; }
+        public int* FrameList;
 
         public EHCIQueueHead* QueueHeadPool { get; set; }
 
@@ -57,7 +57,7 @@ namespace Sharpen.Drivers.USB
         public EHCITransferDescriptor* Previous;
         public EHCITransferDescriptor* Next;
     }
-
+    
     public unsafe struct EHCIQueueHead
     {
         public int Head;
@@ -81,6 +81,7 @@ namespace Sharpen.Drivers.USB
         public EHCITransferDescriptor* Transmit;
         public EHCIQueueHead* Previous;
         public EHCIQueueHead* Next;
+        public fixed byte Padding[12];
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -206,6 +207,7 @@ namespace Sharpen.Drivers.USB
         /// </summary>
         public static unsafe void Init()
         {
+            
             mMutex = new Mutex();
             /**
              * Note: this cycles through PCI devices!
@@ -418,6 +420,7 @@ namespace Sharpen.Drivers.USB
             InitHead(qh, null, dev.Address, 0, packetSize);
             qh->NextLink = (int)td;
             qh->Transmit = td;
+            qh->Transfer = transfer;
 
             InsertHead(controller, qh);
             WaitForQueueHead(controller, qh);
@@ -773,7 +776,23 @@ namespace Sharpen.Drivers.USB
             * (int *)(controller.OperationalRegisters + REG_PERIODICLISTBASE) = (int)Paging.GetPhysicalFromVirtual(controller.FrameList);
             *(int*)(controller.OperationalRegisters + REG_ASYNCLISTADDR) = (int)Paging.GetPhysicalFromVirtual(controller.AsyncQueueHead);
             *(int*)(controller.OperationalRegisters + REG_CTRLDSSEGMENT) = 0;
-            
+
+            Console.Write("Periodic: ");
+            Console.WriteHex((int)Paging.GetPhysicalFromVirtual(controller.FrameList));
+            Console.WriteLine("");
+            Console.Write("Periodic: ");
+            Console.WriteHex((int)Paging.GetPhysicalFromVirtual(controller.FrameList));
+            Console.WriteLine("");
+            Console.Write("FRAME LIST PHYS: ");
+            Console.WriteHex((int)Paging.GetPhysicalFromVirtual(controller.FrameList));
+            Console.WriteLine("");
+            Console.Write("FRAME LIST ENTRY: ");
+            Console.WriteHex((int)controller.FrameList);
+            Console.WriteLine("");
+            Console.Write("FRAME LIST ENTRY 1: ");
+            Console.WriteHex(controller.FrameList[0]);
+            Console.WriteLine("");
+
             // Reset status
             *(int*)(controller.OperationalRegisters + REG_USBSTS) = 0x3F;
 
